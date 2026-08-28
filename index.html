@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Poker Trainer — learn Texas Hold'em, Omaha and Short Deck from beginner to winning player. Drills, a real table with AI opponents, and a coach that checks every decision.">
+  <meta name="theme-color" content="#0b0f14">
+  <title>Poker Trainer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%230d3b28'/><text y='74' x='50' font-size='72' text-anchor='middle' fill='%23e3b23c'>%E2%99%A0</text></svg>">
+  <link rel="stylesheet" href="src/css/base.css">
+  <link rel="stylesheet" href="src/css/table.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar" id="topbar"></header>
+    <main id="screen">
+      <div class="empty">Loading…</div>
+    </main>
+  </div>
+  <div id="toasts"></div>
+
+  <noscript>
+    <div style="padding:40px;text-align:center">Poker Trainer needs JavaScript enabled.</div>
+  </noscript>
+
+  <script type="module" src="src/js/app.js"></script>
+  <script>
+    // ES modules cannot load over file://, so say so plainly rather than
+    // showing an empty page.
+    if (location.protocol === 'file:') {
+      document.getElementById('screen').innerHTML =
+        '<div class="panel"><h2>Start a local server</h2>' +
+        '<p class="muted">Browsers block JavaScript modules opened directly from disk. From the project folder run:</p>' +
+        '<pre class="mono" style="background:#0c1219;padding:12px;border-radius:8px">npm start</pre>' +
+        '<p class="muted">or <code class="mono">python3 -m http.server 8000</code>, then open ' +
+        '<a href="http://localhost:8000">localhost:8000</a>.</p></div>';
+    }
+  </script>
+</body>
+</html>

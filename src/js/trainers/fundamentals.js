@@ -3,7 +3,7 @@
  * what beats what, how many cards save you, and what the pot is offering.
  */
 
-import { makeDeck, parseCards, cardsToString, handKey } from '../core/cards.js';
+import { makeDeck, cardsToString } from '../core/cards.js';
 import { evaluate, describeScore, shortCategoryName } from '../core/evaluator.js';
 import { countOuts, exactOutsEquity, handEquity } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';

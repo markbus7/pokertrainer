@@ -120,6 +120,42 @@ export function equityVsRange(hero, rangeCombos, board = [], options = {}) {
 }
 
 /**
+ * Equity against `opponents` unknown hands. This is what a player can
+ * actually estimate at the table — your own cards, the board, and a count of
+ * how many opponents are still in. Used by both the bots and the coach, so
+ * they always agree about how strong a hand is.
+ */
+export function equityVsField(hole, board, opponents, variant = HOLDEM, rng = makeRng(), trials = 400) {
+  const used = new Set([...hole, ...board]);
+  const deck = makeDeck(variant.shortDeck).filter((c) => !used.has(c));
+  const need = cardsToCome(board.length);
+  const holeCards = variant.holeCards || 2;
+  const draw = opponents * holeCards + need;
+  if (opponents < 1) return 1;
+  if (draw > deck.length) return 0.5;
+
+  let total = 0;
+  for (let t = 0; t < trials; t++) {
+    for (let k = 0; k < draw; k++) {
+      const j = k + Math.floor(rng() * (deck.length - k));
+      const tmp = deck[k]; deck[k] = deck[j]; deck[j] = tmp;
+    }
+    const offset = opponents * holeCards;
+    const full = board.concat(deck.slice(offset, offset + need));
+    const heroScore = evaluateHand(hole, full, variant);
+    let best = heroScore;
+    let ties = 1;
+    for (let o = 0; o < opponents; o++) {
+      const villain = deck.slice(o * holeCards, (o + 1) * holeCards);
+      const score = evaluateHand(villain, full, variant);
+      if (score > best) { best = score; ties = 1; } else if (score === best) ties++;
+    }
+    if (heroScore === best) total += 1 / ties;
+  }
+  return total / trials;
+}
+
+/**
  * Outs: cards that turn a losing hand into a winning one on the next street.
  * Counted by simulation against the actual opponent hand, which is how a
  * student should learn to see them — "which cards save me right now".

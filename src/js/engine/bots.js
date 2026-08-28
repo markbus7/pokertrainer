@@ -6,8 +6,8 @@
  * bluffs and the station never folds, then attacking exactly that.
  */
 
-import { handKey, makeDeck } from '../core/cards.js';
-import { evaluateHand } from '../core/evaluator.js';
+import { handKey } from '../core/cards.js';
+import { equityVsField } from '../core/equity.js';
 import { requiredEquity } from '../core/odds.js';
 import { HAND_STRENGTH, STRENGTH_RANK } from '../data/handStrength.js';
 import { CHARTS } from '../data/ranges.js';
@@ -129,38 +129,9 @@ export function getProfile(key) {
  * Hand strength estimation
  * ------------------------------------------------------------------ */
 
-/**
- * Equity against `opponents` random hands, by simulation. Bots do not get to
- * see anyone's cards — they estimate from their own hand and the board, the
- * same information a human has.
- */
+/** Bots estimate strength from their own cards and the board — nothing else. */
 function monteCarlo(hole, board, table, rng, trials, opponents) {
-  const variant = table.variant;
-  const used = new Set([...hole, ...board]);
-  const deck = makeDeck(variant.shortDeck).filter((c) => !used.has(c));
-  const need = 5 - board.length;
-  const draw = opponents * variant.holeCards + need;
-  if (draw > deck.length) return 0.5;
-
-  let total = 0;
-  for (let t = 0; t < trials; t++) {
-    for (let k = 0; k < draw; k++) {
-      const j = k + Math.floor(rng() * (deck.length - k));
-      const tmp = deck[k]; deck[k] = deck[j]; deck[j] = tmp;
-    }
-    const offset = opponents * variant.holeCards;
-    const full = board.concat(deck.slice(offset, offset + need));
-    const heroScore = evaluateHand(hole, full, variant);
-    let best = heroScore;
-    let ties = 1;
-    for (let o = 0; o < opponents; o++) {
-      const villain = deck.slice(o * variant.holeCards, (o + 1) * variant.holeCards);
-      const score = evaluateHand(villain, full, variant);
-      if (score > best) { best = score; ties = 1; } else if (score === best) ties++;
-    }
-    if (heroScore === best) total += 1 / ties;
-  }
-  return total / trials;
+  return equityVsField(hole, board, opponents, table.variant, rng, trials);
 }
 
 /* ------------------------------------------------------------------ *

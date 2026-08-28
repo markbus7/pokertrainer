@@ -6,6 +6,7 @@
   "description": "Poker Trainer — a browser game that takes you from beginner to crushing online tables.",
   "scripts": {
     "start": "node tools/serve.js",
-    "test": "node tests/run.js"
+    "test": "node tests/run.js",
+    "test:e2e": "node tests/e2e.mjs"
   }
 }

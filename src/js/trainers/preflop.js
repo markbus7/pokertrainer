@@ -4,10 +4,10 @@
  * actual charts in data/ranges.js.
  */
 
-import { expandHandKey, handKey, ALL_HAND_KEYS } from '../core/cards.js';
+import { expandHandKey, ALL_HAND_KEYS } from '../core/cards.js';
 import { CHARTS, preflopAdvice, POSITIONS, POSITION_INFO, rangePercent } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
-import { randInt, shuffle } from '../core/rng.js';
+import { randInt } from '../core/rng.js';
 import { buildChoices, pct } from './helpers.js';
 
 const OPEN_POSITIONS = ['UTG', 'HJ', 'CO', 'BTN', 'SB'];
