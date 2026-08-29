@@ -6,6 +6,7 @@ import { ACHIEVEMENTS } from '../state/achievements.js';
 import { RANKS } from '../state/profile.js';
 import { exportCode, importCode, decodeSyncCode, summarize } from '../state/sync.js';
 import * as cloudSync from '../state/cloudSync.js';
+import { VERSION, BUILT, REPO, checkForUpdate } from '../version.js';
 import { handGrid } from '../core/cards.js';
 import { CHARTS, POSITION_INFO, rangePercent, RFI, THREE_BET } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
@@ -32,6 +33,7 @@ export function renderStats(ctx) {
       tile('Hands played', fmt.chips(profile.data.handsPlayed)),
     ),
 
+    renderVersionPanel(),
     renderSyncPanel(ctx),
 
     curve.length >= 2
@@ -123,6 +125,56 @@ const codeBoxStyle = {
   borderRadius: 'var(--radius-sm)',
   padding: '10px',
 };
+
+/**
+ * Which build is running, and whether it is the current one. The check reads
+ * the version from package.json on the main branch — the same file the build
+ * was stamped from — so "am I up to date" has a real answer rather than a
+ * guess based on a date.
+ */
+function renderVersionPanel() {
+  const status = el('div.faint', { style: { minHeight: '20px' } },
+    'Click to compare against the latest published version.');
+  const button = el('button.btn.sm', { onclick: run }, 'Check for updates');
+
+  async function run() {
+    button.disabled = true;
+    status.style.color = '';
+    status.textContent = 'Checking…';
+    const result = await checkForUpdate();
+    button.disabled = false;
+
+    if (!result.ok) {
+      status.style.color = 'var(--text-dim)';
+      status.textContent = `Could not check: ${result.message} Your copy still works offline.`;
+      return;
+    }
+    if (result.upToDate) {
+      status.style.color = 'var(--green)';
+      status.textContent = `✅ You are on the latest version (${result.latest}).`;
+      return;
+    }
+    status.style.color = 'var(--gold)';
+    status.textContent = `⬆️ Version ${result.latest} is available — you are running ${result.current}. `
+      + 'If you cloned the repo, run "git pull" and reload. If you use the hosted page, a hard refresh will pick it up.';
+  }
+
+  return el('div.panel',
+    el('div.panel-title', el('h2', '🏷️ Version'), el('span.faint', REPO)),
+    el('div.spread',
+      el('div',
+        el('div.row',
+          el('span.mono', { style: { fontSize: '1.35rem', fontWeight: '700', color: 'var(--gold)' } }, `v${VERSION}`),
+          el('span.faint', `built ${BUILT}`),
+        ),
+        el('div.faint', { style: { marginTop: '4px' } },
+          'Your progress is stored separately from the code, so updating never affects it.'),
+      ),
+      button,
+    ),
+    el('div', { style: { marginTop: '12px' } }, status),
+  );
+}
 
 function timeAgo(iso) {
   if (!iso) return 'never';

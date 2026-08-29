@@ -6,6 +6,7 @@
 import { el, mount, $, toast, fmt } from './ui/dom.js';
 import { Profile, nextRank } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
+import { VERSION } from './version.js';
 import { makeRng } from './core/rng.js';
 import { renderHome } from './ui/screenHome.js';
 import { renderLearn, renderDrill, renderGauntletIntro } from './ui/screenDrill.js';
@@ -93,7 +94,11 @@ function drawTopbar(activeTab) {
   const rank = profile.rank;
   const next = nextRank(profile.xp);
   mount($('#topbar'),
-    el('div.brand', el('span.pip', '♠'), 'Poker Trainer'),
+    el('div.brand', el('span.pip', '♠'), 'Poker Trainer',
+      el('button.version-chip', {
+        onclick: () => go('stats'),
+        title: 'Which build you are running — click for details and an update check',
+      }, `v${VERSION}`)),
     el('nav.tabs', TABS.map((t) => el(`button.tab${t.route === activeTab ? '.active' : ''}`, {
       onclick: () => go(t.route),
     }, t.label))),

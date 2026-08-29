@@ -1,4 +1,4 @@
-import { describe, it, assert, equal } from './harness.js';
+import { describe, it, assert, equal, close } from './harness.js';
 import { WALKTHROUGHS } from '../src/js/data/walkthroughs.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
 import { requiredEquity, minimumDefenceFrequency, breakEvenBluffFrequency, spr } from '../src/js/core/odds.js';
@@ -208,9 +208,33 @@ describe('walkthroughs: the numbers taught match the engine', () => {
   });
 
   it('teaches outs equities that match the exact maths', () => {
-    equal(Math.round(exactOutsEquity(9, 'flop') * 100), 35, 'flush draw on the flop is ~35%, taught as 36%');
-    equal(Math.round(exactOutsEquity(8, 'flop') * 100), 31, 'open-ended on the flop is 31.5%, taught as the 32% shortcut');
-    equal(Math.round(exactOutsEquity(9, 'turn') * 100), 20, 'flush draw on the turn is ~20%, taught as 18%');
+    equal(Math.round(exactOutsEquity(9, 'flop') * 100), 35, 'flush draw on the flop is ~35%, shortcut says 36%');
+    equal(Math.round(exactOutsEquity(8, 'flop') * 100), 31, 'open-ended on the flop is 31.5%, shortcut says 32%');
+    equal(Math.round(exactOutsEquity(9, 'turn') * 100), 20, 'flush draw on the turn is ~20%, shortcut says 18%');
+    equal(Math.round(exactOutsEquity(15, 'flop') * 100), 54, 'the 15-out monster is 54%, shortcut says 60%');
+  });
+
+  it('teaches a correct account of WHY the rule of 4 drifts', () => {
+    // The lesson claims: naive addition overshoots by the double-counted
+    // overlap, and rounding 2.1% down to 2% roughly cancels it at 9 outs but
+    // not at 15. Every one of those numbers is asserted here, because an
+    // explanation that sounds right and is wrong is worse than none.
+    const perCard = (unseen) => 1 / unseen;
+    const naive = (outs) => outs * (perCard(47) + perCard(46));
+    const overlap = (outs) => (outs / 47) * ((outs - 1) / 46);
+
+    close(naive(9), 0.387, 0.002, 'nine outs, added honestly, is 38.7%');
+    close(overlap(9), 0.033, 0.002, 'the nine-out overlap is about 3%');
+    close(naive(9) - overlap(9), exactOutsEquity(9, 'flop'), 0.006,
+      'naive minus overlap should land on the true figure');
+
+    close(overlap(15), 0.097, 0.003, 'the fifteen-out overlap is nearly 10%');
+    close(naive(15) - overlap(15), exactOutsEquity(15, 'flop'), 0.008,
+      'the same accounting holds at fifteen outs');
+
+    // And the claim that the shortcut is close at 9 outs but not at 15.
+    assert(Math.abs(0.36 - exactOutsEquity(9, 'flop')) < 0.015, 'x4 is close at nine outs');
+    assert(Math.abs(0.60 - exactOutsEquity(15, 'flop')) > 0.04, 'x4 is visibly high at fifteen outs');
   });
 
   it('teaches the SPR example correctly', () => {

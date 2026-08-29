@@ -11,6 +11,7 @@ const modules = [
   './sync.test.js',
   './cloudSync.test.js',
   './walkthroughs.test.js',
+  './version.test.js',
 ];
 
 for (const m of modules) {
