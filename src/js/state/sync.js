@@ -67,9 +67,12 @@ export function decodeSyncCode(code) {
   return data;
 }
 
-/** Apply imported save data onto a profile, replacing what is there now. */
-export function importCode(profile, code) {
-  const data = decodeSyncCode(code);
+/**
+ * Replace a profile's save data with `data`, keeping local settings that the
+ * incoming data does not specify. Shared by the manual code path and
+ * cloudSync's GitHub-backed path, so "what importing means" is defined once.
+ */
+export function applyImportedData(profile, data) {
   profile.data = {
     ...profile.data,
     ...data,
@@ -77,6 +80,11 @@ export function importCode(profile, code) {
   };
   profile.save();
   return profile;
+}
+
+/** Apply imported save data onto a profile, replacing what is there now. */
+export function importCode(profile, code) {
+  return applyImportedData(profile, decodeSyncCode(code));
 }
 
 /** A short human summary of save data, for a before-you-overwrite comparison. */
