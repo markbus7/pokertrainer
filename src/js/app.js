@@ -5,6 +5,7 @@
 
 import { el, mount, $, toast, fmt } from './ui/dom.js';
 import { Profile, nextRank } from './state/profile.js';
+import * as cloudSync from './state/cloudSync.js';
 import { makeRng } from './core/rng.js';
 import { renderHome } from './ui/screenHome.js';
 import { renderLearn, renderDrill, renderGauntletIntro } from './ui/screenDrill.js';
@@ -111,7 +112,14 @@ document.addEventListener('keydown', (e) => {
   if (currentCtx && typeof currentCtx.onKey === 'function') currentCtx.onKey(e);
 });
 
-profile.onChange(() => drawTopbar(ROUTES[parseHash().route].tab));
+profile.onChange(() => {
+  drawTopbar(ROUTES[parseHash().route].tab);
+  cloudSync.scheduleAutoPush(profile, (result) => {
+    if (!result.ok && result.reason !== 'not-connected') {
+      toast({ icon: '⚠️', title: 'Sync paused', desc: result.message || 'Could not reach GitHub. Your progress is still saved on this device.' });
+    }
+  });
+});
 
 render();
 
@@ -125,3 +133,37 @@ if (!profile.data.seenWelcome) {
     duration: 7000,
   }), 500);
 }
+
+/**
+ * Reconcile with the cloud: render local state immediately (fast, works
+ * offline), then catch up silently if another device pushed something newer
+ * since this browser last synced. Runs on load AND whenever this tab becomes
+ * visible again — a tab left open in the background for a day is exactly
+ * when it is most likely to be behind, and skipping that check would let it
+ * push its stale state right over a newer one on the very next local change.
+ *
+ * No throttle on the visibility listener: each check is a single cheap GET,
+ * and GitHub's personal-token rate limit (5,000/hour) makes even frequent
+ * tab-switching a non-issue. A rate limit here would only buy back a race
+ * against the exact failure mode this exists to prevent.
+ */
+function reconcileWithCloud() {
+  if (!cloudSync.isConnected()) return;
+  cloudSync.applyRemoteIfNewer(profile).then((result) => {
+    if (result.ok && result.applied) {
+      toast({
+        icon: '☁️',
+        title: 'Synced from your other device',
+        desc: `${result.summary.emoji} ${result.summary.rank}, ${fmt.chips(result.summary.xp)} XP.`,
+      });
+      render();
+    }
+  });
+}
+
+reconcileWithCloud();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  reconcileWithCloud();
+});

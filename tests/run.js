@@ -9,6 +9,7 @@ const modules = [
   './bots.test.js',
   './progression.test.js',
   './sync.test.js',
+  './cloudSync.test.js',
 ];
 
 for (const m of modules) {

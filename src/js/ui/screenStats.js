@@ -1,10 +1,11 @@
 /** Career stats, mastery, achievements and the leak report. */
 
-import { el, fmt, sparkline, toast } from './dom.js';
+import { el, mount, fmt, sparkline, toast } from './dom.js';
 import { MODULE_META } from '../data/curriculum.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { RANKS } from '../state/profile.js';
 import { exportCode, importCode, decodeSyncCode, summarize } from '../state/sync.js';
+import * as cloudSync from '../state/cloudSync.js';
 import { handGrid } from '../core/cards.js';
 import { CHARTS, POSITION_INFO, rangePercent, RFI, THREE_BET } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
@@ -123,12 +124,160 @@ const codeBoxStyle = {
   padding: '10px',
 };
 
+function timeAgo(iso) {
+  if (!iso) return 'never';
+  const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 45) return 'just now';
+  if (seconds < 3600) return `${Math.round(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.round(seconds / 3600)}h ago`;
+  return `${Math.round(seconds / 86400)}d ago`;
+}
+
+/**
+ * Automatic sync via a private GitHub Gist. One-time setup per device (paste
+ * a token), then progress pulls in on load and pushes out a few seconds
+ * after any change — no code to copy each time you switch devices.
+ */
+function renderAutoSync(ctx) {
+  const { profile, go } = ctx;
+  const status = cloudSync.getStatus();
+  const container = el('div');
+
+  const decideDirection = async (result) => {
+    if (!result.remoteExisted) {
+      toast({ icon: '☁️', title: 'Connected', desc: 'This device now syncs automatically.' });
+      go('stats');
+      return;
+    }
+    const remote = result.remoteSummary;
+    const local = result.localSummary;
+
+    if (!remote) {
+      await cloudSync.pushLocal(profile);
+      toast({ icon: '☁️', title: 'Connected', desc: "The cloud save looked empty, so this device's progress was uploaded." });
+      go('stats');
+      return;
+    }
+
+    const fresh = local.xp === 0 && local.hands === 0 && local.achievements === 0;
+    const identical = local.xp === remote.xp && local.hands === remote.hands && local.achievements === remote.achievements;
+
+    if (fresh || identical) {
+      await cloudSync.applyRemote(profile);
+      toast({ icon: '☁️', title: 'Connected', desc: `Pulled in ${remote.emoji} ${remote.rank}, ${remote.xp} XP from the cloud.` });
+      go('stats');
+      return;
+    }
+
+    const useCloud = confirm(
+      `This device: ${local.emoji} ${local.rank}, ${local.xp} XP, ${local.hands} hands played.\n`
+      + `The cloud (from your other device): ${remote.emoji} ${remote.rank}, ${remote.xp} XP, ${remote.hands} hands played.\n\n`
+      + "Press OK to bring the cloud's progress to this device.\n"
+      + "Press Cancel to keep this device's progress and overwrite the cloud with it instead.",
+    );
+    if (useCloud) {
+      await cloudSync.applyRemote(profile);
+      toast({ icon: '☁️', title: 'Synced from the cloud', desc: `${remote.emoji} ${remote.rank}, ${remote.xp} XP.` });
+    } else {
+      await cloudSync.pushLocal(profile);
+      toast({ icon: '☁️', title: 'Cloud updated', desc: "This device's progress is now the cloud copy." });
+    }
+    go('stats');
+  };
+
+  const renderDisconnected = () => {
+    const tokenInput = el('input', {
+      type: 'password',
+      placeholder: 'Paste your token here…',
+      autocomplete: 'off',
+      style: { ...codeBoxStyle, padding: '9px 10px' },
+    });
+    const connectStatus = el('div.faint', { style: { minHeight: '20px', marginTop: '8px' } });
+    const connectBtn = el('button.btn.sm.primary', { onclick: doConnect }, 'Connect');
+
+    async function doConnect() {
+      const token = tokenInput.value;
+      if (!token.trim()) {
+        connectStatus.textContent = 'Paste a token first.';
+        connectStatus.style.color = 'var(--red)';
+        return;
+      }
+      connectBtn.disabled = true;
+      connectStatus.style.color = '';
+      connectStatus.textContent = 'Connecting…';
+      const result = await cloudSync.connect(token, profile);
+      if (!result.ok) {
+        connectBtn.disabled = false;
+        connectStatus.textContent = `⚠️ ${result.message || 'Could not connect.'}`;
+        connectStatus.style.color = 'var(--red)';
+        return;
+      }
+      await decideDirection(result);
+    }
+
+    mount(container,
+      el('p.muted', "One-time setup: create a free GitHub token, paste it below, and this device will sync automatically from then on — no code to copy, ever."),
+      el('ol', { style: { color: 'var(--text-dim)', fontSize: '0.85rem', paddingLeft: '20px', margin: '0 0 12px' } },
+        el('li', el('a', { href: cloudSync.TOKEN_SETUP_URL, target: '_blank', rel: 'noopener' }, 'Create a token ↗'),
+          ' — GitHub opens with the right settings already filled in. Click "Generate token".'),
+        el('li', 'Copy the token GitHub shows you (starts with "ghp_").'),
+        el('li', 'Paste it below and click Connect.'),
+      ),
+      el('div.row', tokenInput, connectBtn),
+      connectStatus,
+      el('p.faint', { style: { marginTop: '12px' } },
+        'This creates a secret Gist in your GitHub account to hold your save. It is not publicly listed, but anyone with the exact link could view it, so do not share it. The token is stored only in this browser and can manage Gists only — nothing else in your account.'),
+    );
+  };
+
+  const renderConnected = () => {
+    const syncStatus = el('div.faint', { style: { minHeight: '20px', marginTop: '8px' } });
+    const syncBtn = el('button.btn.sm.primary', { onclick: doSyncNow }, 'Sync now');
+
+    async function doSyncNow() {
+      syncBtn.disabled = true;
+      syncStatus.style.color = '';
+      syncStatus.textContent = 'Syncing…';
+      const result = await cloudSync.syncNow(profile);
+      syncBtn.disabled = false;
+      if (!result.ok) {
+        syncStatus.textContent = `⚠️ ${result.message || 'Sync failed.'}`;
+        syncStatus.style.color = 'var(--red)';
+        return;
+      }
+      syncStatus.textContent = result.applied ? '✅ Pulled in changes from another device.' : '✅ Already up to date.';
+      toast({ icon: '☁️', title: 'Synced', desc: result.applied ? 'Brought in progress from another device.' : 'Already up to date.' });
+      go('stats');
+    }
+
+    function doDisconnect() {
+      if (!confirm("Disconnect this device from automatic sync? Your progress on this device is not affected — you can reconnect any time.")) return;
+      cloudSync.disconnect();
+      toast({ icon: '☁️', title: 'Disconnected', desc: 'This device will no longer sync automatically.' });
+      go('stats');
+    }
+
+    mount(container,
+      el('div.row',
+        el('span.badge.green', '✅ Connected'),
+        el('span.faint', `Last synced ${timeAgo(status.lastSyncedAt)}`),
+      ),
+      el('p.muted', { style: { margin: '10px 0' } }, 'This device syncs automatically. Open the trainer on your other synced device and it will catch up within a few seconds of you making progress here.'),
+      el('div.row', syncBtn, el('button.btn.sm.ghost', { onclick: doDisconnect }, 'Disconnect')),
+      syncStatus,
+    );
+  };
+
+  if (status.connected) renderConnected(); else renderDisconnected();
+  return container;
+}
+
 /**
  * A save code, not live sync: generate a code from this device, paste it in
  * on another one. Importing replaces what is there, so this always shows a
  * before-you-overwrite comparison rather than silently clobbering progress.
  */
-function renderSyncPanel(ctx) {
+function renderManualSync(ctx) {
   const { profile, go } = ctx;
 
   const codeBox = el('textarea', {
@@ -204,9 +353,8 @@ function renderSyncPanel(ctx) {
     go('stats');
   };
 
-  return el('div.panel',
-    el('div.panel-title', el('h2', '🔄 Sync progress'), el('span.faint', 'no account needed')),
-    el('p.muted', 'Your progress lives in this browser only. To bring it to another device or browser, generate a code here and paste it in over there — like a save file.'),
+  return el('div',
+    el('p.muted', 'No GitHub account, or just want a one-off transfer? Generate a code here and paste it in on the other device — like a save file. This always overwrites, so it needs you to do it each time.'),
     el('div.grid.cols-2',
       el('div',
         el('h3', { style: { fontSize: '0.9rem', marginBottom: '8px' } }, 'This device → elsewhere'),
@@ -230,6 +378,17 @@ function renderSyncPanel(ctx) {
         importStatus,
       ),
     ),
+  );
+}
+
+/** Automatic GitHub sync up top (the recommended path), manual code as a fallback below it. */
+function renderSyncPanel(ctx) {
+  const connected = cloudSync.getStatus().connected;
+  return el('div.panel',
+    el('div.panel-title', el('h2', '🔄 Sync progress'), el('span.faint', connected ? 'automatic' : 'no account needed')),
+    renderAutoSync(ctx),
+    el('div', { style: { borderTop: '1px solid var(--border)', margin: '18px 0' } }),
+    renderManualSync(ctx),
   );
 }
 
