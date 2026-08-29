@@ -106,7 +106,7 @@ async function request(token, path, options = {}) {
   }
 
   if (res.status === 401) {
-    return { ok: false, reason: 'bad-token', message: 'GitHub rejected that token — check you copied all of it.' };
+    return { ok: false, reason: 'bad-token', message: 'GitHub rejected that token. It may be mistyped, revoked, or expired — create a new one and reconnect.' };
   }
   if (res.status === 403) {
     return {
