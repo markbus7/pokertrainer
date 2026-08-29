@@ -1,12 +1,17 @@
 {
   "name": "poker-trainer",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "description": "Poker Trainer — a browser game that takes you from beginner to crushing online tables.",
   "scripts": {
     "start": "node tools/serve.js",
     "test": "node tests/run.js",
-    "test:e2e": "node tests/e2e.mjs"
+    "test:e2e": "node tests/e2e.mjs",
+    "stamp": "node tools/stamp-version.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/markbus7/pokertrainer.git"
   }
 }
