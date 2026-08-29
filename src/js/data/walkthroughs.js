@@ -31,6 +31,8 @@ export const WALKTHROUGHS = {
           'Notice what that is not. It is not "do I have the best hand" — nobody knows that. It is not "will I win this pot" — nobody knows that either. It is purely about the *price* you are being offered.',
           'A friend offers you a bet on a coin flip: put in €1, and if you win they pay you €3. You do not need to see the future to know that is a good deal. You win half the time, and you are being paid three-to-one. The price is good, so you take it.',
           'Poker is exactly this. Pot odds are the price. Your hand is the coin.',
+          'One word to pin down before going further, because it is about to appear everywhere. **Equity** is your share of the pot — how often your hand wins if this exact situation were played out again and again. A hand that wins three times in four has 75% equity.',
+          'So equity describes your **cards**. Pot odds describe the **money**. They are two separate things, and every decision in this module is just comparing one against the other.',
         ],
         check: {
           question: 'What do pot odds tell you?',
@@ -143,6 +145,10 @@ export const WALKTHROUGHS = {
           'Of that 200, exactly **50 is your money**. And 50 out of 200 is **25%**.',
           'That is the same 25% we got from the algebra — and it is not a coincidence or an approximation. It is the identical calculation, seen from a different angle:',
           '**The fraction of the final pot made up of your own money is exactly how often you need to win.**',
+          'It is fair to ask why your own call belongs in that total at all. The reason is the thing most explanations skip: **when you win, you win your own money back too.**',
+          'You are not paying 50 for a shot at their 150. You are paying 50 for a shot at the whole **200** — and 50 of that 200 is the chip you just pushed in.',
+          'So treat it as buying a ticket. The ticket costs **50**. The prize is **200**. How often does that ticket have to win to be worth buying? One time in four, because 50 is a quarter of 200.',
+          'Both ways of looking at it give the same answer, always. Risk 50 to *gain* 150, or pay 50 to *collect* 200 — either way, 25%.',
           'Which gives the formula, and now you know where it comes from rather than just having to trust it:',
           '`required equity  =  your call  ÷  (the pot + your call)`',
         ],
@@ -231,7 +237,7 @@ export const WALKTHROUGHS = {
       {
         title: 'Putting it to work',
         body: [
-          'Pot odds give you one half of the decision — what you **need**. The other half is your equity: what you actually **have**, which you get from counting outs.',
+          'Pot odds give you one half of the decision — what you **need**, which comes from the money. The other half is your equity: what you actually **have**, which comes from your cards and you get by counting outs.',
           'Then the decision is simply:',
           '**Have ≥ Need → call.   Have < Need → fold.**',
           'A worked example. You hold a flush draw on the flop: nine cards complete it, which is roughly **36%** by the river. There is 100 in the pot and your opponent bets 50.',
@@ -271,6 +277,7 @@ export const WALKTHROUGHS = {
       },
     ],
     recap: [
+      '**Equity** is how often your hand wins — a fact about your cards. **Required equity** is the threshold it has to beat — a fact about the money.',
       '**The pot** = everything in the middle on your turn, including the bet you are facing.',
       '**Required equity** = your call ÷ (the pot + your call) — that is, your share of the final pot.',
       'Half pot → 25%. Full pot → 33%. Bigger bets always demand more.',
