@@ -1,9 +1,10 @@
 /** Career stats, mastery, achievements and the leak report. */
 
-import { el, fmt, sparkline } from './dom.js';
+import { el, fmt, sparkline, toast } from './dom.js';
 import { MODULE_META } from '../data/curriculum.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { RANKS } from '../state/profile.js';
+import { exportCode, importCode, decodeSyncCode, summarize } from '../state/sync.js';
 import { handGrid } from '../core/cards.js';
 import { CHARTS, POSITION_INFO, rangePercent, RFI, THREE_BET } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
@@ -29,6 +30,8 @@ export function renderStats(ctx) {
       tile('Drill accuracy', accuracy === null ? '—' : fmt.pct(accuracy), `${totals.correct} of ${totals.attempts}`),
       tile('Hands played', fmt.chips(profile.data.handsPlayed)),
     ),
+
+    renderSyncPanel(ctx),
 
     curve.length >= 2
       ? el('div.panel',
@@ -102,6 +105,132 @@ export function renderStats(ctx) {
 
 function tile(label, value, sub = '') {
   return el('div.stat', el('div.label', label), el('div.value', value), sub ? el('div.sub', sub) : null);
+}
+
+/* ------------------------------------------------------------------ *
+ * Cross-device sync
+ * ------------------------------------------------------------------ */
+
+const codeBoxStyle = {
+  width: '100%',
+  fontFamily: 'var(--mono)',
+  fontSize: '0.76rem',
+  resize: 'vertical',
+  background: 'var(--bg-raised)',
+  color: 'var(--text)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-sm)',
+  padding: '10px',
+};
+
+/**
+ * A save code, not live sync: generate a code from this device, paste it in
+ * on another one. Importing replaces what is there, so this always shows a
+ * before-you-overwrite comparison rather than silently clobbering progress.
+ */
+function renderSyncPanel(ctx) {
+  const { profile, go } = ctx;
+
+  const codeBox = el('textarea', {
+    readOnly: true,
+    rows: 3,
+    placeholder: 'Click "Generate code", then copy it to your other device…',
+    style: codeBoxStyle,
+    onfocus: (e) => e.target.select(),
+  });
+
+  const pasteBox = el('textarea', {
+    rows: 3,
+    placeholder: 'Paste a sync code from another device here…',
+    style: codeBoxStyle,
+  });
+
+  const importStatus = el('div.faint', { style: { minHeight: '20px', marginTop: '8px' } });
+
+  const generate = () => {
+    codeBox.value = exportCode(profile);
+    codeBox.select();
+  };
+
+  const copyCode = async () => {
+    if (!codeBox.value) generate();
+    try {
+      await navigator.clipboard.writeText(codeBox.value);
+      toast({ icon: '📋', title: 'Copied', desc: 'Paste it into the trainer on your other device.' });
+    } catch {
+      codeBox.select();
+      toast({ icon: '⚠️', title: 'Could not auto-copy', desc: 'The code is selected — copy it manually.' });
+    }
+  };
+
+  const downloadFile = () => {
+    if (!codeBox.value) generate();
+    const blob = new Blob([codeBox.value], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = el('a', { href: url, download: 'poker-trainer-sync.txt' });
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const loadFile = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { pasteBox.value = String(reader.result || '').trim(); };
+    reader.readAsText(file);
+  };
+
+  const doImport = () => {
+    let data;
+    try {
+      data = decodeSyncCode(pasteBox.value);
+    } catch (err) {
+      importStatus.textContent = `⚠️ ${err.message}`;
+      importStatus.style.color = 'var(--red)';
+      return;
+    }
+    const incoming = summarize(data);
+    const current = summarize(profile.data);
+    const proceed = confirm(
+      `This code: ${incoming.rank} (${incoming.emoji}), ${incoming.xp} XP, ${incoming.hands} hands played.\n`
+      + `This device right now: ${current.rank} (${current.emoji}), ${current.xp} XP, ${current.hands} hands played.\n\n`
+      + 'Importing replaces this device\'s progress with the code\'s progress. Continue?',
+    );
+    if (!proceed) return;
+    importCode(profile, pasteBox.value);
+    toast({ icon: '✅', title: 'Progress restored', desc: `${incoming.emoji} ${incoming.rank}, ${incoming.xp} XP.` });
+    go('stats');
+  };
+
+  return el('div.panel',
+    el('div.panel-title', el('h2', '🔄 Sync progress'), el('span.faint', 'no account needed')),
+    el('p.muted', 'Your progress lives in this browser only. To bring it to another device or browser, generate a code here and paste it in over there — like a save file.'),
+    el('div.grid.cols-2',
+      el('div',
+        el('h3', { style: { fontSize: '0.9rem', marginBottom: '8px' } }, 'This device → elsewhere'),
+        el('div.row', { style: { marginBottom: '8px' } },
+          el('button.btn.sm', { onclick: generate }, 'Generate code'),
+          el('button.btn.sm.primary', { onclick: copyCode }, 'Copy'),
+          el('button.btn.sm.ghost', { onclick: downloadFile }, 'Download file'),
+        ),
+        codeBox,
+      ),
+      el('div',
+        el('h3', { style: { fontSize: '0.9rem', marginBottom: '8px' } }, 'Elsewhere → this device'),
+        pasteBox,
+        el('div.row', { style: { marginTop: '8px' } },
+          el('button.btn.sm.primary', { onclick: doImport }, 'Import'),
+          el('label.btn.sm.ghost', { style: { cursor: 'pointer', margin: 0 } },
+            'Load from file',
+            el('input', { type: 'file', accept: '.txt,.json', style: { display: 'none' }, onchange: loadFile }),
+          ),
+        ),
+        importStatus,
+      ),
+    ),
+  );
 }
 
 /* ------------------------------------------------------------------ *

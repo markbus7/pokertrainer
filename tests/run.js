@@ -8,6 +8,7 @@ const modules = [
   './engine.test.js',
   './bots.test.js',
   './progression.test.js',
+  './sync.test.js',
 ];
 
 for (const m of modules) {
