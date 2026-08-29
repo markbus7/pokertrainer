@@ -69,6 +69,23 @@ export function toast({ icon = '✨', title, desc = '', duration = 4200 }) {
   }, duration);
 }
 
+/**
+ * Renders the small amount of inline markup lesson prose uses: **bold** for
+ * the load-bearing terms and `code` for formulas. Deliberately not a general
+ * markdown parser — this is all the content needs.
+ */
+export function richText(text) {
+  const frag = document.createDocumentFragment();
+  for (const part of String(text).split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)) {
+    if (!part) continue;
+    if (part.startsWith('**') && part.endsWith('**')) frag.appendChild(el('strong', part.slice(2, -2)));
+    else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) frag.appendChild(el('em', part.slice(1, -1)));
+    else if (part.startsWith('`') && part.endsWith('`')) frag.appendChild(el('code.inline-code', part.slice(1, -1)));
+    else frag.appendChild(document.createTextNode(part));
+  }
+  return frag;
+}
+
 export const fmt = {
   pct: (x, digits = 0) => `${(x * 100).toFixed(digits)}%`,
   chips: (n) => Math.round(n).toLocaleString('en-US'),
