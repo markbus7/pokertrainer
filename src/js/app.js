@@ -9,6 +9,7 @@ import * as cloudSync from './state/cloudSync.js';
 import { makeRng } from './core/rng.js';
 import { renderHome } from './ui/screenHome.js';
 import { renderLearn, renderDrill, renderGauntletIntro } from './ui/screenDrill.js';
+import { renderWalkthrough } from './ui/screenWalkthrough.js';
 import { renderTable } from './ui/screenTable.js';
 import { renderGrind } from './ui/screenGrind.js';
 import { renderStats, renderCharts } from './ui/screenStats.js';
@@ -16,6 +17,7 @@ import { renderStats, renderCharts } from './ui/screenStats.js';
 const ROUTES = {
   home: { render: renderHome, tab: 'home', title: 'Dashboard' },
   learn: { render: renderLearn, tab: 'home', title: 'Lesson' },
+  walkthrough: { render: renderWalkthrough, tab: 'home', title: 'Guided lesson' },
   drill: { render: renderDrill, tab: 'home', title: 'Drill' },
   gauntlet: { render: renderGauntletIntro, tab: 'gauntlet', title: 'Gauntlet' },
   play: { render: renderTable, tab: 'play', title: 'Table' },

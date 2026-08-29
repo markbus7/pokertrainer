@@ -44,6 +44,7 @@ const emptyProfile = () => ({
   xp: 0,
   createdAt: Date.now(),
   drills: {},          // module -> { attempts, correct, streak, bestStreak }
+  walkthroughs: [],    // module ids whose guided lesson has been completed
   achievements: [],
   bankroll: 200,
   stakeKey: 'nl2',
@@ -147,6 +148,17 @@ export class Profile {
   accuracy(module) {
     const s = this.drillStats(module);
     return s.attempts >= 5 ? s.correct / s.attempts : null;
+  }
+
+  /** Guided lessons are tracked apart from drills so they cannot skew accuracy. */
+  hasCompletedWalkthrough(id) { return (this.data.walkthroughs || []).includes(id); }
+
+  markWalkthroughComplete(id) {
+    if (!this.data.walkthroughs) this.data.walkthroughs = [];
+    if (this.data.walkthroughs.includes(id)) return false;
+    this.data.walkthroughs.push(id);
+    this.save();
+    return true;
   }
 
   hasAchievement(id) { return this.data.achievements.includes(id); }

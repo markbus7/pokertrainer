@@ -31,7 +31,7 @@ export const MODULE_META = [
     lesson: {
       summary: 'Every call is a bet that you will win often enough to justify the price. Pot odds turn that from a feeling into arithmetic.',
       points: [
-        'Required equity = amount to call ÷ (pot after your call). Call 25 into a pot of 75, and 25 ÷ 125 = 20%.',
+        'Required equity = your call ÷ (the pot + your call). Worked through: there is 75 in the pot, they bet 25, so 100 sits in the middle — you call 25, making the final pot 125, and 25 ÷ 125 = 20%.',
         'A half-pot bet asks you to be right 25% of the time. A pot-sized bet asks for 33%. An overbet asks for more.',
         'This is why big bets are not automatically better: they need to work more often to break even.',
         'Say the price out loud before every call. "I call 25 to win 125, so I need 20%." Most losing calls never get counted.',
@@ -210,6 +210,8 @@ export const MODULE_META = [
     },
   },
 ];
+
+export { WALKTHROUGHS } from './walkthroughs.js';
 
 export const MODULE_IDS = MODULE_META.map((m) => m.id);
 
