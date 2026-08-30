@@ -194,6 +194,7 @@ export const WALKTHROUGHS = {
           'In practice you will face the same handful of bet sizes over and over. Learn these and you will almost never need to calculate at the table.',
           'Each row is: they bet this fraction of the pot, so you need this much equity to call.',
           'Look at the direction of that list. **The bigger the bet, the more equity you need.** This is why an overbet is not automatically a stronger play — it demands more, both from you when you call and from them when they bluff.',
+          'Take the first row as the worked example, because it is the one that catches people out. There is 100 in the pot and they bet 25. That puts **125** in the middle, you call **25**, so the final pot is **150** — and your share is 25 ÷ 150 = **17%**.',
         ],
         visual: {
           type: 'table',
@@ -205,6 +206,7 @@ export const WALKTHROUGHS = {
             ['Full pot', '33%'],
             ['Double the pot', '40%'],
           ],
+          caption: 'These do not scale in a straight line, which is worth knowing before you try to guess a row. A quarter-pot bet is half the size of a half-pot bet, but it asks for 17% — not half of 25%. The reason is that **both numbers move at once**: a smaller bet also makes a smaller final pot. In symbols, a bet of B into a pot of P needs B ÷ (P + 2B), and however enormous the bet gets that can only creep towards 50% without ever reaching it — a 1000 overbet into 100 still only asks for 48%.',
         },
         check: {
           question: 'The pot is 80 and your opponent bets 80 — a full pot-sized bet. What equity do you need to call?',

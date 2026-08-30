@@ -191,6 +191,29 @@ describe('walkthroughs: the numbers taught match the engine', () => {
     }
   });
 
+  it('teaches that the pot-odds table is NOT proportional, correctly', () => {
+    // The lesson warns against halving a row to guess the row below it, and
+    // states a 50% ceiling. Both claims are asserted here.
+    const P = 100;
+    const need = (B) => requiredEquity(B, P + B);
+
+    // The intuitive-but-wrong answer, and the real one.
+    close(need(50), 0.25, 0.001, 'half pot needs 25%');
+    assert(Math.abs(need(25) - 0.125) > 0.03,
+      'a quarter pot is NOT half of the half-pot figure — that is the trap the lesson warns about');
+    close(need(25), 1 / 6, 0.002, 'a quarter pot needs 16.7%, taught as 17%');
+
+    // The closed form the lesson gives: B / (P + 2B).
+    for (const B of [25, 50, 75, 100, 200, 1000]) {
+      close(need(B), B / (P + 2 * B), 1e-9, `B/(P+2B) should match requiredEquity at B=${B}`);
+    }
+
+    // The stated ceiling: approaches 50% from below, never reaches it.
+    assert(need(1000) < 0.5, 'even a huge overbet stays under 50%');
+    equal(Math.round(need(1000) * 100), 48, 'a 1000 overbet into 100 asks for 48%, as the lesson says');
+    assert(need(1e9) < 0.5 && need(1e9) > 0.499, 'the limit is 50%, approached but not reached');
+  });
+
   it('teaches MDF figures that match the formula', () => {
     const pot = 100;
     const expected = { 0.25: 80, 0.5: 67, 0.75: 57, 1: 50, 2: 33 };
