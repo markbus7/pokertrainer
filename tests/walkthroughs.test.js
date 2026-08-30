@@ -88,22 +88,25 @@ describe('walkthroughs: step structure', () => {
 
   it('does not describe the pot as being "in the middle"', () => {
     // A reader took "150 is in the middle" to mean the middle of the number.
-    // It is real poker jargon, so the lessons introduce it once and then use
-    // "the pot" everywhere. "middle pair" and "the awkward middle" are a
-    // different sense of the word and are deliberately untouched.
-    let uses = 0;
+    // It is real poker jargon, so the lessons introduce it once and then say
+    // "the pot" everywhere else. Other senses of the word are fine and stay:
+    // "middle pair", "the awkward middle", and a card in the middle of a
+    // straight are not the table's centre, so the test distinguishes them
+    // rather than banning the word outright.
+    const ALLOWED = [
+      /players often say|meaning simply that they are in the pot/i,  // the definition itself
+      /card in the middle|middle of (a |the )?(straight|run)/i,       // a gap in a straight
+    ];
     let explanatory = 0;
     for (const [id, w] of entries) {
       const text = JSON.stringify(w);
       for (const match of text.match(/[^"]{0,120}in the middle[^"]{0,60}/gi) || []) {
-        uses++;
-        // The one allowed use is the note that defines the phrase.
-        if (/players often say|meaning simply that they are in the pot/i.test(match)) explanatory++;
-        else assert(false, `${id}: pot described as "in the middle" — …${match.trim().slice(-100)}`);
+        if (ALLOWED[0].test(match)) { explanatory++; continue; }
+        if (ALLOWED[1].test(match)) continue;
+        assert(false, `${id}: pot described as "in the middle" — …${match.trim().slice(-100)}`);
       }
     }
-    equal(uses, 1, 'exactly one use expected: the note explaining the jargon');
-    equal(explanatory, 1, 'and that use must be the explanatory one');
+    equal(explanatory, 1, 'the jargon should be defined exactly once');
   });
 
   it('never leaves a broken placeholder in the prose', () => {

@@ -14,7 +14,7 @@ import { renderWalkthrough } from './ui/screenWalkthrough.js';
 import { renderLab, renderLabIntro } from './ui/screenLab.js';
 import { renderTable } from './ui/screenTable.js';
 import { renderGrind } from './ui/screenGrind.js';
-import { renderStats, renderCharts } from './ui/screenStats.js';
+import { renderStats, renderCharts, renderGlossary } from './ui/screenStats.js';
 
 const ROUTES = {
   home: { render: renderHome, tab: 'home', title: 'Dashboard' },
@@ -27,6 +27,7 @@ const ROUTES = {
   play: { render: renderTable, tab: 'play', title: 'Table' },
   grind: { render: renderGrind, tab: 'grind', title: 'Bankroll' },
   charts: { render: renderCharts, tab: 'charts', title: 'Charts' },
+  glossary: { render: renderGlossary, tab: 'glossary', title: 'Glossary' },
   stats: { render: renderStats, tab: 'stats', title: 'Progress' },
 };
 
@@ -37,6 +38,7 @@ const TABS = [
   { route: 'gauntlet', label: 'Gauntlet' },
   { route: 'grind', label: 'Bankroll' },
   { route: 'charts', label: 'Charts' },
+  { route: 'glossary', label: 'Glossary' },
   { route: 'stats', label: 'Progress' },
 ];
 

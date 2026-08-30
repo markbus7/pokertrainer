@@ -629,3 +629,42 @@ main {
   .calib-label { width: 80px; font-size: 0.8rem; }
   .calib-value { width: 78px; font-size: 0.78rem; }
 }
+
+/* Glossary terms embedded in lesson prose */
+.term {
+  appearance: none;
+  font: inherit;
+  color: var(--blue);
+  background: none;
+  border: 0;
+  border-bottom: 1px dashed var(--blue);
+  padding: 0;
+  cursor: pointer;
+  line-height: inherit;
+}
+.term:hover { color: #7fbcff; border-bottom-style: solid; }
+.term::after { content: '?'; font-size: 0.62em; vertical-align: super; margin-left: 1px; opacity: 0.75; }
+.term.open { color: var(--gold); border-bottom-color: var(--gold); }
+
+.term-def {
+  background: var(--bg-raised);
+  border: 1px solid var(--blue);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin: 10px 0 14px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+  animation: rise 0.18s ease;
+}
+.term-def-head { font-weight: 700; color: var(--text); margin-bottom: 4px; }
+
+.glossary-entry {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.glossary-entry:last-child { border-bottom: 0; }
+.glossary-term { font-weight: 700; font-size: 1rem; color: var(--gold); }
+.glossary-short { font-size: 0.88rem; color: var(--text); margin: 2px 0 6px; }
+.glossary-full { font-size: 0.88rem; color: var(--text-dim); line-height: 1.6; }

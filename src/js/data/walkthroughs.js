@@ -240,12 +240,16 @@ export const WALKTHROUGHS = {
       {
         title: 'Putting it to work',
         body: [
-          'Pot odds give you one half of the decision — what you **need**, which comes from the money. The other half is your equity: what you actually **have**, which comes from your cards and you get by counting outs.',
+          'Pot odds give you one half of the decision — what you **need**. The other half is your [[equity]]: what you actually **have**.',
+          'Before the example, the thing that trips people up most: **these are two separate numbers, worked out from two separate things, and neither one ever turns into the other.**',
+          'What you **need** comes from the **money** alone — the pot and the bet. You could work it out with your cards face down.',
+          'What you **have** comes from your **cards** alone — how many cards would complete your hand. You could work it out without knowing what the bet was.',
+          'They are both written as percentages, and that is the entire point: putting two different things on the same scale is what lets you compare them. Think of what you need as the price on a tag, and what you have as the money in your wallet. You are not converting one into the other — you are only checking which is bigger.',
           'Then the decision is simply:',
           '**Have ≥ Need → call.   Have < Need → fold.**',
-          'A worked example. You hold a flush draw on the flop: nine cards complete it, which is roughly **36%** by the river. There is 100 in the pot and your opponent bets 50.',
-          'You need: the pot is now 150 and your call is 50, so the final pot is 200 and your share is 50 ÷ 200 = **25%**.',
-          'You have: **36%**.',
+          'A worked example. You hold a [[flush draw]] on the flop — four cards of one suit, needing a fifth. Nine cards complete it, which is roughly **36%** by the river. There is 100 in the pot and your opponent bets 50.',
+          'You **need** (from the money): the pot is now 150 and your call is 50, so the final pot is 200 and your share is 50 ÷ 200 = **25%**.',
+          'You **have** (from the cards): **36%** — that is the chance one of your nine flush cards arrives on the turn or the river. In a clean drawing spot like this, hitting the flush and winning the pot are the same event, so the number can be used directly.',
           '36 is comfortably more than 25, so this is a clear call — and it stays a clear call even on the times the draw misses and you lose the pot. The price was right; that is what you control.',
           'Say it out loud every time, in this order: *"I call 50 to win 150, so I need 25%. I have about 36%. Call."* Most losing calls in small-stakes poker are ones where nobody ever ran that sentence.',
         ],
@@ -257,7 +261,7 @@ export const WALKTHROUGHS = {
           haveLabel: 'Have (flush draw)',
         },
         check: {
-          question: 'You have a gutshot straight draw — about 16% to hit by the river. The pot is 90 and your opponent bets 90. Call or fold?',
+          question: 'You have a gutshot straight draw — a straight missing one card in the middle, so only four cards complete it, about 16% to hit by the river. The pot is 90 and your opponent bets 90. Call or fold?',
           options: [
             {
               key: 'a',
@@ -280,7 +284,7 @@ export const WALKTHROUGHS = {
       },
     ],
     recap: [
-      '**Equity** is how often your hand wins — a fact about your cards. **Required equity** is the threshold it has to beat — a fact about the money.',
+      '**Equity** is how often your hand wins — a fact about your cards. **Required equity** is the threshold it has to beat — a fact about the money. Two separate numbers; neither turns into the other.',
       '**The pot** = every chip already bet when it is your turn, including the bet you are facing.',
       '**Required equity** = your call ÷ (the pot + your call) — that is, your share of the final pot.',
       'Half pot → 25%. Full pot → 33%. Bigger bets always demand more.',
@@ -481,8 +485,8 @@ export const WALKTHROUGHS = {
         title: 'The counts worth memorising',
         body: [
           'A handful of draws come up constantly. Learn these and you will rarely have to count from scratch.',
-          'The two big ones are the **flush draw at nine** and the **open-ended straight draw at eight** — four cards at each end of your run.',
-          'A **gutshot** has only one rank that fills it, so four cards: half of an open-ended draw, and it shows in how rarely it is worth calling.',
+          'The two big ones are the [[flush draw|flush draw at nine]] and the [[open-ended straight draw|open-ended straight draw at eight]] — four cards at each end of your run.',
+          'A [[gutshot]] has only one rank that fills it, so four cards: half of an open-ended draw, and it shows in how rarely it is worth calling.',
           'And the monster: a flush draw *and* an open-ended straight draw at once gives roughly **15 outs**, which is actually a favourite against many made hands.',
         ],
         visual: {

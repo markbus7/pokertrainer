@@ -14,6 +14,7 @@ const modules = [
   './version.test.js',
   './spacing.test.js',
   './mastery.test.js',
+  './glossary.test.js',
 ];
 
 for (const m of modules) {

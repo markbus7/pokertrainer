@@ -1,3 +1,5 @@
+import { lookupTerm } from '../data/glossary.js';
+
 /** Minimal DOM helpers — enough to build the whole UI without a framework. */
 
 /**
@@ -71,19 +73,56 @@ export function toast({ icon = '✨', title, desc = '', duration = 4200 }) {
 
 /**
  * Renders the small amount of inline markup lesson prose uses: **bold** for
- * the load-bearing terms and `code` for formulas. Deliberately not a general
- * markdown parser — this is all the content needs.
+ * the load-bearing terms, `code` for formulas, *italics* for emphasis, and
+ * [[term]] for a glossary word. Deliberately not a general markdown parser —
+ * this is all the content needs.
+ *
+ * A glossary term renders as a tappable word that reveals its definition in
+ * place. Tap rather than hover, because the people hitting unfamiliar jargon
+ * are as likely to be on a tablet as a desktop.
  */
 export function richText(text) {
   const frag = document.createDocumentFragment();
-  for (const part of String(text).split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)) {
+  for (const part of String(text).split(/(\[\[[^\]]+\]\]|\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)) {
     if (!part) continue;
-    if (part.startsWith('**') && part.endsWith('**')) frag.appendChild(el('strong', part.slice(2, -2)));
+    if (part.startsWith('[[') && part.endsWith(']]')) frag.appendChild(termChip(part.slice(2, -2)));
+    else if (part.startsWith('**') && part.endsWith('**')) frag.appendChild(el('strong', part.slice(2, -2)));
     else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) frag.appendChild(el('em', part.slice(1, -1)));
     else if (part.startsWith('`') && part.endsWith('`')) frag.appendChild(el('code.inline-code', part.slice(1, -1)));
     else frag.appendChild(document.createTextNode(part));
   }
   return frag;
+}
+
+/**
+ * A glossary word. `[[gutshot]]` shows "gutshot"; `[[gutshot|four outs]]`
+ * shows "four outs" and still explains gutshot, so the prose reads naturally.
+ */
+function termChip(spec) {
+  const [name, display] = spec.split('|');
+  const entry = lookupTerm(name);
+  if (!entry) return document.createTextNode(display || name);
+
+  const button = el('button.term', { type: 'button' }, display || name);
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    const host = button.closest('p, li, div');
+    if (!host) return;
+    const existing = host.nextElementSibling;
+    if (existing && existing.classList.contains('term-def') && existing.dataset.term === name) {
+      existing.remove();
+      button.classList.remove('open');
+      return;
+    }
+    if (existing && existing.classList.contains('term-def')) existing.remove();
+    const box = el('div.term-def', { dataset: { term: name } },
+      el('div.term-def-head', entry.term),
+      el('div', entry.full),
+    );
+    host.after(box);
+    button.classList.add('open');
+  });
+  return button;
 }
 
 export const fmt = {
