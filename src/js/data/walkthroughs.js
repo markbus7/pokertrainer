@@ -612,7 +612,7 @@ export const WALKTHROUGHS = {
           'The single biggest factor in whether a hand is playable is not the cards. It is **how many people still get to act behind you**.',
           'Open from the first seat and five players remain who might wake up with something better. Open from the button and only two do — and both of them will be out of position for the whole hand.',
           'So the further from the button you sit, the tighter you have to be. This is not caution; it is arithmetic. The same hand is profitable in one seat and loses money in another.',
-          'These are the baseline opening ranges this trainer grades you against.',
+          'These are the baseline [[open|opening]] ranges this trainer grades you against.',
         ],
         visual: {
           type: 'table',
@@ -622,8 +622,9 @@ export const WALKTHROUGHS = {
             ['Hijack', '4', '~23%'],
             ['Cutoff', '3', '~30%'],
             ['Button', '2', '~47%'],
-            ['Small blind', '1', '~41%'],
+            ['Small blind', '1', '~40%'],
           ],
+          caption: 'Look at the last row, because it breaks the pattern. The small blind has **fewer** players left to act than the button, yet it opens **tighter**, not wider. That is not a mistake in the table — it is the second half of the idea, and it comes next.',
         },
         check: {
           question: 'You hold K-9 suited. It is a clear fold under the gun but a clear raise on the button. Why?',
@@ -648,9 +649,85 @@ export const WALKTHROUGHS = {
         },
       },
       {
+        title: 'The small blind puzzle: position is two things, not one',
+        body: [
+          'If the rule were only "fewer players behind means you can open wider", the small blind — with a single opponent left to act — should be the widest seat at the table. It is not. It opens tighter than the button.',
+          'The reason is that being in a good seat means **two separate advantages**, and the small blind gets one of them while losing the other.',
+          '**Before the flop:** how many players can still wake up with a better hand. Fewer is better. The small blind wins here — only the big blind is left.',
+          '**After the flop:** whether you act last on every remaining street. Acting last is better, because you decide with information everyone else had to act without. The small blind loses here badly — it acts **first** on the flop, the turn and the river, every single time, for the rest of the hand.',
+          'The button collects both advantages, which is why it is the widest opening seat in poker and the most profitable seat at the table. The small blind collects one and forfeits the other, which is why it sits between the cutoff and the button rather than above them.',
+          'This is also why you will hear that [[position]] is worth more than cards. It is not one edge you get once — it is an edge that repeats on every street of every hand you play.',
+        ],
+        check: {
+          question: 'The small blind has only one player left to act, yet opens tighter than the button. Why?',
+          options: [
+            {
+              key: 'a',
+              label: 'It will act first on every street after the flop',
+              why: 'Exactly. Few players behind is only half of what makes a seat good. The small blind wins that half and loses the other one, and acting first for the whole rest of the hand is the more expensive of the two.',
+            },
+            {
+              key: 'b',
+              label: 'It has already put money in, so it needs a stronger hand',
+              why: 'Money already posted is gone either way and should not change what you play — that is the same sunk-cost trap as counting chips you put in earlier when working out pot odds. What actually costs the small blind is acting first on every later street.',
+            },
+            {
+              key: 'c',
+              label: 'The big blind gets to act last before the flop',
+              why: 'True, and it is a small factor, but it is not the main one. The decisive problem is after the flop: the small blind acts first on every remaining street, for the whole hand.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+
+      {
+        title: 'Reading the shorthand',
+        body: [
+          'Ranges are written in a compact notation, and it is used everywhere — in the drills, on the Charts tab, and in every chart you will ever see elsewhere. It takes two minutes to learn and nothing else in this module makes sense without it.',
+          'Two letters are the ranks. A third letter says whether the suits match: **s** for [[suited]], **o** for [[offsuit]]. A pair needs no third letter, since two cards of the same rank can never share a suit.',
+          'A **+** means "and everything better of this kind". So `22+` is every pair, and `A2s+` is every suited ace from A2s up to AKs.',
+          'The last column is the one people skip, and it is the one that makes the percentages make sense. A single pair of ranks is not one hand — it is several **[[combo|combinations]]**, and the count depends on the suits.',
+        ],
+        visual: {
+          type: 'table',
+          headers: ['Written', 'Means', 'Combos'],
+          rows: [
+            ['AA', 'a pair of aces', '6'],
+            ['AKs', 'ace-king, same suit', '4'],
+            ['AKo', 'ace-king, different suits', '12'],
+            ['22+', 'every pair from 22 up', '78'],
+            ['A2s+', 'every suited ace', '48'],
+          ],
+          caption: 'There are **1,326** possible two-card hands in a 52-card deck, and that is what a range percentage counts. "Opening 18%" means about 238 of those 1,326 combinations — not 18% of the squares on a chart. An offsuit square is worth three suited squares, which is why a grid that looks mostly empty can still be a wide range.',
+        },
+        check: {
+          question: 'Which is more combinations: AKs or AKo?',
+          options: [
+            {
+              key: 'a',
+              label: 'AKo — three times as many',
+              why: 'Right. Suited AK needs both cards in the same suit, so there are only four. Offsuit AK can be any mismatched pair of suits: 4 × 3 = 12. This is why offsuit hands take up so much of a range by volume.',
+            },
+            {
+              key: 'b',
+              label: 'AKs — suited hands are stronger',
+              why: 'Stronger, yes, but that is a different question from how many there are. Only four combinations of AK share a suit, against twelve that do not.',
+            },
+            {
+              key: 'c',
+              label: 'They are the same — one square each on the chart',
+              why: 'One square each on the grid, but the squares are not equal weight. AKs is 4 combinations and AKo is 12, which is exactly why range percentages count combinations rather than squares.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+
+      {
         title: 'Raise or fold — almost never limp',
         body: [
-          'Just calling the big blind ("limping") is the most common beginner habit and one of the most expensive.',
+          'Just calling the big blind — [[limp|limping]] — is the most common beginner habit and one of the most expensive.',
           'Three things go wrong at once. You **give up the initiative**, so whoever bets first after the flop takes control. You **invite everyone in cheaply**, which is the opposite of what you want with a hand you have doubts about. And you **cap your range** — good players know a limp means you do not have a premium, and attack accordingly.',
           'A raise does the reverse: it can win the pot immediately, it builds a pot when you are strong, and it makes your hand hard to read because your strong and speculative hands arrive the same way.',
           'The rule is blunt and it is right: **if a hand is worth playing, it is worth raising. If it is not worth raising, fold it.**',
@@ -680,7 +757,7 @@ export const WALKTHROUGHS = {
       {
         title: 'Domination is what actually costs you',
         body: [
-          'The hands that lose the most money are not the obviously bad ones. Nobody goes broke with 7-2. The expensive hands are the ones that look strong and are **dominated**.',
+          'The hands that lose the most money are not the obviously bad ones. Nobody goes broke with 7-2. The expensive hands are the ones that look strong and are [[dominated]].',
           'Domination means sharing your best card with an opponent who holds a better second card. A-J against A-K, K-10 against K-Q.',
           'What makes it so costly is that domination hits precisely when you think you are winning. You flop an ace with A-J, feel delighted, and then pay off someone with A-K over three streets.',
           'This is the real reason to fold decent-looking hands against early-position raisers. Against a range of roughly the top 18% of hands, A-J is not a hand that wins — it is a hand that finds out it was second best after putting in a lot of money.',
@@ -709,7 +786,8 @@ export const WALKTHROUGHS = {
       },
     ],
     recap: [
-      'How wide you open is set by how many players act after you, not by optimism.',
+      'How wide you open is set by two things: how many players act after you, and whether you will act last after the flop. The button wins both, which is why it opens widest.',
+      'Shorthand: **s** = suited, **o** = offsuit, no letter = a pair, **+** = "and better". A pair is 6 combos, suited 4, offsuit 12, out of 1,326 in total.',
       'Raise or fold. Limping surrenders initiative and tells opponents you are weak.',
       'Domination — sharing your top card with a better kicker — is where the money goes.',
       'Fold good-looking hands like A-J against tight early-position raises.',
