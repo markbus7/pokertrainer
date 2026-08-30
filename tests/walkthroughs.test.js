@@ -86,6 +86,26 @@ describe('walkthroughs: step structure', () => {
     }
   });
 
+  it('does not describe the pot as being "in the middle"', () => {
+    // A reader took "150 is in the middle" to mean the middle of the number.
+    // It is real poker jargon, so the lessons introduce it once and then use
+    // "the pot" everywhere. "middle pair" and "the awkward middle" are a
+    // different sense of the word and are deliberately untouched.
+    let uses = 0;
+    let explanatory = 0;
+    for (const [id, w] of entries) {
+      const text = JSON.stringify(w);
+      for (const match of text.match(/[^"]{0,120}in the middle[^"]{0,60}/gi) || []) {
+        uses++;
+        // The one allowed use is the note that defines the phrase.
+        if (/players often say|meaning simply that they are in the pot/i.test(match)) explanatory++;
+        else assert(false, `${id}: pot described as "in the middle" — …${match.trim().slice(-100)}`);
+      }
+    }
+    equal(uses, 1, 'exactly one use expected: the note explaining the jargon');
+    equal(explanatory, 1, 'and that use must be the explanatory one');
+  });
+
   it('never leaves a broken placeholder in the prose', () => {
     for (const [id, w] of entries) {
       const text = JSON.stringify(w);
