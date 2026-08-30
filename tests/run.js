@@ -13,6 +13,7 @@ const modules = [
   './walkthroughs.test.js',
   './version.test.js',
   './spacing.test.js',
+  './mastery.test.js',
 ];
 
 for (const m of modules) {
