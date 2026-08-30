@@ -21,7 +21,14 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 
 const errors = [];
-page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+page.on('console', (m) => {
+  if (m.type() !== 'error') return;
+  // The update check calls out to raw.githubusercontent.com on load. The
+  // failure is handled in code, but the browser still logs the dropped
+  // request, and a sandbox without egress will always produce one.
+  if (/raw\.githubusercontent|ERR_CONNECTION|Failed to load resource/.test(m.text())) return;
+  errors.push(m.text());
+});
 page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
 
 const step = async (name, fn) => {
@@ -49,7 +56,10 @@ await step('lesson opens', async () => {
 if (SHOT) await page.screenshot({ path: `${SHOT}/02-lesson.png` });
 
 await step('drill answers and explains', async () => {
-  await page.click('button.btn.primary.lg');
+  // Navigate by route, not by "the big primary button" — that button was
+  // "Start drilling" when this test was written and is now "Teach me this",
+  // so the test was quietly exercising the guided lesson instead.
+  await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'networkidle' });
   await page.waitForSelector('.option', { timeout: 5000 });
   const q = await page.textContent('.question');
   await page.click('.option');
@@ -57,13 +67,22 @@ await step('drill answers and explains', async () => {
   const fb = await page.textContent('.feedback');
   console.log(`      Q: ${q.slice(0, 60)}…`);
   console.log(`      feedback: ${fb.slice(0, 70).replace(/\n/g, ' ')}…`);
-  if (!/Correct|Not quite/.test(fb)) throw new Error('no verdict shown');
+  if (!/✓ Correct|✗ Not quite/.test(fb)) throw new Error(`no verdict shown: "${fb.slice(0, 60)}"`);
 });
 if (SHOT) await page.screenshot({ path: `${SHOT}/03-drill.png` });
 
 await step('next question advances', async () => {
-  await page.click('button.btn.primary');
+  await page.click('button:has-text("Next question")');
   await page.waitForSelector('.option:not([disabled])', { timeout: 5000 });
+});
+
+await step('the guided lesson grades its checks too', async () => {
+  await page.goto(`${BASE}/#walkthrough?module=hand-rankings`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.option', { timeout: 5000 });
+  await page.click('.option');
+  await page.waitForSelector('.feedback', { timeout: 5000 });
+  const fb = await page.textContent('.feedback');
+  if (!/That is right|Not quite/.test(fb)) throw new Error(`lesson check gave no verdict: "${fb.slice(0, 60)}"`);
 });
 
 await step('table deals and plays', async () => {
@@ -95,18 +114,31 @@ await step('hero action is graded', async () => {
 if (SHOT) await page.screenshot({ path: `${SHOT}/05-coach.png` });
 
 await step('hand plays to completion', async () => {
-  // Keep acting until the hand resolves, the way a player would.
-  for (let i = 0; i < 40; i++) {
+  // Keep acting until the hand resolves, the way a player would. Bounded by a
+  // deadline rather than an iteration count: each bot turn takes ~600ms, and a
+  // four-street hand against five opponents can legitimately run past twenty
+  // seconds, which a fixed loop count was cutting off mid-hand.
+  const deadline = Date.now() + 60000;
+  while (Date.now() < deadline) {
     const bar = await page.textContent('.action-bar');
     if (/Deal next hand/.test(bar)) break;
+    // Calling every street can bust the hero, and the rebuy panel's buttons
+    // live outside .action-buttons — so without this the loop sits waiting for
+    // an action control that is no longer on screen.
+    if (/out of chips/i.test(bar)) {
+      const topUp = await page.$('.action-bar .btn.primary');
+      if (topUp) { await topUp.click().catch(() => {}); await page.waitForTimeout(250); continue; }
+    }
     const btn = (await page.$('.action-buttons .btn.success'))
       || (await page.$('.action-buttons .btn:not(.danger):not(.primary)'))
       || (await page.$('.action-buttons .btn.danger'));
     if (btn) await btn.click().catch(() => {});
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(250);
   }
   const bar = await page.textContent('.action-bar');
-  if (!/Deal next hand/.test(bar)) throw new Error('hand never resolved');
+  if (!/Deal next hand/.test(bar)) {
+    throw new Error(`hand never resolved — action bar reads: "${bar.replace(/\s+/g, ' ').trim().slice(0, 120)}"`);
+  }
   const street = await page.textContent('.street-tag');
   const log = await page.textContent('.log');
   console.log(`      reached: ${street}`);
@@ -146,6 +178,37 @@ await step('progress persists across a reload', async () => {
   const xpAfter = await page.textContent('.rank-chip .xp');
   if (xp !== xpAfter) throw new Error(`XP changed across reload: ${xp} -> ${xpAfter}`);
   console.log(`      persisted: ${xpAfter}`);
+});
+
+await step('no lesson renders raw markup in any of its steps', async () => {
+  // Markup is rendered in several places — body text, captions, questions,
+  // option labels and table cells — and each is a separate code path. Two of
+  // them once rendered [[term]] literally, so this walks every step of every
+  // lesson and checks what actually reaches the screen.
+  const mods = ['pot-odds', 'hand-rankings', 'outs', 'preflop', 'position', 'bankroll',
+    'cbet', 'mdf', 'bluffing', 'spr', 'exploit', 'icm'];
+  const faults = [];
+  for (const m of mods) {
+    await page.goto(`${BASE}/#walkthrough?module=${m}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.lesson-body', { timeout: 5000 });
+    for (let i = 0; i < 8; i++) {
+      const txt = await page.evaluate(() => {
+        const panel = document.querySelectorAll('.screen > .panel')[1];
+        return panel ? panel.textContent : '';
+      });
+      if (/\[\[|\]\]/.test(txt)) faults.push(`${m} step ${i + 1}: literal [[ ]]`);
+      if (/(^|[^*])\*([^*]|$)/.test(txt.replace(/\*\*/g, ''))) faults.push(`${m} step ${i + 1}: stray asterisk`);
+      const option = await page.$('.option:not([disabled])');
+      if (!option) break;
+      await option.click();
+      await page.waitForTimeout(50);
+      const nextBtn = await page.$('button:has-text("Next step")');
+      if (!nextBtn) break;
+      await nextBtn.click();
+      await page.waitForTimeout(80);
+    }
+  }
+  if (faults.length) throw new Error(faults.join('; '));
 });
 
 console.log(`\nconsole errors: ${errors.length}`);

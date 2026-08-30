@@ -668,3 +668,25 @@ main {
 .glossary-term { font-weight: 700; font-size: 1rem; color: var(--gold); }
 .glossary-short { font-size: 0.88rem; color: var(--text); margin: 2px 0 6px; }
 .glossary-full { font-size: 0.88rem; color: var(--text-dim); line-height: 1.6; }
+
+/* Told-you-you-are-behind banner */
+.update-banner {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 11px 20px;
+  background: linear-gradient(180deg, #3a2c08, #2a2006);
+  border-bottom: 1px solid var(--gold-dim);
+  font-size: 0.88rem;
+}
+.update-banner strong { color: var(--gold); }
+.update-banner .faint { max-width: 70ch; }
+
+@media (max-width: 640px) {
+  .update-banner { padding: 10px 12px; font-size: 0.82rem; }
+}

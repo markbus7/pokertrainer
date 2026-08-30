@@ -1,6 +1,6 @@
 /** Lessons, drills and the Gauntlet. */
 
-import { el, mount, toast, fmt } from './dom.js';
+import { el, mount, richText, toast, fmt } from './dom.js';
 import { scenarioView } from './scenarioView.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
 import { generateQuestion, generateGauntlet, difficultyForLevel } from '../trainers/index.js';
@@ -246,13 +246,13 @@ export function renderDrill(ctx, params) {
         onclick: () => answer(option.key),
       },
         el('span.key', String(i + 1)),
-        el('span', option.label),
+        el('span', richText(option.label)),
       )),
     );
 
     mount(body,
       scenarioView(q.scenario, ctx.profile.settings),
-      el('div.question', { style: { marginTop: q.scenario ? '16px' : '0' } }, q.question),
+      el('div.question', { style: { marginTop: q.scenario ? '16px' : '0' } }, richText(q.question)),
       options,
       chosen === null ? null : el(`div.feedback.${chosen === q.answer ? 'correct' : 'wrong'}`,
         el('div.verdict', chosen === q.answer ? '✓ Correct' : '✗ Not quite'),
