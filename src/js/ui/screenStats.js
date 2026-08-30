@@ -7,6 +7,7 @@ import { RANKS } from '../state/profile.js';
 import { exportCode, importCode, decodeSyncCode, summarize } from '../state/sync.js';
 import * as cloudSync from '../state/cloudSync.js';
 import { VERSION, BUILT, REPO, checkForUpdate } from '../version.js';
+import { calibrationReport, nextReviewLabel, strength, hasStudied } from '../state/spacing.js';
 import { handGrid } from '../core/cards.js';
 import { CHARTS, POSITION_INFO, rangePercent, RFI, THREE_BET } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
@@ -33,6 +34,8 @@ export function renderStats(ctx) {
       tile('Hands played', fmt.chips(profile.data.handsPlayed)),
     ),
 
+    renderCalibration(profile),
+    renderRetention(profile),
     renderVersionPanel(),
     renderSyncPanel(ctx),
 
@@ -173,6 +176,66 @@ function renderVersionPanel() {
       button,
     ),
     el('div', { style: { marginTop: '12px' } }, status),
+  );
+}
+
+/**
+ * What you believed against what was true. People are poor judges of their own
+ * knowledge, and the gap is invisible unless something measures it — which is
+ * the whole reason the Lab asks how sure you are before showing the answer.
+ */
+function renderCalibration(profile) {
+  const report = calibrationReport(profile);
+  if (!report.total) return null;
+
+  return el('div.panel',
+    el('div.panel-title',
+      el('h2', '🎯 Calibration'),
+      el('span.faint', `${report.total} judged answers`),
+    ),
+    el('p.muted', 'How often you were right, split by how sure you felt at the time.'),
+    el('div',
+      report.rows.map((row) => el('div.calib-row',
+        el('div.calib-label', row.label),
+        el('div.calib-track',
+          el(`div.calib-fill${row.accuracy !== null && row.accuracy < 0.6 ? '.low' : ''}`, {
+            style: { width: `${Math.round((row.accuracy || 0) * 100)}%` },
+          }),
+        ),
+        el('div.calib-value', row.attempts
+          ? `${fmt.pct(row.accuracy)} of ${row.attempts}`
+          : '—'),
+      )),
+    ),
+    report.verdict
+      ? el('div.notice', { style: { marginTop: '14px' } }, report.verdict)
+      : el('div.faint', { style: { marginTop: '14px' } },
+          `Answer ${Math.max(0, 15 - report.total)} more in the Lab and this will tell you whether your confidence is trustworthy.`),
+  );
+}
+
+/** How firmly each concept is held, and when it next comes back. */
+function renderRetention(profile) {
+  const studied = MODULE_META.filter((m) => m.unlockLevel <= profile.level && hasStudied(profile, m.id));
+  if (!studied.length) return null;
+
+  return el('div.panel',
+    el('div.panel-title', el('h2', '🔁 Retention'), el('span.faint', 'spaced review schedule')),
+    el('p.muted', 'Each concept comes back at a widening gap for as long as you keep getting it right. A miss brings it back tomorrow.'),
+    el('div.stack-sm',
+      studied.map((meta) => {
+        const s = strength(profile, meta.id);
+        const label = nextReviewLabel(profile, meta.id);
+        return el('div', { style: { padding: '8px 0', borderBottom: '1px solid var(--border)' } },
+          el('div.spread',
+            el('div.row', el('span', meta.icon), el('span', { style: { fontWeight: '600' } }, meta.name)),
+            el('span.faint.mono', label),
+          ),
+          el('div.bar.green', { style: { marginTop: '6px', height: '6px' } },
+            el('span', { style: { width: `${Math.round(s * 100)}%` } })),
+        );
+      }),
+    ),
   );
 }
 

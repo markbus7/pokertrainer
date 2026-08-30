@@ -2,6 +2,7 @@
 
 import { el, fmt } from './dom.js';
 import { MODULE_META, recommendedModule } from '../data/curriculum.js';
+import { dueConcepts, nextReviewLabel, hasStudied } from '../state/spacing.js';
 import { RANKS, nextRank } from '../state/profile.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { stakeFor } from '../state/stats.js';
@@ -60,10 +61,12 @@ export function renderHome(ctx) {
       ),
     ),
 
+    duePanel(profile, go),
+
     /* ---- quick actions ---- */
     el('div.grid.cols-3',
+      quickCard('🎛️', 'The Lab', 'Solve spots at a table — type the equity, size the bet. No multiple choice.', 'Open the Lab', () => go('lab')),
       quickCard('🃏', 'Play a Table', 'Six seats, real opponents, a coach watching every decision.', 'Sit down', () => go('play')),
-      quickCard('⚡', 'The Gauntlet', 'Ten mixed questions across everything you have unlocked. No warm-up.', 'Start run', () => go('gauntlet')),
       quickCard('💰', 'Bankroll Challenge', `Climb from NL2 to NL500. You are at ${stake.name} with ${fmt.money(profile.data.bankroll)}.`, 'Grind', () => go('grind')),
     ),
 
@@ -84,6 +87,52 @@ export function renderHome(ctx) {
       el('div.grid.cols-3',
         MODULE_META.map((meta) => moduleTile(meta, profile, go)),
       ),
+    ),
+  );
+}
+
+/**
+ * Reviews that have come due. Spacing only works if something surfaces the
+ * concept at the right moment — a schedule nobody is shown is just a record.
+ */
+function duePanel(profile, go) {
+  const unlocked = MODULE_META.filter((m) => m.unlockLevel <= profile.level);
+  const started = unlocked.filter((m) => hasStudied(profile, m.id));
+  if (!started.length) return null;
+
+  const due = dueConcepts(profile, started.map((m) => m.id));
+  if (!due.length) {
+    const soonest = started
+      .map((m) => ({ m, label: nextReviewLabel(profile, m.id) }))
+      .filter((x) => x.label !== 'not started')
+      .sort((a, b) => a.label.localeCompare(b.label))[0];
+    return el('div.panel',
+      el('div.spread',
+        el('div',
+          el('h3', { style: { margin: 0 } }, '✅ Nothing due for review'),
+          el('div.faint', soonest
+            ? `Everything you have studied is still fresh. ${soonest.m.name} is ${soonest.label}.`
+            : 'Everything you have studied is still fresh.'),
+        ),
+        el('button.btn.sm.ghost', { onclick: () => go('lab') }, 'Practise anyway'),
+      ),
+    );
+  }
+
+  const metaFor = (id) => MODULE_META.find((m) => m.id === id);
+  return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
+    el('div.spread',
+      el('div',
+        el('h3', { style: { margin: 0 } }, `🔁 ${due.length} ready for review`),
+        el('div.faint', 'These are due now — practising a concept just as it starts to fade is what makes it stick.'),
+      ),
+      el('button.btn.sm.primary', { onclick: () => go('lab') }, 'Review now'),
+    ),
+    el('div.row', { style: { marginTop: '12px' } },
+      due.slice(0, 6).map((id) => {
+        const meta = metaFor(id);
+        return meta ? el('span.badge.gold', `${meta.icon} ${meta.name}`) : null;
+      }),
     ),
   );
 }

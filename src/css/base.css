@@ -537,3 +537,95 @@ main {
   transition: color 0.15s, border-color 0.15s;
 }
 .version-chip:hover { color: var(--gold); border-color: var(--gold-dim); }
+
+/* ============================================================
+   The Lab — interactive spots
+   ============================================================ */
+
+.lab-felt {
+  background: radial-gradient(ellipse at 50% 40%, var(--felt-1) 0%, var(--felt-2) 78%);
+  border: 8px solid var(--felt-rail);
+  border-radius: 20px;
+  padding: 20px 18px;
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.45);
+}
+
+.lab-pot {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 9px;
+  background: rgba(0, 0, 0, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  padding: 6px 18px;
+  font-weight: 700;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.lab-pot .label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.6); font-weight: 700; }
+.lab-bet { font-size: 0.78rem; font-weight: 600; color: var(--gold); }
+
+.lab-board { min-height: 78px; display: flex; align-items: center; }
+.lab-hands { display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; }
+.lab-hand { display: grid; gap: 5px; justify-items: center; }
+
+.lab-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 16px 0 10px;
+}
+.lab-input {
+  width: 130px;
+  font-family: var(--mono);
+  font-size: 1.9rem;
+  font-weight: 700;
+  text-align: right;
+  color: var(--gold);
+  background: var(--bg-raised);
+  border: 2px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+.lab-input:focus { outline: none; border-color: var(--gold); }
+.lab-unit { font-size: 1.5rem; font-weight: 700; color: var(--gold); }
+.lab-amount {
+  font-family: var(--mono);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 92px;
+}
+
+.lab-slider { width: 100%; accent-color: var(--gold); height: 8px; }
+
+.confidence {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.confidence-btn { border-color: var(--gold-dim); }
+.confidence-btn:hover:not(:disabled) { background: var(--gold); color: #23180a; border-color: var(--gold); }
+
+/* Calibration table on the Progress page */
+.calib-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.calib-row:last-child { border-bottom: 0; }
+.calib-label { width: 110px; flex: none; font-size: 0.88rem; }
+.calib-track { flex: 1; height: 18px; background: #0c1219; border: 1px solid var(--border); border-radius: 99px; overflow: hidden; }
+.calib-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #1f7a55, var(--green)); }
+.calib-fill.low { background: linear-gradient(90deg, #8f2b2f, var(--red)); }
+.calib-value { width: 96px; flex: none; text-align: right; font-family: var(--mono); font-size: 0.85rem; font-weight: 700; }
+
+@media (max-width: 640px) {
+  .lab-input, .lab-amount { font-size: 1.5rem; }
+  .lab-hands { gap: 18px; }
+  .calib-label { width: 80px; font-size: 0.8rem; }
+  .calib-value { width: 78px; font-size: 0.78rem; }
+}

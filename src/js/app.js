@@ -11,6 +11,7 @@ import { makeRng } from './core/rng.js';
 import { renderHome } from './ui/screenHome.js';
 import { renderLearn, renderDrill, renderGauntletIntro } from './ui/screenDrill.js';
 import { renderWalkthrough } from './ui/screenWalkthrough.js';
+import { renderLab, renderLabIntro } from './ui/screenLab.js';
 import { renderTable } from './ui/screenTable.js';
 import { renderGrind } from './ui/screenGrind.js';
 import { renderStats, renderCharts } from './ui/screenStats.js';
@@ -21,6 +22,8 @@ const ROUTES = {
   walkthrough: { render: renderWalkthrough, tab: 'home', title: 'Guided lesson' },
   drill: { render: renderDrill, tab: 'home', title: 'Drill' },
   gauntlet: { render: renderGauntletIntro, tab: 'gauntlet', title: 'Gauntlet' },
+  lab: { render: renderLabIntro, tab: 'lab', title: 'The Lab' },
+  'lab-run': { render: renderLab, tab: 'lab', title: 'The Lab' },
   play: { render: renderTable, tab: 'play', title: 'Table' },
   grind: { render: renderGrind, tab: 'grind', title: 'Bankroll' },
   charts: { render: renderCharts, tab: 'charts', title: 'Charts' },
@@ -30,6 +33,7 @@ const ROUTES = {
 const TABS = [
   { route: 'home', label: 'Train' },
   { route: 'play', label: 'Play' },
+  { route: 'lab', label: 'Lab' },
   { route: 'gauntlet', label: 'Gauntlet' },
   { route: 'grind', label: 'Bankroll' },
   { route: 'charts', label: 'Charts' },
