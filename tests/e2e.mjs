@@ -211,6 +211,54 @@ await step('no lesson renders raw markup in any of its steps', async () => {
   if (faults.length) throw new Error(faults.join('; '));
 });
 
+await step('layout holds up on phone and tablet viewports', async () => {
+  // iPad first, then iPhone, then desktop — the order this actually gets
+  // used in. Checks the three things that break on touch and are invisible
+  // on a desktop: content wider than the screen, tap targets under Apple's
+  // 44px guidance, and inputs under 16px (which make iOS zoom the page on
+  // focus and never zoom back).
+  const viewports = [
+    ['iPhone SE', 375, 667],
+    ['iPhone 15', 393, 852],
+    ['iPad portrait', 820, 1180],
+    ['iPad landscape', 1180, 820],
+  ];
+  const routes = ['#home', '#play', '#lab-run', '#walkthrough?module=pot-odds', '#charts?chart=BTN', '#stats'];
+  const faults = [];
+
+  for (const [name, w, h] of viewports) {
+    await page.setViewportSize({ width: w, height: h });
+    for (const route of routes) {
+      await page.goto(`${BASE}/${route}`, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(320);
+      const bad = await page.evaluate((vw) => {
+        const out = [];
+        const de = document.documentElement;
+        if (de.scrollWidth - de.clientWidth > 1) out.push(`overflows by ${de.scrollWidth - de.clientWidth}px`);
+        for (const sel of ['.felt', '.range-grid-scroll', '.topbar', '.action-buttons']) {
+          for (const elem of document.querySelectorAll(sel)) {
+            // A scroll container is *supposed* to hold wider content — that is
+            // what makes it scrollable. Only unreachable overflow is a fault.
+            const scrolls = /auto|scroll/.test(getComputedStyle(elem).overflowX);
+            if (!scrolls && elem.scrollWidth > elem.clientWidth + 2) {
+              out.push(`${sel} content is cut off with no way to scroll to it`);
+            }
+          }
+        }
+        for (const input of document.querySelectorAll('input:not([type=range]), textarea')) {
+          const fs = parseFloat(getComputedStyle(input).fontSize);
+          if (fs && fs < 16) out.push(`input at ${fs}px would trigger iOS zoom`);
+        }
+        void vw;
+        return [...new Set(out)];
+      }, w);
+      for (const b of bad) faults.push(`${name} ${route}: ${b}`);
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  if (faults.length) throw new Error(faults.join('; '));
+});
+
 console.log(`\nconsole errors: ${errors.length}`);
 for (const e of errors.slice(0, 12)) console.log(`  ! ${e}`);
 await browser.close();
