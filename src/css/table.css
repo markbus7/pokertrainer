@@ -152,13 +152,21 @@
   z-index: 5;
 }
 
-/* Seat placement around the oval. */
-.seat[data-slot="0"] { left: 50%; top: 90%; }   /* hero */
-.seat[data-slot="1"] { left: 11%; top: 70%; }
-.seat[data-slot="2"] { left: 9%;  top: 30%; }
-.seat[data-slot="3"] { left: 50%; top: 13%; }
-.seat[data-slot="4"] { left: 91%; top: 30%; }
-.seat[data-slot="5"] { left: 89%; top: 70%; }
+/* Seat placement around the oval.
+   Side seats anchor to the rail rather than centring on a percentage: a
+   fixed-width plate centred at 9% hangs off the edge once the felt is
+   narrow, and with the coach panel alongside it the felt is never much
+   wider than 776px — not even on a large desktop. */
+.seat[data-slot="0"] { left: 50%; top: 89%; transform: translate(-50%, -50%); }
+.seat[data-slot="3"] { left: 50%; top: 11%; transform: translate(-50%, -50%); }
+.seat[data-slot="1"] { left: 3%;  top: 71%; transform: translateY(-50%); }
+.seat[data-slot="2"] { left: 3%;  top: 29%; transform: translateY(-50%); }
+.seat[data-slot="4"] { left: auto; right: 3%; top: 29%; transform: translateY(-50%); }
+.seat[data-slot="5"] { left: auto; right: 3%; top: 71%; transform: translateY(-50%); }
+
+/* Bets sit inboard of their seat, so they never cross the rail. */
+.seat[data-slot="1"] .seat-bet, .seat[data-slot="2"] .seat-bet { right: auto; left: 100%; margin-left: 6px; top: 50%; transform: translateY(-50%); }
+.seat[data-slot="4"] .seat-bet, .seat[data-slot="5"] .seat-bet { left: auto; right: 100%; margin-right: 6px; top: 50%; transform: translateY(-50%); }
 
 /* Seats on the top half hang their cards below the plate, so nothing
    spills over the rail. */
@@ -169,12 +177,11 @@
 .seat[data-slot="3"] .seat-action,
 .seat[data-slot="4"] .seat-action { top: auto; bottom: -12px; }
 
-.seat[data-slot="0"] .seat-bet { top: -30px; left: 50%; transform: translateX(-50%); }
-.seat[data-slot="1"] .seat-bet { right: -14px; top: 4px; }
-.seat[data-slot="2"] .seat-bet { right: -14px; bottom: 0; }
-.seat[data-slot="3"] .seat-bet { bottom: -30px; left: 50%; transform: translateX(-50%); }
-.seat[data-slot="4"] .seat-bet { left: -14px; bottom: 0; }
-.seat[data-slot="5"] .seat-bet { left: -14px; top: 4px; }
+/* Top and bottom seats put their bet toward the middle of the felt. The side
+   seats are handled above; setting both top and bottom on the same element
+   stretches it into a tall oval instead of leaving a compact pill. */
+.seat[data-slot="0"] .seat-bet { top: -30px; bottom: auto; left: 50%; transform: translateX(-50%); }
+.seat[data-slot="3"] .seat-bet { bottom: -30px; top: auto; left: 50%; transform: translateX(-50%); }
 
 .seat[data-slot="0"] .dealer-button { top: -8px; right: -6px; }
 .seat[data-slot="1"] .dealer-button { top: -8px; right: -6px; }
@@ -345,18 +352,83 @@ input[type="range"] {
 .range-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: var(--text-dim); }
 .range-legend .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: -2px; }
 
+/* ============================================================
+   The table on touch screens
+   ------------------------------------------------------------
+   Seat plates are a fixed width but were positioned by
+   percentage, so on a narrow felt they hung off the rail — on
+   an iPhone one plate was clipped away entirely. Below the
+   desktop width the side seats anchor to the felt's edges
+   instead of being centred on a percentage, which keeps every
+   plate inside the oval at any size.
+   ============================================================ */
+
+@media (max-width: 1320px) {
+  .felt {
+    aspect-ratio: 4 / 3;
+    min-height: 0;
+    border-width: 10px;
+  }
+  .felt::before { font-size: 9rem; }
+
+  .seat { width: min(38%, 150px); }
+  .seat-plate { padding: 5px 7px; }
+  .seat-name { font-size: 0.76rem; }
+  .seat-stack { font-size: 0.82rem; }
+  .seat-pos { font-size: 0.58rem; }
+
+}
+
 @media (max-width: 700px) {
-  .felt { min-height: 340px; aspect-ratio: 4 / 5; border-width: 10px; }
-  .felt::before { font-size: 8rem; }
-  .seat { width: 104px; }
-  .seat-plate { padding: 4px 6px; }
-  .seat-name { font-size: 0.7rem; }
-  .card { width: 30px; height: 43px; }
-  .card .rank { font-size: 0.82rem; }
-  .card .suit { font-size: 0.74rem; }
-  .card.lg { width: 42px; height: 60px; }
-  .seat[data-slot="1"] { left: 14%; top: 68%; }
-  .seat[data-slot="2"] { left: 12%; top: 26%; }
-  .seat[data-slot="4"] { left: 88%; top: 26%; }
-  .seat[data-slot="5"] { left: 86%; top: 68%; }
+  .felt { aspect-ratio: 5 / 6; border-width: 8px; border-radius: 46% / 38%; }
+  .felt::before { font-size: 6rem; }
+
+  /* A phone felt is about 350px across, and six seats plus their cards will
+     not fit at desktop proportions — plates ended up sitting on top of the
+     cards. Two things buy back the room:
+       - the seat plate becomes a compact chip: who, and how much
+       - face-down opponent cards are hidden, because a card back carries no
+         information at all. They reappear at showdown, when they mean
+         something. Whether an opponent is still in the hand is already clear
+         from their plate, since folded seats dim and collapse. */
+  .seat { width: min(32%, 96px); }
+  .seat-plate { padding: 4px 6px; border-radius: 8px; }
+  .seat-name { font-size: 0.66rem; gap: 2px; }
+  .seat-stack { font-size: 0.74rem; }
+  .seat-pos { font-size: 0.52rem; letter-spacing: 0.05em; }
+  .seat-action { font-size: 0.56rem; padding: 1px 5px; top: -10px; }
+  .seat-bet { font-size: 0.66rem; padding: 1px 6px; }
+
+  .seat:not(.hero) .seat-cards,
+  .seat:not(.hero) .card.back { display: none; }
+  .seat:not(.hero) .card-row { gap: 2px; }
+
+  .card { width: 26px; height: 37px; }
+  .card .rank { font-size: 0.72rem; }
+  .card .suit { font-size: 0.64rem; }
+  .card.lg { width: 38px; height: 54px; }
+  .card.lg .rank { font-size: 1.02rem; }
+  .card.lg .suit { font-size: 0.92rem; }
+
+  .board { min-height: 58px; gap: 4px; }
+  .pot-chip { padding: 4px 12px; font-size: 0.9rem; }
+  .dealer-button { width: 21px; height: 21px; font-size: 0.62rem; }
+
+  /* On a felt this small the inboard bet chips can reach the centre, so pin
+     them just outside the plate instead of beside the (now hidden) cards. */
+  .seat[data-slot="1"] .seat-bet, .seat[data-slot="2"] .seat-bet { margin-left: 3px; }
+  .seat[data-slot="4"] .seat-bet, .seat[data-slot="5"] .seat-bet { margin-right: 3px; }
+  .seat[data-slot="3"] .seat-bet { bottom: -24px; }
+  .seat[data-slot="0"] .seat-bet { top: -24px; }
+
+  .lab-felt { padding: 14px 10px; gap: 12px; }
+  .lab-hands { gap: 16px; }
+}
+
+/* Sliders need a real thumb to drag on a touch screen. This lives here rather
+   than in base.css because table.css loads later, and the action-bar slider
+   rule above would otherwise win on source order alone. */
+@media (pointer: coarse) {
+  input[type="range"], .lab-slider { height: 44px; }
+  .lab-slider { margin: 4px 0; }
 }

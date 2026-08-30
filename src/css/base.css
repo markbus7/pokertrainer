@@ -391,29 +391,9 @@ main {
 }
 .notice.warn { background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.35); }
 
-@media (max-width: 760px) {
-  /* Two rows: identity on top, tabs scrolling underneath. Wrapping the tabs
-     into a column pushed the whole app off the screen. */
-  .topbar { padding: 8px 12px; gap: 10px; }
-  .brand { order: 1; }
-  .rank-chip { order: 2; margin-left: auto; }
-  .tabs {
-    order: 3;
-    width: 100%;
-    flex: none;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  .tabs::-webkit-scrollbar { display: none; }
-}
 
-@media (max-width: 640px) {
-  main { padding: 16px 12px 60px; }
-  h1 { font-size: 1.5rem; }
-  .grid.cols-3, .grid.cols-4 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-}
+
+
 
 /* ============================================================
    Guided lessons
@@ -512,10 +492,7 @@ main {
 .lesson-table td:first-child { color: var(--text); font-weight: 550; }
 .lesson-table td:not(:first-child) { color: var(--gold); font-weight: 650; }
 
-@media (max-width: 640px) {
-  .gauge-label { width: 88px; font-size: 0.78rem; }
-  .lesson-body p { font-size: 0.95rem; }
-}
+
 
 .lesson-body em, .feedback em, .visual-caption em { color: var(--text); font-style: italic; opacity: 0.92; }
 
@@ -623,12 +600,7 @@ main {
 .calib-fill.low { background: linear-gradient(90deg, #8f2b2f, var(--red)); }
 .calib-value { width: 96px; flex: none; text-align: right; font-family: var(--mono); font-size: 0.85rem; font-weight: 700; }
 
-@media (max-width: 640px) {
-  .lab-input, .lab-amount { font-size: 1.5rem; }
-  .lab-hands { gap: 18px; }
-  .calib-label { width: 80px; font-size: 0.8rem; }
-  .calib-value { width: 78px; font-size: 0.78rem; }
-}
+
 
 /* Glossary terms embedded in lesson prose */
 .term {
@@ -687,6 +659,103 @@ main {
 .update-banner strong { color: var(--gold); }
 .update-banner .faint { max-width: 70ch; }
 
-@media (max-width: 640px) {
-  .update-banner { padding: 10px 12px; font-size: 0.82rem; }
+
+
+/* ============================================================
+   Responsive layer
+   ------------------------------------------------------------
+   Built around how this actually gets used: iPad most of the
+   time, iPhone next, desktop least. So the touch layouts are
+   the considered ones rather than a shrunken desktop.
+
+   Two rules throughout:
+     - Anything you tap is at least 44px tall (Apple's guidance;
+       below that people miss).
+     - Any focusable input is at least 16px, because iOS Safari
+       zooms the whole page when you focus something smaller and
+       does not zoom back out.
+   ============================================================ */
+
+/* Respect the notch and home indicator rather than sitting under them. */
+.topbar { padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
+
+/* iOS zooms the page on focus if a field is under 16px, and never zooms back. */
+input, textarea, select { font-size: max(16px, 1rem); }
+.lab-input { font-size: 1.9rem; }
+
+/* Comfortable touch targets everywhere it matters. */
+@media (pointer: coarse) {
+  .tab { min-height: 44px; display: inline-flex; align-items: center; padding: 8px 15px; }
+  .btn { min-height: 44px; }
+  .btn.sm { min-height: 44px; }
+  .option { min-height: 52px; }
+  .term { padding: 3px 0; }
+  .rank-chip { min-height: 44px; }
+  input[type="range"] { height: 34px; }
+
+  /* Small chips and inline links keep their look but get a full-size hit
+     area, so they are not the one thing on the page you have to aim at. */
+  .version-chip { min-height: 44px; padding: 5px 12px; }
+  .panel a, .lesson-body a, .glossary-full a { display: inline-block; padding: 11px 0; min-height: 44px; }
+}
+
+/* ---- Tablet and phone: one scrolling row of tabs, never a wrapped block ---- */
+@media (max-width: 1023px) {
+  .topbar { padding-top: 8px; padding-bottom: 8px; gap: 10px; }
+  .brand { order: 1; font-size: 1rem; }
+  .rank-chip { order: 2; margin-left: auto; }
+  .tabs {
+    order: 3;
+    width: 100%;
+    flex: none;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: none; }
+
+  main { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
+  .panel { padding: 15px; }
+  h1 { font-size: 1.6rem; }
+}
+
+/* ---- Phone ---- */
+@media (max-width: 700px) {
+  main { padding-top: 14px; }
+  .panel { padding: 13px; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.15rem; }
+  .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; }
+  .stat .value { font-size: 1.3rem; }
+  .lesson-body p { font-size: 0.97rem; line-height: 1.62; }
+  .question { font-size: 1.05rem; }
+
+  /* Stacked, full-width actions beat three cramped ones in a row. */
+  .action-buttons .btn { min-width: 0; flex: 1 1 100%; }
+  .row > .btn, .action-buttons > .btn { flex: 1 1 auto; }
+
+  .gauge-label { width: 88px; font-size: 0.78rem; }
+  .calib-label { width: 84px; font-size: 0.8rem; }
+  .calib-value { width: 74px; font-size: 0.76rem; }
+  .lab-input, .lab-amount { font-size: 1.55rem; }
+
+  /* 169 cells across a phone: let it scroll rather than crush each one. */
+  .range-grid { min-width: 430px; }
+  .range-grid-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .range-cell { font-size: 0.6rem; }
+
+  #toasts { left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); align-items: stretch; }
+  .toast { max-width: none; }
+}
+
+/* Landscape phone: very little height, so trim the vertical furniture. */
+@media (max-height: 460px) and (orientation: landscape) {
+  .topbar { position: static; }
+  main { padding-top: 10px; }
+  .panel { padding: 11px; }
 }

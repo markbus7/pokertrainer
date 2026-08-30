@@ -121,7 +121,9 @@ function tile(label, value, sub = '') {
 const codeBoxStyle = {
   width: '100%',
   fontFamily: 'var(--mono)',
-  fontSize: '0.76rem',
+  // 16px is a floor, not a preference: iOS Safari zooms the whole page when
+  // you focus a field smaller than this, and does not zoom back out.
+  fontSize: '16px',
   resize: 'vertical',
   background: 'var(--bg-raised)',
   color: 'var(--text)',
@@ -562,15 +564,21 @@ export function renderCharts(ctx, params = {}) {
       ),
       el('p.muted', POSITION_INFO[position].blurb),
 
-      el('div.range-grid',
-        grid.flat().map((key) => el(`div.range-cell.${cellClass(key)}${key.length === 2 ? '.pair' : ''}`, {
-          onmouseenter: () => {
+      el('div.range-grid-scroll', el('div.range-grid',
+        grid.flat().map((key) => {
+          // Touch screens have no hover, so the detail line was unreachable
+          // on the devices this is most often read on.
+          const describe = () => {
             detail.textContent = `${key} — ${fmt.pct(HAND_STRENGTH[key], 1)} against a random hand, ranked ${STRENGTH_RANK[key]} of 169. ${
               inRange(key) ? 'In this range.' : 'Not in this range.'
             }`;
-          },
-        }, key)),
-      ),
+          };
+          return el(`div.range-cell.${cellClass(key)}${key.length === 2 ? '.pair' : ''}`, {
+            onmouseenter: describe,
+            onclick: describe,
+          }, key);
+        }),
+      )),
 
       detail,
 
