@@ -214,7 +214,7 @@ function renderStack({ segments, caption }) {
   );
 }
 
-function renderTable({ headers, rows }) {
+function renderTable({ headers, rows, caption }) {
   return el('div.visual',
     el('div', { style: { overflowX: 'auto' } },
       el('table.lesson-table',
@@ -222,6 +222,7 @@ function renderTable({ headers, rows }) {
         el('tbody', rows.map((row) => el('tr', row.map((cell) => el('td', cell))))),
       ),
     ),
+    caption ? el('div.visual-caption', richText(caption)) : null,
   );
 }
 
