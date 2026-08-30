@@ -261,7 +261,7 @@ export const WALKTHROUGHS = {
           haveLabel: 'Have (flush draw)',
         },
         check: {
-          question: 'You have a gutshot straight draw — a straight missing one card in the middle, so only four cards complete it, about 16% to hit by the river. The pot is 90 and your opponent bets 90. Call or fold?',
+          question: 'You have an inside straight draw (a [[gutshot]]) — a straight missing one card in the middle, so only four cards complete it, about 16% to hit by the river. The pot is 90 and your opponent bets 90. Call or fold?',
           options: [
             {
               key: 'a',
@@ -486,7 +486,7 @@ export const WALKTHROUGHS = {
         body: [
           'A handful of draws come up constantly. Learn these and you will rarely have to count from scratch.',
           'The two big ones are the [[flush draw|flush draw at nine]] and the [[open-ended straight draw|open-ended straight draw at eight]] — four cards at each end of your run.',
-          'A [[gutshot]] has only one rank that fills it, so four cards: half of an open-ended draw, and it shows in how rarely it is worth calling.',
+          'An inside straight draw — a [[gutshot]] — has only one rank that fills it, so four cards: half of an open-ended draw, and it shows in how rarely it is worth calling.',
           'And the monster: a flush draw *and* an open-ended straight draw at once gives roughly **15 outs**, which is actually a favourite against many made hands.',
         ],
         visual: {
@@ -496,7 +496,7 @@ export const WALKTHROUGHS = {
             ['Flush draw', '9', 'Two hearts in hand, two on board'],
             ['Open-ended straight', '8', '9-8 on a 7-6-2 board'],
             ['Gutshot straight', '4', '9-8 on a 6-5-2 board (needs a 7)'],
-            ['Two overcards', '6', 'A-K on a 7-4-2 board'],
+            ['Two [[overcard|overcards]]', '6', 'A-K on a 7-4-2 board'],
             ['Flush + open-ended', '15', 'The best draw in poker'],
           ],
         },
@@ -1045,8 +1045,8 @@ export const WALKTHROUGHS = {
         title: 'Dry boards and wet boards',
         body: [
           'Which flop you are on changes everything, and it comes down to one question: **how many hands can continue against you?**',
-          'A **dry** board — say A-7-2 rainbow, no flush draw, no straight draw — connects with almost nothing. Your opponent either hit an ace or gave up. Here you can bet small with your entire range, because there is very little that can call.',
-          'A **wet** board — say 9-8-7 with two of a suit — connects with everything. Straights, straight draws, flush draws, pairs. Your opponent has plenty to continue with, so a bluff runs into a call far more often.',
+          'A [[dry board|**dry** board]] — say A-7-2 [[rainbow]], no flush draw, no straight draw — connects with almost nothing. Your opponent either hit an ace or gave up. Here you can bet small with your entire range, because there is very little that can call.',
+          'A [[wet board|**wet** board]] — say 9-8-7 with two of a suit — connects with everything. Straights, straight draws, flush draws, pairs. Your opponent has plenty to continue with, so a bluff runs into a call far more often.',
           'The rule that follows: **bet dry boards often and cheaply. Slow down on wet boards unless you actually have something.**',
         ],
         check: {
@@ -1055,7 +1055,7 @@ export const WALKTHROUGHS = {
             {
               key: 'a',
               label: 'Check — this board hits their range hard and you have nothing',
-              why: 'Right. Straights, two pair, and every draw are in their calling range, and ace-high has no fold equity against that. Betting here just loses chips slowly.',
+              why: 'Right. Straights, two pair, and every draw are in their calling range, and ace-high has no [[fold equity]] against that. Betting here just loses chips slowly.',
             },
             {
               key: 'b',
@@ -1075,7 +1075,7 @@ export const WALKTHROUGHS = {
         title: 'The two questions before any bet',
         body: [
           'Before every bet you make, on any street, ask exactly two questions:',
-          '**1. Will a worse hand call me?** If yes, betting makes money — that is value.',
+          '**1. Will a worse hand call me?** If yes, betting makes money — that is a [[value bet]].',
           '**2. Will a better hand fold?** If yes, betting makes money — that is a bluff.',
           'If the answer to both is no, **the bet cannot make money** and you should check. This one habit removes a large share of the bets that lose people money, because it catches the bets made out of momentum rather than reason.',
           'It also explains the awkward middle: hands too weak to be called by worse but too strong to bluff with. Those hands want to check and see a showdown, not fire a third barrel.',
@@ -1301,7 +1301,7 @@ export const WALKTHROUGHS = {
       {
         title: 'Balance, and when to abandon it',
         body: [
-          'Against a strong opponent you want your bluffs and value bets to arrive in a ratio that leaves them no good answer. At a **pot-sized** bet that is roughly **one bluff for every two value hands** — about a third of your betting range.',
+          'Against a strong opponent you want your bluffs and [[value bet|value bets]] to arrive in a ratio that leaves them no good answer. At a **pot-sized** bet that is roughly **one bluff for every two value hands** — about a third of your betting range.',
           'Get that ratio right and it does not matter what they do: calling and folding are equally break-even for them. That is what balance means.',
           'But balance is a **defensive** goal. It stops good players exploiting you; it does not extract maximum money from bad ones.',
           'Against weak opponents, throw it away. **Value bet more and bluff less** against a station. **Bluff more** against someone who folds too much. Balance is what you fall back on when you have no read — never a reason to ignore one you have.',
@@ -1454,7 +1454,7 @@ export const WALKTHROUGHS = {
           'Balanced play is a defensive stance — it guarantees nobody can exploit you, and it makes very little from opponents who are playing badly.',
           'Almost every player at small stakes has one large, obvious leak. Your job is to **name it in a sentence**, then do the thing that punishes it.',
           'There are only a handful of leaks worth knowing, and every one of them has an opposite:',
-          'Someone folds too much → **bluff them relentlessly**. Someone calls too much → **never bluff, value bet wider**. Someone bluffs too much → **call them down lighter**. Someone plays too many hands → **wait and punish with strong ones**.',
+          'Someone folds too much → **bluff them relentlessly**. Someone calls too much → **never bluff, [[value bet]] wider**. Someone bluffs too much → **call them down lighter**. Someone plays too many hands → **wait and punish with strong ones**.',
           'That is the entire skill. Notice the pattern, apply the opposite.',
         ],
         check: {

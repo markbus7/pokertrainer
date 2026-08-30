@@ -132,7 +132,7 @@ export function renderWalkthrough(ctx, params) {
         el('div.row', { style: { marginBottom: '10px' } },
           el('span.badge.gold', 'Check yourself'),
         ),
-        el('div.question', check.question),
+        el('div.question', richText(check.question)),
         el('div.options',
           check.options.map((option, i) => el(`button.option${
             !answered ? '' : option.key === check.answer ? '.correct' : option.key === state.chosen ? '.wrong' : ''
@@ -141,7 +141,7 @@ export function renderWalkthrough(ctx, params) {
             onclick: () => answer(option.key),
           },
             el('span.key', String(i + 1)),
-            el('span', option.label),
+            el('span', richText(option.label)),
           )),
         ),
         answered

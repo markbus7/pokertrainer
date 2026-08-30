@@ -80,6 +80,41 @@ export const TERMS = {
     short: 'Just calling the big blind instead of raising.',
     full: 'Entering the pot for the minimum rather than raising. It surrenders the initiative, invites everyone in cheaply, and tells observant opponents you do not hold a premium. Raise or fold instead.',
   },
+  'value bet': {
+    term: 'Value bet',
+    short: 'Betting because worse hands will call.',
+    full: 'A bet made to be called, not to make anyone fold. The test is simple: will a hand worse than mine pay this off? If yes, betting makes money. It is the opposite of a bluff, and against players who call too much it is nearly your whole strategy.',
+  },
+  'fold equity': {
+    term: 'Fold equity',
+    short: 'The value that comes from your opponent folding.',
+    full: 'The part of a bet\u2019s profit that comes from simply winning the pot uncontested. A hand with no chance of winning at showdown has value only through fold equity — which is why bluffing someone who never folds is worth nothing.',
+  },
+  overcard: {
+    term: 'Overcard',
+    short: 'A card in your hand higher than any on the board.',
+    full: 'Holding A-K on a 7-4-2 board gives you two overcards: pairing either one would beat anything that has paired the board. Six cards do that (three aces, three kings), which is where the "two overcards is six outs" figure comes from.',
+  },
+  rainbow: {
+    term: 'Rainbow',
+    short: 'A board of all different suits — no flush possible yet.',
+    full: 'Three community cards of three different suits, so nobody can have a flush and nobody can even be drawing to one with two cards. The opposite of a two-tone board, and part of what makes a flop "dry".',
+  },
+  'dry board': {
+    term: 'Dry board',
+    short: 'A flop that connects with very few hands.',
+    full: 'Disconnected, usually rainbow, with no obvious straight or flush draws — A-7-2 rainbow is the classic. Very little of your opponent\u2019s range can continue against a bet, which is why you can bet a dry board small with almost any hand.',
+  },
+  'wet board': {
+    term: 'Wet board',
+    short: 'A flop that connects with lots of hands.',
+    full: 'Coordinated and full of draws — 9-8-7 with two of a suit is about as wet as it gets. Straights, flush draws and pairs all continue against a bet, so bluffing into one runs into a call far more often.',
+  },
+  stack: {
+    term: 'Stack',
+    short: 'The chips a player has in front of them.',
+    full: 'Everything you can bet in this hand. The "effective stack" is the smaller of yours and your opponent\u2019s, since neither of you can win more than the shorter one — that is the number that actually matters.',
+  },
   position: {
     term: 'Position',
     short: 'Acting after your opponents, on every street.',

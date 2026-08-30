@@ -4,7 +4,9 @@ import { MODULE_META } from '../src/js/data/curriculum.js';
 import { requiredEquity, minimumDefenceFrequency, breakEvenBluffFrequency, spr } from '../src/js/core/odds.js';
 import { exactOutsEquity } from '../src/js/core/equity.js';
 import { CHARTS, rangePercent, rangeCombos, parseRange } from '../src/js/data/ranges.js';
-import { comboCount, ALL_HAND_KEYS } from '../src/js/core/cards.js';
+import { comboCount, ALL_HAND_KEYS, makeDeck } from '../src/js/core/cards.js';
+import { evaluate } from '../src/js/core/evaluator.js';
+import { icmEquity } from '../src/js/core/odds.js';
 import { lookupTerm } from '../src/js/data/glossary.js';
 
 const entries = Object.entries(WALKTHROUGHS);
@@ -249,6 +251,59 @@ describe('walkthroughs: the numbers taught match the engine', () => {
     assert(need(1000) < 0.5, 'even a huge overbet stays under 50%');
     equal(Math.round(need(1000) * 100), 48, 'a 1000 overbet into 100 asks for 48%, as the lesson says');
     assert(need(1e9) < 0.5 && need(1e9) > 0.499, 'the limit is 50%, approached but not reached');
+  });
+
+  it('teaches hand frequencies that match an exhaustive count', () => {
+    // The hand-rankings lesson prints these as the reason the ranking order
+    // is what it is. Counted here rather than trusted.
+    const deck = makeDeck();
+    const counts = new Array(9).fill(0);
+    const hand = new Array(5);
+    for (let a = 0; a < 48; a++) {
+      hand[0] = deck[a];
+      for (let b = a + 1; b < 49; b++) {
+        hand[1] = deck[b];
+        for (let c = b + 1; c < 50; c++) {
+          hand[2] = deck[c];
+          for (let d = c + 1; d < 51; d++) {
+            hand[3] = deck[d];
+            for (let e = d + 1; e < 52; e++) {
+              hand[4] = deck[e];
+              counts[evaluate(hand) >> 20]++;
+            }
+          }
+        }
+      }
+    }
+
+    const table = WALKTHROUGHS['hand-rankings'].steps[0].visual.rows;
+    const byName = Object.fromEntries(table.map((r) => [r[0], Number(r[1].replace(/,/g, ''))]));
+    const expected = {
+      'Straight flush': counts[8],
+      'Four of a kind': counts[7],
+      'Full house': counts[6],
+      Flush: counts[5],
+      Straight: counts[4],
+      'Three of a kind': counts[3],
+      'Two pair': counts[2],
+      'One pair': counts[1],
+      'High card': counts[0],
+    };
+    for (const [name, actual] of Object.entries(expected)) {
+      equal(byName[name], actual, `the lesson's count for ${name} must match the evaluator`);
+    }
+
+    // And the claim the whole step rests on: flushes really are rarer.
+    assert(counts[5] < counts[4], 'a flush must be rarer than a straight for the lesson to hold');
+    assert(counts[6] < counts[5], 'and a full house rarer than a flush');
+  });
+
+  it('teaches the ICM equal-stacks figure correctly', () => {
+    // "Three players, equal stacks, prizes 500/300/200 -> each worth 333."
+    const eq = icmEquity([1000, 1000, 1000], [500, 300, 200]);
+    close(eq[0], 333.3, 0.5, 'equal stacks should split the prize pool evenly');
+    const text = JSON.stringify(WALKTHROUGHS.icm);
+    assert(/333/.test(text), 'the lesson should quote that figure');
   });
 
   it('teaches opening percentages that match the actual charts', () => {

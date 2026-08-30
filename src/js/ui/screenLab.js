@@ -217,7 +217,7 @@ export function renderLab(ctx) {
     mount(body,
       felt(s),
       el('div.muted', { style: { marginTop: '14px' } }, s.prompt),
-      el('div.question', { style: { marginTop: '6px' } }, s.question),
+      el('div.question', { style: { marginTop: '6px' } }, richText(s.question)),
       state.result ? feedback(s) : inputFor(s),
     );
 

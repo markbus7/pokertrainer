@@ -6,7 +6,7 @@
 import { el, mount, $, toast, fmt } from './ui/dom.js';
 import { Profile, nextRank } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
-import { VERSION } from './version.js';
+import { VERSION, checkForUpdate } from './version.js';
 import { makeRng } from './core/rng.js';
 import { renderHome } from './ui/screenHome.js';
 import { renderLearn, renderDrill, renderGauntletIntro } from './ui/screenDrill.js';
@@ -118,6 +118,44 @@ function drawTopbar(activeTab) {
   );
 }
 
+/**
+ * Tell the reader when their copy is out of date, instead of leaving them to
+ * discover it. A user updated, reloaded, and still saw the old version with
+ * nothing on screen explaining why — the app had an update check, but only if
+ * you already knew to go and press it.
+ *
+ * Static hosting caches aggressively and iOS Safari has no true hard refresh,
+ * so being behind for a few minutes after a release is normal rather than
+ * broken. This says so, which is the part that was missing.
+ *
+ * Deliberately no cache-busting query on the module URLs: the imports are not
+ * versioned, so busting only the entry point would load a new app.js against
+ * cached older modules. Everything expiring together is the safe behaviour.
+ */
+function announceUpdateIfBehind() {
+  checkForUpdate().then((result) => {
+    if (!result.ok || !result.behind) return;
+    if (sessionStorage.getItem('pt-update-dismissed') === result.latest) return;
+
+    const banner = el('div.update-banner',
+      el('div',
+        el('strong', `Version ${result.latest} is available`),
+        el('div.faint', `You are running ${result.current}. Reload to update — if the version does not change, your browser is still holding a cached copy, which usually clears within about ten minutes.`),
+      ),
+      el('div.row',
+        el('button.btn.sm.primary', { onclick: () => location.reload() }, 'Reload'),
+        el('button.btn.sm.ghost', {
+          onclick: () => {
+            try { sessionStorage.setItem('pt-update-dismissed', result.latest); } catch { /* private mode */ }
+            banner.remove();
+          },
+        }, 'Later'),
+      ),
+    );
+    document.body.insertBefore(banner, document.body.firstChild);
+  });
+}
+
 window.addEventListener('hashchange', render);
 
 document.addEventListener('keydown', (e) => {
@@ -175,6 +213,7 @@ function reconcileWithCloud() {
 }
 
 reconcileWithCloud();
+announceUpdateIfBehind();
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;

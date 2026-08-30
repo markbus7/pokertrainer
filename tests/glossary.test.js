@@ -63,6 +63,44 @@ describe('glossary: lessons only reference terms that exist', () => {
   });
 });
 
+describe('glossary: no unexplained jargon survives in the lessons', () => {
+  // Terms a beginner would plausibly not know. Each must either be in the
+  // glossary or explained where it is used — this sweep is what caught
+  // "value bet", "fold equity", "rainbow" and "overcard" going undefined.
+  const JARGON = [
+    'gutshot', 'flush draw', 'open-ended', 'outs', 'equity', 'pot odds', '3-bet',
+    'MDF', 'SPR', 'ICM', 'VPIP', 'rake', 'kicker', 'dominated', 'semi-bluff',
+    'bluff catcher', 'range', 'showdown', 'blinds', 'street', 'position', 'limp',
+    'suited', 'offsuit', 'combo', 'overcard', 'rainbow', 'value bet', 'fold equity',
+    'stack',
+  ];
+
+  it('covers every piece of jargon the lessons use', () => {
+    const unexplained = [];
+    for (const [id, w] of Object.entries(WALKTHROUGHS)) {
+      const text = JSON.stringify(w).toLowerCase();
+      for (const term of JARGON) {
+        const needle = term.toLowerCase();
+        if (!text.includes(needle)) continue;
+        if (lookupTerm(term)) continue;                    // in the glossary
+        if (text.includes(`[[${needle}`)) continue;        // marked in place
+        unexplained.push(`${id}: "${term}"`);
+      }
+    }
+    equal(unexplained.length, 0,
+      `jargon used but never explained:\n  ${unexplained.join('\n  ')}`);
+  });
+
+  it('leads with the plain name for gutshot, which misreads as "gunshot"', () => {
+    // A reader twice read "gutshot" as "gunshot". The word stays — it is the
+    // real term — but the meaning no longer depends on parsing it.
+    const text = JSON.stringify(WALKTHROUGHS);
+    assert(!/gunshot/i.test(text), 'there must be no "gunshot" typo anywhere');
+    assert(/inside straight draw/i.test(text),
+      'the plainer name should appear alongside it');
+  });
+});
+
 describe('glossary: the pot odds lesson separates need from have', () => {
   it('states that the two numbers never convert into each other', () => {
     const text = JSON.stringify(WALKTHROUGHS['pot-odds']);
