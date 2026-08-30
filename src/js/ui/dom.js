@@ -85,9 +85,12 @@ export function richText(text) {
   const frag = document.createDocumentFragment();
   for (const part of String(text).split(/(\[\[[^\]]+\]\]|\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)) {
     if (!part) continue;
+    // Bold and italic recurse, so a marked term nested inside emphasis —
+    // **[[combo|combinations]]** — still renders as a term rather than as
+    // literal brackets. Without this the outer marker swallows the inner one.
     if (part.startsWith('[[') && part.endsWith(']]')) frag.appendChild(termChip(part.slice(2, -2)));
-    else if (part.startsWith('**') && part.endsWith('**')) frag.appendChild(el('strong', part.slice(2, -2)));
-    else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) frag.appendChild(el('em', part.slice(1, -1)));
+    else if (part.startsWith('**') && part.endsWith('**')) frag.appendChild(el('strong', richText(part.slice(2, -2))));
+    else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) frag.appendChild(el('em', richText(part.slice(1, -1))));
     else if (part.startsWith('`') && part.endsWith('`')) frag.appendChild(el('code.inline-code', part.slice(1, -1)));
     else frag.appendChild(document.createTextNode(part));
   }

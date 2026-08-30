@@ -3,6 +3,9 @@ import { WALKTHROUGHS } from '../src/js/data/walkthroughs.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
 import { requiredEquity, minimumDefenceFrequency, breakEvenBluffFrequency, spr } from '../src/js/core/odds.js';
 import { exactOutsEquity } from '../src/js/core/equity.js';
+import { CHARTS, rangePercent, rangeCombos, parseRange } from '../src/js/data/ranges.js';
+import { comboCount, ALL_HAND_KEYS } from '../src/js/core/cards.js';
+import { lookupTerm } from '../src/js/data/glossary.js';
 
 const entries = Object.entries(WALKTHROUGHS);
 
@@ -114,6 +117,17 @@ describe('walkthroughs: step structure', () => {
       const text = JSON.stringify(w);
       for (const bad of ['undefined', 'NaN', '[object Object]', 'TODO', 'XXX']) {
         assert(!text.includes(bad), `${id}: contains "${bad}"`);
+      }
+    }
+  });
+
+  it('nests glossary terms inside emphasis without breaking either', () => {
+    // **[[term]]** used to render as literal brackets, because the bold
+    // pattern matched first and swallowed the term marker whole.
+    for (const [id, w] of entries) {
+      for (const match of JSON.stringify(w).match(/\*\*\[\[[^\]]+\]\]\*\*/g) || []) {
+        const inner = match.slice(4, -4).split('|')[0];
+        assert(lookupTerm(inner), `${id}: nested term [[${inner}]] must resolve`);
       }
     }
   });
@@ -235,6 +249,43 @@ describe('walkthroughs: the numbers taught match the engine', () => {
     assert(need(1000) < 0.5, 'even a huge overbet stays under 50%');
     equal(Math.round(need(1000) * 100), 48, 'a 1000 overbet into 100 asks for 48%, as the lesson says');
     assert(need(1e9) < 0.5 && need(1e9) > 0.499, 'the limit is 50%, approached but not reached');
+  });
+
+  it('teaches opening percentages that match the actual charts', () => {
+    // The lesson prints a table of opening ranges. If the charts are ever
+    // retuned, the lesson must not keep quoting the old numbers.
+    const taught = { UTG: 18, HJ: 23, CO: 30, BTN: 47, SB: 40 };
+    for (const [pos, pct] of Object.entries(taught)) {
+      const actual = rangePercent(CHARTS.rfi[pos]) * 100;
+      close(actual, pct, 1.2, `${pos} is taught as ~${pct}% but the chart is ${actual.toFixed(1)}%`);
+    }
+  });
+
+  it('teaches the combo counts the card model actually produces', () => {
+    // The shorthand table claims specific combination counts; these are the
+    // numbers the engine derives, so the two cannot drift apart.
+    equal(comboCount('AA'), 6, 'a pair is 6 combos');
+    equal(comboCount('AKs'), 4, 'suited is 4');
+    equal(comboCount('AKo'), 12, 'offsuit is 12');
+    equal(rangeCombos(parseRange('22+')), 78, 'every pair is 78 combos');
+    equal(rangeCombos(parseRange('A2s+')), 48, 'every suited ace is 48 combos');
+
+    // And the total the lesson quotes as the denominator.
+    const total = ALL_HAND_KEYS.reduce((sum, k) => sum + comboCount(k), 0);
+    equal(total, 1326, 'there are 1,326 two-card hands');
+
+    // "Opening 18% means about 238 of those" — check that arithmetic.
+    equal(rangeCombos(CHARTS.rfi.UTG), 238, 'the UTG range really is 238 combos');
+  });
+
+  it('teaches the small-blind exception correctly, against the real charts', () => {
+    // The lesson's whole second step rests on this being true.
+    const btn = rangePercent(CHARTS.rfi.BTN);
+    const sb = rangePercent(CHARTS.rfi.SB);
+    assert(sb < btn,
+      `the lesson explains why SB opens tighter than BTN, so it must: SB ${(sb * 100).toFixed(1)}% vs BTN ${(btn * 100).toFixed(1)}%`);
+    assert(sb > rangePercent(CHARTS.rfi.CO),
+      'and the lesson places SB between the cutoff and the button');
   });
 
   it('teaches MDF figures that match the formula', () => {

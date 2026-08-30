@@ -50,6 +50,36 @@ export const TERMS = {
     short: 'Every chip already bet, including the bet you are facing.',
     full: 'All the chips wagered so far in the hand, sitting in the centre of the table. When it is your turn, it includes the bet you are currently facing — that money stopped being your opponent’s the moment they pushed it forward.',
   },
+  'open': {
+    term: 'Open',
+    short: 'To be the first player to raise.',
+    full: 'Putting in the first raise when nobody before you has entered the pot. Your "opening range" is the set of hands you would do that with from a given seat — which gets wider the closer you sit to the button.',
+  },
+  '3-bet': {
+    term: '3-bet',
+    short: 'The re-raise: raising someone who already raised.',
+    full: 'The big blind counts as the first bet, an open raise is the second, so re-raising is the third — hence 3-bet. A 3-betting range needs bluffs as well as strong hands, or observant opponents simply fold every time you do it.',
+  },
+  suited: {
+    term: 'Suited',
+    short: 'Both your cards are the same suit. Written "s".',
+    full: 'Two cards of one suit, giving you a shot at a flush. Written with an s, so AKs is ace-king of the same suit. It is worth only two or three points of extra equity, but it is free, and it turns hands that would otherwise be folds into playable ones.',
+  },
+  offsuit: {
+    term: 'Offsuit',
+    short: 'Your two cards are different suits. Written "o".',
+    full: 'Two cards of different suits, so no flush is possible from them alone. Written with an o, so AKo is ace-king of mixed suits. There are three times as many offsuit combinations of a given pair of ranks as suited ones.',
+  },
+  combo: {
+    term: 'Combo',
+    short: 'One specific two-card holding, of the 1,326 possible.',
+    full: 'A single exact hand, like the ace of spades with the king of hearts. Any pair of ranks has 6 combos if paired, 4 if suited, and 12 if offsuit. Range percentages count combos, not grid squares, which is why an offsuit square is worth three times a suited one.',
+  },
+  limp: {
+    term: 'Limp',
+    short: 'Just calling the big blind instead of raising.',
+    full: 'Entering the pot for the minimum rather than raising. It surrenders the initiative, invites everyone in cheaply, and tells observant opponents you do not hold a premium. Raise or fold instead.',
+  },
   position: {
     term: 'Position',
     short: 'Acting after your opponents, on every street.',
