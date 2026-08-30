@@ -3,6 +3,7 @@
 import { el, fmt } from './dom.js';
 import { MODULE_META, recommendedModule } from '../data/curriculum.js';
 import { dueConcepts, nextReviewLabel, hasStudied } from '../state/spacing.js';
+import { masteryTier, nextTierGoal, tierByKey } from '../state/mastery.js';
 import { RANKS, nextRank } from '../state/profile.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { stakeFor } from '../state/stats.js';
@@ -168,6 +169,9 @@ function moduleTile(meta, profile, go) {
   const locked = meta.unlockLevel > profile.level;
   const stats = profile.drillStats(meta.id);
   const acc = profile.accuracy(meta.id);
+  const tier = locked ? 'untouched' : masteryTier(profile, meta.id);
+  const tierInfo = tierByKey(tier);
+  const goal = locked ? null : nextTierGoal(profile, meta.id);
 
   return el(`button.module-tile${locked ? '.locked' : ''}`, {
     disabled: locked,
@@ -177,7 +181,9 @@ function moduleTile(meta, profile, go) {
       el('span.icon', locked ? '🔒' : meta.icon),
       locked
         ? el('span.badge', `Level ${meta.unlockLevel}`)
-        : acc !== null && acc >= 0.9 ? el('span.badge.green', 'Mastered') : null,
+        : tier !== 'untouched'
+          ? el(`span.badge${tierInfo.tone ? `.${tierInfo.tone}` : ''}`, `${tierInfo.icon} ${tierInfo.name}`)
+          : null,
     ),
     el('div.name', meta.name),
     el('div.tagline', meta.tagline),
@@ -186,8 +192,13 @@ function moduleTile(meta, profile, go) {
       : stats.attempts
         ? `${stats.correct}/${stats.attempts} correct${acc !== null ? ` · ${fmt.pct(acc)}` : ''}`
         : 'Not started'),
+    !locked && goal
+      ? el('div.mastery', { style: { color: 'var(--text-faint)' } },
+          `${goal.name} at ${goal.requirement}`)
+      : null,
     !locked && stats.attempts
-      ? el('div.bar', { style: { height: '5px' } }, el('span', { style: { width: `${Math.round((acc ?? 0) * 100)}%` } }))
+      ? el('div.bar', { style: { height: '5px' } },
+          el('span', { style: { width: `${Math.round((goal ? goal.progress : 1) * 100)}%` } }))
       : null,
   );
 }

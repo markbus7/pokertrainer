@@ -5,6 +5,8 @@ import { scenarioView } from './scenarioView.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
 import { generateQuestion, generateGauntlet, difficultyForLevel } from '../trainers/index.js';
 import { checkAchievements } from '../state/achievements.js';
+import { masteryTier, nextTierGoal, promotion, tierByKey } from '../state/mastery.js';
+import { review } from '../state/spacing.js';
 
 /** The lesson page for a module, with the drill entry point. */
 export function renderLearn(ctx, params) {
@@ -69,6 +71,15 @@ export function renderDrill(ctx, params) {
   const difficulty = difficultyForLevel(profile.level);
   const queue = gauntlet ? generateGauntlet(rng, profile.level, 10) : [];
 
+  // A session used to run forever, so there was no moment of having finished
+  // and no target to aim at. It is now a fixed length with a stated pass mark,
+  // and endless practice is an explicit choice afterwards rather than the
+  // only mode available.
+  const endless = params.endless === '1';
+  const SESSION_LENGTH = 10;
+  const PASS_MARK = 8;
+  const tierBefore = gauntlet ? null : masteryTier(profile, meta.id);
+
   const state = {
     index: 0,
     correct: 0,
@@ -79,12 +90,17 @@ export function renderDrill(ctx, params) {
     locked: false,
   };
 
+  const sessionLength = gauntlet ? queue.length : SESSION_LENGTH;
+  const bounded = gauntlet || !endless;
+  const sessionOver = () => bounded && state.answered >= sessionLength;
+
   const header = el('div.panel');
   const body = el('div.panel');
   const footer = el('div.row');
   const root = el('div.screen', header, body, footer);
 
   const nextQuestion = () => {
+    if (sessionOver()) return finish();
     if (gauntlet && state.index >= queue.length) return finish();
     state.question = gauntlet ? queue[state.index] : generateQuestion(meta.id, rng, difficulty);
     state.locked = false;
@@ -95,24 +111,74 @@ export function renderDrill(ctx, params) {
 
   const finish = () => {
     const pct = state.answered ? state.correct / state.answered : 0;
+    const passed = state.correct >= (gauntlet ? 8 : PASS_MARK);
     if (gauntlet) {
       checkAchievements(profile, { type: 'gauntlet', correct: state.correct, total: state.answered })
         .forEach((a) => toast({ icon: a.icon, title: a.name, desc: a.description }));
     }
+
+    const tierAfter = gauntlet ? null : masteryTier(profile, meta.id);
+    const promoted = tierBefore ? promotion(tierBefore, tierAfter) : null;
+    if (promoted) {
+      toast({ icon: '🎓', title: `${meta.name}: ${promoted.name}`, desc: promoted.blurb, duration: 7000 });
+    }
+    const goal = gauntlet ? null : nextTierGoal(profile, meta.id);
+
     mount(header,
-      el('h1', gauntlet ? 'Gauntlet complete' : 'Session complete'),
-      el('div.muted', `${state.correct} of ${state.answered} correct — ${fmt.pct(pct)}`),
+      el('div.row',
+        el('span', { style: { fontSize: '2rem' } }, passed ? '✅' : '📘'),
+        el('div',
+          el('h1', { style: { margin: 0 } }, gauntlet ? 'Gauntlet complete' : passed ? 'Session passed' : 'Session complete'),
+          el('div.muted', `${state.correct} of ${state.answered} correct — ${fmt.pct(pct)}`
+            + (bounded ? ` · pass mark was ${gauntlet ? 8 : PASS_MARK}` : '')),
+        ),
+      ),
     );
+
     mount(body,
       el('div.grid.cols-3',
         el('div.stat', el('div.label', 'Score'), el('div.value', `${state.correct}/${state.answered}`)),
         el('div.stat', el('div.label', 'Accuracy'), el(`div.value.${pct >= 0.8 ? 'good' : pct < 0.5 ? 'bad' : ''}`, fmt.pct(pct))),
         el('div.stat', el('div.label', 'XP earned'), el('div.value', `+${state.xpEarned}`)),
       ),
+
+      promoted
+        ? el('div.panel', { style: { marginTop: '16px', borderColor: 'var(--green)', background: 'rgba(62,207,142,0.08)' } },
+            el('div.row',
+              el('span', { style: { fontSize: '1.8rem' } }, promoted.icon),
+              el('div',
+                el('h3', { style: { margin: 0 } }, `${meta.name} is now ${promoted.name}`),
+                el('div.faint', promoted.blurb),
+              ),
+            ),
+          )
+        : null,
+
+      goal
+        ? el('div.panel', { style: { marginTop: '16px', background: 'var(--bg-raised)' } },
+            el('div.spread',
+              el('div',
+                el('div', { style: { fontWeight: '650' } }, `Next: ${goal.name}`),
+                el('div.faint', `Needs ${goal.requirement}. Still to go: ${goal.missing.join(', ')}.`),
+              ),
+            ),
+            el('div.bar', { style: { marginTop: '10px' } },
+              el('span', { style: { width: `${Math.round(goal.progress * 100)}%` } })),
+          )
+        : !gauntlet
+          ? el('div.notice', { style: { marginTop: '16px' } },
+              `You have mastered ${meta.name}. It will come back for spaced review so it stays that way.`)
+          : null,
+
       el('p.muted', { style: { marginTop: '16px' } }, verdictText(pct, gauntlet)),
     );
+
     mount(footer,
-      el('button.btn.primary', { onclick: () => go(gauntlet ? 'gauntlet' : 'drill', params) }, 'Go again'),
+      el('button.btn.primary', { onclick: () => go(gauntlet ? 'gauntlet' : 'drill', { module: params.module }) },
+        'Another session'),
+      !gauntlet
+        ? el('button.btn.ghost', { onclick: () => go('drill', { module: params.module, endless: '1' }) }, 'Endless practice')
+        : null,
       el('button.btn.ghost', { onclick: () => go('home') }, 'Back to dashboard'),
     );
     return null;
@@ -141,6 +207,7 @@ export function renderDrill(ctx, params) {
     }
 
     profile.recordDrill(q.module, wasCorrect);
+    review(profile, q.module, wasCorrect);
     checkAchievements(profile).forEach((a) => toast({ icon: a.icon, title: a.name, desc: a.description }));
     draw(key);
   };
@@ -153,7 +220,11 @@ export function renderDrill(ctx, params) {
           el('span', { style: { fontSize: '1.6rem' } }, q.icon),
           el('div',
             el('div', { style: { fontWeight: '650' } }, gauntlet ? 'The Gauntlet' : q.moduleName),
-            el('div.faint', gauntlet ? `Question ${state.index} of ${queue.length} · ${q.moduleName}` : `Difficulty ${q.difficulty}`),
+            el('div.faint', gauntlet
+              ? `Question ${state.index} of ${queue.length} · ${q.moduleName}`
+              : bounded
+                ? `Question ${Math.min(state.index, sessionLength)} of ${sessionLength} · pass mark ${PASS_MARK}`
+                : `Endless practice · question ${state.index}`),
           ),
         ),
         el('div.row',
@@ -161,8 +232,9 @@ export function renderDrill(ctx, params) {
           el('span.badge', `${state.correct}/${state.answered}`),
         ),
       ),
-      gauntlet
-        ? el('div.bar', { style: { marginTop: '12px' } }, el('span', { style: { width: `${(state.index / queue.length) * 100}%` } }))
+      bounded
+        ? el('div.bar', { style: { marginTop: '12px' } },
+            el('span', { style: { width: `${(Math.min(state.answered, sessionLength) / sessionLength) * 100}%` } }))
         : null,
     );
 
@@ -191,9 +263,9 @@ export function renderDrill(ctx, params) {
     mount(footer,
       chosen === null
         ? el('span.faint', 'Press 1-4 to answer')
-        : el('button.btn.primary', { onclick: () => (gauntlet && state.index >= queue.length ? finish() : nextQuestion()) },
-            gauntlet && state.index >= queue.length ? 'See results' : 'Next question →'),
-      chosen !== null && !gauntlet ? el('button.btn.ghost', { onclick: finish }, 'End session') : null,
+        : el('button.btn.primary', { onclick: () => (sessionOver() ? finish() : nextQuestion()) },
+            sessionOver() ? 'See results →' : 'Next question →'),
+      chosen !== null && !bounded ? el('button.btn.ghost', { onclick: finish }, 'End session') : null,
       !gauntlet && chosen === null ? el('button.btn.ghost', { onclick: () => go('learn', { module: meta.id }) }, 'Review the lesson') : null,
     );
   };
@@ -204,7 +276,7 @@ export function renderDrill(ctx, params) {
       answer(state.question.options[n - 1].key);
     } else if (state.locked && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
-      if (gauntlet && state.index >= queue.length) finish(); else nextQuestion();
+      if (sessionOver()) finish(); else nextQuestion();
     }
   });
 
