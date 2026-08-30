@@ -62,19 +62,20 @@ export const WALKTHROUGHS = {
         body: [
           'Only two things go into this. Get these straight and the rest is arithmetic.',
           '**What you risk:** the amount you have to call. That is all. If you fold instead, you lose nothing extra — money you already put in earlier in the hand is gone either way, so it plays no part in this decision.',
-          '**What you win:** everything sitting in the middle. Their bet is part of that. The moment they pushed those chips forward, the chips stopped being theirs — if you win the pot, you collect them.',
+          '**What you win:** everything already in the pot. Their bet is part of that. The moment they pushed those chips forward, the chips stopped being theirs — if you win the pot, you collect them.',
+          'A note on wording, because you will meet it elsewhere: players often say chips are \u201cin the middle\u201d, meaning simply that they are in the pot — the chips get pushed to the centre of the table. This trainer says \u201cin the pot\u201d throughout, to keep it unambiguous.',
           'So: **you risk your call, to win the pot.**',
         ],
         visual: {
           type: 'stack',
           segments: [
-            { label: 'In the middle (you win this)', value: 150, tone: 'gold' },
+            { label: 'Already in the pot (you win this)', value: 150, tone: 'gold' },
             { label: 'Your call (you risk this)', value: 50, tone: 'blue' },
           ],
           caption: 'Risking 50 to win 150.',
         },
         check: {
-          question: 'The pot was 100. Your opponent bets 50. It is now your turn. How much is in the middle right now?',
+          question: 'The pot was 100. Your opponent bets 50. It is now your turn. How big is the pot right now?',
           options: [
             {
               key: 'a',
@@ -84,7 +85,7 @@ export const WALKTHROUGHS = {
             {
               key: 'b',
               label: '150',
-              why: 'Right — the original 100 plus their 50. This is what "the pot" means throughout this trainer: everything in the middle when it is your turn, including the bet you are facing.',
+              why: 'Right — the original 100 plus their 50. This is what "the pot" means throughout this trainer: every chip already bet when it is your turn, including the bet you are facing.',
             },
             {
               key: 'c',
@@ -94,7 +95,7 @@ export const WALKTHROUGHS = {
             {
               key: 'd',
               label: '50',
-              why: 'That is only their bet. The 100 that was already there is still in the middle and you win it too.',
+              why: 'That is only their bet. The 100 that was already there is still in the pot, and you win that too.',
             },
           ],
           answer: 'b',
@@ -104,7 +105,7 @@ export const WALKTHROUGHS = {
       {
         title: 'Working out the break-even point',
         body: [
-          'Keep the spot from the last step: there was **100** in the pot, your opponent bet **50**, so there is **150** in the middle — and it costs you **50** to try to win it.',
+          'Keep the spot from the last step: the pot was **100**, your opponent bet **50**, so the pot is now **150** — and it costs you **50** to try to win it.',
           'Imagine playing this identical spot 100 times. Say you win it W times out of the 100.',
           'Each time you win, you gain **150**. Each time you lose, you drop the **50** you called.',
           'Break-even is where those cancel out exactly:',
@@ -141,7 +142,7 @@ export const WALKTHROUGHS = {
         title: 'The shortcut: your share of the final pot',
         body: [
           'That algebra works, but nobody is solving equations at the table. Here is the fast way to see the same thing.',
-          'Same spot: 100 was in the pot, they bet 50, so 150 sits in the middle and your call is 50. Once you call, the **final pot** is 150 + 50 = **200**.',
+          'Same spot: the pot was 100, they bet 50, so the pot is now 150, and your call is 50. Once you call, the **final pot** is 150 + 50 = **200**.',
           'Of that 200, exactly **50 is your money**. And 50 out of 200 is **25%**.',
           'That is the same 25% we got from the algebra — and it is not a coincidence or an approximation. It is the identical calculation, seen from a different angle:',
           '**The fraction of the final pot made up of your own money is exactly how often you need to win.**',
@@ -166,12 +167,12 @@ export const WALKTHROUGHS = {
             {
               key: 'a',
               label: '20%',
-              why: 'Right. Their bet makes it 80 in the middle, you call 20, so the final pot is 100 — and your 20 is a fifth of it.',
+              why: 'Right. Their bet takes the pot to 80, you call 20, so the final pot is 100 — and your 20 is a fifth of it.',
             },
             {
               key: 'b',
               label: '25%',
-              why: 'This compares your 20 against the 80 in the middle. But the final pot also contains your own call: 60 + 20 + 20 = 100, so your share is 20 ÷ 100 = 20%.',
+              why: 'This compares your 20 against the 80 the pot had reached. But the final pot also contains your own call: 60 + 20 + 20 = 100, so your share is 20 ÷ 100 = 20%.',
             },
             {
               key: 'c',
@@ -194,7 +195,7 @@ export const WALKTHROUGHS = {
           'In practice you will face the same handful of bet sizes over and over. Learn these and you will almost never need to calculate at the table.',
           'Each row is: they bet this fraction of the pot, so you need this much equity to call.',
           'Look at the direction of that list. **The bigger the bet, the more equity you need.** This is why an overbet is not automatically a stronger play — it demands more, both from you when you call and from them when they bluff.',
-          'Take the first row as the worked example, because it is the one that catches people out. There is 100 in the pot and they bet 25. That puts **125** in the middle, you call **25**, so the final pot is **150** — and your share is 25 ÷ 150 = **17%**.',
+          'Take the first row as the worked example, because it is the one that catches people out. The pot is 100 and they bet 25. That takes the pot to **125**, you call **25**, so the final pot is **150** — and your share is 25 ÷ 150 = **17%**.',
         ],
         visual: {
           type: 'table',
@@ -243,7 +244,7 @@ export const WALKTHROUGHS = {
           'Then the decision is simply:',
           '**Have ≥ Need → call.   Have < Need → fold.**',
           'A worked example. You hold a flush draw on the flop: nine cards complete it, which is roughly **36%** by the river. There is 100 in the pot and your opponent bets 50.',
-          'You need: 150 is now in the middle and your call is 50, so the final pot is 200 and your share is 50 ÷ 200 = **25%**.',
+          'You need: the pot is now 150 and your call is 50, so the final pot is 200 and your share is 50 ÷ 200 = **25%**.',
           'You have: **36%**.',
           '36 is comfortably more than 25, so this is a clear call — and it stays a clear call even on the times the draw misses and you lose the pot. The price was right; that is what you control.',
           'Say it out loud every time, in this order: *"I call 50 to win 150, so I need 25%. I have about 36%. Call."* Most losing calls in small-stakes poker are ones where nobody ever ran that sentence.',
@@ -280,7 +281,7 @@ export const WALKTHROUGHS = {
     ],
     recap: [
       '**Equity** is how often your hand wins — a fact about your cards. **Required equity** is the threshold it has to beat — a fact about the money.',
-      '**The pot** = everything in the middle on your turn, including the bet you are facing.',
+      '**The pot** = every chip already bet when it is your turn, including the bet you are facing.',
       '**Required equity** = your call ÷ (the pot + your call) — that is, your share of the final pot.',
       'Half pot → 25%. Full pot → 33%. Bigger bets always demand more.',
       'Compare what you **need** against what you **have**, and call when have ≥ need.',
