@@ -11,6 +11,7 @@ import { calibrationReport, nextReviewLabel, strength, hasStudied } from '../sta
 import { handGrid } from '../core/cards.js';
 import { CHARTS, POSITION_INFO, rangePercent, RFI, THREE_BET } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
+import { allTerms } from '../data/glossary.js';
 
 export function renderStats(ctx) {
   const { profile, go } = ctx;
@@ -600,4 +601,28 @@ export function renderCharts(ctx, params = {}) {
 
 function legend(colour, label) {
   return el('span', el('span.swatch', { style: { background: colour } }), label);
+}
+
+
+/* ------------------------------------------------------------------ *
+ * Glossary
+ * ------------------------------------------------------------------ */
+
+/** Every term in one place, for when a word rather than an idea is the blocker. */
+export function renderGlossary() {
+  const terms = allTerms();
+  return el('div.screen',
+    el('div.panel',
+      el('h1', '📖 Glossary'),
+      el('p.muted', `Every piece of jargon the lessons use, in plain language. Terms appear underlined inside a lesson — tap one there and it explains itself without losing your place.`),
+      el('span.badge', `${terms.length} terms`),
+    ),
+    el('div.panel',
+      terms.map((t) => el('div.glossary-entry',
+        el('div.glossary-term', t.term),
+        el('div.glossary-short', t.short),
+        el('div.glossary-full', t.full),
+      )),
+    ),
+  );
 }
