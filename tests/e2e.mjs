@@ -235,6 +235,31 @@ await step('the rank chip opens the ladder, and locked ranks stay locked', async
   if (!seen.ladder) throw new Error('the ladder did not render');
   if (seen.locked < 2) throw new Error(`expected several locked ranks, saw ${seen.locked}`);
   if (!seen.next) throw new Error('the next rank was not marked');
+
+  // A rank already reached must open and show what it took — the thing the
+  // first version of this screen had no way to do.
+  const earned = await page.$$('button.ladder-row');
+  if (!earned.length) throw new Error('no rank rows are pressable');
+  const opened = await page.evaluate(() => {
+    const row = [...document.querySelectorAll('button.ladder-row')]
+      .find((r) => /Earned/i.test(r.textContent));
+    if (!row) return 'no earned rank to press';
+    const detail = [...row.children].find((c) => c.hasAttribute('hidden') || c.hidden);
+    if (!detail) return 'an earned rank has no collapsed detail to open';
+    const before = detail.hidden;
+    row.click();
+    const after = detail.hidden;
+    row.click();
+    if (before === after) return 'pressing an earned rank did not open it';
+    if (detail.hidden !== before) return 'pressing it again did not close it';
+    return null;
+  });
+  if (opened) throw new Error(opened);
+
+  // Locked ranks must stay shut.
+  const lockedPressable = await page.evaluate(() => [...document.querySelectorAll('.ladder-row')]
+    .filter((r) => /Locked/i.test(r.textContent) && r.tagName === 'BUTTON').length);
+  if (lockedPressable) throw new Error(`${lockedPressable} locked ranks are pressable`);
 });
 
 await step('layout holds up on phone and tablet viewports', async () => {

@@ -74,34 +74,31 @@ describe('progression: ranks', () => {
     assert(meetsRank(p, RANKS[3]), 'level 4 requirements are satisfied');
   });
 
-  it('never takes back a level already reached', () => {
+  it('gives up a rank when the skills behind it are gone', () => {
     const p = promoteTo(fresh(), 3);
     equal(p.level, 3);
-    // Simulate the rules tightening under an existing player: their drill
-    // history is wiped but the level they had earned stays.
     p.data.drills = {};
     p.data.walkthroughs = [];
-    equal(p.level, 3, 'a level already granted is not clawed back');
+    assert(p.level < 3, 'a rank measures what you can do now, not what you once could');
   });
 
-  it('grandfathers a save written before requirements existed', () => {
-    // The exact shape of an older save: XP, some drilling, no levelFloor.
-    // Under the old rule 1,450 XP was level 3; that must survive the upgrade,
-    // because the modules unlocked at level 3 were already in use.
-    const memory = new Map();
-    const storage = {
-      getItem: (k) => (memory.has(k) ? memory.get(k) : null),
-      setItem: (k, v) => memory.set(k, String(v)),
-      removeItem: (k) => memory.delete(k),
-    };
-    const legacy = new Profile({ xp: 1450, drills: {}, walkthroughs: [] }, storage);
-    equal(legacy.level, rankForXp(1450).level, 'keeps the level the old rule gave');
-    assert(legacy.level >= 3, 'not demoted by the new requirements');
+  it('recomputes an older save honestly rather than trusting its XP', () => {
+    // A save written before requirements existed carries plenty of XP and no
+    // record of any skill. Under the old rule that was level 3; it is not.
+    const legacy = new Profile({ xp: 1450, drills: {}, walkthroughs: [] }, null);
+    equal(rankForXp(1450).level, 3, 'the old rule called this level 3');
+    equal(legacy.level, 1, 'the requirements do not agree');
   });
 
-  it('does not hand a brand-new player a level they never earned', () => {
-    const p = fresh();
-    equal(p.level, 1, 'a fresh save starts at the bottom');
+  it('remembers when a rank was first reached', () => {
+    const p = promoteTo(fresh(), 3);
+    const at = p.rankReachedAt(3);
+    assert(at instanceof Date, 'a date is recorded');
+    equal(p.rankReachedAt(10), null, 'nothing recorded for a rank never reached');
+    // The record survives losing the rank: it says you were there once.
+    p.data.drills = {};
+    p.data.walkthroughs = [];
+    assert(p.rankReachedAt(3) instanceof Date, 'the history is not rewritten');
   });
 
   it('reports exactly what is missing for the next rank', () => {
@@ -155,6 +152,20 @@ describe('progression: persistence', () => {
     const p = new Profile({}, storage);
     p.addXp(100);
     equal(p.xp, 100, 'the session still works without persistence');
+  });
+});
+
+describe('the Ranks screen does not describe behaviour the code lost', () => {
+  it('never promises that a rank is permanent', async () => {
+    // This exact class of rot has bitten twice: profile.js claimed to be
+    // "skill-gated" when it was not, and this screen went on promising a
+    // rank could not be taken away after that guarantee was removed.
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../src/js/ui/screenLevels.js', import.meta.url), 'utf8');
+    assert(
+      !/never taken away|cannot be lost|never lose (?:a |your )?rank/i.test(src),
+      'the screen still promises ranks are permanent, which the code no longer does',
+    );
   });
 });
 

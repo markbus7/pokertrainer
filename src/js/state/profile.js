@@ -97,18 +97,20 @@ export function requirementRows(profile, rank) {
 export const meetsRank = (profile, rank) => requirementRows(profile, rank).every((r) => r.met);
 
 /**
- * The rank actually earned. Never drops below a level already reached: the
- * requirements were introduced after people had already been playing, and
- * taking back a level somebody earned under the old rules — re-locking the
- * modules that came with it — would be punishing them for a change they had
- * no part in. They gate what comes next instead.
+ * The rank you currently meet the requirements for — recomputed every time,
+ * never stored. An earlier version held a floor so that adding requirements
+ * could not demote anyone, but a rank that survives losing the thing it
+ * measured is a decoration rather than a rank. It can go down, and the Ranks
+ * screen says exactly which requirement slipped.
  */
 export function rankForProfile(profile) {
   let earned = RANKS[0];
   for (const rank of RANKS) if (meetsRank(profile, rank)) earned = rank;
-  const floor = profile.data.levelFloor || 1;
-  return earned.level >= floor ? earned : RANKS[floor - 1];
+  return earned;
 }
+
+/** What the old XP-only rule would have said — kept only to explain a drop. */
+export const legacyRankForProfile = (profile) => rankForXp(profile.data.xp || 0);
 
 export function nextRankFor(profile) {
   const current = rankForProfile(profile);
@@ -133,7 +135,7 @@ const emptyProfile = () => ({
   drills: {},          // module -> { attempts, correct, streak, bestStreak }
   walkthroughs: [],    // module ids whose guided lesson has been completed
   achievements: [],
-  levelFloor: 1,
+  rankHistory: {},   // level -> first time it was reached
   bankroll: 200,
   stakeKey: 'nl2',
   handsPlayed: 0,
@@ -168,13 +170,6 @@ export class Profile {
     this.data.settings = { ...emptyProfile().settings, ...(data.settings || {}) };
     this.listeners = new Set();
 
-    // A save written before ranks had requirements has no floor recorded, and
-    // its level was purely a function of XP. Seed the floor from that old rule
-    // so nobody is demoted — and, worse, has modules they were using re-locked
-    // — by a change to the rules made after they had already earned the rank.
-    if (data && data.levelFloor === undefined && (data.xp || 0) > 0) {
-      this.data.levelFloor = rankForXp(this.data.xp).level;
-    }
   }
 
   static load(storage = createStorage()) {
@@ -220,15 +215,25 @@ export class Profile {
     return Math.min(...rows.map((r) => (r.need <= 0 ? 1 : Math.min(1, r.have / r.need))));
   }
 
-  /** Records a level once reached, so it is never taken back. */
-  lockInLevel() {
-    let earned = RANKS[0];
-    for (const rank of RANKS) if (meetsRank(this, rank)) earned = rank;
-    if (earned.level > (this.data.levelFloor || 1)) {
-      this.data.levelFloor = earned.level;
+  /**
+   * Stamps the date a rank is first reached. This is a record of what
+   * happened, not a guarantee — losing the skills behind a rank still costs
+   * you the rank; the date just says you were there once.
+   */
+  noteRankReached() {
+    if (!this.data.rankHistory) this.data.rankHistory = {};
+    const level = this.rank.level;
+    if (level > 1 && !this.data.rankHistory[level]) {
+      this.data.rankHistory[level] = Date.now();
       return true;
     }
     return false;
+  }
+
+  /** When a rank was first reached, or null if it was before this was kept. */
+  rankReachedAt(level) {
+    const at = (this.data.rankHistory || {})[level];
+    return at ? new Date(at) : null;
   }
   get settings() { return this.data.settings; }
 
@@ -236,7 +241,7 @@ export class Profile {
   addXp(amount) {
     const before = this.level;
     this.data.xp = Math.max(0, this.data.xp + Math.round(amount));
-    this.lockInLevel();
+    this.noteRankReached();
     const after = this.level;
     this.save();
     return { levelsGained: after - before, rank: this.rank, xp: this.data.xp };
@@ -257,7 +262,7 @@ export class Profile {
       stats.streak = 0;
     }
     this.data.drills[module] = stats;
-    this.lockInLevel();
+    this.noteRankReached();
     this.save();
     return stats;
   }
@@ -275,7 +280,7 @@ export class Profile {
     if (!this.data.walkthroughs) this.data.walkthroughs = [];
     if (this.data.walkthroughs.includes(id)) return false;
     this.data.walkthroughs.push(id);
-    this.lockInLevel();
+    this.noteRankReached();
     this.save();
     return true;
   }
