@@ -4,14 +4,14 @@ import { el, fmt } from './dom.js';
 import { MODULE_META, recommendedModule } from '../data/curriculum.js';
 import { dueConcepts, nextReviewLabel, hasStudied } from '../state/spacing.js';
 import { masteryTier, nextTierGoal, tierByKey } from '../state/mastery.js';
-import { RANKS, nextRank } from '../state/profile.js';
+import { RANKS } from '../state/profile.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { stakeFor } from '../state/stats.js';
 
 export function renderHome(ctx) {
   const { profile, go } = ctx;
   const rank = profile.rank;
-  const next = nextRank(profile.xp);
+  const next = profile.nextRank;
   const recommended = recommendedModule(profile);
   const stake = stakeFor(profile.data.stakeKey);
 

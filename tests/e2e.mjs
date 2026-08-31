@@ -211,6 +211,32 @@ await step('no lesson renders raw markup in any of its steps', async () => {
   if (faults.length) throw new Error(faults.join('; '));
 });
 
+await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(300);
+  await page.click('.rank-chip');
+  await page.waitForTimeout(400);
+  const url = page.url();
+  if (!/#levels/.test(url)) throw new Error(`rank chip went to ${url}`);
+
+  const seen = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('.panel')].map((p) => p.textContent).join(' ');
+    return {
+      ladder: /The ladder/.test(rows),
+      locked: (rows.match(/Locked/gi) || []).length,
+      next: /Next/.test(rows),
+      // A locked rank must not spell out its requirements.
+      leaks: /Skills Mastered/.test(rows)
+        ? [...document.querySelectorAll('.panel')].filter((p) => /Locked/i.test(p.textContent)
+            && /Skills at Solid/.test(p.textContent)).length
+        : 0,
+    };
+  });
+  if (!seen.ladder) throw new Error('the ladder did not render');
+  if (seen.locked < 2) throw new Error(`expected several locked ranks, saw ${seen.locked}`);
+  if (!seen.next) throw new Error('the next rank was not marked');
+});
+
 await step('layout holds up on phone and tablet viewports', async () => {
   // iPad first, then iPhone, then desktop — the order this actually gets
   // used in. Checks the three things that break on touch and are invisible
