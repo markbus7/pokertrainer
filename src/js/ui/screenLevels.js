@@ -9,7 +9,7 @@
  */
 
 import { el, fmt, richText } from './dom.js';
-import { RANKS, requirementRows, meetsRank } from '../state/profile.js';
+import { RANKS, requirementRows, legacyRankForProfile } from '../state/profile.js';
 import { MODULE_META } from '../data/curriculum.js';
 
 export function renderLevels(ctx) {
@@ -19,6 +19,7 @@ export function renderLevels(ctx) {
 
   return el('div.screen',
     renderCurrent(profile, current, next),
+    renderDropNotice(profile, current),
     next ? renderNext(profile, next, go) : renderMaxed(),
     renderLadder(profile, current, next),
     renderHowItWorks(),
@@ -82,16 +83,19 @@ function renderNext(profile, next, go) {
   );
 }
 
-function requirementRow(r) {
+function requirementRow(r, { showSurplus = false } = {}) {
   const pct = r.need <= 0 ? 1 : Math.min(1, r.have / r.need);
   const fmtNum = (n) => (n >= 1000 ? fmt.chips(n) : String(n));
+  // On a rank already earned, the honest figure is what you actually have —
+  // clipping it back to the minimum hides the work.
+  const shown = showSurplus ? r.have : Math.min(r.have, r.need);
   return el('div', { style: { padding: '8px 0', borderBottom: '1px solid var(--border)' } },
     el('div.spread',
       el('div.row',
         el('span', { style: { color: r.met ? 'var(--green)' : 'var(--text-dim)' } }, r.met ? '✓' : '○'),
         el('span', { style: { fontWeight: r.met ? '500' : '600' } }, r.label),
       ),
-      el('span.faint.mono', `${fmtNum(Math.min(r.have, r.need))} / ${fmtNum(r.need)}`),
+      el('span.faint.mono', `${fmtNum(shown)} / ${fmtNum(r.need)}`),
     ),
     el('div.bar', { style: { marginTop: '6px', height: '6px' } },
       el('span', {
@@ -122,39 +126,110 @@ function renderLadder(profile, current, next) {
       el('h2', 'The ladder'),
       el('span.faint', `${current.level} of ${RANKS.length} reached`),
     ),
-    el('div.stack-sm', RANKS.map((rank) => {
-      const earned = rank.level <= current.level;
-      const isNext = next && rank.level === next.level;
-      return el('div', {
-        style: {
-          padding: '10px 12px',
-          borderRadius: 'var(--radius-sm)',
-          border: `1px solid ${isNext ? 'var(--gold-dim)' : 'var(--border)'}`,
-          background: isNext ? 'rgba(214,168,63,0.06)' : 'transparent',
-          opacity: earned || isNext ? '1' : '0.5',
-        },
-      },
-        el('div.spread',
-          el('div.row',
-            el('span', { style: { fontSize: '1.4rem' } }, earned || isNext ? rank.emoji : '🔒'),
-            el('div',
-              el('div', { style: { fontWeight: '600' } }, `${rank.name}`),
-              el('div.faint', { style: { fontSize: '0.78rem' } }, `Level ${rank.level}`),
-            ),
-          ),
-          el('span.badge', earned ? '✓ Earned' : isNext ? 'Next' : 'Locked'),
-        ),
-        // Only the next rank spells out its requirements. The ones beyond it
-        // stay shut until the rank before them is reached, so the ladder shows
-        // one clear target instead of a wall of numbers.
-        isNext
-          ? el('div.faint', { style: { marginTop: '6px', fontSize: '0.82rem' } }, rank.blurb)
-          : earned
-            ? null
-            : el('div.faint', { style: { marginTop: '6px', fontSize: '0.82rem' } },
-                `What this asks for is revealed once you reach ${RANKS[rank.level - 2].name}.`),
-      );
-    })),
+    el('div.faint', { style: { marginBottom: '10px', fontSize: '0.82rem' } },
+      'Tap any rank you have reached to see what it took.'),
+    el('div.stack-sm', RANKS.map((rank) => ladderRow(profile, rank, current, next))),
+  );
+}
+
+/**
+ * One rung. Anything you have reached — now or in the past — opens to show the
+ * requirements and how you stand against them, because "what did I actually do
+ * for this" is the obvious question and the ladder previously refused to
+ * answer it. Ranks you have not reached stay shut.
+ */
+function ladderRow(profile, rank, current, next) {
+  const achieved = rank.level <= current.level;
+  const isNext = next && rank.level === next.level;
+  const reachedAt = profile.rankReachedAt(rank.level);
+  const lapsed = !achieved && !isNext && reachedAt;
+  const openable = achieved || isNext || lapsed;
+
+  const badge = achieved ? '✓ Earned' : isNext ? 'Next' : lapsed ? 'Reached before' : 'Locked';
+  const rows = openable ? requirementRows(profile, rank) : [];
+
+  const detail = el('div', { hidden: !isNext, style: { marginTop: '8px' } },
+    el('div.faint', { style: { fontSize: '0.82rem', marginBottom: '6px' } }, rank.blurb),
+    rank.level === 1
+      ? el('div.faint', { style: { fontSize: '0.82rem' } }, 'Where everybody starts. Nothing to earn.')
+      : el('div', rows.map((r) => requirementRow(r, { showSurplus: achieved }))),
+    reachedAt
+      ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem' } },
+          `First reached ${reachedAt.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}.`)
+      : achieved && rank.level > 1
+        ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem' } },
+            'Reached before the game started keeping dates.')
+        : null,
+    lapsed
+      ? el('div.faint', { style: { marginTop: '6px', fontSize: '0.78rem', color: 'var(--gold)' } },
+          'You held this rank once. The rows above show what has slipped since.')
+      : null,
+  );
+
+  const head = el('div.spread', { style: { alignItems: 'center' } },
+    el('div.row',
+      el('span', { style: { fontSize: '1.4rem' } }, openable ? rank.emoji : '🔒'),
+      el('div',
+        el('div', { style: { fontWeight: '600' } }, rank.name),
+        el('div.faint', { style: { fontSize: '0.78rem' } }, `Level ${rank.level}`),
+      ),
+    ),
+    el('div.row', { style: { gap: '8px' } },
+      el('span.badge', badge),
+      openable ? el('span.faint.chevron', { style: { fontSize: '0.8rem' } }, detail.hidden ? '▾' : '▴') : null,
+    ),
+  );
+
+  const row = el(openable ? 'button.ladder-row' : 'div.ladder-row', {
+    style: {
+      display: 'block',
+      width: '100%',
+      textAlign: 'left',
+      padding: '10px 12px',
+      borderRadius: 'var(--radius-sm)',
+      border: `1px solid ${isNext ? 'var(--gold-dim)' : 'var(--border)'}`,
+      background: isNext ? 'rgba(214,168,63,0.06)' : 'transparent',
+      color: 'inherit',
+      font: 'inherit',
+      opacity: openable ? '1' : '0.5',
+      cursor: openable ? 'pointer' : 'default',
+    },
+    ...(openable
+      ? {
+          onclick: () => {
+            detail.hidden = !detail.hidden;
+            const chev = row.querySelector('.chevron');
+            if (chev) chev.textContent = detail.hidden ? '▾' : '▴';
+          },
+        }
+      : {}),
+  },
+    head,
+    openable
+      ? detail
+      : el('div.faint', { style: { marginTop: '6px', fontSize: '0.82rem' } },
+          `What this asks for is revealed once you reach ${RANKS[rank.level - 2].name}.`),
+  );
+  return row;
+}
+
+/**
+ * If the requirements put you below where XP alone would have, say so here
+ * rather than leaving a silently lower number to be discovered.
+ */
+function renderDropNotice(profile, current) {
+  const legacy = legacyRankForProfile(profile);
+  if (legacy.level <= current.level) return null;
+  // Worded as a standing fact rather than an event: this shows for anyone
+  // whose playing has outrun their drilling, not only just after ranks
+  // gained requirements.
+  return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
+    el('div.panel-title', el('h3', { style: { margin: 0 } }, '📉 Your XP is ahead of your skills')),
+    el('div.faint',
+      `On XP alone you would be Level ${legacy.level}, ${legacy.name}. Ranks also ask for lessons `
+      + `finished and skills drilled, and on those you are Level ${current.level}, ${current.name}.`),
+    el('div.faint', { style: { marginTop: '6px' } },
+      'None of the XP is lost — it all still counts. The requirements above are what closes the gap.'),
   );
 }
 
@@ -168,7 +243,7 @@ function renderHowItWorks() {
     '**XP** measures how much you have played — every drill answer, guided lesson, Lab spot and hand at the table adds to it.',
     `**Solid** and **Mastered** measure how widely. A skill is Solid at 15 questions and 75%, and Mastered at 30 questions and 90% with its guided lesson finished. There are ${total} skills in all.`,
     'Both matter, because XP on its own could be earned by repeating one drill forever — which would have unlocked the whole curriculum for somebody who had only ever practised one thing.',
-    'A rank you have already reached is never taken away, even if the requirements change afterwards.',
+    'A rank reflects what you can do now, so it can go down as well as up — if the skills behind it fade, the rank goes with them until you have them back. The date you first reached it is kept either way.',
   ];
   return el('div.panel',
     el('div.panel-title', el('h2', 'How ranks are earned')),
