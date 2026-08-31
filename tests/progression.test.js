@@ -1,10 +1,24 @@
 import { describe, it, assert, equal, close } from './harness.js';
-import { Profile, RANKS, rankForXp, rankProgress } from '../src/js/state/profile.js';
+import { Profile, RANKS, rankForXp, rankProgress, requirementRows, meetsRank } from '../src/js/state/profile.js';
 import { SessionStats, leakReport, bankrollAdvice, STAKES } from '../src/js/state/stats.js';
 import { checkAchievements, ACHIEVEMENTS } from '../src/js/state/achievements.js';
 import { generateQuestion, generateGauntlet, DRILL_MODULE_IDS, difficultyForLevel } from '../src/js/trainers/index.js';
 import { MODULE_META, unlockedModules, recommendedModule } from '../src/js/data/curriculum.js';
 import { makeRng } from '../src/js/core/rng.js';
+
+/** Earn a rank properly: the lessons, the drilling, and then the XP. */
+const promoteTo = (p, level) => {
+  const rank = RANKS[level - 1];
+  const req = rank.requires || {};
+  const ids = MODULE_META.map((m) => m.id);
+  const drill = (id, n) => { for (let i = 0; i < n; i++) p.recordDrill(id, true); };
+
+  for (let i = 0; i < (req.mastered || 0); i++) { p.markWalkthroughComplete(ids[i]); drill(ids[i], 30); }
+  for (let i = 0; i < (req.solid || 0); i++) drill(ids[i], Math.max(0, 15 - p.drillStats(ids[i]).attempts));
+  for (let i = 0; i < (req.lessons || 0); i++) p.markWalkthroughComplete(ids[i]);
+  if (p.xp < rank.xp) p.addXp(rank.xp - p.xp);
+  return p;
+};
 
 const fresh = () => {
   const memory = new Map();
@@ -36,12 +50,67 @@ describe('progression: ranks', () => {
     equal(rankProgress(999999), 1, 'maxed out');
   });
 
-  it('gains levels as XP accrues', () => {
+  it('does not promote on XP alone', () => {
+    // The whole point of the requirements: grinding one drill forever used to
+    // reach level 10 and unlock the entire curriculum, ICM included, for
+    // somebody who had only ever practised one thing.
     const p = fresh();
     equal(p.level, 1);
-    const result = p.addXp(RANKS[2].xp);
+    p.addXp(RANKS[9].xp * 2);
+    equal(p.level, 1, 'XP without breadth is not a rank');
+  });
+
+  it('cannot reach the top by repeating a single module', () => {
+    const p = fresh();
+    p.markWalkthroughComplete('pot-odds');
+    for (let i = 0; i < 4000; i++) p.recordDrill('pot-odds', true);
+    p.addXp(RANKS[9].xp * 2);
+    assert(p.level <= 2, `one module carried the player to level ${p.level}`);
+  });
+
+  it('promotes once every requirement is met', () => {
+    const p = promoteTo(fresh(), 4);
+    equal(p.level, 4);
+    assert(meetsRank(p, RANKS[3]), 'level 4 requirements are satisfied');
+  });
+
+  it('never takes back a level already reached', () => {
+    const p = promoteTo(fresh(), 3);
     equal(p.level, 3);
-    equal(result.levelsGained, 2);
+    // Simulate the rules tightening under an existing player: their drill
+    // history is wiped but the level they had earned stays.
+    p.data.drills = {};
+    p.data.walkthroughs = [];
+    equal(p.level, 3, 'a level already granted is not clawed back');
+  });
+
+  it('grandfathers a save written before requirements existed', () => {
+    // The exact shape of an older save: XP, some drilling, no levelFloor.
+    // Under the old rule 1,450 XP was level 3; that must survive the upgrade,
+    // because the modules unlocked at level 3 were already in use.
+    const memory = new Map();
+    const storage = {
+      getItem: (k) => (memory.has(k) ? memory.get(k) : null),
+      setItem: (k, v) => memory.set(k, String(v)),
+      removeItem: (k) => memory.delete(k),
+    };
+    const legacy = new Profile({ xp: 1450, drills: {}, walkthroughs: [] }, storage);
+    equal(legacy.level, rankForXp(1450).level, 'keeps the level the old rule gave');
+    assert(legacy.level >= 3, 'not demoted by the new requirements');
+  });
+
+  it('does not hand a brand-new player a level they never earned', () => {
+    const p = fresh();
+    equal(p.level, 1, 'a fresh save starts at the bottom');
+  });
+
+  it('reports exactly what is missing for the next rank', () => {
+    const p = fresh();
+    const rows = requirementRows(p, RANKS[1]);
+    assert(rows.length >= 2, 'more than XP is required');
+    assert(rows.some((r) => r.key === 'xp'), 'XP is one of the rows');
+    assert(rows.every((r) => typeof r.have === 'number' && typeof r.need === 'number'));
+    assert(rows.some((r) => !r.met), 'a fresh player has unmet requirements');
   });
 
   it('never drops below zero XP', () => {
@@ -89,6 +158,50 @@ describe('progression: persistence', () => {
   });
 });
 
+describe('rank requirements are reachable', () => {
+  it('never asks for more skills than are unlocked at the rank below', () => {
+    // The trap this guards: requiring "8 skills at Solid" for a rank whose
+    // predecessor has only 6 modules unlocked would make the ladder
+    // impossible to climb, and nothing else in the app would notice.
+    for (let i = 1; i < RANKS.length; i++) {
+      const rank = RANKS[i];
+      const available = unlockedModules(RANKS[i - 1].level).length;
+      const req = rank.requires || {};
+      for (const key of ['lessons', 'solid', 'mastered']) {
+        if (!req[key]) continue;
+        assert(
+          req[key] <= available,
+          `${rank.name} wants ${req[key]} ${key} but only ${available} modules are unlocked at ${RANKS[i - 1].name}`,
+        );
+      }
+    }
+  });
+
+  it('never eases off as the ladder climbs', () => {
+    const keys = ['lessons', 'solid', 'mastered'];
+    for (let i = 2; i < RANKS.length; i++) {
+      for (const key of keys) {
+        const prev = (RANKS[i - 1].requires || {})[key] || 0;
+        const here = (RANKS[i].requires || {})[key] || 0;
+        assert(here >= prev, `${RANKS[i].name} asks for less ${key} than ${RANKS[i - 1].name}`);
+      }
+    }
+  });
+
+  it('mastering everything is exactly what the top rank means', () => {
+    const top = RANKS[RANKS.length - 1].requires;
+    equal(top.mastered, MODULE_META.length, 'GTO Master requires every skill mastered');
+  });
+
+  it('can actually be climbed all the way, one rank at a time', () => {
+    const p = fresh();
+    for (let level = 2; level <= RANKS.length; level++) {
+      promoteTo(p, level);
+      equal(p.level, level, `stuck below level ${level}`);
+    }
+  });
+});
+
 describe('progression: drill tracking', () => {
   it('tracks streaks and resets them on a miss', () => {
     const p = fresh();
@@ -110,8 +223,7 @@ describe('progression: drill tracking', () => {
   });
 
   it('recommends the weakest unlocked module', () => {
-    const p = fresh();
-    p.addXp(RANKS[4].xp);   // unlock a few modules
+    const p = promoteTo(fresh(), 5);   // unlock a few modules
     const untouched = recommendedModule(p);
     assert(untouched, 'always recommends something');
     for (const m of unlockedModules(p.level)) {
@@ -144,7 +256,7 @@ describe('progression: achievements', () => {
     const p = fresh();
     for (let i = 0; i < 10; i++) p.recordDrill('outs', true);
     assert(checkAchievements(p).some((a) => a.id === 'streak-10'));
-    p.addXp(RANKS[4].xp);
+    promoteTo(p, 5);
     assert(checkAchievements(p).some((a) => a.id === 'level-5'));
   });
 });

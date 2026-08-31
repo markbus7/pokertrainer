@@ -134,6 +134,11 @@ main {
   border-radius: 99px;
   padding: 5px 14px 5px 8px;
   cursor: pointer;
+  /* It is a button so it is reachable by keyboard and reads as clickable,
+     but it should keep looking exactly like the chip it replaced. */
+  color: inherit;
+  font: inherit;
+  text-align: left;
 }
 .rank-chip:hover { border-color: var(--border-bright); }
 .rank-chip .emoji { font-size: 1.3rem; }

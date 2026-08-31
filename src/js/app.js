@@ -4,7 +4,7 @@
  */
 
 import { el, mount, $, toast, fmt } from './ui/dom.js';
-import { Profile, nextRank } from './state/profile.js';
+import { Profile } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
 import { VERSION, checkForUpdate } from './version.js';
 import { makeRng } from './core/rng.js';
@@ -15,6 +15,7 @@ import { renderLab, renderLabIntro } from './ui/screenLab.js';
 import { renderTable } from './ui/screenTable.js';
 import { renderGrind } from './ui/screenGrind.js';
 import { renderStats, renderCharts, renderGlossary } from './ui/screenStats.js';
+import { renderLevels } from './ui/screenLevels.js';
 
 const ROUTES = {
   home: { render: renderHome, tab: 'home', title: 'Dashboard' },
@@ -29,6 +30,7 @@ const ROUTES = {
   charts: { render: renderCharts, tab: 'charts', title: 'Charts' },
   glossary: { render: renderGlossary, tab: 'glossary', title: 'Glossary' },
   stats: { render: renderStats, tab: 'stats', title: 'Progress' },
+  levels: { render: renderLevels, tab: 'stats', title: 'Ranks' },
 };
 
 const TABS = [
@@ -98,7 +100,7 @@ function render() {
 
 function drawTopbar(activeTab) {
   const rank = profile.rank;
-  const next = nextRank(profile.xp);
+  const next = profile.nextRank;
   mount($('#topbar'),
     el('div.brand', el('span.pip', '♠'), 'Poker Trainer',
       el('button.version-chip', {
@@ -108,7 +110,10 @@ function drawTopbar(activeTab) {
     el('nav.tabs', TABS.map((t) => el(`button.tab${t.route === activeTab ? '.active' : ''}`, {
       onclick: () => go(t.route),
     }, t.label))),
-    el('div.rank-chip', { onclick: () => go('stats'), title: rank.blurb },
+    el('button.rank-chip', {
+      onclick: () => go('levels'),
+      title: `${rank.blurb} — click to see what the next rank asks for`,
+    },
       el('span.emoji', rank.emoji),
       el('div.meta',
         el('span.name', rank.name),
