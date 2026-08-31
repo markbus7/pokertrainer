@@ -288,3 +288,51 @@ describe('stats: bankroll ladder', () => {
     }
   });
 });
+
+describe('curriculum ordering: a drill never needs a later module', () => {
+  const levelOf = (id) => MODULE_META.find((m) => m.id === id).unlockLevel;
+  const OUTS_LEVEL = levelOf('outs');
+
+  it('never reveals the opponent\'s hand in a module that unlocks before outs', () => {
+    // Showing the opponent's cards is only useful if you are expected to count
+    // outs against them. Any module reachable before Outs & Equity that does so
+    // is asking for a skill the student has not been taught yet — which is
+    // exactly how the call-or-fold drill ended up inside Pot Odds.
+    const rng = makeRng(23);
+    const early = DRILL_MODULE_IDS.filter((id) => levelOf(id) < OUTS_LEVEL);
+    assert(early.length > 0, 'there are modules that unlock before outs');
+    for (const moduleId of early) {
+      for (let i = 0; i < 40; i++) {
+        const q = generateQuestion(moduleId, rng, 3);
+        assert(
+          !q.scenario || !q.scenario.revealVillain,
+          `${moduleId} (level ${levelOf(moduleId)}) revealed the opponent's hand, `
+          + `which needs outs (level ${OUTS_LEVEL}): "${q.question}"`,
+        );
+      }
+    }
+  });
+
+  it('still teaches the combined call/fold decision, in Outs & Equity', () => {
+    const rng = makeRng(5);
+    let seen = 0;
+    for (let i = 0; i < 60; i++) {
+      const q = generateQuestion('outs', rng, 3);
+      if (/Call or fold/.test(q.question)) seen++;
+    }
+    assert(seen > 0, 'the call-or-fold drill survived the move');
+  });
+
+  it('lets Pot Odds still drill the comparison, by supplying the equity', () => {
+    const rng = makeRng(31);
+    let seen = 0;
+    for (let i = 0; i < 60; i++) {
+      const q = generateQuestion('pot-odds', rng, 3);
+      if (/Call or fold/.test(q.question)) {
+        seen++;
+        assert(/win this hand/.test(q.question), `equity must be given: "${q.question}"`);
+      }
+    }
+    assert(seen > 0, 'pot odds still practises the call/fold comparison');
+  });
+});
