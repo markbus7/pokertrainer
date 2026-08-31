@@ -220,6 +220,94 @@ describe('walkthroughs: the numbers taught match the engine', () => {
     equal(Math.round(requiredEquity(90, 180) * 100), 33, 'gutshot spot should demand 33%');
   });
 
+  it('teaches the count-in-calls shortcut correctly', () => {
+    // The step claims 1 / (pot-in-calls + 2) is not an approximation but the
+    // same fraction with the chips divided out. Assert that across a wide
+    // sweep, because a shortcut that is merely close would be worse than none.
+    let worst = 0;
+    for (let pot = 5; pot <= 400; pot += 5) {
+      for (let bet = 1; bet <= pot * 3; bet++) {
+        worst = Math.max(worst, Math.abs(requiredEquity(bet, pot + bet) - 1 / (pot / bet + 2)));
+      }
+    }
+    assert(worst < 1e-12, `the shortcut drifts from the real figure by ${worst}`);
+  });
+
+  it('gets every worked example in the count-in-calls step right', () => {
+    // Each example is stated as "N fits, plus 2, so you need 1 in N+2".
+    const examples = [
+      { pot: 100, bet: 50, fits: 2, need: 25 },
+      { pot: 55, bet: 55, fits: 1, need: 33 },
+      { pot: 120, bet: 40, fits: 3, need: 20 },
+    ];
+    for (const { pot, bet, fits, need } of examples) {
+      equal(pot / bet, fits, `${bet} should fit into ${pot} ${fits} times`);
+      equal(Math.round(requiredEquity(bet, pot + bet) * 100), need,
+        `pot ${pot}, bet ${bet} should need ${need}%`);
+      close(1 / (fits + 2), requiredEquity(bet, pot + bet), 1e-12, 'the shortcut agrees');
+    }
+  });
+
+  it('gets the count-in-calls table right, including the overbet row', () => {
+    // Reads the figures the lesson actually prints rather than a copy of them:
+    // a test that restates the intended numbers cannot catch a typo in the
+    // step itself, which is the only place a reader ever looks.
+    const step = WALKTHROUGHS['pot-odds'].steps
+      .find((s) => /count in calls/i.test(s.title));
+    assert(step && step.visual && step.visual.rows, 'the count-in-calls step has a table');
+
+    const FRACTIONS = {
+      'a quarter of it': 0.25,
+      'a third of it': 1 / 3,
+      'half of it': 0.5,
+      'all of it': 1,
+      'twice the pot': 2,
+    };
+    const pot = 120;   // divides cleanly by every fraction above
+
+    for (const [size, fitsText, plusTwo, needText] of step.visual.rows) {
+      const fraction = FRACTIONS[size];
+      assert(fraction !== undefined, `unrecognised row label "${size}"`);
+      const bet = pot * fraction;
+
+      // "1 in 6 — 17%" must agree with the engine on both halves.
+      const m = needText.match(/1 in ([\d.]+)\s*—\s*(\d+)%/);
+      assert(m, `could not read the taught figure from "${needText}"`);
+      const denominator = Number(m[1]);
+      const taught = Number(m[2]);
+
+      // "once" and "half a time" carry no digits, so read them by name.
+      const WORDS = { once: 1, 'half a time': 0.5 };
+      const fits = WORDS[fitsText] ?? Number((fitsText.match(/[\d.]+/) || [])[0]);
+      assert(Number.isFinite(fits), `could not read the fits column "${fitsText}"`);
+      close(fits, pot / bet, 1e-9, `"${size}": the Fits column`);
+      close(denominator, pot / bet + 2, 1e-9, `"${size}": plus-2 denominator`);
+      close(Number(plusTwo), pot / bet + 2, 1e-9, `"${size}": the Plus 2 column`);
+      equal(Math.round(requiredEquity(bet, pot + bet) * 100), taught,
+        `"${size}" is taught as ${taught}% but the engine disagrees`);
+      close(1 / denominator, requiredEquity(bet, pot + bet), 0.005,
+        `"${size}": 1 in ${denominator} must be the real price`);
+    }
+
+    // The caption's claim: a bigger bet fits FEWER times and prices you worse.
+    const need = (f) => requiredEquity(pot * f, pot + pot * f);
+    assert(need(2) > need(1) && need(1) > need(0.5) && need(0.5) > need(0.25),
+      'bigger bets must demand more equity, as the caption says');
+  });
+
+  it("makes every wrong answer in the count-in-calls check numerically true", () => {
+    // Each distractor names the bet size it would be correct for. If that
+    // claim is wrong the explanation teaches a falsehood, which is worse than
+    // saying nothing.
+    equal(Math.round(requiredEquity(30, 120) * 100), 20, 'the check spot: pot 90, bet 30');
+    equal(Math.round(requiredEquity(50, 150) * 100), 25, '25% is indeed the half-pot answer');
+    equal(Math.round(requiredEquity(90, 180) * 100), 33, '33% is indeed the pot-sized answer');
+    equal(Math.round(requiredEquity(25, 125) * 100), 17, '17% is indeed the quarter-pot answer');
+    // And the arithmetic the correct option quotes.
+    equal(90 / 30, 3, 'thirty goes into ninety three times');
+    close(1 / (3 + 2), 0.2, 1e-12, 'three plus two is five, and one in five is 20%');
+  });
+
   it('teaches the pot-odds table correctly', () => {
     const pot = 100;
     const expected = { 0.25: 17, 0.5: 25, 0.75: 30, 1: 33, 2: 40 };

@@ -190,6 +190,60 @@ export const WALKTHROUGHS = {
       },
 
       {
+        title: 'Doing it in your head: count in calls',
+        body: [
+          'The arithmetic above is right, but it is three steps: add their bet to the pot, add your call, then divide. At a table you want one step.',
+          'Here is the trick. **Stop counting chips and start counting your own call as the unit.**',
+          'Ask one question: **how many times does their bet fit into the pot?** Call that number N.',
+          'Now count the final pot in calls. The pot is worth **N** calls. Their bet is **1** more. Your call is **1** more. So the final pot is **N + 2** calls — and you are putting in exactly one of them.',
+          'That is the whole method: **you need 1 out of N + 2.**',
+          'Work one through. The pot is 100 and they bet 50. Fifty goes into a hundred **twice**, so N = 2. Add 2 and you get 4. You are putting in one of four, so you need **25%**.',
+          'Another. The pot is 55 and they bet 55. It goes in **once**, so N = 1. Add 2 and you get 3. You need **one in three — 33%**. No addition anywhere.',
+          'And a smaller one. The pot is 120 and they bet 40. Forty goes in **three** times, so N = 3, plus 2 is 5, and you need **one in five — 20%**.',
+          'This is not a new rule, it is the same fraction with the chips divided out. You need bet ÷ (pot + two bets); divide the top and bottom by your own bet and the amounts vanish, leaving 1 ÷ (pot-in-calls + 2). Exactly the same answer, every time.',
+          'One consequence worth noticing: **the actual amounts never mattered.** A bet of 55 into 55 and a bet of 400 into 400 are the same problem, because the only thing you used was how the bet compares to the pot.',
+        ],
+        visual: {
+          type: 'table',
+          headers: ['They bet', 'Fits into the pot', 'Plus 2', 'So you need'],
+          rows: [
+            ['a quarter of it', '4 times', '6', '1 in 6 — 17%'],
+            ['a third of it', '3 times', '5', '1 in 5 — 20%'],
+            ['half of it', '2 times', '4', '1 in 4 — 25%'],
+            ['all of it', 'once', '3', '1 in 3 — 33%'],
+            ['twice the pot', 'half a time', '2.5', '1 in 2.5 — 40%'],
+          ],
+          caption: 'The bigger their bet, the fewer times it fits, and the worse your price. The last row is the one that catches people: an overbet makes the bet *bigger* but the number of times it fits *smaller*.',
+        },
+        check: {
+          question: 'The pot is 90 and your opponent bets 30. Counting in calls, what equity do you need?',
+          options: [
+            {
+              key: 'a',
+              label: '20%',
+              why: 'Right. Thirty goes into ninety three times, so N = 3. Add 2 for their bet and your call and you get 5 — you are putting in one of five, which is 20%.',
+            },
+            {
+              key: 'b',
+              label: '25%',
+              why: 'That is the answer when their bet is half the pot, where it fits twice. Here it fits three times, not two — 30 into 90 — so the price is better than half pot, not the same.',
+            },
+            {
+              key: 'c',
+              label: '33%',
+              why: 'That is the answer for a pot-sized bet, where their bet fits exactly once. They have bet a third of the pot here, which is much cheaper for you.',
+            },
+            {
+              key: 'd',
+              label: '17%',
+              why: 'Close, but that is the quarter-pot answer: a quarter fits four times, giving 6. Thirty is a third of ninety, not a quarter, so it fits three times and you get 5.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+
+      {
         title: 'The five numbers worth memorising',
         body: [
           'In practice you will face the same handful of bet sizes over and over. Learn these and you will almost never need to calculate at the table.',
