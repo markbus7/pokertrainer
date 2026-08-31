@@ -6,8 +6,8 @@
  * percentage goes through here, so the numbers a student learns are real.
  */
 
-import { makeDeck, removeCards } from './cards.js';
-import { evaluateHand } from './evaluator.js';
+import { makeDeck, removeCards, RANK_CHARS, SUIT_SYMBOLS, SUIT_NAMES, RANK_NAMES, RANK_PLURALS, rankOf } from './cards.js';
+import { evaluateHand, describeScore, shortCategoryName, categoryOf, kickersOf, CAT } from './evaluator.js';
 import { makeRng, shuffle } from './rng.js';
 
 const HOLDEM = { omaha: false, shortDeck: false };
@@ -172,6 +172,121 @@ export function countOuts(hero, villain, board) {
     if (h > v) outs.push(card);
   }
   return { outs, count: outs.length, behindNow };
+}
+
+/** "8\u2660" rather than "8s" \u2014 readable in a sentence. */
+export const cardToPretty = (card) => RANK_CHARS[card >> 2] + SUIT_SYMBOLS[card & 3];
+
+const COUNT_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+const countWord = (n) => COUNT_WORDS[n] || String(n);
+
+/**
+ * A hand named the way a player says it mid-sentence: "a pair of eights",
+ * "trip sevens", "an ace-high flush". describeScore is Title Case and shaped
+ * like a headline, which reads wrong inside prose.
+ */
+export function handPhrase(score) {
+  const k = kickersOf(score);
+  const one = (r) => RANK_NAMES[r].toLowerCase();
+  const many = (r) => RANK_PLURALS[r].toLowerCase();
+  const art = (word) => (/^[aeiou]/.test(word) ? 'an' : 'a');
+  switch (categoryOf(score)) {
+    case CAT.STRAIGHT_FLUSH: return k[0] === 14 ? 'a royal flush' : `${art(one(k[0]))} ${one(k[0])}-high straight flush`;
+    case CAT.QUADS: return `four ${many(k[0])}`;
+    case CAT.FULL_HOUSE: return `${many(k[0])} full of ${many(k[1])}`;
+    case CAT.FLUSH: return `${art(one(k[0]))} ${one(k[0])}-high flush`;
+    case CAT.STRAIGHT: return `${art(one(k[0]))} ${one(k[0])}-high straight`;
+    case CAT.TRIPS: return `trip ${many(k[0])}`;
+    case CAT.TWO_PAIR: return `two pair, ${many(k[0])} and ${many(k[1])}`;
+    case CAT.PAIR: return `a pair of ${many(k[0])}`;
+    default: return `${one(k[0])} high`;
+  }
+}
+
+/** Fallback wording when a group's cards make the same category at different heights. */
+const CATEGORY_PHRASES = {
+  'High Card': 'high card', 'One Pair': 'a pair', 'Two Pair': 'two pair',
+  'Three of a Kind': 'trips', 'Straight': 'a straight', 'Flush': 'a flush',
+  'Full House': 'a full house', 'Four of a Kind': 'quads', 'Straight Flush': 'a straight flush',
+};
+
+/**
+ * Which cards are your outs, and what each one actually makes.
+ *
+ * countOuts already knows the exact cards; quoting only the total asks a
+ * student to take the number on trust, which is the one thing a trainer
+ * should never do. This turns the same list into the sentence a coach would
+ * say out loud: you have this, they have that, and here are the cards that
+ * change it.
+ */
+export function describeOuts(hero, villain, board) {
+  const { outs, count, behindNow } = countOuts(hero, villain, board);
+  const heroNow = handPhrase(evaluateHand(hero, board, HOLDEM));
+  const villainNow = handPhrase(evaluateHand(villain, board, HOLDEM));
+  if (!count) {
+    return { outs, count, behindNow, heroNow, villainNow, groups: [], sentence: 'No card on the turn puts you in front.' };
+  }
+
+  // Group by the category an out makes, so nine hearts read as one flush draw
+  // rather than nine separate facts.
+  const byCategory = new Map();
+  for (const card of outs) {
+    const score = evaluateHand(hero, board.concat(card), HOLDEM);
+    const key = shortCategoryName(score);
+    if (!byCategory.has(key)) byCategory.set(key, { cards: [], full: new Set(), said: new Set() });
+    const g = byCategory.get(key);
+    g.cards.push(card);
+    g.full.add(describeScore(score));
+    g.said.add(handPhrase(score));
+  }
+
+  const groups = [...byCategory.entries()]
+    .map(([category, g]) => ({
+      // "Pair of Eights" when every card in the group makes the same hand,
+      // "Flush" when they differ only in how high it runs.
+      label: g.full.size === 1 ? [...g.full][0] : category,
+      // Nine hearts of differing height are still just "a flush" in prose.
+      said: g.said.size === 1 ? [...g.said][0] : (CATEGORY_PHRASES[category] || category.toLowerCase()),
+      cards: g.cards,
+      text: g.cards.map(cardToPretty).join(' '),
+    }))
+    .sort((a, b) => b.cards.length - a.cards.length);
+
+  // "the three eights" and "the nine hearts" are how a player says this out
+  // loud; "nine cards" is the fallback when the group has no single shape.
+  const namedCards = (cards) => {
+    const ranks = [...new Set(cards.map(rankOf))];
+    const suits = [...new Set(cards.map((c) => c & 3))];
+    const n = countWord(cards.length);
+    if (ranks.length === 1) return `the ${n} ${RANK_PLURALS[ranks[0]].toLowerCase()}`;
+    if (suits.length === 1) return `the ${n} ${SUIT_NAMES[suits[0]]}`;
+    if (ranks.length === 2) {
+      const [a, b] = ranks.map((r) => RANK_PLURALS[r].toLowerCase());
+      const ca = cards.filter((c) => rankOf(c) === ranks[0]).length;
+      const cb = cards.length - ca;
+      return `the ${countWord(ca)} ${a} and ${countWord(cb)} ${b}`;
+    }
+    return `${n} card${cards.length === 1 ? '' : 's'}`;
+  };
+
+  const phrase = (g) => `${namedCards(g.cards)} (${g.text}) give${
+    g.cards.length === 1 ? 's' : ''} you ${g.said}`;
+
+  const parts = groups.map(phrase);
+  const list = parts.length === 1
+    ? parts[0]
+    : `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`;
+
+  return {
+    outs,
+    count,
+    behindNow,
+    heroNow,
+    villainNow,
+    groups,
+    sentence: `You have ${heroNow}; they have ${villainNow}. ${
+      list.charAt(0).toUpperCase()}${list.slice(1)} \u2014 that is ${count} out${count === 1 ? '' : 's'}.`,
+  };
 }
 
 /**

@@ -7,7 +7,7 @@ import { makeRng, randInt, shuffle } from '../core/rng.js';
 import { MODULE_META, moduleMeta, unlockedModules } from '../data/curriculum.js';
 import {
   handRankingDrill, nameThatHandDrill, outsDrill, ruleOfFourDrill,
-  potOddsDrill, callOrFoldDrill,
+  potOddsDrill, equityGivenDrill, callOrFoldDrill,
 } from './fundamentals.js';
 import {
   openingDrill, facingRaiseDrill, positionDrill, blindDefenceDrill, handStrengthDrill,
@@ -22,8 +22,10 @@ import {
 
 const GENERATORS = {
   'hand-rankings': [handRankingDrill, nameThatHandDrill],
-  'pot-odds': [potOddsDrill, callOrFoldDrill],
-  outs: [outsDrill, ruleOfFourDrill],
+  // callOrFoldDrill needs outs counted, so it belongs to Outs & Equity even
+  // though it is a pot-odds application: Pot Odds unlocks a level earlier.
+  'pot-odds': [potOddsDrill, equityGivenDrill],
+  outs: [outsDrill, ruleOfFourDrill, callOrFoldDrill],
   preflop: [openingDrill, facingRaiseDrill, handStrengthDrill],
   position: [positionDrill, blindDefenceDrill],
   cbet: [cbetDrill],

@@ -5,7 +5,7 @@
 
 import { makeDeck, cardsToString } from '../core/cards.js';
 import { evaluate, describeScore, shortCategoryName } from '../core/evaluator.js';
-import { countOuts, exactOutsEquity, handEquity } from '../core/equity.js';
+import { countOuts, describeOuts, exactOutsEquity, handEquity } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 import { buildChoices, numericDistractors, percentDistractors, attempt, pct } from './helpers.js';
@@ -96,7 +96,10 @@ export function outsDrill(rng, difficulty = 2) {
     question: 'You are behind. How many cards on the turn put you in front?',
     options,
     answer,
-    explanation: `${count} outs. With two cards to come that is about ${pct(equity)} — the rule of 4 gives you ${count * 4}%, which is close enough to act on.`,
+    // Naming the cards is the whole lesson: a bare count asks you to take the
+    // number on trust, which teaches nothing you can repeat at a table.
+    explanation: `${describeOuts(hero, villain, board).sentence} With two cards to come that is about ${
+      pct(equity)} — the rule of 4 gives you ${count * 4}%, which is close enough to act on.`,
     xp: 10 + difficulty * 3,
   };
 }
@@ -151,7 +154,52 @@ export function potOddsDrill(rng, difficulty = 2) {
   };
 }
 
-/** Put the two together: you have a draw and a price. Call or fold? */
+/**
+ * The comparison on its own: equity is handed to you, so the only skill under
+ * test is "is what I have at least what I need". Pot Odds unlocks a level
+ * before Outs & Equity, so its drills must not require counting outs.
+ */
+export function equityGivenDrill(rng, difficulty = 2) {
+  const spot = attempt(() => {
+    const pot = (4 + randInt(rng, 10)) * 5;
+    const bet = Math.max(5, Math.round(pot * [0.33, 0.5, 0.75, 1][randInt(rng, 4)] / 5) * 5);
+    const need = requiredEquity(bet, pot + bet);
+    const equity = (10 + randInt(rng, 45)) / 100;
+    // Skip anything close enough that the right answer is a judgement call.
+    if (Math.abs(equity - need) < 0.05) return null;
+    return { pot, bet, need, equity };
+  });
+  if (!spot) return null;
+
+  const { pot, bet, need, equity } = spot;
+  const shouldCall = equity > need;
+  const { options, answer } = buildChoices(rng, shouldCall ? 'Call' : 'Fold', ['Call', 'Fold']);
+  const ev = callEV(equity, bet, pot + bet);
+
+  return {
+    module: 'pot-odds',
+    difficulty,
+    scenario: { pot, toCall: bet, potFacing: pot + bet },
+    question: `You will win this hand ${pct(equity)} of the time. There is ${
+      pot} in the pot and they bet ${bet}. Call or fold?`,
+    options,
+    answer,
+    explanation: `You call ${bet} to win ${pot + bet + bet}, so you need ${bet} ÷ ${
+      pot + bet + bet} = ${pct(need, 1)}. You have ${pct(equity)}, which is ${
+      shouldCall ? 'more than' : 'less than'} the price asks. ${
+      shouldCall
+        ? `Calling wins about ${ev.toFixed(1)} chips every time.`
+        : `Calling loses about ${Math.abs(ev).toFixed(1)} chips every time.`
+    }`,
+    xp: 12 + difficulty * 2,
+  };
+}
+
+/**
+ * Put the two together: you have a draw and a price. Call or fold?
+ * Lives in the outs module, not pot odds, because it cannot be answered
+ * without counting outs first \u2014 and pot odds unlocks a level earlier.
+ */
 export function callOrFoldDrill(rng, difficulty = 3) {
   const spot = attempt(() => {
     const deck = shuffle(rng, makeDeck());
@@ -175,14 +223,29 @@ export function callOrFoldDrill(rng, difficulty = 3) {
   const { options, answer } = buildChoices(rng, shouldCall ? 'Call' : 'Fold', ['Call', 'Fold']);
   const ev = callEV(equity, bet, pot + bet);
 
+  // The outs figure and the engine's equity rarely match exactly, and the gap
+  // is itself worth teaching: backdoor draws push it up, cards that can be
+  // beaten again by the river pull it down. Saying which way, and why, stops
+  // the two numbers looking like a contradiction.
+  const fromOuts = exactOutsEquity(count, 'flop');
+  const drift = equity - fromOuts;
+  const reconcile = Math.abs(drift) < 0.015
+    ? ''
+    : drift > 0
+      ? ` It comes out a little above that because some runner-runner cards win for you too.`
+      : ` It comes out a little below that because a few of those cards can still be beaten by the river.`;
+
   return {
-    module: 'pot-odds',
+    module: 'outs',
     difficulty,
     scenario: { board, hole: hero, villain, revealVillain: true, pot, toCall: bet },
     question: `The pot is ${pot} and you face a bet of ${bet}. Your opponent's hand is face up. Call or fold?`,
     options,
     answer,
-    explanation: `You have ${count} outs and ${pct(equity, 1)} equity. The price demands ${pct(need, 1)}. ${
+    explanation: `${describeOuts(hero, villain, board).sentence} With two cards to come, ${count} outs is roughly ${
+      count * 4}% by the rule of 4; the exact figure is ${pct(equity, 1)}.${reconcile
+    } The price demands ${bet} ÷ ${pot + bet + bet} = ${pct(need, 1)}, so you ${
+      shouldCall ? 'have more than enough' : 'fall short'}. ${
       shouldCall
         ? `Calling wins about ${ev.toFixed(1)} chips every time you make it.`
         : `Calling loses about ${Math.abs(ev).toFixed(1)} chips every time — a fold is a profit.`

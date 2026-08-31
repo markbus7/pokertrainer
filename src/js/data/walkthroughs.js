@@ -282,6 +282,38 @@ export const WALKTHROUGHS = {
           answer: 'b',
         },
       },
+      {
+        title: 'Where the other number comes from',
+        body: [
+          'One thing to be straight about before you start drilling, because it is the obvious next question and this lesson has quietly been dodging it.',
+          'Everything above works out what you **need**. That half is finished \u2014 you can now price any bet.',
+          'What you **have** has been *handed to you* every time. In the flush draw example, \u201cnine cards complete it, roughly 36%\u201d arrived as a given. Nothing here taught you to find the nine, or to turn nine into 36%.',
+          'That is a separate skill, and it has its own name. The cards still to come that would turn your losing hand into a winning one are your [[outs]]. Nine hearts for a [[flush draw]]. Four cards for a [[gutshot]].',
+          'Counting them from a real board, and converting the count into a percentage, is the **next module: Outs & Equity**. It is the other half of every calling decision you will ever make.',
+          'So the honest state of play: after this lesson you can price a bet, but not yet read your own hand. The Pot Odds drills therefore *give* you your equity, so you can practise the comparison on its own. Once you finish Outs & Equity, you work out both halves yourself.',
+        ],
+        check: {
+          question: 'You hold two hearts, and two more hearts are on the flop. Nine hearts are still unseen. What is the name for those nine cards?',
+          options: [
+            {
+              key: 'a',
+              label: 'Your pot odds',
+              why: 'Pot odds come from the money \u2014 the pot and the bet \u2014 and would be the same number if you were holding two blank cards. These nine cards are about your hand, not the price.',
+            },
+            {
+              key: 'b',
+              label: 'Your outs',
+              why: 'Right. Outs are the cards that would put you in front. Counting them is the first step to working out what you have, and it is exactly what the next module teaches.',
+            },
+            {
+              key: 'c',
+              label: 'Your equity',
+              why: 'Very close, and the two are directly linked \u2014 but equity is the *percentage* those cards translate into (about 36% here). The nine cards themselves are the outs; the percentage is what you convert them into.',
+            },
+          ],
+          answer: 'b',
+        },
+      },
     ],
     recap: [
       '**Equity** is how often your hand wins — a fact about your cards. **Required equity** is the threshold it has to beat — a fact about the money. Two separate numbers; neither turns into the other.',

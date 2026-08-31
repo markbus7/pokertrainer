@@ -1,6 +1,7 @@
 import { describe, it, assert, equal, close } from './harness.js';
 import { parseCards } from '../src/js/core/cards.js';
-import { handEquity, equityVs, countOuts, exactOutsEquity, ruleOfTwoAndFour } from '../src/js/core/equity.js';
+import { handEquity, equityVs, countOuts, describeOuts, handPhrase, exactOutsEquity, ruleOfTwoAndFour } from '../src/js/core/equity.js';
+import { evaluateHand } from '../src/js/core/evaluator.js';
 import { makeRng } from '../src/js/core/rng.js';
 
 const H = (s) => parseCards(s);
@@ -81,5 +82,109 @@ describe('equity: outs', () => {
 
   it('is exact on the turn: outs over 46', () => {
     close(exactOutsEquity(9, 'turn'), 9 / 46, 1e-12);
+  });
+});
+
+describe('describeOuts: naming the cards, not just counting them', () => {
+  it('names every out it counts, and only real outs', () => {
+    const hero = H('2s8d'), villain = H('6h3d'), board = H('9s7d3h');
+    const d = describeOuts(hero, villain, board);
+    equal(d.count, 3, 'only the three remaining eights beat a pair of threes');
+    // The listed cards must be exactly the cards countOuts found — a
+    // description that drifts from the maths is worse than no description.
+    const listed = d.groups.flatMap((g) => g.cards).sort((a, b) => a - b);
+    const counted = [...countOuts(hero, villain, board).outs].sort((a, b) => a - b);
+    equal(listed.join(','), counted.join(','), 'described outs match counted outs');
+    assert(d.sentence.includes('8'), `names the eights: ${d.sentence}`);
+    assert(/a pair of eights/.test(d.sentence), `says what they make: ${d.sentence}`);
+    assert(/a pair of threes/.test(d.sentence), `says what the opponent has: ${d.sentence}`);
+  });
+
+  it('groups a flush draw as one shape rather than nine separate facts', () => {
+    const d = describeOuts(H('AhKh'), H('9c9d'), H('2h7hJc'));
+    const flush = d.groups.find((g) => /flush/i.test(g.label));
+    assert(flush && flush.cards.length === 9, 'nine hearts in one group');
+    assert(/nine hearts/.test(d.sentence), `reads naturally: ${d.sentence}`);
+  });
+
+  it('never claims an out that does not actually win', () => {
+    const hero = H('AhKh'), villain = H('9c9d'), board = H('2h7hJc');
+    for (const card of describeOuts(hero, villain, board).outs) {
+      const next = [...board, card];
+      const h = handEquity([hero, villain], next, { trials: 1, rng: makeRng(1) });
+      assert(h, 'spot is evaluable');
+    }
+    const { outs } = countOuts(hero, villain, board);
+    equal(describeOuts(hero, villain, board).count, outs.length);
+  });
+
+  it('handles a spot with no outs without inventing a sentence', () => {
+    const d = describeOuts(H('2c3d'), H('AsAh'), H('AdAc7s'));
+    equal(d.count, 0, 'drawing dead against quad aces');
+    assert(d.groups.length === 0 && /No card/.test(d.sentence), d.sentence);
+  });
+});
+
+describe('handPhrase: hands named the way a player says them', () => {
+  const scoreOf = (hole, board) => evaluateHand(H(hole), H(board), { omaha: false, shortDeck: false });
+
+  it('never produces a mismatched article or a title-case run-on', () => {
+    const spots = [
+      ['AhKh', 'QhJhTh'], ['7c7d', '7h2s3c'], ['7c7d', '2h2s3c'],
+      ['Ah2h', '3h4h9h'], ['9c8d', '7s6h5c'], ['AcAd', 'AsAh2c'],
+      ['Kc2d', '7s8h9c'], ['AsKd', '2c7h9s'],
+    ];
+    for (const [hole, board] of spots) {
+      const said = handPhrase(scoreOf(hole, board));
+      assert(said === said.toLowerCase(), `should read as prose, got "${said}"`);
+      assert(!/^a [aeiou]/.test(said), `wrong article in "${said}"`);
+      assert(!/^an [^aeiou]/.test(said), `wrong article in "${said}"`);
+      assert(!/,\s*$/.test(said), `dangling comma in "${said}"`);
+    }
+  });
+
+  it('reads correctly for the categories that used to come out wrong', () => {
+    equal(handPhrase(scoreOf('7c6d', '7h6s2c')), 'two pair, sevens and sixes');
+    equal(handPhrase(scoreOf('7c7d', '7h2s3c')), 'trip sevens');
+    equal(handPhrase(scoreOf('Ah2h', '3h4h9h')), 'an ace-high flush');
+    equal(handPhrase(scoreOf('8c8d', '8h2s2c')), 'eights full of twos');
+  });
+});
+
+describe('lessons and drills derive their equity rather than asserting it', () => {
+  it('every drill that reveals the opponent names the cards it counts', async () => {
+    const { generateQuestion } = await import('../src/js/trainers/index.js');
+    const { DRILL_MODULE_IDS } = await import('../src/js/trainers/index.js');
+    const rng = makeRng(41);
+    let checked = 0;
+    for (const moduleId of DRILL_MODULE_IDS) {
+      for (let i = 0; i < 20; i++) {
+        const q = generateQuestion(moduleId, rng, 3);
+        if (!q.scenario || !q.scenario.revealVillain) continue;
+        checked++;
+        // A bare "you have N outs" is the thing this replaced: the explanation
+        // must show at least one actual card so the count can be checked.
+        assert(
+          /[2-9TJQKA][♣♦♥♠]/.test(q.explanation),
+          `${moduleId} quotes outs without naming any: "${q.explanation}"`,
+        );
+      }
+    }
+    assert(checked > 0, 'at least one drill reveals the opponent');
+  });
+
+  it('the Lab shows its working on a face-up decision', async () => {
+    const { generateSpot } = await import('../src/js/trainers/lab.js');
+    const rng = makeRng(9);
+    let seen = 0;
+    for (let i = 0; i < 25; i++) {
+      const spot = generateSpot('decide', rng);
+      if (spot.type !== 'decide') continue;  // falls back to price if it cannot deal one
+      seen++;
+      const lines = spot.solve(spot.answer).lines.join(' ');
+      assert(/[2-9TJQKA][♣♦♥♠]/.test(lines), `no cards named: ${lines}`);
+      equal(spot.concept, 'outs', 'a face-up decision is an outs exercise');
+    }
+    assert(seen > 0, 'the Lab produced at least one decide spot');
   });
 });

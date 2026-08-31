@@ -13,7 +13,7 @@
  */
 
 import { makeDeck, cardsToString } from '../core/cards.js';
-import { countOuts, handEquity, exactOutsEquity } from '../core/equity.js';
+import { countOuts, describeOuts, handEquity, exactOutsEquity } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 
@@ -137,9 +137,12 @@ function decideSpot(rng) {
     const shouldCall = equity > need;
     return {
       type: 'decide',
-      concept: 'pot-odds',
+      // Tagged to outs, not pot odds: the price here is the easy half, and a
+      // miss almost always means the outs were counted wrong. Scheduling a
+      // pot-odds review would send you back to revise the wrong thing.
+      concept: 'outs',
       table: { board, hole: hero, villain, revealVillain: true, pot, bet, potNow },
-      prompt: `Their hand is face up, so there is no guessing involved — only the price.`,
+      prompt: `Their hand is face up, so nothing is hidden — count the cards that put you in front, then check them against the price.`,
       question: `The pot is now ${potNow} and it costs ${bet} to call. Call or fold?`,
       inputKind: 'action',
       actions: [
@@ -152,7 +155,8 @@ function decideSpot(rng) {
         correct: given === (shouldCall ? 'call' : 'fold'),
         exact: shouldCall ? 'Call' : 'Fold',
         lines: [
-          `You have **${count} outs**, which is about ${(equity * 100).toFixed(0)}% by the river.`,
+          describeOuts(hero, villain, board).sentence,
+          `That is about **${(equity * 100).toFixed(0)}%** by the river.`,
           `The price demands ${bet} ÷ ${potNow + bet} = **${(need * 100).toFixed(1)}%**.`,
           shouldCall
             ? `${(equity * 100).toFixed(0)} beats ${(need * 100).toFixed(0)}, so calling wins about ${callEV(equity, bet, potNow).toFixed(0)} chips each time you do it.`
