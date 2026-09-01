@@ -520,6 +520,28 @@ describe('walkthroughs: hands-on exercises', () => {
     assert(outs.includes('count-outs'), 'the outs lesson must make you tap real outs');
   });
 
+  it('makes the outs exercise say "if it came next", and show where you stand', async () => {
+    // A reader tapped every heart and every straight card, because "put you
+    // in front" reads as "improve my hand" when nothing pins it to one card
+    // and nothing shows the comparison before you start.
+    const { makePractice } = await import('../src/js/trainers/practice.js');
+    const { makeRng } = await import('../src/js/core/rng.js');
+    const spot = makePractice('count-outs', makeRng(3));
+
+    assert(/if it came next/i.test(spot.prompt),
+      `the prompt must limit it to one card: "${spot.prompt}"`);
+    assert(spot.standings && spot.standings.hero && spot.standings.villain,
+      'the exercise must state where the hand stands before you start tapping');
+
+    // And a wrong pick has to be explained, not just counted.
+    const outs = new Set(spot.grade([]).outs);
+    const notAnOut = spot.unseen.find((c) => !outs.has(c));
+    const graded = spot.grade([notAnOut]);
+    assert(graded.wrongLesson, 'a wrong pick must come with an explanation');
+    assert(graded.wrongLesson.wouldBe && graded.wrongLesson.villain,
+      'the explanation must name what the card leaves you with, and what it loses to');
+  });
+
   it('never asks a lesson to do something the curriculum has not taught', () => {
     // Same ordering rule the drills follow: a decide exercise needs outs
     // counted, so it cannot appear in a module that unlocks before Outs.

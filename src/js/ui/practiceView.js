@@ -13,6 +13,8 @@ import { t } from '../i18n/index.js';
 import { cardEl, cardRow } from './cardView.js';
 import { rankOf, suitOf, RANK_CHARS, SUIT_SYMBOLS } from '../core/cards.js';
 
+const cardName = (card) => RANK_CHARS[rankOf(card) - 2] + SUIT_SYMBOLS[suitOf(card)];
+
 /**
  * @param {object} spot     from trainers/practice.js
  * @param {function} onDone called with the grade result once submitted
@@ -77,10 +79,17 @@ function countOutsView(spot, onDone, settings) {
       for (const c of graded.missed) byCard.get(c)?.classList.add('missed');
       for (const c of graded.wrong) byCard.get(c)?.classList.add('wrong');
       for (const cell of cells) cell.disabled = true;
-      feedback.appendChild(gradeBox(graded, [
+      const lines = [
         graded.missed.length ? t('{n} you missed are outlined in gold.', { n: graded.missed.length }) : null,
         graded.wrong.length ? t('{n} you picked do not win the hand.', { n: graded.wrong.length }) : null,
-      ].filter(Boolean)));
+      ];
+      if (graded.wrongLesson) {
+        const { card, wouldBe, villain } = graded.wrongLesson;
+        lines.push(t('Take {card}: it would leave you with {hand}, which still loses to {villain}. '
+          + 'A card that improves your hand is only an out if it also beats theirs.',
+          { card: cardName(card), hand: wouldBe, villain }));
+      }
+      feedback.appendChild(gradeBox(graded, lines.filter(Boolean)));
       onDone(graded);
     },
   }, t('Check my outs'));
@@ -91,6 +100,15 @@ function countOutsView(spot, onDone, settings) {
       seatBlock('The flop', spot.board, settings),
       seatBlock('Their hand', spot.villain, settings, '.villain'),
     ),
+    // Anchor "in front" to the comparison. Without this the question reads as
+    // "which cards improve my hand", and the honest answer to that is a much
+    // longer list than the outs.
+    spot.standings
+      ? el('div.practice-standing',
+          richText(t('**Right now** you have {hero} and they have {villain}, so you are behind. '
+            + 'You are looking for the single next card that changes that.',
+            { hero: spot.standings.hero, villain: spot.standings.villain })))
+      : null,
     el('div.spread', { style: { margin: '12px 0 6px' } },
       el('span.faint', t('Every card still unseen:')),
       count,

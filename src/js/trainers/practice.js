@@ -14,6 +14,7 @@
 
 import { makeDeck, removeCards, cardsToString } from '../core/cards.js';
 import { evaluate, describeScore } from '../core/evaluator.js';
+import { evaluateHand } from '../core/evaluator.js';
 import { countOuts, describeOuts, handEquity, exactOutsEquity, handPhrase } from '../core/equity.js';
 import { requiredEquity, callEV } from '../core/odds.js';
 import { shuffle, randInt, makeRng } from '../core/rng.js';
@@ -50,9 +51,18 @@ export function countOutsPractice(rng = makeRng()) {
   const unseen = removeCards(makeDeck(), [...hero, ...villain, ...board]);
   const outSet = new Set(outs);
 
+  const described = describeOuts(hero, villain, board);
+
   return {
     kind: 'count-outs',
-    prompt: 'Tap every card that would put you in front.',
+    // "if it came next" is doing real work. Without it the question reads as
+    // "which cards help my hand", and a reader reasonably taps the flush and
+    // straight cards — including suits they do not even hold, because the
+    // board has two of them. One card, and it has to win outright.
+    prompt: 'Tap every card that would put you in front **if it came next**.',
+    // Stated before you start rather than only in the feedback, so "in front"
+    // is anchored to a comparison you can see instead of a vague improvement.
+    standings: { hero: described.heroNow, villain: described.villainNow },
     hero, villain, board, unseen,
     /** @param {number[]} picked */
     grade(picked) {
@@ -61,10 +71,20 @@ export function countOutsPractice(rng = makeRng()) {
       const missed = outs.filter((c) => !chosen.has(c));
       const wrong = [...chosen].filter((c) => !outSet.has(c));
       const perfect = missed.length === 0 && wrong.length === 0;
-      const described = describeOuts(hero, villain, board);
+
+      // Naming what a wrong pick actually leaves you with is the correction
+      // that teaches: "K♥ still leaves you queen-high" lands where "8 of your
+      // picks do not win" does not.
+      let wrongLesson = null;
+      if (wrong.length) {
+        const worst = wrong[0];
+        const wouldBe = handPhrase(evaluateHand(hero, [...board, worst], HOLDEM));
+        wrongLesson = { card: worst, wouldBe, villain: described.villainNow };
+      }
+
       return {
         correct: perfect,
-        hits, missed, wrong,
+        hits, missed, wrong, wrongLesson,
         outs,
         explanation: described.sentence,
         equity: exactOutsEquity(outs.length, 'flop'),

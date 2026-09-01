@@ -902,3 +902,13 @@ input, textarea, select { font-size: max(16px, 1rem); }
   .out-rank { font-size: 0.62rem; }
   .out-suit { font-size: 0.54rem; }
 }
+
+/* Where the hand stands before you start tapping outs. */
+.practice-standing {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--gold-dim);
+  background: var(--bg-raised);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.9rem;
+}

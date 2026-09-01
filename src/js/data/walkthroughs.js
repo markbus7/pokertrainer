@@ -591,8 +591,8 @@ export const WALKTHROUGHS = {
         title: 'Now count a real one',
         body: [
           'Reading about counting is not counting. Here is a hand that has just been dealt, with your opponent’s cards face up so nothing is hidden.',
-          'Below it is every card still unseen — the whole rest of the deck. **Tap each one that would put you in front.**',
-          'Work it the way the last step described: see what beats you now, then go looking for the cards that change it. Take as long as you like; nothing is timed.',
+          'Below it is every card still unseen — the whole rest of the deck. **Tap each one that would put you in front if it came next.**',
+          'One card, not two. A card that merely improves your hand is not an out unless it also beats theirs — so a heart is worthless to you when you hold no hearts, however many are on the board.',
           'When you check your answer the grid marks what you found, what you missed, and anything you picked that does not actually win. That is a more useful correction than being told a number.',
         ],
         practice: 'count-outs',

@@ -1938,4 +1938,66 @@ export const NL = {
     'Je ligt achter. Hun hand ligt open. Er is een pot en er is een bet. **Tel wat je redt, zet het om in een percentage, bepaal de prijs van de bet, en handel dan.**',
   'You have every piece now: outs from this module, the price from Pot Odds. Nothing else is needed.':
     'Je hebt nu alle onderdelen: outs uit deze module, de prijs uit Pot Odds. Meer is er niet nodig.',
+  /* ---------------------------------------------------------------- *
+   * Generated poker prose
+   *
+   * These build the sentences the engine writes about a real hand — the
+   * outs explanation under an exercise, a drill's feedback, the Lab's
+   * working. Assembled from fragments rather than stored whole, because
+   * the cards change every deal.
+   * ---------------------------------------------------------------- */
+  'two': 'twee', 'three': 'drie', 'four': 'vier', 'five': 'vijf', 'six': 'zes',
+  'seven': 'zeven', 'eight': 'acht', 'nine': 'negen', 'ten': 'tien',
+  'jack': 'boer', 'queen': 'vrouw', 'king': 'heer', 'ace': 'aas',
+  'twos': 'tweeën', 'threes': 'drieën', 'fours': 'vieren', 'fives': 'vijven',
+  'sixes': 'zessen', 'sevens': 'zevens', 'eights': 'achten', 'nines': 'negens',
+  'tens': 'tienen', 'jacks': 'boeren', 'queens': 'vrouwen', 'kings': 'heren', 'aces': 'azen',
+  'clubs': 'klaveren', 'diamonds': 'ruiten', 'hearts': 'harten', 'spades': 'schoppen',
+  'no': 'geen', 'one': 'één', 'eleven': 'elf', 'twelve': 'twaalf',
+
+  /* Hand shapes. The poker category names stay recognisable; what changes
+     is the grammar holding them together. */
+  'a royal flush': 'een royal flush',
+  '{article} {rank}-high straight flush': 'een {rank}-hoge straight flush',
+  'four {ranks}': 'vier {ranks}',
+  '{ranks} full of {others}': '{ranks} full of {others}',
+  '{article} {rank}-high flush': 'een {rank}-hoge flush',
+  '{article} {rank}-high straight': 'een {rank}-hoge straight',
+  'trip {ranks}': 'trip {ranks}',
+  'two pair, {ranks} and {others}': 'two pair, {ranks} en {others}',
+  'a pair of {ranks}': 'een paar {ranks}',
+  '{rank} high': '{rank} hoog',
+
+  /* Naming a group of cards, and the sentence they sit in. */
+  'the {n} {ranks}': 'de {n} {ranks}',
+  'the {n} {suit}': 'de {n} {suit}',
+  'the {a} {ranksA} and {b} {ranksB}': 'de {a} {ranksA} en {b} {ranksB}',
+  '{n} card': '{n} kaart',
+  '{n} cards': '{n} kaarten',
+  '{cards} ({list}) gives you {hand}': '{cards} ({list}) geeft je {hand}',
+  '{cards} ({list}) give you {hand}': '{cards} ({list}) geven je {hand}',
+  '{first}, and {last}': '{first}, en {last}',
+  'You have {hero}; they have {villain}.': 'Jij hebt {hero}; zij hebben {villain}.',
+  '{list} — that is {n} out.': '{list} — dat is {n} out.',
+  '{list} — that is {n} outs.': '{list} — dat zijn {n} outs.',
+  'No card on the turn puts you in front.': 'Geen enkele kaart op de turn zet je op voorsprong.',
+  'high card': 'high card', 'a pair': 'een pair', 'two pair': 'two pair',
+  'trips': 'trips', 'a straight': 'een straight', 'a flush': 'een flush',
+  'a full house': 'een full house', 'quads': 'quads', 'a straight flush': 'een straight flush',
+  /* ---- The outs exercise, made unambiguous ---- */
+  'Tap every card that would put you in front **if it came next**.':
+    'Tik op elke kaart die je op voorsprong zou zetten **als hij als volgende komt**.',
+  '**Right now** you have {hero} and they have {villain}, so you are behind. You are looking for the single next card that changes that.':
+    '**Op dit moment** heb jij {hero} en hebben zij {villain}, dus je ligt achter. Je zoekt de ene volgende kaart die dat verandert.',
+  'Take {card}: it would leave you with {hand}, which still loses to {villain}. A card that improves your hand is only an out if it also beats theirs.':
+    'Neem {card}: daarmee zou je {hand} hebben, en dat verliest nog steeds van {villain}. Een kaart die je hand verbetert is alleen een out als hij ook hun hand verslaat.',
+  'Next step →': 'Volgende stap →',
+  'Finish lesson →': 'Les afronden →',
+  'Read it again': 'Lees het nog eens',
+  'Lesson complete': 'Les afgerond',
+  'Start drilling →': 'Begin met oefenen →',
+  'Below it is every card still unseen — the whole rest of the deck. **Tap each one that would put you in front if it came next.**':
+    'Daaronder staat elke kaart die nog ongezien is — de hele rest van het pak. **Tik op elke kaart die je op voorsprong zou zetten als hij als volgende komt.**',
+  'One card, not two. A card that merely improves your hand is not an out unless it also beats theirs — so a heart is worthless to you when you hold no hearts, however many are on the board.':
+    'Eén kaart, niet twee. Een kaart die je hand alleen maar verbetert is geen out tenzij hij ook hun hand verslaat — dus een hart is waardeloos voor je als je zelf geen harten hebt, hoeveel er ook op het bord liggen.',
 };
