@@ -1,6 +1,7 @@
 /** Career stats, mastery, achievements and the leak report. */
 
 import { el, mount, fmt, sparkline, toast } from './dom.js';
+import { t } from '../i18n/index.js';
 import { MODULE_META } from '../data/curriculum.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { RANKS } from '../state/profile.js';
@@ -31,7 +32,7 @@ export function renderStats(ctx) {
     el('div.grid.cols-4',
       tile('Rank', `${profile.rank.emoji} ${profile.rank.name}`, `Level ${profile.level} of ${RANKS.length}`),
       tile('Total XP', fmt.chips(profile.xp)),
-      tile('Drill accuracy', accuracy === null ? '—' : fmt.pct(accuracy), `${totals.correct} of ${totals.attempts}`),
+      tile('Drill accuracy', accuracy === null ? '—' : fmt.pct(accuracy), t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
       tile('Hands played', fmt.chips(profile.data.handsPlayed)),
     ),
 

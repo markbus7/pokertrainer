@@ -9,6 +9,7 @@
  */
 
 import { el, fmt, richText } from './dom.js';
+import { t } from '../i18n/index.js';
 import { RANKS, requirementRows, legacyRankForProfile } from '../state/profile.js';
 import { MODULE_META } from '../data/curriculum.js';
 
@@ -37,7 +38,7 @@ function renderCurrent(profile, rank, next) {
         el('div', { style: { fontSize: '3.2rem', lineHeight: '1' } }, rank.emoji),
         el('div',
           el('div', { style: { fontSize: '1.5rem', fontWeight: '700' } }, rank.name),
-          el('div.faint', `Level ${rank.level} of ${RANKS.length}`),
+          el('div.faint', t('Level {level} of {total}', { level: rank.level, total: RANKS.length })),
           el('div.faint', { style: { marginTop: '4px', maxWidth: '46ch' } }, rank.blurb),
         ),
       ),
@@ -72,7 +73,7 @@ function renderNext(profile, next, go) {
   return el('div.panel',
     el('div.panel-title',
       el('h2', `${next.emoji} ${next.name}`),
-      el('span.faint', `${done} of ${rows.length} done`),
+      el('span.faint', t('{done} of {total} done', { done, total: rows.length })),
     ),
     el('div.faint', { style: { marginBottom: '12px' } }, next.blurb),
     el('div.stack-sm', rows.map((r) => requirementRow(r))),
@@ -124,7 +125,7 @@ function renderLadder(profile, current, next) {
   return el('div.panel',
     el('div.panel-title',
       el('h2', 'The ladder'),
-      el('span.faint', `${current.level} of ${RANKS.length} reached`),
+      el('span.faint', t('{n} of {total} reached', { n: current.level, total: RANKS.length })),
     ),
     el('div.faint', { style: { marginBottom: '10px', fontSize: '0.82rem' } },
       'Tap any rank you have reached to see what it took.'),
@@ -155,7 +156,7 @@ function ladderRow(profile, rank, current, next) {
       : el('div', rows.map((r) => requirementRow(r, { showSurplus: achieved }))),
     reachedAt
       ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem' } },
-          `First reached ${reachedAt.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}.`)
+          t('First reached {date}.', { date: reachedAt.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }))
       : achieved && rank.level > 1
         ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem' } },
             'Reached before the game started keeping dates.')
@@ -171,7 +172,7 @@ function ladderRow(profile, rank, current, next) {
       el('span', { style: { fontSize: '1.4rem' } }, openable ? rank.emoji : '🔒'),
       el('div',
         el('div', { style: { fontWeight: '600' } }, rank.name),
-        el('div.faint', { style: { fontSize: '0.78rem' } }, `Level ${rank.level}`),
+        el('div.faint', { style: { fontSize: '0.78rem' } }, t('Level {level}', { level: rank.level })),
       ),
     ),
     el('div.row', { style: { gap: '8px' } },
@@ -208,7 +209,7 @@ function ladderRow(profile, rank, current, next) {
     openable
       ? detail
       : el('div.faint', { style: { marginTop: '6px', fontSize: '0.82rem' } },
-          `What this asks for is revealed once you reach ${RANKS[rank.level - 2].name}.`),
+          t('What this asks for is revealed once you reach {rank}.', { rank: t(RANKS[rank.level - 2].name) })),
   );
   return row;
 }
@@ -226,8 +227,9 @@ function renderDropNotice(profile, current) {
   return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
     el('div.panel-title', el('h3', { style: { margin: 0 } }, '📉 Your XP is ahead of your skills')),
     el('div.faint',
-      `On XP alone you would be Level ${legacy.level}, ${legacy.name}. Ranks also ask for lessons `
-      + `finished and skills drilled, and on those you are Level ${current.level}, ${current.name}.`),
+      t('On XP alone you would be Level {legacy}, {legacyName}. Ranks also ask for lessons finished '
+        + 'and skills drilled, and on those you are Level {level}, {name}.',
+        { legacy: legacy.level, legacyName: t(legacy.name), level: current.level, name: t(current.name) })),
     el('div.faint', { style: { marginTop: '6px' } },
       'None of the XP is lost — it all still counts. The requirements above are what closes the gap.'),
   );
