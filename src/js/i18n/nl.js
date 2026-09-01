@@ -1869,4 +1869,73 @@ export const NL = {
     'Dit werkt bij je. Maak het nu automatisch.',
   'Reliable under pressure, and proven over enough attempts to mean something.':
     'Betrouwbaar onder druk, en bewezen over genoeg pogingen om iets te betekenen.',
+  /* ---------------------------------------------------------------- *
+   * Hands-on lesson exercises
+   * ---------------------------------------------------------------- */
+  'Your turn': 'Jouw beurt',
+  'Work the exercise above to continue.': 'Doe de oefening hierboven om verder te gaan.',
+  'Your hand': 'Jouw hand',
+  'The flop': 'De flop',
+  'Their hand': 'Hun hand',
+  'The board': 'Het bord',
+  'Hand A': 'Hand A',
+  'Hand B': 'Hand B',
+  'Split pot': 'Gedeelde pot',
+  'In the pot': 'In de pot',
+  'They bet': 'Zij betten',
+  'To call': 'Te callen',
+  'The pot is now': 'De pot is nu',
+  'Check': 'Controleer',
+  'Check my outs': 'Controleer mijn outs',
+  'Every card still unseen:': 'Elke kaart die nog ongezien is:',
+  '{n} selected': '{n} geselecteerd',
+  '{n} you missed are outlined in gold.': '{n} die je miste zijn goud omlijnd.',
+  '{n} you picked do not win the hand.': '{n} die je koos winnen de hand niet.',
+  'The answer is {pct}%.': 'Het antwoord is {pct}%.',
+  '✓ That is right': '✓ Dat klopt',
+  '✗ Not quite': '✗ Net niet',
+  'Equity you need, as a percentage': 'De equity die je nodig hebt, als percentage',
+  'Tap every card that would put you in front.':
+    'Tik op elke kaart die je op voorsprong zou zetten.',
+  'Both players are all-in. Tap the hand that wins.':
+    'Beide spelers zijn all-in. Tik op de hand die wint.',
+  'Type the equity you need to call, as a percentage.':
+    'Typ de equity die je nodig hebt om te callen, als percentage.',
+  'Their hand is face up. Count what saves you, price the bet, then decide.':
+    'Hun hand ligt open. Tel wat je redt, bepaal de prijs van de bet, en beslis dan.',
+  'Type a number — the percentage you need.': 'Typ een getal — het percentage dat je nodig hebt.',
+
+  'Price a real one': 'Bereken er een echte',
+  'Your turn. Below is a pot and a bet — no options to choose between, no hand to distract you. **Work out the equity you need and type it in.**':
+    'Jouw beurt. Hieronder staan een pot en een bet — geen opties om uit te kiezen, geen hand die afleidt. **Reken uit hoeveel equity je nodig hebt en typ het in.**',
+  'Use whichever method you prefer. Count how many times their bet fits into the pot and add 2, or do it the long way with your call over the final pot. Both land in the same place.':
+    'Gebruik welke methode je wilt. Tel hoe vaak hun bet in de pot past en tel er 2 bij, of doe het via de lange weg met je call gedeeld door de uiteindelijke pot. Ze komen op hetzelfde uit.',
+  'Anything within two points counts, because the skill is arriving at the right figure rather than matching a decimal.':
+    'Alles binnen twee punten telt, want de vaardigheid is op het juiste getal uitkomen, niet een decimaal exact raken.',
+
+  'Read a real board': 'Lees een echt bord',
+  'The table above is the theory. This is the job: two hands, five community cards, and three seconds to say who wins.':
+    'De tabel hierboven is de theorie. Dit is het werk: twee handen, vijf gemeenschappelijke kaarten, en drie seconden om te zeggen wie wint.',
+  'Both players are all-in, so every card is face up. **Tap the hand that takes it.**':
+    'Beide spelers zijn all-in, dus elke kaart ligt open. **Tik op de hand die hem pakt.**',
+  'Remember that you are looking for the best five cards out of the seven available to each player — and that both players share the board.':
+    'Onthoud dat je zoekt naar de beste vijf kaarten uit de zeven die elke speler heeft — en dat beide spelers het bord delen.',
+
+  'Now count a real one': 'Tel er nu een echte',
+  'Reading about counting is not counting. Here is a hand that has just been dealt, with your opponent’s cards face up so nothing is hidden.':
+    'Lezen over tellen is niet tellen. Hier is een hand die net gedeeld is, met de kaarten van je tegenstander open zodat er niets verborgen blijft.',
+  'Below it is every card still unseen — the whole rest of the deck. **Tap each one that would put you in front.**':
+    'Daaronder staat elke kaart die nog ongezien is — de hele rest van het pak. **Tik op elke kaart die je op voorsprong zou zetten.**',
+  'Work it the way the last step described: see what beats you now, then go looking for the cards that change it. Take as long as you like; nothing is timed.':
+    'Pak het aan zoals de vorige stap beschreef: kijk wat je nu verslaat, en ga dan op zoek naar de kaarten die dat veranderen. Neem er zoveel tijd voor als je wilt; er loopt geen klok.',
+  'When you check your answer the grid marks what you found, what you missed, and anything you picked that does not actually win. That is a more useful correction than being told a number.':
+    'Als je je antwoord controleert markeert het raster wat je gevonden hebt, wat je gemist hebt, en alles wat je koos dat in werkelijkheid niet wint. Dat is een nuttigere correctie dan een getal te horen krijgen.',
+
+  'Both halves, one decision': 'Beide helften, één beslissing',
+  'This is the whole thing put together, and it is the decision you will make thousands of times.':
+    'Dit is het geheel bij elkaar, en het is de beslissing die je duizenden keren gaat maken.',
+  'You are behind. Their hand is face up. There is a pot and there is a bet. **Count what saves you, turn it into a percentage, price the bet, then act.**':
+    'Je ligt achter. Hun hand ligt open. Er is een pot en er is een bet. **Tel wat je redt, zet het om in een percentage, bepaal de prijs van de bet, en handel dan.**',
+  'You have every piece now: outs from this module, the price from Pot Odds. Nothing else is needed.':
+    'Je hebt nu alle onderdelen: outs uit deze module, de prijs uit Pot Odds. Meer is er niet nodig.',
 };

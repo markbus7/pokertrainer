@@ -211,6 +211,49 @@ await step('no lesson renders raw markup in any of its steps', async () => {
   if (faults.length) throw new Error(faults.join('; '));
 });
 
+await step('lessons deal real cards and grade what you do with them', async () => {
+  // The outs exercise is the one that cannot be faked: you point at the cards
+  // rather than pick a number from four options.
+  await page.goto(`${BASE}/#walkthrough?module=outs`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  // Step one is an ordinary check; answer it to reach the exercise.
+  const first = await page.$$('.option');
+  if (first.length) { await first[0].click(); await page.waitForTimeout(200); }
+  for (const b of await page.$$('button.btn.primary')) {
+    if (/next step/i.test((await b.textContent()) || '')) { await b.click(); break; }
+  }
+  await page.waitForTimeout(500);
+
+  const cells = await page.$$('.out-cell');
+  if (cells.length !== 45) throw new Error(`expected 45 unseen cards, got ${cells.length}`);
+
+  // The footer must refuse to advance until the exercise is done.
+  const beforeButtons = await page.$$eval('button', (n) => n.map((b) => b.textContent.trim()));
+  if (beforeButtons.some((txt) => /next step/i.test(txt))) {
+    throw new Error('a practice step let you continue without doing it');
+  }
+
+  await cells[0].click();
+  await cells[1].click();
+  const checkBtn = await page.$('.practice button.btn.primary');
+  if (!checkBtn) throw new Error('no way to submit the exercise');
+  await checkBtn.click();
+  await page.waitForTimeout(400);
+
+  // Grading must mark the grid itself, not just print a sentence.
+  const marked = await page.evaluate(() => document.querySelectorAll(
+    '.out-cell.hit, .out-cell.missed, .out-cell.wrong').length);
+  if (marked === 0) throw new Error('grading did not mark any cards on the grid');
+  if (!(await page.$('.practice .feedback'))) throw new Error('no feedback shown');
+
+  // And now it lets you move on.
+  const after = await page.$$eval('button', (n) => n.map((b) => b.textContent.trim()));
+  if (!after.some((txt) => /next step/i.test(txt))) {
+    throw new Error('finishing the exercise did not unlock the next step');
+  }
+});
+
 await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);

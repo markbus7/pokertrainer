@@ -48,7 +48,11 @@ describe('walkthroughs: step structure', () => {
         }
         const prose = step.body.join(' ');
         assert(prose.length > 200, `${at}: not enough explanation to teach the idea (${prose.length} chars)`);
-        assert(step.check, `${at}: every step must end in a comprehension check`);
+        // Every step must end in something the reader has to DO: either a
+        // comprehension check or a hands-on exercise. Never neither, and
+        // never both — two graded things in one step is one too many.
+        const ends = [step.check, step.practice].filter(Boolean).length;
+        equal(ends, 1, `${at}: a step needs exactly one of check or practice`);
       });
     }
   });
@@ -58,6 +62,7 @@ describe('walkthroughs: step structure', () => {
       w.steps.forEach((step, i) => {
         const at = `${id} step ${i + 1}`;
         const { check } = step;
+        if (!check) return;
         assert(check.question && check.question.length > 10, `${at}: check needs a question`);
         assert(check.options.length >= 2, `${at}: check needs at least two options`);
         const answer = check.options.find((o) => o.key === check.answer);
@@ -69,6 +74,7 @@ describe('walkthroughs: step structure', () => {
   it('explains every option — including, and especially, the wrong ones', () => {
     for (const [id, w] of entries) {
       w.steps.forEach((step, i) => {
+        if (!step.check) return;
         for (const option of step.check.options) {
           const at = `${id} step ${i + 1} option ${option.key}`;
           assert(option.label && option.label.length >= 1, `${at}: missing label`);
@@ -83,6 +89,7 @@ describe('walkthroughs: step structure', () => {
     for (const [id, w] of entries) {
       w.steps.forEach((step, i) => {
         const at = `${id} step ${i + 1}`;
+        if (!step.check) return;
         const keys = step.check.options.map((o) => o.key);
         equal(new Set(keys).size, keys.length, `${at}: duplicate option keys`);
         const labels = step.check.options.map((o) => o.label);
@@ -146,6 +153,7 @@ describe('walkthroughs: step structure', () => {
       w.steps.forEach((step, i) => {
         const where = `${id} step ${i + 1}`;
         for (const para of step.body) checkText(para, where);
+        if (!step.check) return;
         checkText(step.check.question, `${where} question`);
         for (const option of step.check.options) checkText(option.why, `${where} option ${option.key}`);
       });
@@ -479,5 +487,51 @@ describe('walkthroughs: the numbers taught match the engine', () => {
 
   it('teaches the SPR example correctly', () => {
     equal(spr(120, 40), 3, 'effective stack 120 into a pot of 40 is an SPR of 3');
+  });
+});
+
+describe('walkthroughs: hands-on exercises', () => {
+  it('only asks for exercises the trainer can actually build', async () => {
+    // A typo here would render a step with no exercise at all and no error,
+    // leaving a lesson that simply cannot be completed.
+    const { PRACTICE, makePractice } = await import('../src/js/trainers/practice.js');
+    const { makeRng } = await import('../src/js/core/rng.js');
+    for (const [id, w] of Object.entries(WALKTHROUGHS)) {
+      for (const step of w.steps) {
+        if (!step.practice) continue;
+        assert(PRACTICE[step.practice],
+          `${id} asks for a "${step.practice}" exercise, which does not exist`);
+        const built = makePractice(step.practice, makeRng(7));
+        assert(built && built.kind && typeof built.grade === 'function',
+          `${id}: ${step.practice} did not produce a gradeable exercise`);
+      }
+    }
+  });
+
+  it('puts a hands-on exercise in the lessons that most need one', () => {
+    // The lessons were 45 steps of prose with a multiple-choice question at
+    // the end of each and not one card dealt. These three are where doing it
+    // matters most: reading a board, pricing a bet, counting outs.
+    for (const id of ['hand-rankings', 'pot-odds', 'outs']) {
+      const kinds = WALKTHROUGHS[id].steps.filter((s) => s.practice).map((s) => s.practice);
+      assert(kinds.length > 0, `${id} has no hands-on exercise`);
+    }
+    const outs = WALKTHROUGHS.outs.steps.map((s) => s.practice).filter(Boolean);
+    assert(outs.includes('count-outs'), 'the outs lesson must make you tap real outs');
+  });
+
+  it('never asks a lesson to do something the curriculum has not taught', () => {
+    // Same ordering rule the drills follow: a decide exercise needs outs
+    // counted, so it cannot appear in a module that unlocks before Outs.
+    const levelOf = (id) => MODULE_META.find((m) => m.id === id).unlockLevel;
+    const outsLevel = levelOf('outs');
+    const NEEDS_OUTS = new Set(['count-outs', 'decide']);
+    for (const [id, w] of Object.entries(WALKTHROUGHS)) {
+      for (const step of w.steps) {
+        if (!step.practice || !NEEDS_OUTS.has(step.practice)) continue;
+        assert(levelOf(id) >= outsLevel,
+          `${id} (level ${levelOf(id)}) asks you to count outs, taught at level ${outsLevel}`);
+      }
+    }
   });
 });
