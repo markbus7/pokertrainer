@@ -19,13 +19,25 @@ describe('i18n: the mechanism', () => {
     setLang('en');
   });
 
-  it('every placeholder in a key also appears in its translation', () => {
+  it('never drops a placeholder carrying data, and never invents one', () => {
     // A dropped {n} silently renders a sentence with a number missing, which
-    // no test of the English side would ever catch.
+    // no test of the English side would catch. Purely grammatical ones are a
+    // different matter: {article} exists to pick "a" or "an", and Dutch uses
+    // "een" either way, so a translation is right to leave it out.
+    const GRAMMATICAL = new Set(['article']);
     for (const [key, value] of Object.entries(NL)) {
-      const wanted = [...key.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
-      const got = [...value.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
-      equal(got.join(','), wanted.join(','), `placeholders differ for "${key.slice(0, 60)}"`);
+      const wanted = [...key.matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
+      const got = new Set([...value.matchAll(/\{(\w+)\}/g)].map((m) => m[1]));
+
+      for (const name of got) {
+        assert(wanted.includes(name),
+          `"${key.slice(0, 50)}" has no {${name}}, so the translation renders it literally`);
+      }
+      for (const name of wanted) {
+        if (GRAMMATICAL.has(name)) continue;
+        assert(got.has(name),
+          `{${name}} is missing from the translation of "${key.slice(0, 50)}" — its value would vanish`);
+      }
     }
   });
 
