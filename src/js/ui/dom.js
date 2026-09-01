@@ -1,4 +1,5 @@
 import { lookupTerm } from '../data/glossary.js';
+import { t } from '../i18n/index.js';
 
 /** Minimal DOM helpers — enough to build the whole UI without a framework. */
 
@@ -22,7 +23,8 @@ export function el(spec, props = null, ...children) {
     if (value == null || value === false) continue;
     if (key === 'class') node.className = `${node.className} ${value}`.trim();
     else if (key === 'html') node.innerHTML = value;
-    else if (key === 'text') node.textContent = value;
+    else if (key === 'text') node.textContent = t(value);
+    else if (key === 'title' || key === 'placeholder' || key === 'aria-label') node.setAttribute(key, t(value));
     else if (key === 'style' && typeof value === 'object') Object.assign(node.style, value);
     else if (key.startsWith('on') && typeof value === 'function') {
       node.addEventListener(key.slice(2).toLowerCase(), value);
@@ -38,7 +40,11 @@ export function el(spec, props = null, ...children) {
 function append(node, children) {
   for (const child of children.flat(4)) {
     if (child == null || child === false || child === true) continue;
-    node.appendChild(child instanceof Node ? child : document.createTextNode(String(child)));
+    // Text children are translated here rather than at 1,100 call sites.
+    // This is safe because t() only substitutes strings the table actually
+    // has an entry for: a card rank, a player name or a formatted number is
+    // never a key, so it passes through untouched.
+    node.appendChild(child instanceof Node ? child : document.createTextNode(t(String(child))));
   }
 }
 
@@ -82,6 +88,13 @@ export function toast({ icon = '✨', title, desc = '', duration = 4200 }) {
  * are as likely to be on a tablet as a desktop.
  */
 export function richText(text) {
+  // Translate the whole string once, here, then parse. Doing it inside the
+  // parser would hit every recursive call, so an emphasised fragment lifted
+  // out of a Dutch sentence would be looked up again as if it were English.
+  return parseRich(t(text));
+}
+
+function parseRich(text) {
   const frag = document.createDocumentFragment();
   for (const part of String(text).split(/(\[\[[^\]]+\]\]|\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)) {
     if (!part) continue;
@@ -89,8 +102,8 @@ export function richText(text) {
     // **[[combo|combinations]]** — still renders as a term rather than as
     // literal brackets. Without this the outer marker swallows the inner one.
     if (part.startsWith('[[') && part.endsWith(']]')) frag.appendChild(termChip(part.slice(2, -2)));
-    else if (part.startsWith('**') && part.endsWith('**')) frag.appendChild(el('strong', richText(part.slice(2, -2))));
-    else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) frag.appendChild(el('em', richText(part.slice(1, -1))));
+    else if (part.startsWith('**') && part.endsWith('**')) frag.appendChild(el('strong', parseRich(part.slice(2, -2))));
+    else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) frag.appendChild(el('em', parseRich(part.slice(1, -1))));
     else if (part.startsWith('`') && part.endsWith('`')) frag.appendChild(el('code.inline-code', part.slice(1, -1)));
     else frag.appendChild(document.createTextNode(part));
   }

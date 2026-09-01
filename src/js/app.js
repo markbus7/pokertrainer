@@ -7,6 +7,7 @@ import { el, mount, $, toast, fmt } from './ui/dom.js';
 import { Profile } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
 import { VERSION, checkForUpdate } from './version.js';
+import { t, setLang, getLang, LANGUAGES } from './i18n/index.js';
 import { makeRng } from './core/rng.js';
 import { renderHome } from './ui/screenHome.js';
 import { renderLearn, renderDrill, renderGauntletIntro } from './ui/screenDrill.js';
@@ -45,6 +46,9 @@ const TABS = [
 ];
 
 const profile = Profile.load();
+// The stored language has to be live before anything renders, or the first
+// paint is English and then flips.
+setLang(profile.settings.lang || 'en');
 const rng = makeRng();
 let currentCtx = null;
 
@@ -94,8 +98,28 @@ function render() {
 
   mount($('#screen'), screen);
   drawTopbar(def.tab);
-  document.title = `${def.title} · Poker Trainer`;
+  document.title = `${t(def.title)} · Poker Trainer`;
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+}
+
+/**
+ * Language switch. Two languages fit as a pair of chips, which is one tap
+ * rather than the two a dropdown costs, and shows the alternative exists
+ * without being opened.
+ */
+function languageToggle() {
+  return el('div.lang-switch', { role: 'group', 'aria-label': t('Language') },
+    LANGUAGES.map((lang) => el(`button.lang-chip${lang.code === getLang() ? '.active' : ''}`, {
+      onclick: () => {
+        if (lang.code === getLang()) return;
+        setLang(lang.code);
+        profile.updateSettings({ lang: lang.code });
+        render();
+      },
+      title: lang.label,
+      'aria-pressed': lang.code === getLang() ? 'true' : 'false',
+    }, `${lang.flag} ${lang.short}`)),
+  );
 }
 
 function drawTopbar(activeTab) {
@@ -107,9 +131,10 @@ function drawTopbar(activeTab) {
         onclick: () => go('stats'),
         title: 'Which build you are running — click for details and an update check',
       }, `v${VERSION}`)),
-    el('nav.tabs', TABS.map((t) => el(`button.tab${t.route === activeTab ? '.active' : ''}`, {
-      onclick: () => go(t.route),
-    }, t.label))),
+    el('nav.tabs', TABS.map((tab) => el(`button.tab${tab.route === activeTab ? '.active' : ''}`, {
+      onclick: () => go(tab.route),
+    }, t(tab.label)))),
+    languageToggle(),
     el('button.rank-chip', {
       onclick: () => go('levels'),
       title: `${rank.blurb} — click to see what the next rank asks for`,

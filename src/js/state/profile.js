@@ -141,7 +141,9 @@ const emptyProfile = () => ({
   handsPlayed: 0,
   lifetimeProfitBb: 0,
   sessions: [],
-  settings: { sound: true, coach: true, fourColour: false, autoMuck: true },
+  // lang lives in settings so it travels with the cloud sync: pick Dutch on
+  // the iPad and the iPhone is in Dutch too, without setting it twice.
+  settings: { sound: true, coach: true, fourColour: false, autoMuck: true, lang: 'en' },
 });
 
 /** localStorage in the browser, a plain object under test. */
