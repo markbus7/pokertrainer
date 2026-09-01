@@ -1,12 +1,29 @@
 /** Dashboard: where you are, what to do next. */
 
 import { el, fmt } from './dom.js';
+import { t } from '../i18n/index.js';
 import { MODULE_META, recommendedModule } from '../data/curriculum.js';
 import { dueConcepts, nextReviewLabel, hasStudied } from '../state/spacing.js';
 import { masteryTier, nextTierGoal, tierByKey } from '../state/mastery.js';
-import { RANKS } from '../state/profile.js';
+import { RANKS, requirementRows } from '../state/profile.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { stakeFor } from '../state/stats.js';
+
+/**
+ * What is actually still missing for the next rank. Reports the requirement
+ * furthest from being met rather than assuming it is XP, which stopped being
+ * true once ranks started asking for lessons and drilled skills too.
+ */
+function nextRankHint(profile, next) {
+  const rows = requirementRows(profile, next);
+  const behind = rows.filter((r) => !r.met);
+  if (!behind.length) return t('Ready for {rank} — the requirements are met.', { rank: t(next.name) });
+  const worst = behind.reduce((a, b) => ((a.have / a.need) <= (b.have / b.need) ? a : b));
+  const remaining = worst.need - worst.have;
+  return worst.key === 'xp'
+    ? t('{n} XP to {rank}', { n: fmt.chips(remaining), rank: `${next.emoji} ${t(next.name)}` })
+    : t('{n} more to {rank}: {what}', { n: remaining, rank: `${next.emoji} ${t(next.name)}`, what: t(worst.label).toLowerCase() });
+}
 
 export function renderHome(ctx) {
   const { profile, go } = ctx;
@@ -28,7 +45,7 @@ export function renderHome(ctx) {
         el('div.row',
           el('div', { style: { fontSize: '3rem', lineHeight: '1' } }, rank.emoji),
           el('div',
-            el('div.faint', `Level ${rank.level} of ${RANKS.length}`),
+            el('div.faint', t('Level {level} of {total}', { level: rank.level, total: RANKS.length })),
             el('h1', { style: { margin: '2px 0 4px' } }, rank.name),
             el('div.muted', { style: { maxWidth: '460px' } }, rank.blurb),
           ),
@@ -41,7 +58,11 @@ export function renderHome(ctx) {
       el('div', { style: { marginTop: '16px' } },
         el('div.bar', el('span', { style: { width: `${Math.round(profile.progress * 100)}%` } })),
         el('div.spread', { style: { marginTop: '6px' } },
-          el('div.faint', next ? `${fmt.chips(next.xp - profile.xp)} XP to ${next.emoji} ${next.name}` : 'Maximum rank reached — you have mastered the curriculum.'),
+          // Not "XP to next rank" any more: XP stopped being the only gate when
+          // ranks gained requirements, so this read "-2,000 XP to Grinder" for
+          // anyone whose XP had run ahead of their skills. Name the requirement
+          // that is actually furthest behind instead.
+          el('div.faint', next ? nextRankHint(profile, next) : t('Maximum rank reached — you have mastered the curriculum.')),
           el('div.faint', next ? `${fmt.chips(profile.xp)} / ${fmt.chips(next.xp)}` : ''),
         ),
       ),
@@ -68,13 +89,13 @@ export function renderHome(ctx) {
     el('div.grid.cols-3',
       quickCard('🎛️', 'The Lab', 'Solve spots at a table — type the equity, size the bet. No multiple choice.', 'Open the Lab', () => go('lab')),
       quickCard('🃏', 'Play a Table', 'Six seats, real opponents, a coach watching every decision.', 'Sit down', () => go('play')),
-      quickCard('💰', 'Bankroll Challenge', `Climb from NL2 to NL500. You are at ${stake.name} with ${fmt.money(profile.data.bankroll)}.`, 'Grind', () => go('grind')),
+      quickCard('💰', 'Bankroll Challenge', t('Climb from NL2 to NL500. You are at {stake} with {money}.', { stake: stake.name, money: fmt.money(profile.data.bankroll) }), 'Grind', () => go('grind')),
     ),
 
     /* ---- stats strip ---- */
     el('div.grid.cols-4',
       statTile('Hands played', fmt.chips(profile.data.handsPlayed)),
-      statTile('Drill accuracy', accuracy === null ? '—' : fmt.pct(accuracy), accuracy === null ? 'answer a few first' : `${totals.correct} of ${totals.attempts}`),
+      statTile('Drill accuracy', accuracy === null ? '—' : fmt.pct(accuracy), accuracy === null ? 'answer a few first' : t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
       statTile('Achievements', `${profile.data.achievements.length} / ${ACHIEVEMENTS.length}`),
       statTile('Lifetime', fmt.bb(profile.data.lifetimeProfitBb), 'across all sessions'),
     ),
@@ -83,7 +104,7 @@ export function renderHome(ctx) {
     el('div.panel',
       el('div.panel-title',
         el('h2', 'Training modules'),
-        el('span.faint', `${MODULE_META.filter((m) => m.unlockLevel <= profile.level).length} of ${MODULE_META.length} unlocked`),
+        el('span.faint', t('{n} of {total} unlocked', { n: MODULE_META.filter((m) => m.unlockLevel <= profile.level).length, total: MODULE_META.length })),
       ),
       el('div.grid.cols-3',
         MODULE_META.map((meta) => moduleTile(meta, profile, go)),
@@ -124,7 +145,7 @@ function duePanel(profile, go) {
   return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
     el('div.spread',
       el('div',
-        el('h3', { style: { margin: 0 } }, `🔁 ${due.length} ready for review`),
+        el('h3', { style: { margin: 0 } }, t('🔁 {n} ready for review', { n: due.length })),
         el('div.faint', 'These are due now — practising a concept just as it starts to fade is what makes it stick.'),
       ),
       el('button.btn.sm.primary', { onclick: () => go('lab') }, 'Review now'),
@@ -180,7 +201,7 @@ function moduleTile(meta, profile, go) {
     el('div.spread',
       el('span.icon', locked ? '🔒' : meta.icon),
       locked
-        ? el('span.badge', `Level ${meta.unlockLevel}`)
+        ? el('span.badge', t('Level {level}', { level: meta.unlockLevel }))
         : tier !== 'untouched'
           ? el(`span.badge${tierInfo.tone ? `.${tierInfo.tone}` : ''}`, `${tierInfo.icon} ${tierInfo.name}`)
           : null,
@@ -190,7 +211,7 @@ function moduleTile(meta, profile, go) {
     el('div.mastery', locked
       ? `Unlocks at ${RANKS[meta.unlockLevel - 1].name}`
       : stats.attempts
-        ? `${stats.correct}/${stats.attempts} correct${acc !== null ? ` · ${fmt.pct(acc)}` : ''}`
+        ? t('{correct}/{attempts} correct', { correct: stats.correct, attempts: stats.attempts }) + (acc !== null ? ` · ${fmt.pct(acc)}` : '')
         : 'Not started'),
     !locked && goal
       ? el('div.mastery', { style: { color: 'var(--text-faint)' } },

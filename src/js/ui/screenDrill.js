@@ -1,6 +1,7 @@
 /** Lessons, drills and the Gauntlet. */
 
 import { el, mount, richText, toast, fmt } from './dom.js';
+import { t } from '../i18n/index.js';
 import { scenarioView } from './scenarioView.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
 import { generateQuestion, generateGauntlet, difficultyForLevel } from '../trainers/index.js';
@@ -130,7 +131,7 @@ export function renderDrill(ctx, params) {
         el('div',
           el('h1', { style: { margin: 0 } }, gauntlet ? 'Gauntlet complete' : passed ? 'Session passed' : 'Session complete'),
           el('div.muted', `${state.correct} of ${state.answered} correct — ${fmt.pct(pct)}`
-            + (bounded ? ` · pass mark was ${gauntlet ? 8 : PASS_MARK}` : '')),
+            + (bounded ? t(' · pass mark was {pass}', { pass: gauntlet ? 8 : PASS_MARK }) : '')),
         ),
       ),
     );
@@ -221,9 +222,9 @@ export function renderDrill(ctx, params) {
           el('div',
             el('div', { style: { fontWeight: '650' } }, gauntlet ? 'The Gauntlet' : q.moduleName),
             el('div.faint', gauntlet
-              ? `Question ${state.index} of ${queue.length} · ${q.moduleName}`
+              ? t('Question {n} of {total} · {module}', { n: state.index, total: queue.length, module: t(q.moduleName) })
               : bounded
-                ? `Question ${Math.min(state.index, sessionLength)} of ${sessionLength} · pass mark ${PASS_MARK}`
+                ? t('Question {n} of {total} · pass mark {pass}', { n: Math.min(state.index, sessionLength), total: sessionLength, pass: PASS_MARK })
                 : `Endless practice · question ${state.index}`),
           ),
         ),

@@ -708,10 +708,14 @@ input, textarea, select { font-size: max(16px, 1rem); }
 /* ---- Tablet and phone: one scrolling row of tabs, never a wrapped block ---- */
 @media (max-width: 1023px) {
   .topbar { padding-top: 8px; padding-bottom: 8px; gap: 10px; }
+  /* Explicit order for every direct child: an unordered one defaults to 0
+     and jumps ahead of the brand, which is how the language switch first
+     landed to the left of the logo. */
   .brand { order: 1; font-size: 1rem; }
-  .rank-chip { order: 2; margin-left: auto; }
+  .lang-switch { order: 2; margin-left: auto; }
+  .rank-chip { order: 3; margin-left: 0; }
   .tabs {
-    order: 3;
+    order: 4;
     width: 100%;
     flex: none;
     flex-wrap: nowrap;
@@ -764,3 +768,33 @@ input, textarea, select { font-size: max(16px, 1rem); }
   main { padding-top: 10px; }
   .panel { padding: 11px; }
 }
+
+/* Language switch: a pair of chips rather than a dropdown, so the other
+   language is one tap away and visibly exists. */
+.lang-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+}
+.lang-chip {
+  background: transparent;
+  border: 0;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 99px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lang-chip:hover { color: var(--text); }
+.lang-chip.active { background: var(--bg-raised); color: var(--text); }
+
+@media (pointer: coarse) {
+  .lang-chip { min-height: 40px; padding: 6px 12px; }
+}
+

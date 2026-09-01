@@ -262,6 +262,51 @@ await step('the rank chip opens the ladder, and locked ranks stay locked', async
   if (lockedPressable) throw new Error(`${lockedPressable} locked ranks are pressable`);
 });
 
+await step('the language switch turns the whole app Dutch and persists', async () => {
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+
+  const englishNav = await page.$$eval('.tab', (n) => n.map((x) => x.textContent.trim()));
+  if (!englishNav.includes('Train')) throw new Error(`expected English nav, got ${englishNav}`);
+
+  await page.click('.lang-chip:not(.active)');
+  await page.waitForTimeout(400);
+
+  const dutchNav = await page.$$eval('.tab', (n) => n.map((x) => x.textContent.trim()));
+  if (!dutchNav.includes('Leren')) throw new Error(`nav did not switch: ${dutchNav}`);
+
+  // A lesson is the real test: it is the largest body of text in the app.
+  await page.goto(`${BASE}/#walkthrough?module=pot-odds`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+  const lesson = await page.textContent('.lesson-body');
+  if (!/pot odds/i.test(lesson) && !/prijs/i.test(lesson)) {
+    throw new Error('lesson body looks wrong');
+  }
+  if (/What question are we actually asking/.test(await page.textContent('body'))) {
+    throw new Error('the lesson is still rendering English');
+  }
+
+  // Poker vocabulary must survive the switch untranslated.
+  const glossaryText = await (async () => {
+    await page.goto(`${BASE}/#glossary`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(400);
+    return page.textContent('body');
+  })();
+  for (const term of ['Flush draw', 'Gutshot', 'Pot odds']) {
+    if (!glossaryText.includes(term)) throw new Error(`jargon "${term}" was translated away`);
+  }
+
+  // And it survives a reload, because it lives in the profile.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  const stillDutch = await page.$eval('.lang-chip.active', (n) => n.textContent);
+  if (!/NL/.test(stillDutch)) throw new Error(`language did not persist: ${stillDutch}`);
+
+  // Put it back so later steps see the app they expect.
+  await page.click('.lang-chip:not(.active)');
+  await page.waitForTimeout(300);
+});
+
 await step('layout holds up on phone and tablet viewports', async () => {
   // iPad first, then iPhone, then desktop — the order this actually gets
   // used in. Checks the three things that break on touch and are invisible

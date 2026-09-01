@@ -9,6 +9,7 @@
  */
 
 import { el, mount, richText, toast } from './dom.js';
+import { t } from '../i18n/index.js';
 import { renderVisual } from './visuals.js';
 import { moduleMeta, WALKTHROUGHS } from '../data/curriculum.js';
 
@@ -105,7 +106,7 @@ export function renderWalkthrough(ctx, params) {
           el('span', { style: { fontSize: '1.6rem' } }, meta.icon),
           el('div',
             el('div', { style: { fontWeight: '650' } }, meta.name),
-            el('div.faint', `Step ${stepNumber} of ${totalSteps}`),
+            el('div.faint', t('Step {n} of {total}', { n: stepNumber, total: totalSteps })),
           ),
         ),
         el('button.btn.sm.ghost', { onclick: () => go('learn', { module: meta.id }) }, 'Exit lesson'),
