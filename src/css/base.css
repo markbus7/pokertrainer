@@ -798,3 +798,107 @@ input, textarea, select { font-size: max(16px, 1rem); }
   .lang-chip { min-height: 40px; padding: 6px 12px; }
 }
 
+
+/* ---- Hands-on lesson exercises ------------------------------------ *
+   Real cards inside a lesson. The outs grid is the important one: after
+   grading it marks the cards you found, the ones you missed and the ones
+   that never won, so the correction lands on the cards themselves rather
+   than on a number in a sentence.                                      */
+.practice {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--gold-dim);
+  border-radius: var(--radius);
+  background: rgba(214, 168, 63, 0.04);
+}
+.practice-prompt { font-weight: 600; margin-bottom: 14px; }
+.practice-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  margin-bottom: 5px;
+}
+.practice-table { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+.practice-seat.villain { opacity: 0.9; }
+.practice-board { margin-bottom: 14px; }
+.practice-hands { display: flex; flex-wrap: wrap; gap: 12px; }
+.practice-hand {
+  flex: 1 1 150px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.practice-hand:hover:not(:disabled) { border-color: var(--border-bright); }
+.practice-hand.correct { border-color: var(--green); background: rgba(62, 207, 142, 0.1); }
+.practice-hand.wrong { border-color: var(--red); background: rgba(242, 85, 90, 0.1); }
+.practice-hand:disabled { cursor: default; }
+
+.practice-money { display: flex; flex-wrap: wrap; gap: 10px; }
+.practice-money-tile {
+  flex: 1 1 90px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.practice-input {
+  width: 110px;
+  font-size: max(16px, 1rem);
+  font-family: var(--mono);
+  padding: 10px 12px;
+  background: var(--bg-raised);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* The deck, laid out as ranks across and suits down. */
+.out-grid {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 3px;
+}
+.out-cell {
+  aspect-ratio: 3 / 4;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.out-cell:hover:not(:disabled) { border-color: var(--border-bright); color: var(--text); }
+.out-rank { font-size: 0.72rem; font-weight: 700; }
+.out-suit { font-size: 0.62rem; }
+.out-rank.red, .out-suit.red { color: #e2646a; }
+.out-cell.picked { background: rgba(214, 168, 63, 0.22); border-color: var(--gold); color: var(--text); }
+.out-cell.hit { background: rgba(62, 207, 142, 0.25); border-color: var(--green); color: var(--text); }
+.out-cell.missed { border-color: var(--gold); border-width: 2px; background: rgba(214, 168, 63, 0.1); }
+.out-cell.wrong { background: rgba(242, 85, 90, 0.2); border-color: var(--red); }
+.out-cell:disabled { cursor: default; }
+
+@media (pointer: coarse) {
+  .out-cell { min-height: 34px; }
+  .practice-input { min-height: 44px; }
+}
+@media (max-width: 700px) {
+  .practice { padding: 12px; }
+  .practice-table { gap: 12px; }
+  .out-grid { gap: 2px; }
+  .out-rank { font-size: 0.62rem; }
+  .out-suit { font-size: 0.54rem; }
+}

@@ -244,6 +244,16 @@ export const WALKTHROUGHS = {
       },
 
       {
+        title: 'Price a real one',
+        body: [
+          'Your turn. Below is a pot and a bet — no options to choose between, no hand to distract you. **Work out the equity you need and type it in.**',
+          'Use whichever method you prefer. Count how many times their bet fits into the pot and add 2, or do it the long way with your call over the final pot. Both land in the same place.',
+          'Anything within two points counts, because the skill is arriving at the right figure rather than matching a decimal.',
+        ],
+        practice: 'price',
+      },
+
+      {
         title: 'The five numbers worth memorising',
         body: [
           'In practice you will face the same handful of bet sizes over and over. Learn these and you will almost never need to calculate at the table.',
@@ -430,6 +440,16 @@ export const WALKTHROUGHS = {
         },
       },
       {
+        title: 'Read a real board',
+        body: [
+          'The table above is the theory. This is the job: two hands, five community cards, and three seconds to say who wins.',
+          'Both players are all-in, so every card is face up. **Tap the hand that takes it.**',
+          'Remember that you are looking for the best five cards out of the seven available to each player — and that both players share the board.',
+        ],
+        practice: 'pick-winner',
+      },
+
+      {
         title: 'The ace plays high and low — but never wraps',
         body: [
           'The ace is the only card that works at both ends of a straight.',
@@ -568,6 +588,17 @@ export const WALKTHROUGHS = {
         },
       },
       {
+        title: 'Now count a real one',
+        body: [
+          'Reading about counting is not counting. Here is a hand that has just been dealt, with your opponent’s cards face up so nothing is hidden.',
+          'Below it is every card still unseen — the whole rest of the deck. **Tap each one that would put you in front.**',
+          'Work it the way the last step described: see what beats you now, then go looking for the cards that change it. Take as long as you like; nothing is timed.',
+          'When you check your answer the grid marks what you found, what you missed, and anything you picked that does not actually win. That is a more useful correction than being told a number.',
+        ],
+        practice: 'count-outs',
+      },
+
+      {
         title: 'The counts worth memorising',
         body: [
           'A handful of draws come up constantly. Learn these and you will rarely have to count from scratch.',
@@ -646,6 +677,16 @@ export const WALKTHROUGHS = {
           answer: 'a',
         },
       },
+      {
+        title: 'Both halves, one decision',
+        body: [
+          'This is the whole thing put together, and it is the decision you will make thousands of times.',
+          'You are behind. Their hand is face up. There is a pot and there is a bet. **Count what saves you, turn it into a percentage, price the bet, then act.**',
+          'You have every piece now: outs from this module, the price from Pot Odds. Nothing else is needed.',
+        ],
+        practice: 'decide',
+      },
+
       {
         title: 'Not every out is clean',
         body: [

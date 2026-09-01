@@ -9,9 +9,24 @@
  */
 
 import { el, mount, richText, toast } from './dom.js';
+import { makePractice } from '../trainers/practice.js';
+import { practiceView } from './practiceView.js';
 import { t } from '../i18n/index.js';
 import { renderVisual } from './visuals.js';
 import { moduleMeta, WALKTHROUGHS } from '../data/curriculum.js';
+
+/**
+ * Builds one hands-on exercise. A generator can decline a deal, so this
+ * reports and returns null rather than leaving a step that cannot render.
+ */
+function buildPractice(kind) {
+  try {
+    return makePractice(kind);
+  } catch (err) {
+    console.error('practice unavailable:', err);
+    return null;
+  }
+}
 
 export function renderWalkthrough(ctx, params) {
   const meta = moduleMeta(params.module);
@@ -21,7 +36,7 @@ export function renderWalkthrough(ctx, params) {
   }
 
   const { profile, go } = ctx;
-  const state = { index: 0, chosen: null, correctCount: 0, answered: new Set() };
+  const state = { index: 0, chosen: null, practice: null, correctCount: 0, answered: new Set() };
 
   const header = el('div.panel');
   const body = el('div.panel');
@@ -52,6 +67,7 @@ export function renderWalkthrough(ctx, params) {
     if (state.index >= totalSteps - 1) return finish();
     state.index++;
     state.chosen = null;
+    state.practice = null;
     draw();
     window.scrollTo({ top: 0 });
     return null;
@@ -61,6 +77,7 @@ export function renderWalkthrough(ctx, params) {
     if (state.index === 0) return;
     state.index--;
     state.chosen = null;
+    state.practice = null;
     draw();
   }
 
@@ -90,7 +107,7 @@ export function renderWalkthrough(ctx, params) {
 
     mount(footer,
       el('button.btn.primary.lg', { onclick: () => go('drill', { module: meta.id }) }, `Drill ${meta.name}`),
-      el('button.btn.ghost', { onclick: () => { state.index = 0; state.chosen = null; draw(); } }, 'Read it again'),
+      el('button.btn.ghost', { onclick: () => { state.index = 0; state.chosen = null; state.practice = null; draw(); } }, 'Read it again'),
       el('button.btn.ghost', { onclick: () => go('home') }, 'Back to dashboard'),
     );
     return null;
@@ -117,6 +134,12 @@ export function renderWalkthrough(ctx, params) {
 
     const check = step.check;
     const answered = state.chosen !== null;
+    // A practice step replaces the multiple-choice check entirely: you do the
+    // thing with real cards and the engine grades it, which is a different
+    // exercise from recognising the right sentence out of four.
+    const practice = step.practice
+      ? (state.practice || (state.practice = buildPractice(step.practice)))
+      : null;
     const chosenOption = answered ? check.options.find((o) => o.key === state.chosen) : null;
     const isCorrect = answered && state.chosen === check.answer;
 
@@ -129,7 +152,20 @@ export function renderWalkthrough(ctx, params) {
       el('div.lesson-body', step.body.map((paragraph) => el('p', richText(paragraph)))),
       step.visual ? renderVisual(step.visual) : null,
 
-      el('div', { style: { marginTop: '22px', paddingTop: '18px', borderTop: '1px solid var(--border)' } },
+      practice
+        ? el('div', { style: { marginTop: '22px', paddingTop: '18px', borderTop: '1px solid var(--border)' } },
+            el('div.row', { style: { marginBottom: '10px' } },
+              el('span.badge.gold', 'Your turn'),
+            ),
+            practiceView(practice, (result) => {
+              state.chosen = result.correct ? 'practice-ok' : 'practice-miss';
+              state.practiceCorrect = result.correct;
+              drawFooter();
+            }, profile.settings),
+          )
+        : null,
+
+      check ? el('div', { style: { marginTop: '22px', paddingTop: '18px', borderTop: '1px solid var(--border)' } },
         el('div.row', { style: { marginBottom: '10px' } },
           el('span.badge.gold', 'Check yourself'),
         ),
@@ -157,20 +193,29 @@ export function renderWalkthrough(ctx, params) {
                 : null,
             )
           : null,
-      ),
+      ) : null,
     );
 
+    drawFooter();
+  }
+
+  function drawFooter() {
+    const step = walkthrough.steps[state.index];
+    const answered = state.chosen !== null;
     mount(footer,
       state.index > 0 ? el('button.btn.ghost', { onclick: back }, '← Previous') : null,
       answered
         ? el('button.btn.primary', { onclick: next },
             state.index >= totalSteps - 1 ? 'Finish lesson →' : 'Next step →')
-        : el('span.faint', 'Answer the check to continue — press 1-4 or click.'),
+        : el('span.faint', step.practice
+            ? 'Work the exercise above to continue.'
+            : 'Answer the check to continue — press 1-4 or click.'),
     );
   }
 
   ctx.onKey = (e) => {
     const step = walkthrough.steps[state.index];
+    if (!step.check) return;
     const n = Number(e.key);
     if (state.chosen === null && n >= 1 && n <= step.check.options.length) {
       answer(step.check.options[n - 1].key);
