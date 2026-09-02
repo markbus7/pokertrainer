@@ -2179,4 +2179,54 @@ export const NL = {
   'The report is selected — copy it by hand.': 'Het rapport is geselecteerd — kopieer het handmatig.',
   '**Right now** you both have {hero} — but their {theirs} plays against your {yours}, so you are behind. You are looking for the single next card that changes that.':
     '**Op dit moment** hebben jullie allebei {hero} — maar hun {theirs} speelt tegen jouw {yours}, dus je ligt achter. Je zoekt de ene volgende kaart die dat verandert.',
+  /* ---------------------------------------------------------------- *
+   * Outs: the reference card, and the derivation folded away
+   * ---------------------------------------------------------------- */
+  'The shortcut is not exact — it drifts a little high on the flop and a little low on the turn — but never by enough to change what you should do. That is the whole point of a shortcut, and you do not need to carry the reason around with you.':
+    'De vuistregel is niet exact — hij valt op de flop iets te hoog uit en op de turn iets te laag — maar nooit genoeg om te veranderen wat je zou moeten doen. Dat is precies het nut van een vuistregel, en je hoeft de reden niet met je mee te dragen.',
+  'Why the shortcut works at all': 'Waarom de vuistregel überhaupt werkt',
+  'Two cards to come is not simply twice one card, and it is worth seeing why once. Adding the two chances together counts the times you hit on **both** cards twice over — once in each half of the sum — so plain addition overshoots.':
+    'Twee kaarten te komen is niet simpelweg twee keer één kaart, en het is de moeite waard dat één keer te zien. De twee kansen bij elkaar optellen telt de keren dat je op **beide** kaarten raakt dubbel — één keer in elke helft van de som — dus gewoon optellen schiet door.',
+  'None of these figures are worth memorising. They are here so the shortcut is something you understand rather than something you trust.':
+    'Geen van deze getallen is het onthouden waard. Ze staan hier zodat de vuistregel iets is wat je begrijpt in plaats van iets wat je maar gelooft.',
+  'They stop cancelling when you have a lot of outs, because the overlap grows faster than the rounding saves. At fifteen outs the overlap is nearly 10%, so 15 × 4 = 60% overshoots the true **54%**. The rule of 2 has the opposite, smaller problem: one card in 46 is 2.2%, not 2.0%, so it runs a shade low.':
+    'Ze heffen elkaar niet meer op als je veel outs hebt, omdat de overlap sneller groeit dan het afronden bespaart. Bij vijftien outs is de overlap bijna 10%, dus 15 × 4 = 60% schiet voorbij de echte **54%**. De regel van 2 heeft het omgekeerde, kleinere probleem: één kaart op 46 is 2,2%, niet 2,0%, dus hij valt een tikje laag uit.',
+
+  'The card you actually carry': 'De kaart die je echt meeneemt',
+  'Here is the honest version of how this gets used at a real table: **almost nobody calculates anything.**':
+    'Hier is de eerlijke versie van hoe dit aan een echte tafel gebruikt wordt: **bijna niemand rekent iets uit.**',
+  'A good player has a handful of numbers memorised and matches against them. "Half pot, flush draw" — 25 against 35 — call. That takes about a second and no arithmetic happens at all.':
+    'Een goede speler heeft een handvol getallen uit zijn hoofd en legt de situatie daarnaast. "Halve pot, flush draw" — 25 tegen 35 — call. Dat kost ongeveer een seconde en er wordt niets uitgerekend.',
+  'The table below is the whole thing in one place. Your draw down the side, their bet across the top, and the answer where the two meet. This is what the counting and the rule of 4 are *for*: you do the working a few times so that eventually you do not have to.':
+    'De tabel hieronder is het geheel op één plek. Jouw draw langs de zijkant, hun bet bovenaan, en het antwoord waar de twee elkaar kruisen. Hier zijn het tellen en de regel van 4 *voor*: je doet het werk een paar keer zodat je het uiteindelijk niet meer hoeft te doen.',
+  'Notice how many cells are not close at all. A gutshot against a pot-sized bet misses by seventeen points — you do not need a calculator for that. Thirteen of these twenty answers are clear by five points or more, and you can give them instantly once the table is in your head.':
+    'Let op hoeveel vakjes helemaal niet close zijn. Een gutshot tegen een pot-sized bet komt zeventien punten tekort — daar heb je geen rekenmachine voor nodig. Dertien van deze twintig antwoorden zijn met vijf punten of meer duidelijk, en die kun je meteen geven zodra de tabel in je hoofd zit.',
+  'Everything else in this module is scaffolding for this card. Learn the table, and keep the method for the spots that are not on it.':
+    'Al het andere in deze module is steigerwerk voor deze kaart. Leer de tabel, en houd de methode achter de hand voor de situaties die er niet op staan.',
+  'You need 20% against a third-pot bet, 25% against half, 29% against two-thirds and 33% against a pot-sized one. Marked **close** means within five points of the line — those are the ones where care pays, and where the rest of this trainer (position, what they would bet here) tips the answer.':
+    'Je hebt 20% nodig tegen een derde-pot bet, 25% tegen een halve, 29% tegen twee derde en 33% tegen een pot-sized bet. **Close** betekent binnen vijf punten van de grens — dat zijn de vakjes waar zorgvuldigheid loont, en waar de rest van deze trainer (positie, wat zij hier zouden betten) de doorslag geeft.',
+  'You hold': 'Jij hebt',
+  'You have': 'Jouw equity',
+  'They bet ⅓': 'Zij betten ⅓',
+  'half': 'half',
+  'pot': 'pot',
+  'Flush + straight draw': 'Flush + straight draw',
+  'Open-ended straight': 'Open-ended straight',
+  'call': 'call',
+  'fold': 'fold',
+  'call (close)': 'call (close)',
+  'fold (close)': 'fold (close)',
+  'Two overcards': 'Twee overcards',
+  'You have an open-ended straight draw on the flop and your opponent bets the size of the pot. Without doing any arithmetic, what does the card say?':
+    'Je hebt een open-ended straight draw op de flop en je tegenstander bet de grootte van de pot. Wat zegt de kaart, zonder te rekenen?',
+  'Fold — but it is close': 'Fold — maar het is close',
+  'Right. An open-ender is about 31% and a pot-sized bet demands 33%. You are short by two points, which is a fold rather than a disaster — and it is exactly the kind of spot where the extra information later in this trainer (position, what they would bet here) tips it.':
+    'Klopt. Een open-ender is ongeveer 31% en een pot-sized bet vraagt 33%. Je komt twee punten tekort, wat een fold is en geen ramp — en het is precies het soort situatie waar de extra informatie verderop in deze trainer (positie, wat zij hier zouden betten) de doorslag geeft.',
+  'Call — a straight draw is always worth it': 'Call — een straight draw is het altijd waard',
+  'A straight draw is worth it against most bets, but not this one. The row shows call against a third, a half and two-thirds, and fold against a pot-sized bet. The bigger the bet, the more equity it demands.':
+    'Een straight draw is het tegen de meeste bets waard, maar tegen deze niet. De rij laat call zien tegen een derde, een halve en twee derde, en fold tegen een pot-sized bet. Hoe groter de bet, hoe meer equity hij vraagt.',
+  'Fold — it is not close at all': 'Fold — het is helemaal niet close',
+  'It is a fold, but only just: 31% against 33%. The card marks it close for a reason. The genuinely clear folds are the gutshot row, which misses by ten points or more.':
+    'Het is een fold, maar maar net: 31% tegen 33%. De kaart markeert hem niet voor niets als close. De echt duidelijke folds staan in de gutshot-rij, die er tien punten of meer naast zit.',
+  'optional': 'optioneel',
 };
