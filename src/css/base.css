@@ -912,3 +912,37 @@ input, textarea, select { font-size: max(16px, 1rem); }
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   font-size: 0.9rem;
 }
+
+/* Action buttons for the choice exercises. */
+.practice-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.practice-choice {
+  flex: 1 1 180px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+}
+.practice-choice:hover:not(:disabled) { border-color: var(--border-bright); }
+.practice-choice.correct { border-color: var(--green); background: rgba(62, 207, 142, 0.12); }
+.practice-choice.wrong { border-color: var(--red); background: rgba(242, 85, 90, 0.12); }
+.practice-choice:disabled { cursor: default; }
+@media (pointer: coarse) { .practice-choice { min-height: 52px; } }
+
+/* The learning report: a big readable block of text meant to be copied. */
+.report-box {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 16px;          /* iOS zooms the page below this on focus */
+  line-height: 1.5;
+  resize: vertical;
+  background: var(--bg-raised);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}

@@ -2000,4 +2000,181 @@ export const NL = {
     'Daaronder staat elke kaart die nog ongezien is — de hele rest van het pak. **Tik op elke kaart die je op voorsprong zou zetten als hij als volgende komt.**',
   'One card, not two. A card that merely improves your hand is not an out unless it also beats theirs — so a heart is worthless to you when you hold no hearts, however many are on the board.':
     'Eén kaart, niet twee. Een kaart die je hand alleen maar verbetert is geen out tenzij hij ook hun hand verslaat — dus een hart is waardeloos voor je als je zelf geen harten hebt, hoeveel er ook op het bord liggen.',
+  /* ---------------------------------------------------------------- *
+   * Hands-on exercises for the remaining lessons
+   * ---------------------------------------------------------------- */
+  'Raise it or fold it': 'Raise hem of fold hem',
+  'The chart above is the theory. Here is a hand, and a seat. **Decide.**':
+    'De chart hierboven is de theorie. Hier is een hand, en een stoel. **Beslis.**',
+  'You will not always have a chart in front of you, so work it the way the last step described: how many players can still wake up behind you with something better?':
+    'Je hebt niet altijd een chart voor je, dus pak het aan zoals de vorige stap beschreef: hoeveel spelers kunnen er achter je nog wakker worden met iets beters?',
+  'The further from the button you sit, the more of them there are, and the stronger your hand has to be before it is worth entering the pot.':
+    'Hoe verder je van de button zit, hoe meer dat er zijn, en hoe sterker je hand moet zijn voordat het de moeite waard is de pot in te gaan.',
+
+  'The same hand, two seats': 'Dezelfde hand, twee stoelen',
+  'Here is one hand. It is a fold from one seat and a raise from another, and nothing about the cards changes between them — which is the whole argument of this module in a single decision.':
+    'Hier is één hand. Vanaf de ene stoel is het een fold en vanaf de andere een raise, en aan de kaarten verandert er niets — wat het hele punt van deze module is, in één beslissing.',
+  'Two things are different between the seats. Under the gun, five players can still wake up behind you with something better. On the button, only two can, and both of them will be acting first for the rest of the hand.':
+    'Tussen de stoelen verschillen twee dingen. Under the gun kunnen er nog vijf spelers achter je wakker worden met iets beters. Op de button maar twee, en die handelen allebei de rest van de hand als eerste.',
+  '**Pick the seat where this hand is a raise.**':
+    '**Kies de stoel waar deze hand een raise is.**',
+
+  'Can you sit down?': 'Kun je aanschuiven?',
+  'A bankroll and a stake. **Decide whether you can play it.**':
+    'Een bankroll en een niveau. **Beslis of je het kunt spelen.**',
+  'Hold the number from the last step in mind: normal downswings run past 20 buy-ins. The threshold is not about how confident you feel or how well you have been running — it is about surviving an ordinary bad stretch without going broke.':
+    'Houd het getal uit de vorige stap in gedachten: normale downswings lopen voorbij de 20 buy-ins. De drempel gaat niet over hoe zeker je je voelt of hoe goed je gelopen hebt — hij gaat over een gewone slechte periode overleven zonder failliet te gaan.',
+  'Divide the roll by the buy-in and compare it against 30. That is the whole calculation, and it is the one most players skip on the way to busting.':
+    'Deel de roll door de buy-in en vergelijk het met 30. Dat is de hele berekening, en het is de berekening die de meeste spelers overslaan op weg naar failliet.',
+
+  'Read the texture': 'Lees de textuur',
+  'You raised before the flop and they called. The flop comes down and they check to you.':
+    'Je hebt vóór de flop geraised en zij callden. De flop komt en zij checken naar jou.',
+  '**Look at the board and decide: bet small, or check back?** The question to ask is how many of their hands can carry on against a bet.':
+    '**Kijk naar het bord en beslis: klein betten, of terug checken?** De vraag die je stelt is hoeveel van hun handen door kunnen tegen een bet.',
+  'Count the suits and the gaps. Three different suits and spread-out ranks means very little connected with it; two of a suit and close together means almost everything did.':
+    'Tel de kleuren en de gaten. Drie verschillende kleuren en ver uit elkaar liggende waarden betekent dat er heel weinig op aansluit; twee van een kleur en dicht bij elkaar betekent dat bijna alles dat wel deed.',
+
+  'Work out the floor': 'Bereken de ondergrens',
+  'A pot and a bet. **Type the share of your range you must keep defending.**':
+    'Een pot en een bet. **Typ het deel van je range dat je moet blijven verdedigen.**',
+  'It is pot ÷ (pot + bet). Remember the direction: a smaller bet is a cheaper bluff, so it needs to work less often — which means you have to defend *more*.':
+    'Het is pot ÷ (pot + bet). Onthoud de richting: een kleinere bet is een goedkopere bluff, dus die hoeft minder vaak te werken — wat betekent dat jij *meer* moet verdedigen.',
+
+  'Price your own bluff': 'Bepaal de prijs van je eigen bluff',
+  'Now from the other side of the table. You are bluffing with a hand that cannot win a showdown, so folds are the only way this bet makes money.':
+    'Nu vanaf de andere kant van de tafel. Je bluft met een hand die geen showdown kan winnen, dus folds zijn de enige manier waarop deze bet geld verdient.',
+  '**Type how often they must fold for the bluff to break even.** You are risking the bet to win the pot, and that ratio is the whole answer.':
+    '**Typ hoe vaak ze moeten folden om de bluff quitte te laten draaien.** Je riskeert de bet om de pot te winnen, en die verhouding is het hele antwoord.',
+  'Notice which way it moves before you answer: a bigger bluff wins more when it works, and has to work more often to pay for itself.':
+    'Let op welke kant het op beweegt voordat je antwoordt: een grotere bluff wint meer als hij werkt, en moet vaker werken om zichzelf terug te verdienen.',
+
+  'Work out a real one': 'Reken er een echte uit',
+  'Two stacks and a pot. **Type the SPR.**': 'Twee stacks en een pot. **Typ de SPR.**',
+  'Remember which stack counts. You can never win more than the shorter one, so the bigger stack is irrelevant here — the extra chips behind it simply cannot come into play in this hand.':
+    'Onthoud welke stack telt. Je kunt nooit meer winnen dan de kortste, dus de grotere stack doet hier niet ter zake — die extra chips kunnen in deze hand simpelweg niet meespelen.',
+  'Divide that effective stack by the pot. Under 3 and top pair is committed; over 6 and one pair is just one pair.':
+    'Deel die effective stack door de pot. Onder de 3 is top pair committed; boven de 6 is één pair gewoon één pair.',
+
+  'Name the leak': 'Benoem het lek',
+  'Here is a player with a leak you can see in their numbers. **Pick the adjustment that punishes it.**':
+    'Hier is een speler met een lek dat je in zijn cijfers kunt zien. **Kies de aanpassing die het afstraft.**',
+  'The method never changes: find what they do too much of, and do the opposite. Somebody who cannot fold should never be bluffed; somebody who folds everything should be attacked relentlessly.':
+    'De methode verandert nooit: zoek wat ze te veel doen, en doe het tegenovergestelde. Tegen iemand die niet kan folden bluf je nooit; iemand die alles foldt val je onophoudelijk aan.',
+  'Read the three figures before you choose — they tell you which of those it is.':
+    'Lees de drie cijfers voordat je kiest — die vertellen je welke van de twee het is.',
+
+  'The call that is right for chips and wrong for money':
+    'De call die juist is voor chips en fout voor geld',
+  'It is the bubble — one more player out and everyone still in gets paid. You can call an all-in as a genuine favourite in chips.':
+    'Het is de bubble — nog één speler eruit en iedereen die nog meedoet krijgt betaald. Je kunt een all-in callen als echte favoriet in chips.',
+  '**Decide.** The chips say one thing and the prize pool says another, and this is the one moment in poker where they disagree sharply.':
+    '**Beslis.** De chips zeggen het ene en het prijzengeld het andere, en dit is het ene moment in poker waarop ze het scherp oneens zijn.',
+  'Ask what busting costs you against what winning gains: a payout you were about to lock up, against a prize you might have reached anyway.':
+    'Vraag je af wat eruit gaan je kost tegenover wat winnen oplevert: een uitbetaling die je bijna zeker had, tegenover een prijs die je toch al had kunnen halen.',
+
+  /* ---- The shared exercise views ---- */
+  'Your answer': 'Jouw antwoord',
+  'The answer is {value}.': 'Het antwoord is {value}.',
+  'Type a number.': 'Typ een getal.',
+  'Everybody has folded to you. Raise or fold?': 'Iedereen heeft naar jou gefold. Raise of fold?',
+  'Same hand, two seats. From which one is this a raise?':
+    'Dezelfde hand, twee stoelen. Vanaf welke is dit een raise?',
+  'You raised before the flop and they called. They check. Bet small, or check back?':
+    'Je hebt vóór de flop geraised en zij callden. Zij checken. Klein betten, of terug checken?',
+  'What share of your range do you have to keep defending?':
+    'Welk deel van je range moet je blijven verdedigen?',
+  'You are bluffing with a hand that cannot win a showdown. How often must they fold?':
+    'Je bluft met een hand die geen showdown kan winnen. Hoe vaak moeten ze folden?',
+  'What is the stack-to-pot ratio?': 'Wat is de stack-to-pot ratio?',
+  'It is the bubble — one more out and everyone left is paid. You can call an all-in. Do you?':
+    'Het is de bubble — nog één eruit en iedereen die over is krijgt betaald. Je kunt een all-in callen. Doe je dat?',
+  'You have this roll and want to sit at {stake}. Should you?':
+    'Je hebt deze roll en wilt aan {stake} gaan zitten. Zou je dat doen?',
+  'Your seat': 'Jouw stoel',
+  'Players behind you': 'Spelers achter je',
+  'Under the gun': 'Under the gun',
+  'On the button': 'Op de button',
+  'Both': 'Allebei',
+  'Raise': 'Raise',
+  'Fold': 'Fold',
+  'Call': 'Call',
+  'Bet small': 'Bet klein',
+  'Check back': 'Check terug',
+  'In the pot': 'In de pot',
+  'They bet': 'Zij betten',
+  'Your bluff': 'Jouw bluff',
+  'Pot on the flop': 'Pot op de flop',
+  'Your stack': 'Jouw stack',
+  'Their stack': 'Hun stack',
+  'Your equity if you call': 'Jouw equity als je callt',
+  'Players left': 'Spelers over',
+  'Places paid': 'Betaalde plaatsen',
+  'Folds to a bet': 'Foldt tegen een bet',
+  'Your bankroll': 'Jouw bankroll',
+  'Buy-in': 'Buy-in',
+  'That is': 'Dat is',
+  '{n} buy-ins': '{n} buy-ins',
+  'Never bluff, value bet wider': 'Nooit bluffen, ruimer value betten',
+  'Steal relentlessly, fold to his raises': 'Onophoudelijk stelen, folden tegen zijn raises',
+  'Stop bluffing, call him down lighter': 'Stoppen met bluffen, hem lichter afcallen',
+  'Sit at {stake}': 'Ga aan {stake} zitten',
+  'Play lower': 'Speel lager',
+  'Call {amount}': 'Call {amount}',
+  '{name} {tell}. What is the adjustment?': '{name} {tell}. Wat is de aanpassing?',
+  'plays 68% of hands and almost never folds after the flop':
+    'speelt 68% van de handen en foldt na de flop bijna nooit',
+  'plays 12% of hands and folds to 71% of bets':
+    'speelt 12% van de handen en foldt tegen 71% van de bets',
+  'raises 41% of hands and bets at almost every pot':
+    'raiset 41% van de handen en bet in bijna elke pot',
+  /* ---- Exercise feedback ---- */
+  'He cannot fold, so a bluff has nothing to win. Value bet thinner and larger than feels comfortable — he pays every time.':
+    'Hij kan niet folden, dus een bluff heeft niets te winnen. Value bet dunner en groter dan comfortabel voelt — hij betaalt elke keer.',
+  'He folds far too much, so your cards barely matter. Steal relentlessly — and when he finally raises, believe him and fold.':
+    'Hij foldt veel te veel, dus je kaarten doen er nauwelijks toe. Steel onophoudelijk — en als hij eindelijk raiset, geloof hem en fold.',
+  'He bluffs constantly, so you do not need to fight him. Stop bluffing, tighten your opens, and call him down much wider than normal.':
+    'Hij bluft constant, dus je hoeft niet met hem te vechten. Stop met bluffen, maak je opens strakker, en call hem veel ruimer af dan normaal.',
+  '{hand} from {seat}. That seat opens about {pct}% of hands, and this one is {inside} it.':
+    '{hand} vanaf {seat}. Die stoel opent ongeveer {pct}% van de handen, en deze valt daar{inside}.',
+  'inside': ' binnen',
+  'outside': ' buiten',
+  '{hand} is a fold under the gun and a raise on the button. The cards did not change — five players can still wake up behind you in the first seat, and only two on the button.':
+    '{hand} is een fold under the gun en een raise op de button. De kaarten zijn niet veranderd — vanaf de eerste stoel kunnen er nog vijf spelers achter je wakker worden, op de button maar twee.',
+  'Three different suits and nothing connected — a dry board. Very little of their calling range hit this, so a small bet folds out most of it. Bet your whole range here.':
+    'Drie verschillende kleuren en niets aaneengesloten — een droog bord. Heel weinig van hun callrange raakte dit, dus een kleine bet jaagt het grootste deel weg. Bet hier met je hele range.',
+  '{shape} and connected — a wet board. Straights, draws and pairs all continue against a bet, so this one favours the caller. Check and keep the pot small.':
+    '{shape} en aaneengesloten — een nat bord. Straights, draws en pairs gaan allemaal door tegen een bet, dus dit bord is in het voordeel van de caller. Check en houd de pot klein.',
+  'All one suit': 'Allemaal één kleur',
+  'Two of a suit': 'Twee van een kleur',
+  'MDF = pot ÷ (pot + bet) = {pot} ÷ {total} = {pct}%. Fold more often than that and they can bluff you with any two cards.':
+    'MDF = pot ÷ (pot + bet) = {pot} ÷ {total} = {pct}%. Fold je vaker dan dat, dan kunnen ze je met twee willekeurige kaarten bluffen.',
+  'You risk {bet} to win {pot}, so break-even is {bet} ÷ {total} = {pct}%. A bigger bluff wins more when it works and has to work more often.':
+    'Je riskeert {bet} om {pot} te winnen, dus break-even is {bet} ÷ {total} = {pct}%. Een grotere bluff wint meer als hij werkt en moet vaker werken.',
+  'The effective stack is the smaller of the two — {effective} — because neither of you can win more than that. {effective} ÷ {pot} = {spr}.':
+    'De effective stack is de kleinste van de twee — {effective} — omdat geen van beiden meer kan winnen dan dat. {effective} ÷ {pot} = {spr}.',
+  'Under 3: top pair is committed.': 'Onder de 3: top pair is committed.',
+  'Over 6: one pair is just one pair.': 'Boven de 6: één pair is gewoon één pair.',
+  'In between: proceed carefully.': 'Ertussenin: ga voorzichtig verder.',
+  'You are a favourite in chips at {pct}%, and that is not the question. Busting costs a payout you were about to lock up, while winning only slightly improves one you might have got anyway — your prize equity is about {equity} of a {pool} pool. On the bubble you fold hands you would happily get in with at any other stage.':
+    'Je bent favoriet in chips met {pct}%, en dat is niet de vraag. Eruit gaan kost je een uitbetaling die je bijna zeker had, terwijl winnen een prijs die je toch al had kunnen halen maar licht verbetert — je prijzenequity is ongeveer {equity} van een pot van {pool}. Op de bubble fold je handen waarmee je in elk ander stadium graag all-in zou gaan.',
+  '{n} buy-ins is enough for {stake}, which wants at least {wanted}.':
+    '{n} buy-ins is genoeg voor {stake}, dat er minstens {wanted} wil.',
+  '{n} buy-ins is not enough for {stake} — you want at least {wanted}. Normal downswings run past 20 buy-ins, so an ordinary bad run would take the lot.':
+    '{n} buy-ins is niet genoeg voor {stake} — je wilt er minstens {wanted}. Normale downswings lopen voorbij de 20 buy-ins, dus een gewone slechte reeks zou alles meenemen.',
+  /* ---- Learning report ---- */
+  '🧾 Learning report': '🧾 Leerrapport',
+  'for improving the lessons': 'om de lessen te verbeteren',
+  'A summary of what you have studied and where it is going badly — which lesson you read and then still got wrong, which skill keeps slipping. Copy it into the chat when something did not make sense, and the explanation can be fixed rather than guessed at.':
+    'Een samenvatting van wat je gestudeerd hebt en waar het misgaat — welke les je gelezen hebt en daarna toch fout deed, welke vaardigheid blijft wegzakken. Plak hem in de chat als iets niet duidelijk was, dan kan de uitleg gerepareerd worden in plaats van geraden.',
+  'It contains no name, no token and nothing that identifies you — only what you studied and how it went.':
+    'Er staat geen naam in, geen token en niets wat jou identificeert — alleen wat je gestudeerd hebt en hoe het ging.',
+  'Copy report': 'Kopieer rapport',
+  'Refresh': 'Ververs',
+  'Your learning report': 'Jouw leerrapport',
+  'Copied': 'Gekopieerd',
+  'Paste it into the chat and say what confused you.':
+    'Plak hem in de chat en vertel wat je verwarrend vond.',
+  'Select and copy': 'Selecteer en kopieer',
+  'The report is selected — copy it by hand.': 'Het rapport is geselecteerd — kopieer het handmatig.',
 };
