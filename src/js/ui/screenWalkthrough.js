@@ -10,6 +10,7 @@
 
 import { el, mount, richText, toast } from './dom.js';
 import { makePractice } from '../trainers/practice.js';
+import { review } from '../state/spacing.js';
 import { practiceView } from './practiceView.js';
 import { t } from '../i18n/index.js';
 import { renderVisual } from './visuals.js';
@@ -50,6 +51,9 @@ export function renderWalkthrough(ctx, params) {
     const step = walkthrough.steps[state.index];
     state.chosen = optionKey;
     const isCorrect = optionKey === step.check.answer;
+    // Checks were counted for the end-of-lesson summary and then thrown
+    // away. They are cheap evidence of whether the step landed.
+    profile.recordPractice(meta.id, 'check', isCorrect);
 
     if (isCorrect && !state.answered.has(state.index)) {
       state.answered.add(state.index);
@@ -160,6 +164,11 @@ export function renderWalkthrough(ctx, params) {
             practiceView(practice, (result) => {
               state.chosen = result.correct ? 'practice-ok' : 'practice-miss';
               state.practiceCorrect = result.correct;
+              // Recorded so the learning report can see it. An exercise is the
+              // most diagnostic thing in the app — a wrong multiple choice
+              // says you picked B, a wrong outs grid says what you believed.
+              profile.recordPractice(meta.id, step.practice, result.correct, result.misreadings);
+              review(profile, meta.id, result.correct);
               drawFooter();
             }, profile.settings),
           )

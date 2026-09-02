@@ -13,7 +13,7 @@
  */
 
 import { makeDeck, removeCards, cardsToString, rankOf } from '../core/cards.js';
-import { evaluate, describeScore } from '../core/evaluator.js';
+import { evaluate, describeScore, categoryOf } from '../core/evaluator.js';
 import { evaluateHand } from '../core/evaluator.js';
 import { countOuts, describeOuts, handEquity, exactOutsEquity, handPhrase } from '../core/equity.js';
 import { requiredEquity, callEV, minimumDefenceFrequency, breakEvenBluffFrequency, spr, icmEquity } from '../core/odds.js';
@@ -36,6 +36,51 @@ const attempt = (fn, tries = 400) => {
  * four options; you are pointing at every card in the deck that saves you,
  * and the grid shows exactly which ones you missed.
  * ------------------------------------------------------------------ */
+
+/**
+ * Why a card that is not an out was picked anyway.
+ *
+ * Three distinct misreadings, and they call for three different fixes:
+ * chasing a suit you hold none of is a misunderstanding of what a flush
+ * needs; picking a card that improves your hand but still loses is a
+ * misunderstanding of what "out" means; picking one that changes nothing is
+ * usually a misread of the board.
+ */
+export function classifyWrongPicks(hero, villain, board, wrong) {
+  const heroSuits = new Set(hero.map((c) => c & 3));
+  const boardSuitCount = board.reduce((acc, c) => {
+    acc[c & 3] = (acc[c & 3] || 0) + 1;
+    return acc;
+  }, {});
+  // Compare hand CATEGORY, not raw score. A card that only improves your
+  // kicker scores higher while leaving you with the same nothing, and calling
+  // that "improved" would file every missed heart under the wrong lesson.
+  const before = categoryOf(evaluateHand(hero, board, HOLDEM));
+
+  const tally = {};
+  for (const card of wrong) {
+    const suit = card & 3;
+    const afterScore = evaluateHand(hero, [...board, card], HOLDEM);
+    const after = categoryOf(afterScore);
+    const villainAfter = evaluateHand(villain, [...board, card], HOLDEM);
+    const improved = after > before;
+
+    let tag;
+    if (!improved && !heroSuits.has(suit) && (boardSuitCount[suit] || 0) >= 2) {
+      // The exact mistake a reader described: tapping every card of a suit
+      // sitting on the board, while holding none of it themselves.
+      tag = 'chasing-a-flush-you-cannot-make';
+    } else if (!improved) {
+      tag = 'does-not-change-your-hand';
+    } else if (afterScore <= villainAfter) {
+      tag = 'improves-your-hand-but-still-loses';
+    } else {
+      tag = 'unclassified';
+    }
+    tally[tag] = (tally[tag] || 0) + 1;
+  }
+  return tally;
+}
 
 export function countOutsPractice(rng = makeRng()) {
   const spot = attempt(() => {
@@ -89,6 +134,10 @@ export function countOutsPractice(rng = makeRng()) {
       return {
         correct: perfect,
         hits, missed, wrong, wrongLesson,
+        // Why each wrong pick was wrong, as a named misconception rather than
+        // a count. "Eleven picks were wrong" says nothing a lesson can act on;
+        // "seven were a suit you hold none of" names the misreading exactly.
+        misreadings: classifyWrongPicks(hero, villain, board, wrong),
         outs,
         explanation: described.sentence,
         equity: exactOutsEquity(outs.length, 'flop'),

@@ -11,12 +11,31 @@
  *
  * Deliberately no identifying information: no name, no token, no gist id.
  * Just what was studied and how it went.
+ *
+ * The report itself stays in English even when the app is in Dutch. It is
+ * not something the player reads — it is something they hand to whoever is
+ * fixing the lessons, and keeping one wording means the same phrase always
+ * means the same problem.
  */
 
 import { MODULE_META } from '../data/curriculum.js';
 import { masteryTier, REQUIREMENTS } from './mastery.js';
 import { calibrationReport, getCard, strength } from './spacing.js';
 import { RANKS, requirementRows } from './profile.js';
+
+/**
+ * The misreadings the exercises can name, written as a sentence rather than
+ * a code. A tag like "chasing-a-flush-you-cannot-make" is only useful if the
+ * report says what it means for the lesson.
+ */
+const MISREADINGS = {
+  'chasing-a-flush-you-cannot-make':
+    'picked cards of a suit they hold none of — reading the board\'s suits as their own draw',
+  'improves-your-hand-but-still-loses':
+    'picked cards that improve the hand but still lose — treating "improves" as "wins"',
+  'does-not-change-your-hand':
+    'picked cards that change nothing — misread what the hand currently is',
+};
 import { VERSION } from '../version.js';
 
 const pct = (x) => (x === null || x === undefined ? '—' : `${Math.round(x * 100)}%`);
@@ -99,6 +118,38 @@ export function learningReport(profile) {
     lines.push('');
     lines.push('DRILLED WITHOUT READING THE LESSON');
     lines.push(`  ${neverRead.map((m) => m.name).join(', ')}`);
+  }
+
+  /* ---- the exercises, and what the wrong answers reveal ---- */
+  const practice = profile.practiceStats().filter((p) => p.attempts > 0);
+  if (practice.length) {
+    const named = (id) => (MODULE_META.find((m) => m.id === id) || {}).name || id;
+    const exercises = practice.filter((p) => p.kind !== 'check');
+    const checks = practice.filter((p) => p.kind === 'check');
+
+    if (exercises.length) {
+      lines.push('');
+      lines.push('HANDS-ON EXERCISES');
+      for (const ex of exercises.sort((a, b) => (a.correct / a.attempts) - (b.correct / b.attempts))) {
+        lines.push(`  ${named(ex.module)} — ${ex.kind}: ${ex.correct} of ${ex.attempts} right`);
+        const tags = Object.entries(ex.tags || {}).sort((a, b) => b[1] - a[1]);
+        for (const [tag, count] of tags) {
+          const wording = MISREADINGS[tag];
+          if (wording) lines.push(`      ${count}× ${wording}`);
+        }
+      }
+    }
+
+    if (checks.length) {
+      const total = checks.reduce((a, c) => a + c.attempts, 0);
+      const right = checks.reduce((a, c) => a + c.correct, 0);
+      lines.push('');
+      lines.push(`LESSON CHECKS: ${right} of ${total} right first time`);
+      const weak = checks.filter((c) => c.attempts >= 2 && c.correct / c.attempts < 0.6);
+      for (const c of weak) {
+        lines.push(`  ${named(c.module)}: ${c.correct} of ${c.attempts} — the steps here are not landing.`);
+      }
+    }
   }
 
   /* ---- everything, briefly ---- */

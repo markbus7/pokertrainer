@@ -2167,8 +2167,8 @@ export const NL = {
   'for improving the lessons': 'om de lessen te verbeteren',
   'A summary of what you have studied and where it is going badly — which lesson you read and then still got wrong, which skill keeps slipping. Copy it into the chat when something did not make sense, and the explanation can be fixed rather than guessed at.':
     'Een samenvatting van wat je gestudeerd hebt en waar het misgaat — welke les je gelezen hebt en daarna toch fout deed, welke vaardigheid blijft wegzakken. Plak hem in de chat als iets niet duidelijk was, dan kan de uitleg gerepareerd worden in plaats van geraden.',
-  'It contains no name, no token and nothing that identifies you — only what you studied and how it went.':
-    'Er staat geen naam in, geen token en niets wat jou identificeert — alleen wat je gestudeerd hebt en hoe het ging.',
+  'It contains no name, no token and nothing that identifies you — only what you studied and how it went. The report itself is written in English whatever language the app is in, because it is meant to be handed over rather than read.':
+    'Er staat geen naam in, geen token en niets wat jou identificeert — alleen wat je gestudeerd hebt en hoe het ging. Het rapport zelf is in het Engels, in welke taal de app ook staat, omdat het bedoeld is om door te geven en niet om te lezen.',
   'Copy report': 'Kopieer rapport',
   'Refresh': 'Ververs',
   'Your learning report': 'Jouw leerrapport',

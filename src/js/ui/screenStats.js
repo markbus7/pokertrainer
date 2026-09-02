@@ -187,7 +187,8 @@ function renderLearningReport(ctx) {
       + 'then still got wrong, which skill keeps slipping. Copy it into the chat when something did '
       + 'not make sense, and the explanation can be fixed rather than guessed at.'),
     el('div.faint', { style: { marginBottom: '10px', fontSize: '0.82rem' } },
-      'It contains no name, no token and nothing that identifies you — only what you studied and how it went.'),
+      'It contains no name, no token and nothing that identifies you — only what you studied and how it went. '
+      + 'The report itself is written in English whatever language the app is in, because it is meant to be handed over rather than read.'),
     box,
     el('div.row', { style: { marginTop: '10px', gap: '8px', flexWrap: 'wrap' } }, copy, refresh),
   );
