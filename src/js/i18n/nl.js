@@ -2177,4 +2177,6 @@ export const NL = {
     'Plak hem in de chat en vertel wat je verwarrend vond.',
   'Select and copy': 'Selecteer en kopieer',
   'The report is selected — copy it by hand.': 'Het rapport is geselecteerd — kopieer het handmatig.',
+  '**Right now** you both have {hero} — but their {theirs} plays against your {yours}, so you are behind. You are looking for the single next card that changes that.':
+    '**Op dit moment** hebben jullie allebei {hero} — maar hun {theirs} speelt tegen jouw {yours}, dus je ligt achter. Je zoekt de ene volgende kaart die dat verandert.',
 };

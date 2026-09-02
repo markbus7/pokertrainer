@@ -11,7 +11,7 @@
 import { el, richText, fmt } from './dom.js';
 import { t } from '../i18n/index.js';
 import { cardEl, cardRow } from './cardView.js';
-import { rankOf, suitOf, RANK_CHARS, SUIT_SYMBOLS } from '../core/cards.js';
+import { rankOf, suitOf, RANK_CHARS, SUIT_SYMBOLS, makeCard } from '../core/cards.js';
 
 const cardName = (card) => RANK_CHARS[rankOf(card) - 2] + SUIT_SYMBOLS[suitOf(card)];
 
@@ -58,29 +58,53 @@ function countOutsView(spot, onDone, settings) {
         count.textContent = t('{n} selected', { n: picked.size });
       },
       'aria-label': RANK_CHARS[rankOf(card) - 2] + SUIT_SYMBOLS[suitOf(card)],
-    },
-      el(`span.out-rank${[1, 2].includes(suitOf(card)) ? '.red' : ''}`, RANK_CHARS[rankOf(card) - 2]),
-      el(`span.out-suit${[1, 2].includes(suitOf(card)) ? '.red' : ''}`, SUIT_SYMBOLS[suitOf(card)]),
-    );
+    }, RANK_CHARS[rankOf(card) - 2]);
+    if ([1, 2].includes(suitOf(card))) cell.classList.add('red');
     cell.dataset.card = String(card);
     return cell;
   };
 
-  const cells = spot.unseen.map(cellFor);
-  const byCard = new Map(cells.map((c) => [Number(c.dataset.card), c]));
+  // Laid out as a real deck: one row per suit, one column per rank, with the
+  // cards already on the table left as gaps so the columns still line up.
+  // Hunting for a card in a 45-cell run was most of the effort in this
+  // exercise, and none of that effort was about poker. Here every card has a
+  // coordinate, and "all the hearts" is a row you can see.
+  const unseen = new Set(spot.unseen);
+  const RANKS_ASC = Array.from({ length: 13 }, (_, i) => i + 2);
+  const SUIT_ORDER = [3, 2, 1, 0];              // spades, hearts, diamonds, clubs
+  const cells = [];
+  const byCard = new Map();
+
   const count = el('span.faint.mono', t('{n} selected', { n: 0 }));
   const feedback = el('div');
+
+  const grid = el('div.out-deck',
+    el('div.out-corner', ''),
+    ...RANKS_ASC.map((rank) => el('div.out-heading', RANK_CHARS[rank - 2])),
+    ...SUIT_ORDER.flatMap((suit) => [
+      el(`div.out-suit${[1, 2].includes(suit) ? '.red' : ''}`, SUIT_SYMBOLS[suit]),
+      ...RANKS_ASC.map((rank) => {
+        const card = makeCard(rank, suit);
+        if (!unseen.has(card)) return el('div.out-gap', '');
+        const cell = cellFor(card);
+        cells.push(cell);
+        byCard.set(card, cell);
+        return cell;
+      }),
+    ]),
+  );
 
   const submit = el('button.btn.primary', {
     onclick: () => {
       if (graded) return;
       graded = spot.grade([...picked]);
       submit.disabled = true;
-      // Mark the grid itself: found, missed, and wrongly chosen.
+      // Mark the deck itself: found, missed, and wrongly chosen.
       for (const c of graded.hits) byCard.get(c)?.classList.add('hit');
       for (const c of graded.missed) byCard.get(c)?.classList.add('missed');
       for (const c of graded.wrong) byCard.get(c)?.classList.add('wrong');
       for (const cell of cells) cell.disabled = true;
+
       const lines = [
         graded.missed.length ? t('{n} you missed are outlined in gold.', { n: graded.missed.length }) : null,
         graded.wrong.length ? t('{n} you picked do not win the hand.', { n: graded.wrong.length }) : null,
@@ -107,15 +131,19 @@ function countOutsView(spot, onDone, settings) {
     // longer list than the outs.
     spot.standings
       ? el('div.practice-standing',
-          richText(t('**Right now** you have {hero} and they have {villain}, so you are behind. '
-            + 'You are looking for the single next card that changes that.',
-            { hero: spot.standings.hero, villain: spot.standings.villain })))
+          richText(spot.standings.decidedBy
+            ? t('**Right now** you both have {hero} — but their {theirs} plays against your {yours}, '
+              + 'so you are behind. You are looking for the single next card that changes that.',
+              { hero: spot.standings.hero, theirs: spot.standings.decidedBy.theirs, yours: spot.standings.decidedBy.yours })
+            : t('**Right now** you have {hero} and they have {villain}, so you are behind. '
+              + 'You are looking for the single next card that changes that.',
+              { hero: spot.standings.hero, villain: spot.standings.villain })))
       : null,
     el('div.spread', { style: { margin: '12px 0 6px' } },
       el('span.faint', t('Every card still unseen:')),
       count,
     ),
-    el('div.out-grid', cells),
+    grid,
     el('div.row', { style: { marginTop: '12px' } }, submit),
     feedback,
   );
