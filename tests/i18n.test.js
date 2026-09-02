@@ -150,3 +150,84 @@ describe('the learning report', () => {
     assert(!/@/.test(report), 'no email-shaped text should appear');
   });
 });
+
+describe('exercises are recorded, and say what went wrong', () => {
+  const fresh = () => {
+    const mem = new Map();
+    return { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
+  };
+
+  it('classifies the exact misreading a reader described', async () => {
+    // Holding no hearts, with two on the board, and tapping the hearts anyway.
+    const { classifyWrongPicks } = await import('../src/js/trainers/practice.js');
+    const { parseCards, makeDeck, rankOf } = await import('../src/js/core/cards.js');
+    const { countOuts } = await import('../src/js/core/equity.js');
+
+    const hero = parseCards('Jd4d');
+    const villain = parseCards('5dKs');
+    const board = parseCards('2h5hQd');
+    const seen = [...hero, ...villain, ...board];
+    const outs = new Set(countOuts(hero, villain, board).outs);
+    const hearts = makeDeck().filter((c) => (c & 3) === 2 && !outs.has(c) && !seen.includes(c));
+
+    const tally = classifyWrongPicks(hero, villain, board, hearts);
+    assert(tally['chasing-a-flush-you-cannot-make'] >= 4,
+      `hearts should read as chasing a flush, got ${JSON.stringify(tally)}`);
+
+    // A card that pairs the hero but still loses is a different misreading.
+    const fours = makeDeck().filter((c) => rankOf(c) === 4 && !outs.has(c) && !seen.includes(c));
+    const pairTally = classifyWrongPicks(hero, villain, board, fours);
+    assert(pairTally['improves-your-hand-but-still-loses'] === fours.length,
+      `pairing cards should read as improves-but-loses, got ${JSON.stringify(pairTally)}`);
+  });
+
+  it('does not call a better kicker an improvement', async () => {
+    // The trap in classifying: a card that lifts your kicker scores higher
+    // while leaving you the same nothing, and filing that under "improved"
+    // would put every missed heart under the wrong lesson.
+    const { classifyWrongPicks } = await import('../src/js/trainers/practice.js');
+    const { parseCards } = await import('../src/js/core/cards.js');
+    const tally = classifyWrongPicks(parseCards('Jd4d'), parseCards('5dKs'), parseCards('2h5hQd'), parseCards('3h'));
+    assert(!tally['improves-your-hand-but-still-loses'],
+      `a kicker bump is not an improvement, got ${JSON.stringify(tally)}`);
+  });
+
+  it('stores exercise results and surfaces them in the report', async () => {
+    const { Profile } = await import('../src/js/state/profile.js');
+    const { learningReport } = await import('../src/js/state/learningReport.js');
+    const p = new Profile({}, fresh());
+
+    p.recordPractice('outs', 'count-outs', false, { 'chasing-a-flush-you-cannot-make': 6 });
+    p.recordPractice('outs', 'count-outs', true, {});
+    const stats = p.practiceStats();
+    equal(stats.length, 1, 'one exercise recorded');
+    equal(stats[0].attempts, 2);
+    equal(stats[0].correct, 1);
+    equal(stats[0].tags['chasing-a-flush-you-cannot-make'], 6);
+
+    const report = learningReport(p);
+    assert(/HANDS-ON EXERCISES/.test(report), 'the report shows exercises');
+    assert(/suit they hold none of/.test(report),
+      'the report must name the misreading in words, not as a tag');
+  });
+
+  it('survives a save and reload, and keeps the tags', async () => {
+    const { Profile } = await import('../src/js/state/profile.js');
+    const storage = fresh();
+    const first = new Profile({}, storage);
+    first.recordPractice('outs', 'count-outs', false, { 'does-not-change-your-hand': 3 });
+
+    const reloaded = Profile.load(storage);
+    equal(reloaded.practiceStats()[0].tags['does-not-change-your-hand'], 3,
+      'exercise history must persist like everything else');
+  });
+
+  it('never records a tag it has no wording for', async () => {
+    const { Profile } = await import('../src/js/state/profile.js');
+    const p = new Profile({}, fresh());
+    p.recordPractice('outs', 'count-outs', false, { unclassified: 4, 'does-not-change-your-hand': 1 });
+    const tags = p.practiceStats()[0].tags;
+    assert(!('unclassified' in tags), 'an unnamed bucket teaches nothing and is dropped');
+    equal(tags['does-not-change-your-hand'], 1);
+  });
+});

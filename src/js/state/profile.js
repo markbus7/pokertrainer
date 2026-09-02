@@ -136,6 +136,7 @@ const emptyProfile = () => ({
   walkthroughs: [],    // module ids whose guided lesson has been completed
   achievements: [],
   rankHistory: {},   // level -> first time it was reached
+  practice: {},      // 'module:kind' -> { attempts, correct, tags }
   bankroll: 200,
   stakeKey: 'nl2',
   handsPlayed: 0,
@@ -267,6 +268,39 @@ export class Profile {
     this.noteRankReached();
     this.save();
     return stats;
+  }
+
+  /**
+   * One hands-on exercise or lesson check, with why it went wrong.
+   *
+   * Kept apart from drill stats on purpose: these are a different kind of
+   * evidence. A drill records that an answer was wrong; an exercise can
+   * record *what the misreading was*, which is the thing that says whether
+   * the lesson or the reader is at fault.
+   */
+  recordPractice(module, kind, correct, tags = null) {
+    if (!this.data.practice) this.data.practice = {};
+    const key = `${module}:${kind}`;
+    const entry = this.data.practice[key] || { attempts: 0, correct: 0, tags: {} };
+    entry.attempts++;
+    if (correct) entry.correct++;
+    if (tags) {
+      for (const [tag, n] of Object.entries(tags)) {
+        if (tag === 'unclassified') continue;
+        entry.tags[tag] = (entry.tags[tag] || 0) + n;
+      }
+    }
+    this.data.practice[key] = entry;
+    this.save();
+    return entry;
+  }
+
+  /** Every recorded exercise, newest key order irrelevant — the report sorts. */
+  practiceStats() {
+    return Object.entries(this.data.practice || {}).map(([key, value]) => {
+      const [module, kind] = key.split(':');
+      return { module, kind, ...value };
+    });
   }
 
   /** 0..1 accuracy, or null when there is not enough data to judge. */
