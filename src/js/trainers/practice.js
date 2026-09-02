@@ -12,8 +12,8 @@
  * remembered from last time — the point is the skill, not the spot.
  */
 
-import { makeDeck, removeCards, cardsToString, rankOf } from '../core/cards.js';
-import { evaluate, describeScore, categoryOf } from '../core/evaluator.js';
+import { makeDeck, removeCards, cardsToString, rankOf, RANK_NAMES } from '../core/cards.js';
+import { evaluate, describeScore, categoryOf, kickersOf } from '../core/evaluator.js';
 import { evaluateHand } from '../core/evaluator.js';
 import { countOuts, describeOuts, handEquity, exactOutsEquity, handPhrase } from '../core/equity.js';
 import { requiredEquity, callEV, minimumDefenceFrequency, breakEvenBluffFrequency, spr, icmEquity } from '../core/odds.js';
@@ -82,6 +82,31 @@ export function classifyWrongPicks(hero, villain, board, wrong) {
   return tally;
 }
 
+/**
+ * When two hands read the same, the card that actually separates them.
+ *
+ * Both "king high" tells you nothing about why one of them is losing. The
+ * five cards each player plays differ somewhere, and that first difference
+ * is the whole answer.
+ */
+export function decidingCard(hero, villain, board) {
+  const heroScore = evaluateHand(hero, board, HOLDEM);
+  const villainScore = evaluateHand(villain, board, HOLDEM);
+  if (handPhrase(heroScore) !== handPhrase(villainScore)) return null;
+
+  const mine = kickersOf(heroScore);
+  const theirs = kickersOf(villainScore);
+  for (let i = 0; i < mine.length; i++) {
+    if (mine[i] === theirs[i]) continue;
+    return {
+      yours: RANK_NAMES[mine[i]].toLowerCase(),
+      theirs: RANK_NAMES[theirs[i]].toLowerCase(),
+      losing: theirs[i] > mine[i],
+    };
+  }
+  return null;
+}
+
 export function countOutsPractice(rng = makeRng()) {
   const spot = attempt(() => {
     const deck = shuffle(rng, makeDeck());
@@ -111,7 +136,14 @@ export function countOutsPractice(rng = makeRng()) {
     prompt: 'Tap every card that would put you in front **if it came next**.',
     // Stated before you start rather than only in the feedback, so "in front"
     // is anchored to a comparison you can see instead of a vague improvement.
-    standings: { hero: described.heroNow, villain: described.villainNow },
+    // When both hands are the same shape the line has to say what separates
+    // them, or it reads as "you both have king high, so you are behind" —
+    // which asserts the conclusion and hides the reason, the kicker.
+    standings: {
+      hero: described.heroNow,
+      villain: described.villainNow,
+      decidedBy: decidingCard(hero, villain, board),
+    },
     hero, villain, board, unseen,
     /** @param {number[]} picked */
     grade(picked) {

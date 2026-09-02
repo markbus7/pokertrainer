@@ -231,3 +231,35 @@ describe('exercises are recorded, and say what went wrong', () => {
     equal(tags['does-not-change-your-hand'], 1);
   });
 });
+
+describe('the outs deck reads as a deck', () => {
+  it('names the card that decides it when both hands read the same', async () => {
+    // "You have king high and they have king high, so you are behind" states
+    // the conclusion and hides the reason. The reason is always a kicker.
+    const { decidingCard } = await import('../src/js/trainers/practice.js');
+    const { parseCards } = await import('../src/js/core/cards.js');
+
+    const same = decidingCard(parseCards('8cTh'), parseCards('2dQs'), parseCards('Jd5sKs'));
+    assert(same, 'two king-high hands must yield a deciding card');
+    equal(same.yours, 'jack');
+    equal(same.theirs, 'queen');
+    assert(same.losing, 'their queen is the higher card');
+
+    // When the hands differ in shape there is nothing to disambiguate.
+    equal(decidingCard(parseCards('Jd4d'), parseCards('5dKs'), parseCards('2h5hQd')), null,
+      'different hand shapes need no kicker explanation');
+  });
+
+  it('accounts for all fifty-two cards, seen ones included', async () => {
+    // The grid is a matrix now: every rank column crossed with every suit row.
+    // A card is either tappable or a gap where it already sits on the table,
+    // and the two together always come to a full deck.
+    const { makePractice } = await import('../src/js/trainers/practice.js');
+    const { makeRng } = await import('../src/js/core/rng.js');
+    const spot = makePractice('count-outs', makeRng(13));
+    const onTable = [...spot.hero, ...spot.villain, ...spot.board];
+    equal(spot.unseen.length + onTable.length, 52,
+      'unseen cards plus cards on the table must be the whole deck');
+    equal(new Set([...spot.unseen, ...onTable]).size, 52, 'and none of them repeat');
+  });
+});
