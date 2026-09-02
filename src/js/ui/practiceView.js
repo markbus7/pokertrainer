@@ -24,6 +24,8 @@ export function practiceView(spot, onDone, settings = {}) {
     case 'count-outs': return countOutsView(spot, onDone, settings);
     case 'pick-winner': return pickWinnerView(spot, onDone, settings);
     case 'price': return priceView(spot, onDone);
+    case 'number': return numberView(spot, onDone);
+    case 'choice': return choiceView(spot, onDone, settings);
     case 'decide': return decideView(spot, onDone, settings);
     default: return null;
   }
@@ -205,7 +207,10 @@ function priceView(spot, onDone) {
 
 const moneyTile = (label, value) => el('div.practice-money-tile',
   el('div.practice-label', t(label)),
-  el('div.mono', { style: { fontSize: '1.25rem', fontWeight: '700' } }, fmt.chips(value)),
+  el('div.mono', { style: { fontSize: '1.25rem', fontWeight: '700' } },
+    // Some tiles carry a seat name or an already-formatted figure; only raw
+    // numbers want the thousands separator.
+    typeof value === 'number' ? fmt.chips(value) : t(String(value))),
 );
 
 /* ------------------------------------------------------------------ *
@@ -247,6 +252,78 @@ function decideView(spot, onDone, settings) {
 }
 
 /* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ *
+ * The two shared shapes: type a number, or pick an action.
+ * ------------------------------------------------------------------ */
+
+function numberView(spot, onDone) {
+  let graded = null;
+  const feedback = el('div');
+  const input = el('input.practice-input', {
+    type: 'number', inputmode: 'decimal', step: 'any',
+    'aria-label': t('Your answer'),
+  });
+
+  const submit = el('button.btn.primary', {
+    onclick: () => {
+      if (graded) return;
+      graded = spot.grade(input.value);
+      submit.disabled = true;
+      input.disabled = true;
+      feedback.appendChild(gradeBox(graded, graded.exact !== undefined
+        ? [t('The answer is {value}.', { value: fmtExact(graded.exact, spot.unit) })] : []));
+      onDone(graded);
+    },
+  }, t('Check'));
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit.click(); });
+
+  return shell(spot,
+    el('div.practice-money', spot.tiles.map((tile) => moneyTile(tile.label, tile.value))),
+    el('div.row', { style: { marginTop: '12px', gap: '8px', flexWrap: 'wrap' } },
+      input, spot.unit ? el('span.faint', spot.unit) : null, submit),
+    feedback,
+  );
+}
+
+const fmtExact = (value, unit) => (unit === '%'
+  ? `${value.toFixed(0)}%`
+  : `${Math.round(value * 10) / 10}`);
+
+function choiceView(spot, onDone, settings) {
+  let graded = null;
+  const feedback = el('div');
+  const buttons = [];
+
+  const act = (key) => {
+    if (graded) return;
+    graded = spot.grade(key);
+    for (const b of buttons) {
+      b.disabled = true;
+      if (b.dataset.key === graded.answer) b.classList.add('correct');
+      else if (b.dataset.key === key) b.classList.add('wrong');
+    }
+    feedback.appendChild(gradeBox(graded));
+    onDone(graded);
+  };
+
+  return shell(spot,
+    spot.cards
+      ? el('div.practice-table', seatBlock(spot.cards.label, spot.cards.cards, settings))
+      : null,
+    spot.tiles && spot.tiles.length
+      ? el('div.practice-money', { style: { marginTop: spot.cards ? '12px' : '0' } },
+          spot.tiles.map((tile) => moneyTile(tile.label, tile.value)))
+      : null,
+    el('div.practice-choices', spot.options.map((o) => {
+      const b = el('button.practice-choice', { onclick: () => act(o.key) }, t(o.label));
+      b.dataset.key = o.key;
+      buttons.push(b);
+      return b;
+    })),
+    feedback,
+  );
+}
 
 function gradeBox(result, extraLines = []) {
   return el(`div.feedback.${result.correct ? 'correct' : 'wrong'}`, { style: { marginTop: '14px' } },

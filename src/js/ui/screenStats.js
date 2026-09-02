@@ -13,6 +13,7 @@ import { handGrid } from '../core/cards.js';
 import { CHARTS, POSITION_INFO, rangePercent, RFI, THREE_BET } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
 import { allTerms } from '../data/glossary.js';
+import { learningReport } from '../state/learningReport.js';
 
 export function renderStats(ctx) {
   const { profile, go } = ctx;
@@ -38,6 +39,7 @@ export function renderStats(ctx) {
 
     renderCalibration(profile),
     renderRetention(profile),
+    renderLearningReport(ctx),
     renderVersionPanel(),
     renderSyncPanel(ctx),
 
@@ -139,6 +141,58 @@ const codeBoxStyle = {
  * was stamped from — so "am I up to date" has a real answer rather than a
  * guess based on a date.
  */
+/**
+ * A report to hand back to whoever is building this.
+ *
+ * Progress screens tell you how you are doing. This one is aimed the other
+ * way: it says where the teaching is failing — a lesson read and then
+ * failed, a skill drilled a hundred times that never improves — because
+ * that is invisible from the outside and is where the explanation, not the
+ * reader, is usually at fault.
+ */
+function renderLearningReport(ctx) {
+  const { profile } = ctx;
+  const box = el('textarea.report-box', {
+    readonly: true,
+    rows: 10,
+    'aria-label': 'Your learning report',
+  });
+  box.value = learningReport(profile);
+
+  const copy = el('button.btn.sm', {
+    onclick: async () => {
+      try {
+        await navigator.clipboard.writeText(box.value);
+        toast({ icon: '📋', title: 'Copied', desc: 'Paste it into the chat and say what confused you.' });
+      } catch {
+        // Clipboard access is refused in plenty of contexts; selecting the
+        // text is a fallback that always works.
+        box.select();
+        toast({ icon: '📋', title: 'Select and copy', desc: 'The report is selected — copy it by hand.' });
+      }
+    },
+  }, 'Copy report');
+
+  const refresh = el('button.btn.sm.ghost', {
+    onclick: () => { box.value = learningReport(profile); },
+  }, 'Refresh');
+
+  return el('div.panel',
+    el('div.panel-title',
+      el('h2', '🧾 Learning report'),
+      el('span.faint', 'for improving the lessons'),
+    ),
+    el('div.faint', { style: { marginBottom: '10px' } },
+      'A summary of what you have studied and where it is going badly — which lesson you read and '
+      + 'then still got wrong, which skill keeps slipping. Copy it into the chat when something did '
+      + 'not make sense, and the explanation can be fixed rather than guessed at.'),
+    el('div.faint', { style: { marginBottom: '10px', fontSize: '0.82rem' } },
+      'It contains no name, no token and nothing that identifies you — only what you studied and how it went.'),
+    box,
+    el('div.row', { style: { marginTop: '10px', gap: '8px', flexWrap: 'wrap' } }, copy, refresh),
+  );
+}
+
 function renderVersionPanel() {
   const status = el('div.faint', { style: { minHeight: '20px' } },
     'Click to compare against the latest published version.');

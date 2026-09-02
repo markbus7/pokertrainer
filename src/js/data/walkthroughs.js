@@ -776,6 +776,16 @@ export const WALKTHROUGHS = {
         },
       },
       {
+        title: 'Raise it or fold it',
+        body: [
+          'The chart above is the theory. Here is a hand, and a seat. **Decide.**',
+          'You will not always have a chart in front of you, so work it the way the last step described: how many players can still wake up behind you with something better?',
+          'The further from the button you sit, the more of them there are, and the stronger your hand has to be before it is worth entering the pot.',
+        ],
+        practice: 'open-or-fold',
+      },
+
+      {
         title: 'The small blind puzzle: position is two things, not one',
         body: [
           'If the rule were only "fewer players behind means you can open wider", the small blind — with a single opponent left to act — should be the widest seat at the table. It is not. It opens tighter than the button.',
@@ -958,6 +968,16 @@ export const WALKTHROUGHS = {
         },
       },
       {
+        title: 'The same hand, two seats',
+        body: [
+          'Here is one hand. It is a fold from one seat and a raise from another, and nothing about the cards changes between them — which is the whole argument of this module in a single decision.',
+          'Two things are different between the seats. Under the gun, five players can still wake up behind you with something better. On the button, only two can, and both of them will be acting first for the rest of the hand.',
+          '**Pick the seat where this hand is a raise.**',
+        ],
+        practice: 'seat-matters',
+      },
+
+      {
         title: 'What position lets you actually do',
         body: [
           'Three concrete abilities, all of which are unavailable out of position:',
@@ -1094,6 +1114,16 @@ export const WALKTHROUGHS = {
         },
       },
       {
+        title: 'Can you sit down?',
+        body: [
+          'A bankroll and a stake. **Decide whether you can play it.**',
+          'Hold the number from the last step in mind: normal downswings run past 20 buy-ins. The threshold is not about how confident you feel or how well you have been running — it is about surviving an ordinary bad stretch without going broke.',
+          'Divide the roll by the buy-in and compare it against 30. That is the whole calculation, and it is the one most players skip on the way to busting.',
+        ],
+        practice: 'roll',
+      },
+
+      {
         title: 'Rake, and where the money really goes',
         body: [
           'The house takes a cut of most pots — typically **5%, capped** at a few big blinds. It is easy to ignore and it is often the difference between a winning player and a losing one.',
@@ -1198,6 +1228,16 @@ export const WALKTHROUGHS = {
           answer: 'a',
         },
       },
+      {
+        title: 'Read the texture',
+        body: [
+          'You raised before the flop and they called. The flop comes down and they check to you.',
+          '**Look at the board and decide: bet small, or check back?** The question to ask is how many of their hands can carry on against a bet.',
+          'Count the suits and the gaps. Three different suits and spread-out ranks means very little connected with it; two of a suit and close together means almost everything did.',
+        ],
+        practice: 'cbet',
+      },
+
       {
         title: 'The two questions before any bet',
         body: [
@@ -1317,6 +1357,15 @@ export const WALKTHROUGHS = {
         },
       },
       {
+        title: 'Work out the floor',
+        body: [
+          'A pot and a bet. **Type the share of your range you must keep defending.**',
+          'It is pot ÷ (pot + bet). Remember the direction: a smaller bet is a cheaper bluff, so it needs to work less often — which means you have to defend *more*.',
+        ],
+        practice: 'defend',
+      },
+
+      {
         title: 'When to ignore it entirely',
         body: [
           'This is the part people miss, and it matters more than the formula.',
@@ -1395,6 +1444,16 @@ export const WALKTHROUGHS = {
           answer: 'a',
         },
       },
+      {
+        title: 'Price your own bluff',
+        body: [
+          'Now from the other side of the table. You are bluffing with a hand that cannot win a showdown, so folds are the only way this bet makes money.',
+          '**Type how often they must fold for the bluff to break even.** You are risking the bet to win the pot, and that ratio is the whole answer.',
+          'Notice which way it moves before you answer: a bigger bluff wins more when it works, and has to work more often to pay for itself.',
+        ],
+        practice: 'bluff',
+      },
+
       {
         title: 'Bluff with hands that can still win',
         body: [
@@ -1501,6 +1560,16 @@ export const WALKTHROUGHS = {
         },
       },
       {
+        title: 'Work out a real one',
+        body: [
+          'Two stacks and a pot. **Type the SPR.**',
+          'Remember which stack counts. You can never win more than the shorter one, so the bigger stack is irrelevant here — the extra chips behind it simply cannot come into play in this hand.',
+          'Divide that effective stack by the pot. Under 3 and top pair is committed; over 6 and one pair is just one pair.',
+        ],
+        practice: 'spr',
+      },
+
+      {
         title: 'Low SPR means committed',
         body: [
           'At an SPR of **3 or less**, top pair is usually a hand you get all-in with, and you should plan for that before you bet.',
@@ -1606,6 +1675,16 @@ export const WALKTHROUGHS = {
           answer: 'a',
         },
       },
+      {
+        title: 'Name the leak',
+        body: [
+          'Here is a player with a leak you can see in their numbers. **Pick the adjustment that punishes it.**',
+          'The method never changes: find what they do too much of, and do the opposite. Somebody who cannot fold should never be bluffed; somebody who folds everything should be attacked relentlessly.',
+          'Read the three figures before you choose — they tell you which of those it is.',
+        ],
+        practice: 'leak',
+      },
+
       {
         title: 'The calling station and the nit',
         body: [
@@ -1742,6 +1821,16 @@ export const WALKTHROUGHS = {
           answer: 'a',
         },
       },
+      {
+        title: 'The call that is right for chips and wrong for money',
+        body: [
+          'It is the bubble — one more player out and everyone still in gets paid. You can call an all-in as a genuine favourite in chips.',
+          '**Decide.** The chips say one thing and the prize pool says another, and this is the one moment in poker where they disagree sharply.',
+          'Ask what busting costs you against what winning gains: a payout you were about to lock up, against a prize you might have reached anyway.',
+        ],
+        practice: 'bubble',
+      },
+
       {
         title: 'Playing the two sides of the pressure',
         body: [

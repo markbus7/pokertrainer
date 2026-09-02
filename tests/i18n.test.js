@@ -111,3 +111,42 @@ describe('i18n: Dutch coverage', () => {
     }
   });
 });
+
+describe('the learning report', () => {
+  it('says where the teaching is failing, not just how the player is doing', async () => {
+    const { Profile } = await import('../src/js/state/profile.js');
+    const { learningReport } = await import('../src/js/state/learningReport.js');
+    const mem = new Map();
+    const p = new Profile({}, {
+      getItem: (k) => (mem.has(k) ? mem.get(k) : null),
+      setItem: (k, v) => mem.set(k, String(v)),
+      removeItem: (k) => mem.delete(k),
+    });
+    // Someone who read the pot odds lesson and is still getting it wrong is
+    // exactly the signal this exists to surface.
+    p.markWalkthroughComplete('pot-odds');
+    for (let i = 0; i < 30; i++) p.recordDrill('pot-odds', i % 3 !== 0);
+    const report = learningReport(p);
+
+    assert(/READ THE LESSON AND STILL GETTING IT WRONG/.test(report),
+      'a lesson read and then failed must be called out');
+    assert(/Pot Odds/.test(report), 'the failing module must be named');
+    assert(/WHERE I AM STRUGGLING/.test(report), 'the struggle list must be present');
+  });
+
+  it('carries nothing that identifies the player', async () => {
+    const { Profile } = await import('../src/js/state/profile.js');
+    const { learningReport } = await import('../src/js/state/learningReport.js');
+    const mem = new Map();
+    const p = new Profile({}, {
+      getItem: (k) => (mem.has(k) ? mem.get(k) : null),
+      setItem: (k, v) => mem.set(k, String(v)),
+      removeItem: (k) => mem.delete(k),
+    });
+    p.addXp(500);
+    const report = learningReport(p);
+    // A token pasted into a report and shared would be a real leak.
+    assert(!/ghp_|github_pat_|gist/i.test(report), 'the report must never carry a credential');
+    assert(!/@/.test(report), 'no email-shaped text should appear');
+  });
+});
