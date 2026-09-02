@@ -973,3 +973,41 @@ input, textarea, select { font-size: max(16px, 1rem); }
   border-radius: var(--radius-sm);
   padding: 12px;
 }
+
+/* Collapsed background inside a lesson. Explicitly tagged optional, because
+   a derivation printed inline reads as one more thing to memorise. */
+.aside {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+}
+.aside-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  background: none;
+  border: 0;
+  color: var(--text-dim);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.aside-toggle:hover { color: var(--text); }
+.aside-caret { font-size: 0.8rem; }
+.aside-tag {
+  margin-left: auto;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 2px 8px;
+}
+.aside-body { padding: 0 14px 12px; color: var(--text-dim); }
+.aside-body p { margin: 0 0 10px; }
+@media (pointer: coarse) { .aside-toggle { min-height: 48px; } }

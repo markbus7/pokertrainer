@@ -20,6 +20,30 @@ import { moduleMeta, WALKTHROUGHS } from '../data/curriculum.js';
  * Builds one hands-on exercise. A generator can decline a deal, so this
  * reports and returns null rather than leaving a step that cannot render.
  */
+/**
+ * "Why this works", collapsed. Open it if you want the derivation; skip it
+ * and you lose nothing you would use at a table. Marked as such explicitly,
+ * because unlabelled detail reads as required.
+ */
+function renderAside(aside) {
+  const body = el('div.aside-body', { hidden: true },
+    aside.body.map((paragraph) => el('p', richText(paragraph))));
+  // The caret is a local, not a module-level one: two asides on a page would
+  // otherwise share a single reference and only the last would ever turn.
+  const caret = el('span.aside-caret', '\u25B8');
+
+  const toggle = el('button.aside-toggle', {
+    onclick: () => {
+      body.hidden = !body.hidden;
+      toggle.setAttribute('aria-expanded', body.hidden ? 'false' : 'true');
+      caret.textContent = body.hidden ? '\u25B8' : '\u25BE';
+    },
+    'aria-expanded': 'false',
+  }, caret, el('span', aside.title), el('span.aside-tag', 'optional'));
+
+  return el('div.aside', toggle, body);
+}
+
 function buildPractice(kind) {
   try {
     return makePractice(kind);
@@ -155,6 +179,11 @@ export function renderWalkthrough(ctx, params) {
       el('h2', step.title),
       el('div.lesson-body', step.body.map((paragraph) => el('p', richText(paragraph)))),
       step.visual ? renderVisual(step.visual) : null,
+      // Background, folded away. A lesson that explains why a shortcut works
+      // is worth having, but printing the derivation inline makes it look
+      // like more to memorise than it is — the outs lesson put thirteen
+      // percentages on screen when only four of them are ever used.
+      step.aside ? renderAside(step.aside) : null,
 
       practice
         ? el('div', { style: { marginTop: '22px', paddingTop: '18px', borderTop: '1px solid var(--border)' } },

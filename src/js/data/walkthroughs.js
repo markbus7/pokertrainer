@@ -648,13 +648,18 @@ export const WALKTHROUGHS = {
           'So a nine-out flush draw is roughly 9 × 4 = **36%** on the flop, and 9 × 2 = **18%** on the turn.',
           'Where does the 2 come from? Count the unseen cards. On the flop you can see your own two plus the three on the board, so 52 − 5 = **47** are unseen, and one of those 47 is about **2%**. On the turn there is one more card showing, so 52 − 6 = **46** unseen — still about 2% each.',
           'So an out is worth roughly 2% for every card still to come. One card left, multiply by 2. Two cards left, multiply by 4.',
-          'Two cards to come is not simply twice one card, though, and it is worth seeing why. Adding the two chances together counts the times you hit on **both** cards twice over — once in each half of the sum — so plain addition overshoots.',
-          'With nine outs, adding honestly gives 38.7%, and that double-counted overlap is worth about 3%. Take it off and you land on the true **35%**.',
-          'Here is the neat part. Rounding each out down from 2.1% to a flat 2% shaves off almost exactly that overlap, which is why the crude 9 × 4 = **36%** sits so close to the real 35%. The shortcut works because two errors cancel.',
-          'They stop cancelling when you have a lot of outs, because the overlap grows faster than the rounding saves. At fifteen outs the overlap is nearly 10%, so 15 × 4 = 60% overshoots the true **54%**.',
-          'The rule of 2 has the opposite, smaller problem: it **runs a little low**. One card in 46 is 2.2%, not 2.0%, and with only one card to come there is no overlap for that rounding to cancel out. Nine outs on the turn is really about **20%**, not the 18% the shortcut gives.',
-          'Neither drift is ever big enough to change what you should do, which is the entire point of a shortcut.',
+          'The shortcut is not exact — it drifts a little high on the flop and a little low on the turn — but never by enough to change what you should do. That is the whole point of a shortcut, and you do not need to carry the reason around with you.',
         ],
+        aside: {
+          title: 'Why the shortcut works at all',
+          body: [
+            'Two cards to come is not simply twice one card, and it is worth seeing why once. Adding the two chances together counts the times you hit on **both** cards twice over — once in each half of the sum — so plain addition overshoots.',
+            'With nine outs, adding honestly gives 38.7%, and that double-counted overlap is worth about 3%. Take it off and you land on the true **35%**.',
+            'Here is the neat part. Rounding each out down from 2.1% to a flat 2% shaves off almost exactly that overlap, which is why the crude 9 × 4 = **36%** sits so close to the real 35%. The shortcut works because two errors cancel.',
+            'They stop cancelling when you have a lot of outs, because the overlap grows faster than the rounding saves. At fifteen outs the overlap is nearly 10%, so 15 × 4 = 60% overshoots the true **54%**. The rule of 2 has the opposite, smaller problem: one card in 46 is 2.2%, not 2.0%, so it runs a shade low.',
+            'None of these figures are worth memorising. They are here so the shortcut is something you understand rather than something you trust.',
+          ],
+        },
         check: {
           question: 'You have an open-ended straight draw on the flop. Roughly what is your equity?',
           options: [
@@ -677,6 +682,50 @@ export const WALKTHROUGHS = {
           answer: 'a',
         },
       },
+      {
+        title: 'The card you actually carry',
+        body: [
+          'Here is the honest version of how this gets used at a real table: **almost nobody calculates anything.**',
+          'A good player has a handful of numbers memorised and matches against them. "Half pot, flush draw" — 25 against 35 — call. That takes about a second and no arithmetic happens at all.',
+          'The table below is the whole thing in one place. Your draw down the side, their bet across the top, and the answer where the two meet. This is what the counting and the rule of 4 are *for*: you do the working a few times so that eventually you do not have to.',
+          'Notice how many cells are not close at all. A gutshot against a pot-sized bet misses by seventeen points — you do not need a calculator for that. Thirteen of these twenty answers are clear by five points or more, and you can give them instantly once the table is in your head.',
+          'Everything else in this module is scaffolding for this card. Learn the table, and keep the method for the spots that are not on it.',
+        ],
+        visual: {
+          type: 'table',
+          headers: ['You hold', 'You have', 'They bet ⅓', 'half', '⅔', 'pot'],
+          rows: [
+            ['Flush + straight draw', '54%', 'call', 'call', 'call', 'call'],
+            ['Flush draw', '35%', 'call', 'call', 'call', 'call (close)'],
+            ['Open-ended straight', '31%', 'call', 'call', 'call (close)', 'fold (close)'],
+            ['Two overcards', '24%', 'call (close)', 'fold (close)', 'fold (close)', 'fold'],
+            ['Gutshot', '16%', 'fold (close)', 'fold', 'fold', 'fold'],
+          ],
+          caption: 'You need 20% against a third-pot bet, 25% against half, 29% against two-thirds and 33% against a pot-sized one. Marked **close** means within five points of the line — those are the ones where care pays, and where the rest of this trainer (position, what they would bet here) tips the answer.',
+        },
+        check: {
+          question: 'You have an open-ended straight draw on the flop and your opponent bets the size of the pot. Without doing any arithmetic, what does the card say?',
+          options: [
+            {
+              key: 'a',
+              label: 'Fold — but it is close',
+              why: 'Right. An open-ender is about 31% and a pot-sized bet demands 33%. You are short by two points, which is a fold rather than a disaster — and it is exactly the kind of spot where the extra information later in this trainer (position, what they would bet here) tips it.',
+            },
+            {
+              key: 'b',
+              label: 'Call — a straight draw is always worth it',
+              why: 'A straight draw is worth it against most bets, but not this one. The row shows call against a third, a half and two-thirds, and fold against a pot-sized bet. The bigger the bet, the more equity it demands.',
+            },
+            {
+              key: 'c',
+              label: 'Fold — it is not close at all',
+              why: 'It is a fold, but only just: 31% against 33%. The card marks it close for a reason. The genuinely clear folds are the gutshot row, which misses by ten points or more.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+
       {
         title: 'Both halves, one decision',
         body: [

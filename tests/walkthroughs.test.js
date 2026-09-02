@@ -490,6 +490,64 @@ describe('walkthroughs: the numbers taught match the engine', () => {
   });
 });
 
+describe('the outs reference card matches the engine', () => {
+  const card = () => WALKTHROUGHS.outs.steps.find((s) => /card you actually carry/i.test(s.title));
+
+  it('gets every call and fold right, and marks the close ones honestly', () => {
+    // This table is meant to be memorised and used without thinking, so a
+    // wrong cell would install a losing habit that no later lesson corrects.
+    const step = card();
+    assert(step && step.visual && step.visual.rows, 'the reference card exists');
+
+    const OUTS = {
+      'Flush + straight draw': 15,
+      'Flush draw': 9,
+      'Open-ended straight': 8,
+      'Two overcards': 6,
+      Gutshot: 4,
+    };
+    const FRACTIONS = [1 / 3, 0.5, 2 / 3, 1];
+    const pot = 120;
+
+    for (const [label, equityText, ...cells] of step.visual.rows) {
+      const outs = OUTS[label];
+      assert(outs, `unrecognised row "${label}"`);
+
+      const equity = exactOutsEquity(outs, 'flop') * 100;
+      equal(Math.round(equity), Number(equityText.replace('%', '')),
+        `${label}: the stated equity must match the engine`);
+
+      cells.forEach((cell, i) => {
+        const bet = pot * FRACTIONS[i];
+        const need = requiredEquity(bet, pot + bet) * 100;
+        const margin = equity - need;
+        const shouldCall = margin > 0;
+
+        assert(/^(call|fold)/.test(cell), `${label}: unreadable cell "${cell}"`);
+        equal(cell.startsWith('call'), shouldCall,
+          `${label} vs ${(FRACTIONS[i] * 100).toFixed(0)}% pot: card says "${cell}" `
+          + `but equity ${equity.toFixed(0)}% against a ${need.toFixed(0)}% price says otherwise`);
+
+        // "close" has to mean something, or the marking is decoration.
+        equal(/close/.test(cell), Math.abs(margin) < 5,
+          `${label} vs ${(FRACTIONS[i] * 100).toFixed(0)}% pot is ${margin.toFixed(0)} points from the line, `
+          + `so "${cell}" marks closeness wrongly`);
+      });
+    }
+  });
+
+  it('states the four prices in its caption correctly', () => {
+    const caption = card().visual.caption;
+    const pot = 120;
+    for (const [fraction, claimed] of [[1 / 3, 20], [0.5, 25], [2 / 3, 29], [1, 33]]) {
+      const bet = pot * fraction;
+      equal(Math.round(requiredEquity(bet, pot + bet) * 100), claimed,
+        `the caption claims ${claimed}% for a ${fraction} pot bet`);
+      assert(caption.includes(`${claimed}%`), `the caption should name ${claimed}%`);
+    }
+  });
+});
+
 describe('walkthroughs: hands-on exercises', () => {
   it('only asks for exercises the trainer can actually build', async () => {
     // A typo here would render a step with no exercise at all and no error,
