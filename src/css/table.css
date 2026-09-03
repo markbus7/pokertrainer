@@ -432,3 +432,119 @@ input[type="range"] {
   input[type="range"], .lab-slider { height: 44px; }
   .lab-slider { margin: 4px 0; }
 }
+
+/* ============================================================
+   HAND REVIEW
+   ============================================================ */
+
+.hand-card-wrap { position: relative; }
+
+.hand-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius-sm);
+  padding: 12px 40px 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.hand-card:hover { background: var(--bg-hover); border-color: var(--border-bright); }
+.hand-card.cooler { border-left-color: var(--blue); }
+
+.hand-card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hand-card-title { font-weight: 650; }
+.hand-card-when { margin-left: auto; white-space: nowrap; }
+
+.hand-card-body {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 9px;
+}
+.hand-card-cards { display: flex; align-items: center; gap: 6px; }
+.hand-card-numbers { margin-left: auto; font-size: 0.84rem; }
+.hand-card-cost { color: var(--red); font-weight: 600; }
+
+.hand-card-remove {
+  position: absolute; top: 6px; right: 6px;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.hand-card-remove:hover { background: var(--bg-hover); color: var(--red); }
+
+/* ---- the replay itself ---- */
+
+.replay-panel { display: grid; gap: 12px; }
+/* The felt is the game's felt, so give it the game's width. Without a cap it
+   stretches to the full page here, because there is no coach column beside
+   it, and the same hand would look like a different table. */
+.replay-panel .felt { max-width: 820px; margin: 0 auto; width: 100%; }
+
+.replay-transport {
+  display: flex; align-items: center; gap: 10px;
+}
+.replay-transport .btn { flex: none; }
+
+/* The dots scroll rather than shrink: a 40-action hand would otherwise
+   squeeze them below the point of being tappable. */
+.replay-dots {
+  flex: 1;
+  display: flex; align-items: center; gap: 5px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding: 6px 2px;
+  min-width: 0;
+}
+.replay-dots::-webkit-scrollbar { display: none; }
+
+.replay-dot {
+  flex: none;
+  width: 10px; height: 10px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border-bright);
+  background: var(--bg-raised);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.replay-dot.street { border-radius: 2px; background: var(--border-bright); }
+.replay-dot.mine { width: 14px; height: 14px; }
+.replay-dot.mine.good { background: var(--green); border-color: var(--green); }
+.replay-dot.mine.ok { background: var(--gold); border-color: var(--gold); }
+.replay-dot.mine.bad { background: var(--red); border-color: var(--red); }
+.replay-dot.here { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22); transform: scale(1.25); }
+
+.verdict-panel { border-left: 3px solid var(--border-bright); }
+.verdict-panel.good { border-left-color: var(--green); }
+.verdict-panel.ok { border-left-color: var(--gold); }
+.verdict-panel.bad { border-left-color: var(--red); }
+
+.replay-numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0 18px;
+  margin-top: 12px;
+}
+
+@media (max-width: 700px) {
+  .hand-card-when { margin-left: 0; width: 100%; }
+  .hand-card-numbers { margin-left: 0; }
+  /* Apple's 44pt minimum: a 10px dot is a target you miss on a phone. */
+  .replay-dot { width: 14px; height: 14px; }
+  .replay-dot.mine { width: 18px; height: 18px; }
+  .replay-dots { gap: 7px; padding: 12px 2px; }
+}
+
+.hand-card-label { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.66rem; }

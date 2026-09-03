@@ -16,6 +16,7 @@ import { makeDeck, cardsToString } from '../core/cards.js';
 import { countOuts, describeOuts, handEquity, exactOutsEquity } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
+import { CLEAR_MARGIN } from '../core/judge.js';
 
 export const LAB_TYPES = ['price', 'size', 'decide'];
 
@@ -131,8 +132,10 @@ function decideSpot(rng) {
     const bet = Math.round(pot * fraction);
     const potNow = pot + bet;
     const need = requiredEquity(bet, potNow);
-    // Skip coin-flip-close spots: the point is the comparison, not a guess.
-    if (Math.abs(equity - need) < 0.06) continue;
+    // Skip close spots: the point is the comparison, not a guess. The margin
+    // is the judge's own, so that a spot you get wrong here is one the hand
+    // review will also call wrong when it replays it.
+    if (Math.abs(equity - need) < CLEAR_MARGIN) continue;
 
     const shouldCall = equity > need;
     return {
@@ -151,6 +154,10 @@ function decideSpot(rng) {
       ],
       answer: shouldCall ? 'call' : 'fold',
       outs: count,
+      // Surfaced so a wrong answer can be saved as a replayable hand, graded
+      // by the same numbers the feedback quotes.
+      equity,
+      need,
       solve: (given) => ({
         correct: given === (shouldCall ? 'call' : 'fold'),
         exact: shouldCall ? 'Call' : 'Fold',

@@ -1885,7 +1885,7 @@ export const NL = {
   'They bet': 'Zij betten',
   'To call': 'Te callen',
   'The pot is now': 'De pot is nu',
-  'Check': 'Controleer',
+  'Check my answer': 'Controleer mijn antwoord',
   'Check my outs': 'Controleer mijn outs',
   'Every card still unseen:': 'Elke kaart die nog ongezien is:',
   '{n} selected': '{n} geselecteerd',
@@ -2229,4 +2229,137 @@ export const NL = {
   'It is a fold, but only just: 31% against 33%. The card marks it close for a reason. The genuinely clear folds are the gutshot row, which misses by ten points or more.':
     'Het is een fold, maar maar net: 31% tegen 33%. De kaart markeert hem niet voor niets als close. De echt duidelijke folds staan in de gutshot-rij, die er tien punten of meer naast zit.',
   'optional': 'optioneel',
+  'You have **{have}** and need **{need}** — call.': 'Je hebt **{have}** en hebt **{need}** nodig — call.',
+  'You have **{have}** but need **{need}** — fold.': 'Je hebt **{have}** maar hebt **{need}** nodig — fold.',
+
+  /* ---- Hand review: the coach's verdicts ---- */
+
+  'Never fold for free': 'Fold nooit gratis',
+  'Nobody had bet. Checking would have shown you the next card at no cost, and you gave up a pot you held {equity} of instead.':
+    'Niemand had gebet. Checken had je de volgende kaart gratis laten zien, en in plaats daarvan gaf je een pot op waarvan je {equity} had.',
+  'You folded the best of it': 'Je foldde de beste hand',
+  'You had {equity} and the price only asked for {needed}. Calling was worth about {gain} chips, and folding threw that away.':
+    'Je had {equity} en de prijs vroeg maar om {needed}. Callen was ongeveer {gain} chips waard, en met folden gooide je dat weg.',
+  'Call {call}': 'Call {call}',
+  'Close fold': 'Close fold',
+  '{equity} against {needed} needed — a thin call. Folding is defensible against somebody who never bluffs, and this is not the kind of spot a session is won or lost on.':
+    '{equity} tegen {needed} nodig — een dunne call. Folden is verdedigbaar tegen iemand die nooit bluft, en dit is niet het soort spot waar een sessie op gewonnen of verloren wordt.',
+  'Good fold': 'Goede fold',
+  "The price asked for {needed} and you had {equity}. Folding saves money, and the folds are where most of a winning player's edge quietly comes from.":
+    'De prijs vroeg om {needed} en je had {equity}. Folden bespaart geld, en de folds zijn waar het meeste van de edge van een winnende speler stilletjes vandaan komt.',
+  'Missed value': 'Value laten liggen',
+  'With {equity} you are well ahead. Betting here gets called by worse hands — money left behind, though how much depends on whether they would have paid.':
+    'Met {equity} sta je ruim voor. Hier betten wordt gecalld door slechtere handen — geld dat je laat liggen, al hangt het ervan af of ze betaald zouden hebben.',
+  'Bet for value': 'Bet voor value',
+  'Fine check': 'Prima check',
+  'With {equity}, keeping the pot small is reasonable. Checking also protects the hands you check with on later streets.':
+    'Met {equity} is de pot klein houden redelijk. Checken beschermt ook de handen waarmee je op latere streets checkt.',
+  'Correct call': 'Juiste call',
+  'You needed {needed} and had {equity}. This call wins about {gain} chips on average.':
+    'Je had {needed} nodig en had {equity}. Deze call wint gemiddeld ongeveer {gain} chips.',
+  'Marginal call': 'Marginale call',
+  '{equity} against {needed} needed — close enough to break-even that the answer comes from the later streets rather than from this one.':
+    '{equity} tegen {needed} nodig — zo dicht bij break-even dat het antwoord van de latere streets komt en niet van deze.',
+  'Called without the odds': 'Gecalld zonder de odds',
+  'The price asked for {needed} and you had {equity}. A call like this loses about {loss} chips every time you make it. Over a career these are the single biggest leak in small-stakes poker.':
+    'De prijs vroeg om {needed} en je had {equity}. Zo een call verliest ongeveer {loss} chips elke keer dat je hem maakt. Over een carrière zijn dit de grootste leak in small-stakes poker.',
+  'Fold — {call} into {pot} was too expensive': 'Fold — {call} in een pot van {pot} was te duur',
+  '{equity} — you are ahead, so betting builds the pot and charges their draws. Size it so worse hands can still call.':
+    '{equity} — je staat voor, dus betten bouwt de pot op en laat hun draws betalen. Kies een maat waarbij slechtere handen nog kunnen callen.',
+  'Bluff': 'Bluff',
+  'With {equity} this is a bluff. It has to work {folds} of the time to break even. Against somebody who folds too much that is a bargain; against a calling station it is a donation.':
+    'Met {equity} is dit een bluff. Hij moet {folds} van de tijd werken om break-even te draaien. Tegen iemand die te veel foldt is dat een koopje; tegen een calling station is het een donatie.',
+  'Thin bet': 'Dunne bet',
+  '{equity} is the awkward middle. Ask the two questions: does a worse hand call, and does a better hand fold? If neither, checking is usually better.':
+    '{equity} is het lastige midden. Stel de twee vragen: callt een slechtere hand, en foldt een betere hand? Als geen van beide, is checken meestal beter.',
+
+  /* ---- Hand review: the list ---- */
+
+  '🔍 Hand review': '🔍 Handen terugkijken',
+  'Hand review': 'Handen terugkijken',
+  'Review': 'Terugkijken',
+  'Every hand here has something in it. Tap one to play it back.':
+    'Elke hand hier heeft iets in zich. Tik er een aan om hem terug te spelen.',
+  'Clear all': 'Alles wissen',
+  'Cleared': 'Gewist',
+  'Your saved hands have been deleted.': 'Je bewaarde handen zijn verwijderd.',
+  'Mistake': 'Fout',
+  'Mistakes': 'Fouten',
+  'Cooler': 'Cooler',
+  'Coolers': 'Coolers',
+  'Cost': 'Kosten',
+  'Nothing saved yet. Hands land here when the coach grades one of your decisions as a mistake, or when you lose {n} big blinds or more having played it right. Go and play a few hands.':
+    'Nog niets bewaard. Handen komen hier terecht als de coach een van je beslissingen als fout beoordeelt, of als je {n} big blinds of meer verliest terwijl je hem goed speelde. Ga een paar handen spelen.',
+  '**What gets saved.** A hand is kept when the coach graded one of your decisions bad, or when you lost {n} big blinds or more with no mistake in it — the second kind matters as much as the first, because it is the proof that losing and misplaying are different things. The last {cap} mistakes are kept. These live on this device only, so they do not bloat every sync of your progress.':
+    '**Wat er bewaard wordt.** Een hand wordt bewaard als de coach een van je beslissingen slecht beoordeelde, of als je {n} big blinds of meer verloor zonder er een fout in te maken — die tweede soort telt net zo zwaar als de eerste, want het is het bewijs dat verliezen en verkeerd spelen twee verschillende dingen zijn. De laatste {cap} fouten worden bewaard. Ze staan alleen op dit apparaat, zodat ze niet elke sync van je voortgang opblazen.',
+  'you': 'jij',
+  'board': 'board',
+  'lost {amount}bb and played it right': 'verloor {amount}bb en speelde hem goed',
+  'cost {amount}bb': 'kostte {amount}bb',
+  'Remove this hand': 'Deze hand verwijderen',
+  'just now': 'zojuist',
+  '{n} min ago': '{n} min geleden',
+  '{n}h ago': '{n}u geleden',
+
+  /* ---- Hand review: the replay ---- */
+
+  'That hand is gone': 'Die hand is weg',
+  'It was cleared, or pushed out by newer ones.': 'Hij is gewist, of verdrongen door nieuwere.',
+  'Back to the list': 'Terug naar de lijst',
+  'All hands': 'Alle handen',
+  'hand #{n}': 'hand #{n}',
+  '← Back': '← Terug',
+  'The {street}': 'De {street}',
+  'The result': 'De uitkomst',
+  'New cards. Nobody has acted yet on this street.': 'Nieuwe kaarten. Niemand heeft op deze street al gehandeld.',
+  'The pot was {pot}, and it cost {call} to stay in.': 'De pot was {pot}, en het kostte {call} om erin te blijven.',
+  'The pot was {pot}.': 'De pot was {pot}.',
+  'Instead:': 'In plaats daarvan:',
+  'Price demands': 'De prijs vraagt',
+  'Your hand has': 'Jouw hand heeft',
+  'Pot': 'Pot',
+  'Facing': 'Tegenover je',
+  'no bet': 'geen bet',
+  'Opponents': 'Tegenstanders',
+  'You folded': 'Je foldde',
+  '{name} folds': '{name} foldt',
+  'You checked': 'Je checkte',
+  '{name} checks': '{name} checkt',
+  'You called {amount}': 'Je callde {amount}',
+  '{name} calls {amount}': '{name} callt {amount}',
+  'You bet {amount}': 'Je bette {amount}',
+  '{name} bets {amount}': '{name} bet {amount}',
+  'You raised to {amount}': 'Je raisede naar {amount}',
+  '{name} raises to {amount}': '{name} raiset naar {amount}',
+  'You won the pot': 'Jij won de pot',
+  '{names} won the pot': '{names} won de pot',
+  'and': 'en',
+  'Everybody else folded, so no cards were shown.': 'Iedereen foldde, dus er werden geen kaarten getoond.',
+  '**This one is not your fault.** You lost {amount}bb and the coach found nothing wrong with any decision in it. Hands like this are the reason results over a session say very little — the decisions are the only part you control, and these ones were right.':
+    '**Deze is niet jouw schuld.** Je verloor {amount}bb en de coach vond geen enkele beslissing verkeerd. Handen als deze zijn de reden dat resultaten over een sessie weinig zeggen — de beslissingen zijn het enige deel dat je in de hand hebt, en die waren hier goed.',
+  '{n} decisions in this hand went wrong. The red marks on the timeline are all of them.':
+    '{n} beslissingen in deze hand gingen mis. De rode markeringen op de tijdlijn zijn ze allemaal.',
+  'End of the spot': 'Einde van de spot',
+  'This one came from the Lab, so the hand stops here — the decision was the whole question.':
+    'Deze kwam uit het Lab, dus de hand stopt hier — de beslissing was de hele vraag.',
+  'The answer was to {action}.': 'Het antwoord was {action}.',
+  'Lost, but played right': 'Verloren, maar goed gespeeld',
+  'Nothing to fix': 'Niets te verbeteren',
+  '**Where the equity comes from.** It is measured by dealing the rest of the hand out thousands of times against the players still in, and counting how often you end up winning. It assumes they could hold anything, which is generous to you when somebody has bet big — a real range is stronger than a random one. Treat a verdict that turns on two or three points as close rather than settled.':
+    '**Waar de equity vandaan komt.** Hij wordt gemeten door de rest van de hand duizenden keren uit te delen tegen de spelers die nog meedoen, en te tellen hoe vaak je wint. Daarbij wordt aangenomen dat ze alles kunnen hebben, wat gunstig voor je is zodra iemand groot heeft gebet — een echte range is sterker dan een willekeurige. Behandel een oordeel dat op twee of drie punten draait als close en niet als beslist.',
+
+  /* ---- Hand review: the felt and the entry points ---- */
+
+  'You': 'Jij',
+  'Them': 'Zij',
+  'sitting out': 'zit uit',
+  'final pot': 'eindpot',
+  'Review this hand': 'Deze hand terugkijken',
+  'Replay this spot': 'Deze spot terugspelen',
+  '🔍 {n} hands worth another look': '🔍 {n} handen die een tweede blik verdienen',
+  '{n} with a mistake in': '{n} met een fout erin',
+  '{n} you lost through no fault of yours': '{n} die je zonder eigen schuld verloor',
+  'Play them back and see where they turned.': 'Speel ze terug en zie waar ze kantelden.',
+  'Review hands': 'Handen terugkijken',
+  'Those mistakes have cost you {amount} big blinds so far.': 'Die fouten hebben je tot nu toe {amount} big blinds gekost.',
 };

@@ -1,6 +1,7 @@
 /** Shared lesson visuals, used by both the guided lessons and the Lab. */
 
 import { el, richText, fmt } from './dom.js';
+import { t } from '../i18n/index.js';
 
 export function renderVisual(visual) {
   switch (visual.type) {
@@ -56,9 +57,9 @@ export function renderGauge({ need, have, needLabel = 'Need', haveLabel = 'Have'
     row(needLabel, need, 'need'),
     row(haveLabel, have, 'have'),
     el('div.visual-caption',
-      have >= need
-        ? richText(`You have **${fmt.pct(have)}** and need **${fmt.pct(need)}** — call.`)
-        : richText(`You have **${fmt.pct(have)}** but need **${fmt.pct(need)}** — fold.`)),
+      richText(have >= need
+        ? t('You have **{have}** and need **{need}** — call.', { have: fmt.pct(have), need: fmt.pct(need) })
+        : t('You have **{have}** but need **{need}** — fold.', { have: fmt.pct(have), need: fmt.pct(need) }))),
   );
 }
 

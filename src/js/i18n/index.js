@@ -36,6 +36,12 @@ export const KEEP_ENGLISH = new Set([
   'Value bet', 'Fold equity', 'Overcard', 'Rainbow', 'Dry board', 'Wet board',
   'Stack', 'Kicker', 'Semi-bluff', 'Bluff catcher', 'Range', 'Continuation bet',
   'Street', 'Showdown', 'Blinds', 'SPR', 'MDF', 'ICM', 'VPIP', 'Rake',
+  // The streets. Every Dutch table and hand history calls them these.
+  'preflop', 'flop', 'turn', 'river', 'showdown',
+  // The action, not the verb. Dutch players check; they do not "controleer".
+  // The practice view's verify button says "Check my answer" for the same
+  // reason — one English word was doing both jobs and losing one of them.
+  'Check',
   'Dominated', 'The nuts', 'bb/100',
   // Hand categories: the names every room, chat box and hand history uses.
   'High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush',

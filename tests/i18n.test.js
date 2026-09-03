@@ -2,6 +2,7 @@ import { describe, it, assert, equal } from './harness.js';
 import { t, setLang, getLang, LANGUAGES, KEEP_ENGLISH, tableFor, needsTranslation } from '../src/js/i18n/index.js';
 import { NL } from '../src/js/i18n/nl.js';
 import { coverage } from '../tools/i18n-coverage.mjs';
+import { judgeDecision } from '../src/js/core/judge.js';
 
 describe('i18n: the mechanism', () => {
   it('falls back to English rather than showing a missing key', () => {
@@ -261,5 +262,41 @@ describe('the outs deck reads as a deck', () => {
     equal(spot.unseen.length + onTable.length, 52,
       'unseen cards plus cards on the table must be the whole deck');
     equal(new Set([...spot.unseen, ...onTable]).size, 52, 'and none of them repeat');
+  });
+});
+
+describe('i18n: the coach speaks Dutch too', () => {
+  it('has a translation for every verdict the grader can produce', () => {
+    // Enumerated rather than sampled: the verdict text is the entire payload
+    // of the hand review, and a branch nobody happened to hit while testing
+    // would be the one that turns up in English in the middle of a Dutch
+    // explanation.
+    const missing = new Set();
+    for (const action of ['fold', 'check', 'call', 'bet', 'raise']) {
+      for (const equity of [0, 0.05, 0.2, 0.32, 0.36, 0.5, 0.64, 0.66, 0.71, 0.9, 1]) {
+        for (const needed of [0, 0.2, 0.25, 0.33, 0.5]) {
+          for (const toCall of [0, 10, 60, 200]) {
+            const v = judgeDecision({ action, equity, needed, toCall, pot: 120, amount: 80, currentBet: 20 });
+            for (const text of [v.head, v.body, v.better]) {
+              if (!text || KEEP_ENGLISH.has(text) || !needsTranslation(text)) continue;
+              if (!NL[text]) missing.add(text);
+            }
+          }
+        }
+      }
+    }
+    assert(missing.size === 0,
+      `no Dutch for:\n      ${[...missing].map((s) => s.slice(0, 70)).join('\n      ')}`);
+  });
+
+  it('keeps the poker Check apart from the verb', () => {
+    // One English word was doing both jobs: the table's Check button and the
+    // practice view's "check my answer" button. The Dutch table turned the
+    // poker action into "Controleer", which is not a thing you can do to a
+    // pot. They are separate strings now, and this is what keeps them so.
+    setLang('nl');
+    equal(t('Check'), 'Check', 'the action stays the word Dutch players use');
+    assert(/^Controleer/.test(t('Check my answer')), 'the verb is still translated');
+    setLang('en');
   });
 });

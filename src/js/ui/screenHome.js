@@ -8,6 +8,7 @@ import { masteryTier, nextTierGoal, tierByKey } from '../state/mastery.js';
 import { RANKS, requirementRows } from '../state/profile.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { stakeFor } from '../state/stats.js';
+import { handSummary } from '../state/handHistory.js';
 
 /**
  * What is actually still missing for the next rank. Reports the requirement
@@ -84,6 +85,7 @@ export function renderHome(ctx) {
     ),
 
     duePanel(profile, go),
+    mistakesPanel(go),
 
     /* ---- quick actions ---- */
     el('div.grid.cols-3',
@@ -156,6 +158,33 @@ function duePanel(profile, go) {
         return meta ? el('span.badge.gold', `${meta.icon} ${meta.name}`) : null;
       }),
     ),
+  );
+}
+
+/**
+ * The hands waiting to be looked at. Only shown when there are some: an empty
+ * "0 mistakes" panel on the dashboard every day would train you to ignore the
+ * place where the mistakes appear.
+ */
+function mistakesPanel(go) {
+  const summary = handSummary();
+  if (!summary.total) return null;
+  const parts = [];
+  if (summary.mistakes) parts.push(t('{n} with a mistake in', { n: summary.mistakes }));
+  if (summary.coolers) parts.push(t('{n} you lost through no fault of yours', { n: summary.coolers }));
+
+  return el('div.panel', { style: { borderColor: 'var(--red)' } },
+    el('div.spread',
+      el('div',
+        el('h3', { style: { margin: 0 } }, t('🔍 {n} hands worth another look', { n: summary.total })),
+        el('div.faint', `${parts.join(', ')}. ${t('Play them back and see where they turned.')}`),
+      ),
+      el('button.btn.sm.primary', { onclick: () => go('review') }, 'Review hands'),
+    ),
+    summary.mistakes
+      ? el('div.faint', { style: { marginTop: '10px' } },
+          t('Those mistakes have cost you {amount} big blinds so far.', { amount: summary.costBb.toFixed(1) }))
+      : null,
   );
 }
 
