@@ -217,7 +217,7 @@ function priceView(spot, onDone) {
         ? [t('The answer is {pct}%.', { pct: graded.exact.toFixed(1) })] : []));
       onDone(graded);
     },
-  }, t('Check'));
+  }, t('Check my answer'));
 
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit.click(); });
 
@@ -303,7 +303,7 @@ function numberView(spot, onDone) {
         ? [t('The answer is {value}.', { value: fmtExact(graded.exact, spot.unit) })] : []));
       onDone(graded);
     },
-  }, t('Check'));
+  }, t('Check my answer'));
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit.click(); });
 
   return shell(spot,

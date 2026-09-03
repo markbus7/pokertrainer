@@ -19,13 +19,14 @@ import { cardRow } from './cardView.js';
 import { potShareVisual, renderGauge } from './visuals.js';
 import { generateSession } from '../trainers/lab.js';
 import { CONFIDENCE, review, recordConfidence } from '../state/spacing.js';
+import { handFromLabSpot, keepHand } from '../state/handHistory.js';
 
 const SESSION_LENGTH = 9;
 
 export function renderLab(ctx) {
   const { profile, rng, go } = ctx;
   const spots = generateSession(rng, SESSION_LENGTH);
-  const state = { index: 0, value: null, result: null, correct: 0, answered: 0 };
+  const state = { index: 0, value: null, result: null, correct: 0, answered: 0, saved: null };
 
   const header = el('div.panel');
   const body = el('div.panel');
@@ -46,6 +47,11 @@ export function renderLab(ctx) {
     }
     review(profile, spot().concept, result.correct);
     if (confidence) recordConfidence(profile, confidence, result.correct);
+    // A "make the call" spot is a real decision at a table, so a wrong one is
+    // kept and replayed exactly like a hand you misplayed in the game.
+    state.saved = spot().type === 'decide'
+      ? keepHand(handFromLabSpot(spot(), given))
+      : null;
     draw();
   }
 
@@ -54,6 +60,7 @@ export function renderLab(ctx) {
     state.index++;
     state.value = null;
     state.result = null;
+    state.saved = null;
     draw();
     window.scrollTo({ top: 0 });
     return null;
@@ -222,6 +229,9 @@ export function renderLab(ctx) {
     );
 
     mount(footer,
+      state.saved
+        ? el('button.btn.ghost', { onclick: () => go('review', { hand: state.saved.id }) }, 'Replay this spot')
+        : null,
       state.result
         ? el('button.btn.primary', { onclick: next },
             state.index >= spots.length - 1 ? 'See results →' : 'Next spot →')

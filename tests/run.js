@@ -6,6 +6,7 @@ const modules = [
   './odds.test.js',
   './ranges.test.js',
   './engine.test.js',
+  './handHistory.test.js',
   './bots.test.js',
   './progression.test.js',
   './sync.test.js',

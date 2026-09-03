@@ -17,7 +17,19 @@ try {
 
 const SHOT = process.env.SHOT_DIR || null;
 const BASE = process.env.BASE_URL || 'http://localhost:8000';
-const browser = await chromium.launch();
+// The bundled browser build and the one this machine has installed do not
+// always match — CI images pin their own. Fall back to it by path rather than
+// failing the whole suite over a version number.
+const CHROME = process.env.PLAYWRIGHT_CHROMIUM_PATH || '/opt/pw-browsers/chromium';
+let browser;
+try {
+  browser = await chromium.launch();
+} catch (err) {
+  const { existsSync } = await import('node:fs');
+  if (!existsSync(CHROME)) throw err;
+  console.log(`  · using the browser at ${CHROME}`);
+  browser = await chromium.launch({ executablePath: CHROME });
+}
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 
 const errors = [];
@@ -147,11 +159,100 @@ await step('hand plays to completion', async () => {
 
 await step('a second hand deals cleanly', async () => {
   await page.click('.action-bar .btn.primary');
-  await page.waitForSelector('.action-buttons button', { timeout: 12000 });
-  const cards = await page.$$eval('.seat.hero .card', (n) => n.length);
-  if (cards !== 2) throw new Error(`expected 2 fresh hole cards, got ${cards}`);
+  // Wait for the cards, not for the action buttons. A hand where everyone
+  // folds to the blinds, or where the hero is already all-in, never offers a
+  // decision — the deal is still clean, and this step is about the deal.
+  await page.waitForFunction(
+    () => document.querySelectorAll('.seat.hero .card').length === 2,
+    null, { timeout: 12000 },
+  );
 });
 if (SHOT) await page.screenshot({ path: `${SHOT}/06-showdown.png` });
+
+await step('a misplayed hand is recorded and replays', async () => {
+  // Played inside the page against the real engine, through the same recorder
+  // the table screen uses. Driving the UI to a bad decision would depend on
+  // which cards came out; this makes the mistake on purpose and still
+  // exercises the whole path from recorder to store to screen.
+  const saved = await page.evaluate(async () => {
+    const [{ createTable }, { botAction }, { makeRng }, hh, { equityVsField }, { requiredEquity }] =
+      await Promise.all([
+        import('/src/js/engine/table.js'),
+        import('/src/js/engine/bots.js'),
+        import('/src/js/core/rng.js'),
+        import('/src/js/state/handHistory.js'),
+        import('/src/js/core/equity.js'),
+        import('/src/js/core/odds.js'),
+      ]);
+    hh.clearHands();
+    const rng = makeRng(20260903);
+    const table = createTable({
+      smallBlind: 1, bigBlind: 2, rng,
+      players: [
+        { id: 'hero', name: 'You', stack: 200, isHero: true },
+        ...[0, 1, 2, 3, 4].map((i) => ({ id: `bot${i}`, name: `Bot ${i}`, stack: 200, profile: 'station' })),
+      ],
+    });
+    for (let h = 0; h < 25 && hh.loadHands().length === 0; h++) {
+      for (const p of table.players) if (p.stack < 20) p.stack = 200;
+      table.startHand();
+      const rec = new hh.HandRecorder(table, 'hero', { source: 'play' });
+      let guard = 0;
+      while (!table.handOver && guard++ < 200) {
+        const actor = table.actor;
+        if (!actor) break;
+        if (actor.isHero) {
+          const live = table.contestants.filter((p) => !p.isHero).length;
+          const toCall = Math.max(0, table.currentBet - actor.committed);
+          const pot = table.totalPot;
+          const equity = equityVsField(actor.hole, table.board, Math.max(1, live), table.variant, rng, 200);
+          const coach = { equity, needed: toCall > 0 ? requiredEquity(toCall, pot) : 0, opponents: live, spr: 5 };
+          // Call everything: eventually that is a call without the odds.
+          const legal = table.legalActions(actor);
+          const pick = legal.find((a) => a.type === 'call') || legal.find((a) => a.type === 'check');
+          rec.act(table, { type: pick.type }, coach);
+        } else {
+          rec.act(table, botAction(table, actor, rng));
+        }
+      }
+      hh.keepHand(rec.finish(table));
+    }
+    const hands = hh.loadHands();
+    return { count: hands.length, id: hands.length ? hands[hands.length - 1].id : null };
+  });
+  if (!saved.count) throw new Error('25 hands of calling everything recorded no mistake');
+  console.log(`      recorded ${saved.count} hand(s) worth reviewing`);
+
+  await page.goto(`${BASE}/#review`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.hand-card', { timeout: 5000 });
+  const cards = await page.$$eval('.hand-card', (n) => n.length);
+  if (cards !== saved.count) throw new Error(`review list shows ${cards} of ${saved.count} hands`);
+
+  await page.click('.hand-card');
+  await page.waitForSelector('.replay-dot', { timeout: 5000 });
+  const dots = await page.$$eval('.replay-dot', (n) => n.length);
+  const onMistake = await page.$$eval('.replay-dot.bad.here', (n) => n.length);
+  if (dots < 3) throw new Error(`expected a timeline, got ${dots} dots`);
+  if (!onMistake) throw new Error('the replay did not open on the mistake');
+  const verdict = await page.textContent('.verdict-panel');
+  console.log(`      ${dots} steps; opened on: ${verdict.replace(/\s+/g, ' ').trim().slice(0, 80)}…`);
+  if (!/Instead/.test(verdict)) throw new Error('no better line offered for a bad decision');
+
+  // The felt in the replay is the felt from the game.
+  const seats = await page.$$eval('.replay-panel .seat', (n) => n.length);
+  if (seats !== 6) throw new Error(`replay felt shows ${seats} seats, expected 6`);
+
+  // Walk the whole hand.
+  const total = dots;
+  for (let i = 0; i < total; i++) {
+    const next = await page.$('.replay-transport .btn:not([disabled]):last-child');
+    if (!next) break;
+    await next.click().catch(() => {});
+  }
+  const end = await page.textContent('.screen');
+  if (!/won the pot/i.test(end)) throw new Error('stepping to the end never reached the result');
+});
+if (SHOT) await page.screenshot({ path: `${SHOT}/07-replay.png` });
 
 await step('range charts render', async () => {
   await page.goto(`${BASE}/#charts?chart=BTN`, { waitUntil: 'networkidle' });
@@ -362,7 +463,7 @@ await step('layout holds up on phone and tablet viewports', async () => {
     ['iPad portrait', 820, 1180],
     ['iPad landscape', 1180, 820],
   ];
-  const routes = ['#home', '#play', '#lab-run', '#walkthrough?module=pot-odds', '#charts?chart=BTN', '#stats'];
+  const routes = ['#home', '#play', '#lab-run', '#review', '#walkthrough?module=pot-odds', '#charts?chart=BTN', '#stats'];
   const faults = [];
 
   for (const [name, w, h] of viewports) {

@@ -4,14 +4,17 @@
  */
 
 import { el, mount, toast, fmt } from './dom.js';
-import { cardEl, cardRow, hiddenCards } from './cardView.js';
+import { t } from '../i18n/index.js';
+import { renderFelt } from './feltView.js';
 import { createTable } from '../engine/table.js';
 import { botAction, getProfile, pickOpponents } from '../engine/bots.js';
 import { VARIANTS, VARIANT_KEYS } from '../engine/variants.js';
 import { equityVsField } from '../core/equity.js';
-import { requiredEquity, potOddsRatio, spr, breakEvenBluffFrequency } from '../core/odds.js';
+import { requiredEquity, potOddsRatio, spr } from '../core/odds.js';
 import { evaluateHand, describeScore, categoryOf, CAT } from '../core/evaluator.js';
+import { judgeDecision } from '../core/judge.js';
 import { SessionStats, leakReport, stakeFor, bankrollAdvice } from '../state/stats.js';
+import { HandRecorder, keepHand } from '../state/handHistory.js';
 import { checkAchievements } from '../state/achievements.js';
 
 const BOT_DELAY = 620;
@@ -62,6 +65,8 @@ export function renderTable(ctx, params = {}) {
     handStarted: false,
     buyInsUsed: grind ? 1 : 0,
     logLines: [],
+    recorder: null,
+    savedHand: null,
   };
   if (grind) profile.setBankroll(profile.data.bankroll - buyInCost);
 
@@ -99,9 +104,14 @@ export function renderTable(ctx, params = {}) {
 
     table.startHand();
     stats.startHand();
+    session.recorder = new HandRecorder(table, HERO_ID, {
+      source: grind ? 'grind' : 'play',
+      stake: grind ? stake.key : null,
+    });
     session.handStarted = true;
     session.verdict = null;
     session.snapshot = null;
+    session.savedHand = null;
     log(`— Hand #${table.handNumber} —`, true);
     draw();
     step();
@@ -132,7 +142,7 @@ export function renderTable(ctx, params = {}) {
       if (session.cancelled || table.handOver) return;
       const action = botAction(table, actor, rng);
       const label = describeAction(action, table, actor);
-      table.act(action);
+      session.recorder.act(table, action);
       log(`${actor.name} ${label}`);
       draw();
       step();
@@ -167,7 +177,7 @@ export function renderTable(ctx, params = {}) {
     if (table.street !== 'preflop') stats.markStreet(table.street);
 
     const label = describeAction(action, table, hero);
-    table.act(action);
+    session.recorder.act(table, action, snap);
     log(`You ${label}`);
     draw();
     step();
@@ -177,6 +187,9 @@ export function renderTable(ctx, params = {}) {
     const result = table.result;
     if (!result || !session.handStarted) return;
     session.handStarted = false;
+    // Kept only if there is something to learn from it — a mistake, or a big
+    // loss that was nobody's fault. keepHand decides; see state/handHistory.
+    session.savedHand = keepHand(session.recorder.finish(table));
 
     const net = result.net[HERO_ID] || 0;
     const showdown = result.reason === 'showdown';
@@ -275,54 +288,35 @@ export function renderTable(ctx, params = {}) {
   }
 
   function drawFelt() {
-    const heroSeat = hero.seat;
-    const count = table.players.length;
-    const seats = table.players.map((p) => {
-      const slot = (p.seat - heroSeat + count) % count;
-      const isActing = table.actor === p && !table.handOver;
-      const wonPot = table.handOver && p.wonThisHand > 0;
-      const showCards = p.isHero || (table.handOver && !p.folded && table.result && table.result.reason === 'showdown');
-
-      return el(`div.seat${p.isHero ? '.hero' : ''}${p.folded ? '.folded' : ''}${isActing ? '.acting' : ''}${wonPot ? '.winner' : ''}`,
-        { dataset: { slot: String(slot) } },
-        p.lastAction ? el(`div.seat-action.${actionTone(p.lastAction)}`, p.lastAction) : null,
-        // A folded seat collapses its card area entirely, so the "Fold" tag
-        // stays pinned to the name plate instead of floating in empty space.
-        p.folded
-          ? null
-          : p.hole.length
-            ? (showCards
-                ? cardRow(p.hole, { size: p.isHero ? 'lg' : '', fourColour: profile.settings.fourColour, dealt: true })
-                : hiddenCards(p.hole.length))
-            : el('div.seat-cards'),
-        el('div.seat-plate',
-          el('div.seat-name',
-            !p.isHero && p.profile ? el('span', getProfile(p.profile).emoji) : null,
-            p.name,
-          ),
-          el('div.seat-stack', p.sittingOut ? 'sitting out' : fmt.chips(p.stack)),
-          el('div.seat-pos', p.position),
-        ),
-        p.committed > 0 ? el('div.seat-bet', '🪙', fmt.chips(p.committed)) : null,
-        p.seat === table.button ? el('div.dealer-button', 'D') : null,
-      );
-    });
-
-    mount(feltHost, el('div.felt',
-      seats,
-      el('div.board-area',
-        el('div.street-tag', table.handOver ? 'showdown' : table.street),
-        el('div.board',
-          table.board.length
-            ? table.board.map((c) => cardEl(c, { size: 'lg', fourColour: profile.settings.fourColour, dealt: true }))
-            : el('span.faint', 'waiting for the flop'),
-        ),
-        el('div.pot-chip', el('span.label', table.handOver ? 'final pot' : 'pot'),
-          fmt.chips(table.handOver && table.result
-            ? table.result.pots.reduce((sum, p) => sum + p.amount, 0)
-            : table.totalPot)),
-      ),
-    ));
+    mount(feltHost, renderFelt({
+      players: table.players.map((p) => ({
+        id: p.id,
+        name: p.name,
+        seat: p.seat,
+        position: p.position,
+        stack: p.stack,
+        committed: p.committed,
+        folded: p.folded,
+        sittingOut: p.sittingOut,
+        lastAction: p.lastAction,
+        hole: p.hole,
+        isHero: p.isHero,
+        emoji: !p.isHero && p.profile ? getProfile(p.profile).emoji : null,
+        wonPot: table.handOver && p.wonThisHand > 0,
+      })),
+      heroSeat: hero.seat,
+      seatCount: table.players.length,
+      button: table.button,
+      board: table.board,
+      pot: table.handOver && table.result
+        ? table.result.pots.reduce((sum, p) => sum + p.amount, 0)
+        : table.totalPot,
+      street: table.handOver ? 'showdown' : table.street,
+      actingId: table.actor && !table.handOver ? table.actor.id : null,
+      reveal: table.handOver && !!table.result && table.result.reason === 'showdown',
+      fourColour: profile.settings.fourColour,
+      potLabel: table.handOver ? 'final pot' : 'pot',
+    }));
   }
 
   function drawActions() {
@@ -338,6 +332,13 @@ export function renderTable(ctx, params = {}) {
                 el('div.faint', `You ${result.net[HERO_ID] >= 0 ? 'won' : 'lost'} ${fmt.chips(Math.abs(result.net[HERO_ID]))} chips this hand.`),
               ),
               el('div.row',
+                // Straight from the hand you just misplayed into the replay of
+                // it: this is the moment the spot is still in your head.
+                session.savedHand
+                  ? el('button.btn.lg.ghost', {
+                      onclick: () => go('review', { hand: session.savedHand.id }),
+                    }, 'Review this hand')
+                  : null,
                 el('button.btn.primary.lg', { onclick: startHand }, 'Deal next hand'),
               ),
             )
@@ -451,7 +452,7 @@ export function renderTable(ctx, params = {}) {
       session.verdict
         ? el(`div.verdict-box.${session.verdict.level}`,
             el('div.head', session.verdict.head),
-            el('div', session.verdict.body),
+            el('div', t(session.verdict.body, session.verdict.params)),
           )
         : null,
 
@@ -489,53 +490,19 @@ export function renderTable(ctx, params = {}) {
 /* ---------------- coaching ---------------- */
 
 /**
- * Grade a decision against the equity you actually had and the price you were
- * actually offered. This is the difference between playing and training.
+ * Grade a decision. The grading itself lives in core/judge.js so that the
+ * replay screen says exactly the same thing about the hand afterwards.
  */
 function judge(action, snap, table) {
-  const { equity, needed, toCall, pot } = snap;
-  const eq = (x) => fmt.pct(x, 1);
-
-  if (action.type === 'fold') {
-    if (toCall === 0) {
-      return { kind: 'fold', level: 'bad', head: 'Never fold for free', body: 'You could have checked and seen the next card at no cost. Folding here gives up a pot you might still win.' };
-    }
-    if (equity > needed + 0.08) {
-      return { kind: 'fold', level: 'bad', head: 'You folded the best of it', body: `You had ${eq(equity)} equity and only needed ${eq(needed)} to call profitably. That fold cost you about ${(equity * pot - (1 - equity) * toCall).toFixed(1)} chips.` };
-    }
-    if (equity > needed) {
-      return { kind: 'fold', level: 'ok', head: 'Close fold', body: `You had ${eq(equity)} against ${eq(needed)} needed — a thin call. Folding is defensible against an opponent who never bluffs.` };
-    }
-    return { kind: 'fold', level: 'good', head: 'Good fold', body: `You needed ${eq(needed)} and had ${eq(equity)}. Folding saves money, and the folds are where most of a winning player's edge quietly comes from.` };
-  }
-
-  if (action.type === 'check') {
-    if (equity > 0.7) {
-      return { kind: 'check', level: 'ok', head: 'Missed value', body: `With ${eq(equity)} equity you are well ahead. Betting here gets called by worse hands — that is free money you left behind.` };
-    }
-    return { kind: 'check', level: 'good', head: 'Fine check', body: `With ${eq(equity)} equity, keeping the pot small is reasonable. Checking also protects the hands you check with on later streets.` };
-  }
-
-  if (action.type === 'call') {
-    if (equity >= needed + 0.05) {
-      return { kind: 'call', level: 'good', head: 'Correct call', body: `You needed ${eq(needed)} and had ${eq(equity)}. This call wins about ${(equity * pot - (1 - equity) * toCall).toFixed(1)} chips on average.` };
-    }
-    if (equity >= needed - 0.03) {
-      return { kind: 'call', level: 'ok', head: 'Marginal call', body: `${eq(equity)} against ${eq(needed)} needed. Close to break-even — the right answer depends on what happens on later streets and on how much they pay you when you hit.` };
-    }
-    return { kind: 'call', level: 'bad', head: 'Called without the odds', body: `You needed ${eq(needed)} but had only ${eq(equity)}. Over a career, calls like this are the single biggest leak in small-stakes poker.` };
-  }
-
-  // bet / raise
-  const betSize = Math.max(0, (action.amount || 0) - table.currentBet);
-  const foldsNeeded = breakEvenBluffFrequency(betSize || 1, pot);
-  if (equity >= 0.65) {
-    return { kind: 'bet', level: 'good', head: 'Value bet', body: `${eq(equity)} equity — you are ahead, so betting builds the pot and charges their draws. Size it so worse hands can still call.` };
-  }
-  if (equity <= 0.35) {
-    return { kind: 'bet', level: 'ok', head: 'Bluff', body: `With ${eq(equity)} equity this is a bluff. It needs to work ${fmt.pct(foldsNeeded)} of the time to break even. Against a player who folds too much that is a bargain; against a calling station it is a donation.` };
-  }
-  return { kind: 'bet', level: 'ok', head: 'Thin bet', body: `${eq(equity)} equity is the awkward middle. Ask the two questions: does a worse hand call, and does a better hand fold? If neither, checking is usually better.` };
+  return judgeDecision({
+    action: action.type,
+    equity: snap.equity,
+    needed: snap.needed,
+    toCall: snap.toCall,
+    pot: snap.pot,
+    amount: action.amount,
+    currentBet: table.currentBet,
+  });
 }
 
 /* ---------------- helpers ---------------- */
@@ -549,13 +516,6 @@ function describeAction(action, table, player) {
     case 'raise': return `raises to ${fmt.chips(action.amount)}`;
     default: return action.type;
   }
-}
-
-function actionTone(label) {
-  const l = label.toLowerCase();
-  if (l.startsWith('fold')) return 'fold';
-  if (l.startsWith('raise') || l.startsWith('bet') || l.startsWith('all-in')) return 'aggressive';
-  return 'passive';
 }
 
 function resultHeadline(result, table) {
