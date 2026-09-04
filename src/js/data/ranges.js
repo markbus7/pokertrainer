@@ -8,6 +8,7 @@
  */
 
 import { RANK_CHARS, ALL_HAND_KEYS, comboCount } from '../core/cards.js';
+import { t } from '../i18n/index.js';
 
 const rankVal = (ch) => RANK_CHARS.indexOf(ch.toUpperCase()) + 2;
 
@@ -172,31 +173,62 @@ export function preflopAdvice(hand, position, spot = { action: 'rfi' }) {
       range,
       percent: rangePercent(range),
       reason: open
-        ? `${hand} is inside the ${(rangePercent(range) * 100).toFixed(0)}% opening range from ${position}.`
-        : `${hand} is outside the ${(rangePercent(range) * 100).toFixed(0)}% opening range from ${position}. Folding here is a profit, not a missed opportunity.`,
+        ? t('{hand} is inside the {pct}% opening range from {position}.',
+          { hand, pct: (rangePercent(range) * 100).toFixed(0), position })
+        : t('{hand} is outside the {pct}% opening range from {position}. Folding here is a profit, not a missed '
+          + 'opportunity.', { hand, pct: (rangePercent(range) * 100).toFixed(0), position }),
     };
   }
 
   const raiser = spot.raiser;
   const chart = CHARTS.threeBet[position];
   if (chart && chart.value.has(hand)) {
-    return { action: 'raise', kind: 'value', range: chart.all, reason: `${hand} is strong enough to 3-bet for value against a ${raiser} open.` };
+    return {
+      action: 'raise',
+      kind: 'value',
+      range: chart.all,
+      reason: t('{hand} is strong enough to 3-bet for value against a {raiser} open.', { hand, raiser }),
+    };
   }
   if (chart && chart.bluff.has(hand)) {
-    return { action: 'raise', kind: 'bluff', range: chart.all, reason: `${hand} is a 3-bet bluff: it blocks their strong hands and plays well when called.` };
+    return {
+      action: 'raise',
+      kind: 'bluff',
+      range: chart.all,
+      reason: t('{hand} is a 3-bet bluff: it blocks their strong hands and plays well when called.', { hand }),
+    };
   }
   if (position === 'BB') {
     const defend = CHARTS.bbDefend[raiser];
     if (defend && defend.has(hand)) {
-      return { action: 'call', range: defend, reason: `You are getting a discount in the big blind, and ${hand} is inside the defending range against a ${raiser} open.` };
+      return {
+        action: 'call',
+        range: defend,
+        reason: t('You are getting a discount in the big blind, and {hand} is inside the defending range against '
+          + 'a {raiser} open.', { hand, raiser }),
+      };
     }
-    return { action: 'fold', range: defend, reason: `Even at big-blind prices, ${hand} is too weak to defend out of position against a ${raiser} open.` };
+    return {
+      action: 'fold',
+      range: defend,
+      reason: t('Even at big-blind prices, {hand} is too weak to defend out of position against a {raiser} open.',
+        { hand, raiser }),
+    };
   }
   const flat = CHARTS.bbDefend[raiser];
   if (flat && flat.has(hand) && ['BTN', 'CO'].includes(position)) {
-    return { action: 'call', range: flat, reason: `${hand} plays well in position against a ${raiser} open — call and use your position postflop.` };
+    return {
+      action: 'call',
+      range: flat,
+      reason: t('{hand} plays well in position against a {raiser} open — call and use your position postflop.',
+        { hand, raiser }),
+    };
   }
-  return { action: 'fold', reason: `${hand} is not strong enough to continue against a ${raiser} open from ${position}.` };
+  return {
+    action: 'fold',
+    reason: t('{hand} is not strong enough to continue against a {raiser} open from {position}.',
+      { hand, raiser, position }),
+  };
 }
 
 /**

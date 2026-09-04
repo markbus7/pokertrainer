@@ -3,6 +3,9 @@ import { t, setLang, getLang, LANGUAGES, KEEP_ENGLISH, tableFor, needsTranslatio
 import { NL } from '../src/js/i18n/nl.js';
 import { coverage } from '../tools/i18n-coverage.mjs';
 import { judgeDecision } from '../src/js/core/judge.js';
+import { coverage as generatedCoverage, untemplated } from '../tools/i18n-generated.mjs';
+import { generateQuestion, DRILL_MODULE_IDS } from '../src/js/trainers/index.js';
+import { makeRng } from '../src/js/core/rng.js';
 
 describe('i18n: the mechanism', () => {
   it('falls back to English rather than showing a missing key', () => {
@@ -298,5 +301,67 @@ describe('i18n: the coach speaks Dutch too', () => {
     equal(t('Check'), 'Check', 'the action stays the word Dutch players use');
     assert(/^Controleer/.test(t('Check my answer')), 'the verb is still translated');
     setLang('en');
+  });
+});
+
+describe('i18n: the text the game makes up as it goes', () => {
+  // The lessons are fixed prose and easy to check. The drills, the Lab and
+  // the exercises write their sentences at run time with the numbers of the
+  // spot in them, and a sentence assembled that way has no key to look up —
+  // so it renders in English however complete the table is. That is what put
+  // a Dutch outs sentence on screen with three English ones underneath it.
+  const report = generatedCoverage('nl', { rounds: 25, seed: 7 });
+
+  for (const surface of ['drills', 'lab', 'exercises']) {
+    it(`says everything in Dutch: ${surface}`, () => {
+      const { total, missing } = report[surface];
+      assert(total > 20, `expected plenty of ${surface} text to check, got ${total}`);
+      assert(missing.length === 0,
+        `${missing.length} of ${total} still English:\n      `
+        + missing.slice(0, 8).map((s) => s.slice(0, 90)).join('\n      '));
+    });
+  }
+
+  it('builds every sentence through t(), not with a template literal', () => {
+    // The check above compares the two languages, so a sentence glued
+    // together from numbers would slip past it the moment somebody writes a
+    // Dutch entry for one of its fragments. This one asks a different
+    // question: could the text have come from keys at all?
+    const left = untemplated({ rounds: 25, seed: 7 });
+    for (const [surface, list] of Object.entries(left)) {
+      assert(list.length === 0,
+        `${surface} still builds ${list.length} strings in code:\n      `
+        + list.slice(0, 6).map((s) => s.slice(0, 90)).join('\n      '));
+    }
+  });
+
+  it('never loses an option to a translation that collides', () => {
+    // Options are deduplicated by their label, so two answers that translate
+    // to the same Dutch words would silently become one — a four-option
+    // question rendering three, with no error anywhere.
+    const problems = [];
+    for (let round = 0; round < 30; round++) {
+      for (const id of DRILL_MODULE_IDS) {
+        setLang('en');
+        let en;
+        try { en = generateQuestion(id, makeRng(500 + round), 3 + (round % 4)); } catch { continue; }
+        setLang('nl');
+        let nl;
+        try { nl = generateQuestion(id, makeRng(500 + round), 3 + (round % 4)); } catch { continue; }
+        if (en.options.length !== nl.options.length) {
+          problems.push(`${id}: ${en.options.length} options in English, ${nl.options.length} in Dutch`);
+        }
+        if (!nl.options.some((o) => o.key === nl.answer)) problems.push(`${id}: the answer vanished in Dutch`);
+      }
+    }
+    setLang('en');
+    assert(problems.length === 0, problems.slice(0, 5).join('\n      '));
+  });
+
+  it('every key the generators ask for has a Dutch entry', () => {
+    const { total, missing } = report.keys;
+    assert(total > 200, `expected the generators to ask for plenty of keys, got ${total}`);
+    assert(missing.length === 0,
+      `no Dutch for:\n      ${missing.slice(0, 10).map((s) => s.slice(0, 90)).join('\n      ')}`);
   });
 });

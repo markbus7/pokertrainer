@@ -135,7 +135,8 @@ function duePanel(profile, go) {
         el('div',
           el('h3', { style: { margin: 0 } }, '✅ Nothing due for review'),
           el('div.faint', soonest
-            ? `Everything you have studied is still fresh. ${soonest.m.name} is ${soonest.label}.`
+            ? t('Everything you have studied is still fresh. {module} is {when}.',
+              { module: t(soonest.m.name), when: t(soonest.label) })
             : 'Everything you have studied is still fresh.'),
         ),
         el('button.btn.sm.ghost', { onclick: () => go('lab') }, 'Practise anyway'),
@@ -155,7 +156,7 @@ function duePanel(profile, go) {
     el('div.row', { style: { marginTop: '12px' } },
       due.slice(0, 6).map((id) => {
         const meta = metaFor(id);
-        return meta ? el('span.badge.gold', `${meta.icon} ${meta.name}`) : null;
+        return meta ? el('span.badge.gold', meta.icon, ' ', t(meta.name)) : null;
       }),
     ),
   );
@@ -232,19 +233,19 @@ function moduleTile(meta, profile, go) {
       locked
         ? el('span.badge', t('Level {level}', { level: meta.unlockLevel }))
         : tier !== 'untouched'
-          ? el(`span.badge${tierInfo.tone ? `.${tierInfo.tone}` : ''}`, `${tierInfo.icon} ${tierInfo.name}`)
+          ? el(`span.badge${tierInfo.tone ? `.${tierInfo.tone}` : ''}`, tierInfo.icon, ' ', t(tierInfo.name))
           : null,
     ),
     el('div.name', meta.name),
     el('div.tagline', meta.tagline),
     el('div.mastery', locked
-      ? `Unlocks at ${RANKS[meta.unlockLevel - 1].name}`
+      ? t('Unlocks at {rank}', { rank: t(RANKS[meta.unlockLevel - 1].name) })
       : stats.attempts
         ? t('{correct}/{attempts} correct', { correct: stats.correct, attempts: stats.attempts }) + (acc !== null ? ` · ${fmt.pct(acc)}` : '')
         : 'Not started'),
     !locked && goal
       ? el('div.mastery', { style: { color: 'var(--text-faint)' } },
-          `${goal.name} at ${goal.requirement}`)
+          t('{tier} at {requirement}', { tier: t(goal.name), requirement: t(goal.requirement) }))
       : null,
     !locked && stats.attempts
       ? el('div.bar', { style: { height: '5px' } },

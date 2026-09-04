@@ -7,6 +7,7 @@
  * target existed or that you had reached it. A goal you cannot see is not a
  * goal, and a milestone nobody announces is not a milestone.
  */
+import { t } from '../i18n/index.js';
 
 export const TIERS = [
   {
@@ -77,20 +78,22 @@ export function nextTierGoal(profile, moduleId) {
 
   const missing = [];
   if (stats.attempts < req.attempts) {
-    missing.push(`${req.attempts - stats.attempts} more question${req.attempts - stats.attempts === 1 ? '' : 's'}`);
+    const short = req.attempts - stats.attempts;
+    missing.push(short === 1 ? t('1 more question') : t('{n} more questions', { n: short }));
   }
   if (accuracy < req.accuracy) {
-    missing.push(`${Math.round(req.accuracy * 100)}% accuracy (you are at ${Math.round(accuracy * 100)}%)`);
+    missing.push(t('{need}% accuracy (you are at {have}%)',
+      { need: Math.round(req.accuracy * 100), have: Math.round(accuracy * 100) }));
   }
   if (req.lesson && !profile.hasCompletedWalkthrough(moduleId)) {
-    missing.push('the guided lesson');
+    missing.push(t('the guided lesson'));
   }
 
   return {
     target,
     name: tierByKey(target).name,
-    requirement: `${req.attempts} questions at ${Math.round(req.accuracy * 100)}%`
-      + (req.lesson ? ', plus the lesson' : ''),
+    requirement: t('{n} questions at {pct}%', { n: req.attempts, pct: Math.round(req.accuracy * 100) })
+      + (req.lesson ? t(', plus the lesson') : ''),
     missing,
     // Progress is gated by whichever requirement is furthest behind, and
     // capped: exceeding one requirement does not carry you past another.

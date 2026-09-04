@@ -31,7 +31,8 @@ export function renderStats(ctx) {
 
   return el('div.screen',
     el('div.grid.cols-4',
-      tile('Rank', `${profile.rank.emoji} ${profile.rank.name}`, `Level ${profile.level} of ${RANKS.length}`),
+      tile('Rank', [profile.rank.emoji, ' ', t(profile.rank.name)],
+        t('Level {level} of {total}', { level: profile.level, total: RANKS.length })),
       tile('Total XP', fmt.chips(profile.xp)),
       tile('Drill accuracy', accuracy === null ? '—' : fmt.pct(accuracy), t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
       tile('Hands played', fmt.chips(profile.data.handsPlayed)),
@@ -45,7 +46,8 @@ export function renderStats(ctx) {
 
     curve.length >= 2
       ? el('div.panel',
-          el('div.panel-title', el('h3', 'Lifetime results'), el('span.faint', `${sessions.length} sessions`)),
+          el('div.panel-title', el('h3', 'Lifetime results'),
+            el('span.faint', t('{n} sessions', { n: sessions.length }))),
           sparkline(curve, { color: running >= 0 ? '#3ecf8e' : '#f2555a' }),
         )
       : null,
@@ -62,7 +64,7 @@ export function renderStats(ctx) {
               el('div.row',
                 el('span', locked ? '🔒' : meta.icon),
                 el('span', { style: { fontWeight: '600' } }, meta.name),
-                locked ? el('span.badge', `Level ${meta.unlockLevel}`) : null,
+                locked ? el('span.badge', t('Level {level}', { level: meta.unlockLevel })) : null,
               ),
               el('span.faint.mono', stats.attempts
                 ? `${stats.correct}/${stats.attempts}${acc !== null ? ` · ${fmt.pct(acc)}` : ''}`
@@ -227,7 +229,7 @@ function renderVersionPanel() {
       el('div',
         el('div.row',
           el('span.mono', { style: { fontSize: '1.35rem', fontWeight: '700', color: 'var(--gold)' } }, `v${VERSION}`),
-          el('span.faint', `built ${BUILT}`),
+          el('span.faint', t('built {date}', { date: BUILT })),
         ),
         el('div.faint', { style: { marginTop: '4px' } },
           'Your progress is stored separately from the code, so updating never affects it.'),
@@ -262,14 +264,15 @@ function renderCalibration(profile) {
           }),
         ),
         el('div.calib-value', row.attempts
-          ? `${fmt.pct(row.accuracy)} of ${row.attempts}`
+          ? t('{pct} of {n}', { pct: fmt.pct(row.accuracy), n: row.attempts })
           : '—'),
       )),
     ),
     report.verdict
       ? el('div.notice', { style: { marginTop: '14px' } }, report.verdict)
       : el('div.faint', { style: { marginTop: '14px' } },
-          `Answer ${Math.max(0, 15 - report.total)} more in the Lab and this will tell you whether your confidence is trustworthy.`),
+          t('Answer {n} more in the Lab and this will tell you whether your confidence is trustworthy.',
+            { n: Math.max(0, 15 - report.total) })),
   );
 }
 
@@ -604,29 +607,32 @@ export function renderCharts(ctx, params = {}) {
       el('div.row',
         ['UTG', 'HJ', 'CO', 'BTN', 'SB'].map((pos) => el(`button.btn.sm${view === pos ? '.primary' : '.ghost'}`, {
           onclick: () => ctx.go('charts', { chart: pos }),
-        }, `Open ${pos}`)),
+        }, t('Open {pos}', { pos }))),
       ),
       el('div.row', { style: { marginTop: '8px' } },
         ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'].map((pos) => el(`button.btn.sm${view === `3bet:${pos}` ? '.primary' : '.ghost'}`, {
           onclick: () => ctx.go('charts', { chart: `3bet:${pos}` }),
-        }, `3-bet ${pos}`)),
+        }, t('3-bet {pos}', { pos }))),
       ),
     ),
 
     el('div.panel',
       el('div.panel-title',
-        el('h2', isThreeBet ? `3-betting from ${POSITION_INFO[position].name}` : `Opening from ${POSITION_INFO[position].name}`),
-        el('span.badge.gold', `${fmt.pct(combos, 1)} of hands`),
+        el('h2', isThreeBet
+          ? t('3-betting from {seat}', { seat: t(POSITION_INFO[position].name) })
+          : t('Opening from {seat}', { seat: t(POSITION_INFO[position].name) })),
+        el('span.badge.gold', t('{pct} of hands', { pct: fmt.pct(combos, 1) })),
       ),
-      el('p.muted', POSITION_INFO[position].blurb),
+      el('p.muted', t(POSITION_INFO[position].blurb)),
 
       el('div.range-grid-scroll', el('div.range-grid',
         grid.flat().map((key) => {
           // Touch screens have no hover, so the detail line was unreachable
           // on the devices this is most often read on.
           const describe = () => {
-            detail.textContent = `${key} — ${fmt.pct(HAND_STRENGTH[key], 1)} against a random hand, ranked ${STRENGTH_RANK[key]} of 169. ${
-              inRange(key) ? 'In this range.' : 'Not in this range.'
+            detail.textContent = `${t('{hand} — {pct} against a random hand, ranked {rank} of 169.',
+              { hand: key, pct: fmt.pct(HAND_STRENGTH[key], 1), rank: STRENGTH_RANK[key] })} ${
+              inRange(key) ? t('In this range.') : t('Not in this range.')
             }`;
           };
           return el(`div.range-cell.${cellClass(key)}${key.length === 2 ? '.pair' : ''}`, {
@@ -679,7 +685,7 @@ export function renderGlossary() {
     el('div.panel',
       el('h1', '📖 Glossary'),
       el('p.muted', `Every piece of jargon the lessons use, in plain language. Terms appear underlined inside a lesson — tap one there and it explains itself without losing your place.`),
-      el('span.badge', `${terms.length} terms`),
+      el('span.badge', t('{n} terms', { n: terms.length })),
     ),
     el('div.panel',
       terms.map((t) => el('div.glossary-entry',

@@ -168,7 +168,10 @@ export class HandRecorder {
         net: result.net[this.heroId] || 0,
         potTotal: result.pots.reduce((s, p) => s + p.amount, 0),
         winners: Object.entries(result.payouts).filter(([, v]) => v > 0).map(([id]) => id),
-        showdown: result.showdown.map((s) => ({ id: s.id, description: s.description })),
+        // The score rather than its description: the wording is
+        // language-dependent, and a hand saved in Dutch should not still read
+        // Dutch after switching the app back to English.
+        showdown: result.showdown.map((s) => ({ id: s.id, score: s.score })),
       },
     };
 

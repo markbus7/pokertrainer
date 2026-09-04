@@ -17,6 +17,7 @@ import { countOuts, describeOuts, handEquity, exactOutsEquity } from '../core/eq
 import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 import { CLEAR_MARGIN } from '../core/judge.js';
+import { t } from '../i18n/index.js';
 
 export const LAB_TYPES = ['price', 'size', 'decide'];
 
@@ -51,8 +52,9 @@ function priceSpot(rng) {
     type: 'price',
     concept: 'pot-odds',
     table: { board: deck.slice(0, 3), hole: deck.slice(3, 5), pot, bet, potNow },
-    prompt: `The pot was ${pot}. Your opponent bets ${bet}, so the pot is now ${potNow}. It costs you ${bet} to call.`,
-    question: 'What equity do you need to call?',
+    prompt: t('The pot was {pot}. Your opponent bets {bet}, so the pot is now {potNow}. It costs you {bet} to call.',
+      { pot, bet, potNow }),
+    question: t('What equity do you need to call?'),
     inputKind: 'percent',
     answer: need * 100,
     tolerance: 1.5,
@@ -60,9 +62,12 @@ function priceSpot(rng) {
       correct: Math.abs(given - need * 100) <= 1.5,
       exact: `${(need * 100).toFixed(1)}%`,
       lines: [
-        `The pot is ${potNow} and your call is ${bet}, so the final pot is ${potNow + bet}.`,
-        `Your ${bet} is ${bet} ÷ ${potNow + bet} = **${(need * 100).toFixed(1)}%** of it.`,
-        `That is ${potOddsRatio(bet, potNow).toFixed(1)}-to-1 — a ${describeFraction(fraction)} bet always asks for about ${Math.round(need * 100)}%.`,
+        t('The pot is {potNow} and your call is {bet}, so the final pot is {final}.',
+          { potNow, bet, final: potNow + bet }),
+        t('Your {bet} is {bet} ÷ {final} = **{pct}%** of it.',
+          { bet, final: potNow + bet, pct: (need * 100).toFixed(1) }),
+        t('That is {ratio}-to-1 — a {size} bet always asks for about {pct}%.',
+          { ratio: potOddsRatio(bet, potNow).toFixed(1), size: describeFraction(fraction), pct: Math.round(need * 100) }),
       ],
       visual: { pot: potNow, call: bet },
     }),
@@ -84,8 +89,8 @@ function sizeSpot(rng) {
     type: 'size',
     concept: 'pot-odds',
     table: { board: deck.slice(0, 3), hole: deck.slice(3, 5), pot },
-    prompt: `There is ${pot} in the pot and your opponent has checked to you.`,
-    question: `Bet an amount that makes them need about ${target.needPct}% equity to call.`,
+    prompt: t('There is {pot} in the pot and your opponent has checked to you.', { pot }),
+    question: t('Bet an amount that makes them need about {pct}% equity to call.', { pct: target.needPct }),
     inputKind: 'chips',
     answer,
     tolerance,
@@ -98,14 +103,17 @@ function sizeSpot(rng) {
         exact: `${answer}`,
         lines: correct
           ? [
-              `**${answer}** — ${target.label}. After your bet the pot is ${pot + answer}, they call ${answer}, so the final pot is ${pot + answer * 2}.`,
-              `Their ${answer} is ${(target.needPct)}% of that, which is exactly the price you were asked to offer.`,
+              t('**{answer}** — {size}. After your bet the pot is {after}, they call {answer}, so the final pot is {final}.',
+                { answer, size: t(target.label), after: pot + answer, final: pot + answer * 2 }),
+              t('Their {answer} is {pct}% of that, which is exactly the price you were asked to offer.',
+                { answer, pct: target.needPct }),
             ]
           : [
-              `You bet **${given}**, which actually offers them ${(offered * 100).toFixed(1)}% — you were aiming for ${target.needPct}%.`,
-              `The number was **${answer}**, which is ${target.label}.`,
-              `Working backwards: to make them need a fraction *t*, bet `
-                + `t × pot ÷ (1 − 2t). For ${target.needPct}% of a ${pot} pot that is ${answer}.`,
+              t('You bet **{given}**, which actually offers them {offered}% — you were aiming for {pct}%.',
+                { given, offered: (offered * 100).toFixed(1), pct: target.needPct }),
+              t('The number was **{answer}**, which is {size}.', { answer, size: t(target.label) }),
+              t('Working backwards: to make them need a fraction *t*, bet t × pot ÷ (1 − 2t). '
+                + 'For {pct}% of a {pot} pot that is {answer}.', { pct: target.needPct, pot, answer }),
             ],
         visual: { pot: pot + answer, call: answer },
       };
@@ -145,12 +153,13 @@ function decideSpot(rng) {
       // pot-odds review would send you back to revise the wrong thing.
       concept: 'outs',
       table: { board, hole: hero, villain, revealVillain: true, pot, bet, potNow },
-      prompt: `Their hand is face up, so nothing is hidden — count the cards that put you in front, then check them against the price.`,
-      question: `The pot is now ${potNow} and it costs ${bet} to call. Call or fold?`,
+      prompt: t('Their hand is face up, so nothing is hidden — count the cards that put you in front, then '
+        + 'check them against the price.'),
+      question: t('The pot is now {potNow} and it costs {bet} to call. Call or fold?', { potNow, bet }),
       inputKind: 'action',
       actions: [
-        { key: 'call', label: `Call ${bet}` },
-        { key: 'fold', label: 'Fold' },
+        { key: 'call', label: t('Call {bet}', { bet }) },
+        { key: 'fold', label: t('Fold') },
       ],
       answer: shouldCall ? 'call' : 'fold',
       outs: count,
@@ -160,14 +169,17 @@ function decideSpot(rng) {
       need,
       solve: (given) => ({
         correct: given === (shouldCall ? 'call' : 'fold'),
-        exact: shouldCall ? 'Call' : 'Fold',
+        exact: shouldCall ? t('Call') : t('Fold'),
         lines: [
           describeOuts(hero, villain, board).sentence,
-          `That is about **${(equity * 100).toFixed(0)}%** by the river.`,
-          `The price demands ${bet} ÷ ${potNow + bet} = **${(need * 100).toFixed(1)}%**.`,
+          t('That is about **{pct}%** by the river.', { pct: (equity * 100).toFixed(0) }),
+          t('The price demands {bet} ÷ {final} = **{pct}%**.',
+            { bet, final: potNow + bet, pct: (need * 100).toFixed(1) }),
           shouldCall
-            ? `${(equity * 100).toFixed(0)} beats ${(need * 100).toFixed(0)}, so calling wins about ${callEV(equity, bet, potNow).toFixed(0)} chips each time you do it.`
-            : `${(equity * 100).toFixed(0)} falls short of ${(need * 100).toFixed(0)}, so calling loses about ${Math.abs(callEV(equity, bet, potNow)).toFixed(0)} chips each time.`,
+            ? t('{have} beats {need}, so calling wins about {chips} chips each time you do it.',
+                { have: (equity * 100).toFixed(0), need: (need * 100).toFixed(0), chips: callEV(equity, bet, potNow).toFixed(0) })
+            : t('{have} falls short of {need}, so calling loses about {chips} chips each time.',
+                { have: (equity * 100).toFixed(0), need: (need * 100).toFixed(0), chips: Math.abs(callEV(equity, bet, potNow)).toFixed(0) }),
         ],
         visual: { pot: potNow, call: bet, have: equity, need },
       }),
@@ -204,11 +216,11 @@ export function generateSession(rng, length = 9) {
 }
 
 function describeFraction(fraction) {
-  if (fraction <= 0.34) return 'third-pot';
-  if (fraction <= 0.51) return 'half-pot';
-  if (fraction <= 0.76) return 'three-quarter-pot';
-  if (fraction <= 1.01) return 'pot-sized';
-  return 'overbet';
+  if (fraction <= 0.34) return t('third-pot');
+  if (fraction <= 0.51) return t('half-pot');
+  if (fraction <= 0.76) return t('three-quarter-pot');
+  if (fraction <= 1.01) return t('pot-sized');
+  return t('overbet');
 }
 
 export { cardsToString, exactOutsEquity };

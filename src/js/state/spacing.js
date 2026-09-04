@@ -12,6 +12,7 @@
  * just read something) feels like mastery. Recording confidence alongside
  * correctness makes that gap visible instead of letting it hide.
  */
+import { t } from '../i18n/index.js';
 
 /** Review gaps in days. After the last one a concept is considered durable. */
 export const INTERVALS = [1, 3, 7, 16, 35, 75];
@@ -93,10 +94,10 @@ export function strength(profile, concept) {
 /** Human-readable "next review in ..." for the UI. */
 export function nextReviewLabel(profile, concept, now = Date.now()) {
   const card = getCard(profile, concept);
-  if (!card.reps) return 'not started';
-  if (card.due <= now) return 'due now';
+  if (!card.reps) return t('not started');
+  if (card.due <= now) return t('due now');
   const days = Math.ceil((card.due - now) / DAY_MS);
-  return days <= 1 ? 'due tomorrow' : `due in ${days} days`;
+  return days <= 1 ? t('due tomorrow') : t('due in {n} days', { n: days });
 }
 
 /* ------------------------------------------------------------------ *

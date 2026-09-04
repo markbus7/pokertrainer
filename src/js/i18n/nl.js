@@ -2362,4 +2362,654 @@ export const NL = {
   'Play them back and see where they turned.': 'Speel ze terug en zie waar ze kantelden.',
   'Review hands': 'Handen terugkijken',
   'Those mistakes have cost you {amount} big blinds so far.': 'Die fouten hebben je tot nu toe {amount} big blinds gekost.',
+
+  /* ---- Generated text: drills, the Lab and the hands-on exercises ---- */
+
+  'Ace': 'Aas',
+  'Aces': 'azen',
+  'King': 'Heer',
+  'Kings': 'heren',
+  'Queen': 'Vrouw',
+  'Queens': 'vrouwen',
+  'Jack': 'Boer',
+  'Jacks': 'boeren',
+  'Ten': 'Tien',
+  'Tens': 'tienen',
+  'Nine': 'Negen',
+  'Nines': 'negens',
+  'Eight': 'Acht',
+  'Eights': 'achten',
+  'Seven': 'Zeven',
+  'Sevens': 'zevens',
+  'Six': 'Zes',
+  'Sixes': 'zessen',
+  'Five': 'Vijf',
+  'Fives': 'vijven',
+  'Four': 'Vier',
+  'Fours': 'vieren',
+  'Three': 'Drie',
+  'Threes': 'drieën',
+  'Two': 'Twee',
+  'Twos': 'tweeën',
+  'Straight Flush, {rank} high': 'Straight flush, {rank} hoog',
+  'Four of a Kind, {ranks}': 'Four of a kind, {ranks}',
+  'Full House, {ranks} full of {others}': 'Full house, {ranks} full of {others}',
+  'Flush, {rank} high': 'Flush, {rank} hoog',
+  'Straight, {rank} high': 'Straight, {rank} hoog',
+  'Three of a Kind, {ranks}': 'Three of a kind, {ranks}',
+  'Two Pair, {ranks} and {others}': 'Two pair, {ranks} en {others}',
+  'Pair of {ranks}': 'Paar {ranks}',
+  '{rank} high': '{rank} hoog',
+  'The pot was {pot}. Your opponent bets {bet}, so the pot is now {potNow}. It costs you {bet} to call.':
+    'De pot was {pot}. Je tegenstander bet {bet}, dus de pot is nu {potNow}. Het kost je {bet} om te callen.',
+  'What equity do you need to call?': 'Hoeveel equity heb je nodig om te callen?',
+  'The pot is {potNow} and your call is {bet}, so the final pot is {final}.':
+    'De pot is {potNow} en jouw call is {bet}, dus de uiteindelijke pot is {final}.',
+  'Your {bet} is {bet} ÷ {final} = **{pct}%** of it.': 'Jouw {bet} is {bet} ÷ {final} = **{pct}%** daarvan.',
+  'That is {ratio}-to-1 — a {size} bet always asks for about {pct}%.':
+    'Dat is {ratio}-op-1 — een {size} bet vraagt altijd om ongeveer {pct}%.',
+  'There is {pot} in the pot and your opponent has checked to you.':
+    'Er zit {pot} in de pot en je tegenstander heeft naar je gecheckt.',
+  'Bet an amount that makes them need about {pct}% equity to call.':
+    'Bet een bedrag waardoor zij ongeveer {pct}% equity nodig hebben om te callen.',
+  '**{answer}** — {size}. After your bet the pot is {after}, they call {answer}, so the final pot is {final}.':
+    '**{answer}** — {size}. Na jouw bet is de pot {after}, zij callen {answer}, dus de uiteindelijke pot is {final}.',
+  'Their {answer} is {pct}% of that, which is exactly the price you were asked to offer.':
+    'Hun {answer} is {pct}% daarvan, precies de prijs die je moest bieden.',
+  'You bet **{given}**, which actually offers them {offered}% — you were aiming for {pct}%.':
+    'Je bette **{given}**, wat ze eigenlijk {offered}% biedt — je mikte op {pct}%.',
+  'The number was **{answer}**, which is {size}.': 'Het getal was **{answer}**, oftewel {size}.',
+  'Working backwards: to make them need a fraction *t*, bet t × pot ÷ (1 − 2t). For {pct}% of a {pot} pot that is {answer}.':
+    'Terugrekenen: om ze een fractie *t* nodig te laten hebben, bet je t × pot ÷ (1 − 2t). Voor {pct}% van een pot van {pot} is dat {answer}.',
+  'Their hand is face up, so nothing is hidden — count the cards that put you in front, then check them against the price.':
+    'Hun hand ligt open, dus er is niets verborgen — tel de kaarten die je op voorsprong zetten en zet ze naast de prijs.',
+  'The pot is now {potNow} and it costs {bet} to call. Call or fold?':
+    'De pot is nu {potNow} en het kost {bet} om te callen. Call of fold?',
+  'Call {bet}': 'Call {bet}',
+  'That is about **{pct}%** by the river.': 'Dat is ongeveer **{pct}%** tegen de river.',
+  'The price demands {bet} ÷ {final} = **{pct}%**.': 'De prijs eist {bet} ÷ {final} = **{pct}%**.',
+  '{have} beats {need}, so calling wins about {chips} chips each time you do it.':
+    '{have} verslaat {need}, dus callen wint ongeveer {chips} chips elke keer dat je het doet.',
+  '{have} falls short of {need}, so calling loses about {chips} chips each time.':
+    '{have} blijft onder {need}, dus callen verliest ongeveer {chips} chips per keer.',
+  'a third of the pot': 'een derde van de pot',
+  'half the pot': 'de helft van de pot',
+  'three quarters of the pot': 'driekwart van de pot',
+  'the whole pot': 'de hele pot',
+  'twice the pot': 'twee keer de pot',
+  'third-pot': 'derde-pot',
+  'half-pot': 'half-pot',
+  'three-quarter-pot': 'driekwart-pot',
+  'pot-sized': 'pot-sized',
+  'overbet': 'overbet',
+  'Player A': 'Speler A',
+  'Player B': 'Speler B',
+  'Split pot': 'Split pot',
+  'Both players are all-in. Who takes it down?': 'Beide spelers zijn all-in. Wie pakt hem?',
+  'Player A has {a}. Player B has {b}.': 'Speler A heeft {a}. Speler B heeft {b}.',
+  'Identical hands — the pot is chopped.': 'Identieke handen — de pot wordt gedeeld.',
+  '{winner} wins on the kicker.': '{winner} wint op de kicker.',
+  '{winner} wins.': '{winner} wint.',
+  'What is your best five-card hand?': 'Wat is je beste hand van vijf kaarten?',
+  '{hand} — using {hole} with {board}.': '{hand} — met {hole} en {board}.',
+  'You are behind. How many cards on the turn put you in front?':
+    'Je staat achter. Hoeveel kaarten op de turn zetten je op voorsprong?',
+  'With two cards to come that is about {exact} — the rule of 4 gives you {rough}%, which is close enough to act on.':
+    'Met nog twee kaarten te komen is dat ongeveer {exact} — de regel van 4 geeft je {rough}%, dichtbij genoeg om op te handelen.',
+  'You have {outs} outs on the {street}. Use the rule of {rule} — roughly what is your equity?':
+    'Je hebt {outs} outs op de {street}. Gebruik de regel van {rule} — hoeveel equity heb je ongeveer?',
+  'Two cards to come, so multiply by 4: {outs} × 4 = {shortcut}%. The exact figure is {exact} — the shortcut drifts a little high with many outs, which is close enough at the table.':
+    'Nog twee kaarten te komen, dus keer 4: {outs} × 4 = {shortcut}%. Het exacte getal is {exact} — de vuistregel schiet bij veel outs iets te hoog, en dat is aan tafel dichtbij genoeg.',
+  'One card to come, so multiply by 2: {outs} × 2 = {shortcut}%. The exact figure is {exact}, since {outs} of the 46 unseen cards win.':
+    'Nog één kaart te komen, dus keer 2: {outs} × 2 = {shortcut}%. Het exacte getal is {exact}, want {outs} van de 46 ongeziene kaarten winnen.',
+  'There is {pot} in the pot. Your opponent bets {bet}. What equity do you need to call profitably?':
+    'Er zit {pot} in de pot. Je tegenstander bet {bet}. Hoeveel equity heb je nodig om winstgevend te callen?',
+  'You call {bet} to win {potFacing}, so you need {bet} ÷ {final} = {need}. That is {ratio} to 1.':
+    'Je callt {bet} om {potFacing} te winnen, dus je hebt {bet} ÷ {final} = {need} nodig. Dat is {ratio} op 1.',
+  'You will win this hand {equity} of the time. There is {pot} in the pot and they bet {bet}. Call or fold?':
+    'Je wint deze hand {equity} van de tijd. Er zit {pot} in de pot en ze betten {bet}. Call of fold?',
+  'You call {bet} to win {final}, so you need {bet} ÷ {final} = {need}. You have {equity}, which is more than the price asks. Calling wins about {chips} chips every time.':
+    'Je callt {bet} om {final} te winnen, dus je hebt {bet} ÷ {final} = {need} nodig. Je hebt {equity}, meer dan de prijs vraagt. Callen wint ongeveer {chips} chips per keer.',
+  'You call {bet} to win {final}, so you need {bet} ÷ {final} = {need}. You have {equity}, which is less than the price asks. Calling loses about {chips} chips every time.':
+    'Je callt {bet} om {final} te winnen, dus je hebt {bet} ÷ {final} = {need} nodig. Je hebt {equity}, minder dan de prijs vraagt. Callen verliest ongeveer {chips} chips per keer.',
+  'The pot is {pot} and you face a bet of {bet}. Your opponent\'s hand is face up. Call or fold?':
+    'De pot is {pot} en je krijgt een bet van {bet}. De hand van je tegenstander ligt open. Call of fold?',
+  'With two cards to come, {count} outs is roughly {rough}% by the rule of 4; the exact figure is {exact}.':
+    'Met nog twee kaarten te komen is {count} outs ruwweg {rough}% volgens de regel van 4; het exacte getal is {exact}.',
+  'It comes out a little above that because some runner-runner cards win for you too.':
+    'Het komt er iets boven uit omdat sommige runner-runner-kaarten ook voor jou winnen.',
+  'It comes out a little below that because a few of those cards can still be beaten by the river.':
+    'Het komt er iets onder uit omdat een paar van die kaarten op de river alsnog verslagen kunnen worden.',
+  'The price demands {bet} ÷ {final} = {need}, so you have more than enough. Calling wins about {chips} chips every time you make it.':
+    'De prijs eist {bet} ÷ {final} = {need}, dus je hebt ruim genoeg. Callen wint ongeveer {chips} chips elke keer dat je het doet.',
+  'The price demands {bet} ÷ {final} = {need}, so you fall short. Calling loses about {chips} chips every time — a fold is a profit.':
+    'De prijs eist {bet} ÷ {final} = {need}, dus je komt tekort. Callen verliest ongeveer {chips} chips per keer — folden is winst.',
+  'Raise': 'Raise',
+  'Fold': 'Fold',
+  'Call': 'Call',
+  'Limp (call the big blind)': 'Limpen (de big blind callen)',
+  'It folds to you in the {seat}. What is your move?': 'Iedereen foldt naar jou in de {seat}. Wat doe je?',
+  'And limping is never the answer: it lets everyone behind you in cheaply while you hold a weak hand out of position.':
+    'En limpen is nooit het antwoord: het laat iedereen achter je goedkoop meedoen terwijl jij een zwakke hand hebt en uit positie zit.',
+  '{raiser} opens to 2.5 big blinds and it folds to you in the {seat}. What is your move?':
+    '{raiser} opent naar 2,5 big blinds en iedereen foldt naar jou in de {seat}. Wat doe je?',
+  'A 3-bet range needs bluffs as well as value hands, or observant opponents simply fold every time you raise.':
+    'Een 3-bet range heeft naast valuehanden ook bluffs nodig, anders folden oplettende tegenstanders simpelweg elke keer dat je raiset.',
+  'What is the earliest position you should open {hand} from?':
+    'Vanaf welke vroegste positie zou je {hand} moeten openen?',
+  '{hand} first appears in the opening range at {seat} ({pct} of hands). Opening it earlier means playing it out of position against too many opponents.':
+    '{hand} duikt voor het eerst op in de openingsrange op {seat} ({pct} van de handen). Eerder openen betekent hem uit positie spelen tegen te veel tegenstanders.',
+  '{raiser} raises to 2.5 big blinds and everyone folds to you in the big blind. What is your move?':
+    '{raiser} raiset naar 2,5 big blinds en iedereen foldt naar jou in de big blind. Wat doe je?',
+  'You only have to put in 1.5 more big blinds to win a pot of 4, so you defend far wider here than anywhere else — but you are out of position for the whole hand, which is why the range still has a limit.':
+    'Je hoeft er maar 1,5 big blind bij te leggen om een pot van 4 te winnen, dus je verdedigt hier veel breder dan waar dan ook — maar je zit de hele hand uit positie, en daarom heeft de range toch een grens.',
+  'All-in preflop against a random hand — which of these is stronger, {a} or {b}?':
+    'All-in preflop tegen een willekeurige hand — welke is sterker, {a} of {b}?',
+  '{a} wins {pctA} against a random hand (rank {rankA} of 169); {b} wins {pctB} (rank {rankB}).':
+    '{a} wint {pctA} tegen een willekeurige hand (plek {rankA} van 169); {b} wint {pctB} (plek {rankB}).',
+  'A pair starts ahead and does not need to improve — that is worth more than any amount of connectivity.':
+    'Een paar staat vanaf het begin voor en hoeft niet te verbeteren — dat is meer waard dan welke connectiviteit ook.',
+  'Even a small pair is usually a coin flip at worst, which is why the bigger unpaired hand needs real high-card strength to beat one.':
+    'Zelfs een klein paar is meestal in het slechtste geval een coinflip, en daarom heeft de grotere ongepaarde hand echte hoge-kaartkracht nodig om er een te verslaan.',
+  'Suited beats offsuit by roughly two to three points of equity — small, but it is free, and it comes from the pots you win rather than chop.':
+    'Suited verslaat offsuit met ruwweg twee tot drie punten equity — weinig, maar het is gratis, en het komt uit de potten die je wint in plaats van deelt.',
+  'Between two pairs it is simply the higher pair; the lower one is drawing to a set.':
+    'Tussen twee paren is het simpelweg het hogere paar; het lagere trekt naar een set.',
+  'With both hands offsuit, raw high-card strength decides it: the hand that makes the better top pair wins far more often than the one that needs to connect.':
+    'Met beide handen offsuit beslist rauwe hoge-kaartkracht: de hand die het betere top pair maakt wint veel vaker dan de hand die moet aansluiten.',
+  '{hand} is inside the {pct}% opening range from {position}.':
+    '{hand} zit binnen de {pct}%-openingsrange vanaf {position}.',
+  '{hand} is outside the {pct}% opening range from {position}. Folding here is a profit, not a missed opportunity.':
+    '{hand} valt buiten de {pct}%-openingsrange vanaf {position}. Hier folden is winst, geen gemiste kans.',
+  '{hand} is strong enough to 3-bet for value against a {raiser} open.':
+    '{hand} is sterk genoeg om voor value te 3-betten tegen een open van {raiser}.',
+  '{hand} is a 3-bet bluff: it blocks their strong hands and plays well when called.':
+    '{hand} is een 3-bet bluff: hij blokkeert hun sterke handen en speelt goed als je gecalld wordt.',
+  'You are getting a discount in the big blind, and {hand} is inside the defending range against a {raiser} open.':
+    'Je krijgt korting in de big blind, en {hand} zit binnen de verdedigingsrange tegen een open van {raiser}.',
+  'Even at big-blind prices, {hand} is too weak to defend out of position against a {raiser} open.':
+    'Zelfs tegen big-blindprijzen is {hand} te zwak om uit positie te verdedigen tegen een open van {raiser}.',
+  '{hand} plays well in position against a {raiser} open — call and use your position postflop.':
+    '{hand} speelt goed in positie tegen een open van {raiser} — call en gebruik je positie postflop.',
+  '{hand} is not strong enough to continue against a {raiser} open from {position}.':
+    '{hand} is niet sterk genoeg om door te gaan tegen een open van {raiser} vanaf {position}.',
+  'Bet small (about a third of the pot)': 'Bet klein (ongeveer een derde van de pot)',
+  'Bet big (about three quarters of the pot)': 'Bet groot (ongeveer driekwart van de pot)',
+  'You raised preflop and the big blind called. They check to you on the flop. What now?':
+    'Je raisede preflop en de big blind callde. Ze checken naar je op de flop. Wat nu?',
+  '{board} is {tags}.': '{board} is {tags}.',
+  'You are well ahead ({equity} equity) on a board that gives them plenty of draws. Bet big: charge the draws and build the pot while you are in front.':
+    'Je staat ruim voor ({equity} equity) op een board dat ze volop draws geeft. Bet groot: laat de draws betalen en bouw de pot op terwijl je voorstaat.',
+  'You are well ahead ({equity} equity) on a dry board. Bet small — they have few draws to charge, and a small bet keeps their weak hands in.':
+    'Je staat ruim voor ({equity} equity) op een droog board. Bet klein — ze hebben weinig draws om te laten betalen, en een kleine bet houdt hun zwakke handen erin.',
+  '{equity} equity on a coordinated board. Bet big to deny equity — checking lets every draw see a free card.':
+    '{equity} equity op een gecoördineerd board. Bet groot om equity te ontzeggen — checken laat elke draw een gratis kaart zien.',
+  '{equity} equity on a dry board. A small bet works with your whole range: they missed this flop as often as you did.':
+    '{equity} equity op een droog board. Een kleine bet werkt met je hele range: zij misten deze flop net zo vaak als jij.',
+  'You only have {equity} equity, but this board is dry and disconnected. A small continuation bet folds out everything that missed, and that is most of their range.':
+    'Je hebt maar {equity} equity, maar dit board is droog en los. Een kleine continuation bet foldt alles weg dat miste, en dat is het grootste deel van hun range.',
+  '{equity} equity on a wet, connected board. They have too many hands that will continue — a bluff here just donates chips. Check and give up cheaply.':
+    '{equity} equity op een nat, aaneengesloten board. Ze hebben te veel handen die doorgaan — een bluff hier doneert alleen chips. Check en geef goedkoop op.',
+  'The pot is {pot} and your opponent bets {bet}. What share of your range must you continue with to stop a pure bluff from printing money?':
+    'De pot is {pot} en je tegenstander bet {bet}. Met welk deel van je range moet je doorgaan om te voorkomen dat een pure bluff geld drukt?',
+  'Minimum defence frequency is pot ÷ (pot + bet) = {pot} ÷ {total} = {mdf}. Fold more often than that and any two cards can profitably bluff you. Note this is a defensive guideline, not a law: against someone who never bluffs, over-folding is correct.':
+    'Minimum defence frequency is pot ÷ (pot + bet) = {pot} ÷ {total} = {mdf}. Fold vaker dan dat en elke willekeurige twee kaarten kunnen je winstgevend bluffen. Let op: dit is een verdedigingsrichtlijn, geen wet — tegen iemand die nooit bluft is te veel folden juist correct.',
+  'You want to bluff {bet} into a pot of {pot} with a hand that never wins at showdown. How often must they fold for this to break even?':
+    'Je wilt {bet} bluffen in een pot van {pot} met een hand die nooit wint op showdown. Hoe vaak moeten ze folden om break-even te draaien?',
+  'You risk {bet} to win {pot}, so you need {bet} ÷ {total} = {need}. Bigger bluffs need to work more often — which is why sizing up is not automatically better.':
+    'Je riskeert {bet} om {pot} te winnen, dus je hebt {bet} ÷ {total} = {need} nodig. Grotere bluffs moeten vaker werken — en daarom is groter betten niet automatisch beter.',
+  'You bet {bet} into {pot} on the river. For a balanced range that gives your opponent no profitable choice, what share of your betting hands should be bluffs?':
+    'Je bet {bet} in {pot} op de river. Welk deel van je bettende handen moet bluff zijn voor een gebalanceerde range die je tegenstander geen winstgevende keuze laat?',
+  'Your opponent needs {need} to call. To make them exactly indifferent, bluffs should be {share} of your betting range — roughly {ratio} bluffs for every value hand. At pot size that is the familiar 1 bluff per 2 value bets.':
+    'Je tegenstander heeft {need} nodig om te callen. Om ze precies onverschillig te maken moet {share} van je bettende range bluff zijn — ruwweg {ratio} bluffs per valuehand. Bij potgrootte is dat de bekende 1 bluff per 2 value bets.',
+  'River. You hold a hand that beats a bluff and nothing else. {name} ({style}) bets {bet} into {pot}. Call or fold?':
+    'River. Je hebt een hand die een bluff verslaat en verder niets. {name} ({style}) bet {bet} in {pot}. Call of fold?',
+  'You need to be right {need} of the time. {name} bluffs about {freq} of the time — {tell}':
+    'Je moet {need} van de tijd gelijk hebben. {name} bluft ongeveer {freq} van de tijd — {tell}',
+  'Since {freq} beats the {need} you need, this is a profitable call.':
+    'Omdat {freq} boven de {need} ligt die je nodig hebt, is dit een winstgevende call.',
+  'Since {freq} falls short of the {need} you need, folding is correct.':
+    'Omdat {freq} onder de {need} blijft die je nodig hebt, is folden juist.',
+  'The pot is {pot} on the flop and the effective stack is {stack}. What is the stack-to-pot ratio?':
+    'De pot is {pot} op de flop en de effectieve stack is {stack}. Wat is de stack-to-pot ratio?',
+  'SPR = {stack} ÷ {pot} = {ratio}.': 'SPR = {stack} ÷ {pot} = {ratio}.',
+  'With an SPR of 3 or less, top pair is usually committed: plan to get all the chips in.':
+    'Bij een SPR van 3 of lager zit je met top pair meestal vast: reken erop dat alle chips erin gaan.',
+  'A medium SPR means you need a strong hand — overpairs and better — to play a big pot.':
+    'Een middelmatige SPR betekent dat je een sterke hand nodig hebt — overpairs en beter — om een grote pot te spelen.',
+  'A deep SPR means one pair is just one pair. Keep the pot small and look for a hand that can stack them.':
+    'Een diepe SPR betekent dat één paar gewoon één paar is. Houd de pot klein en zoek een hand waarmee je ze kunt stacken.',
+  'You have top pair with a good kicker on the river against Stan, who has called every street. What is your play?':
+    'Je hebt top pair met een goede kicker op de river tegen Stan, die elke street heeft gecalld. Wat doe je?',
+  'Bet big for value': 'Bet groot voor value',
+  'Check behind to avoid a raise': 'Check erachteraan om een raise te vermijden',
+  'Bluff-shove to fold out better': 'Bluff-shove om betere handen weg te folden',
+  'Bet tiny to induce a raise': 'Bet minimaal om een raise uit te lokken',
+  'A calling station calls. Against someone who never folds, thin value bets are the whole strategy — and you should size them larger than normal, because he is not folding to that either.':
+    'Een calling station callt. Tegen iemand die nooit foldt zijn dunne value bets de hele strategie — en je mag ze groter maken dan normaal, want daar foldt hij ook niet tegen.',
+  'You missed your draw completely on the river against Stan. What is your play?':
+    'Je miste je draw volledig op de river tegen Stan. Wat doe je?',
+  'Give up and check': 'Opgeven en checken',
+  'Bluff half pot': 'Bluffen voor een halve pot',
+  'Bluff the whole pot': 'Bluffen voor de hele pot',
+  'Overbet to force a fold': 'Overbetten om een fold af te dwingen',
+  'Never bluff a calling station. His entire leak is that he cannot fold; a bluff turns your zero-equity hand into a guaranteed loss.':
+    'Bluf nooit tegen een calling station. Zijn hele leak is dat hij niet kan folden; een bluff maakt van je hand zonder equity een gegarandeerd verlies.',
+  'Rocky has folded 40 hands in a row. He raises from early position and you hold AJo on the button. What is your play?':
+    'Rocky heeft 40 handen op rij gefold. Hij raiset vanuit vroege positie en jij hebt AJo op de button. Wat doe je?',
+  '3-bet for value': '3-betten voor value',
+  'Call and outplay him postflop': 'Callen en hem postflop uitspelen',
+  'Shove all-in': 'All-in shoven',
+  'A nit’s raising range is roughly the top 5% of hands. AJo is dominated by almost all of it. Folding a good-looking hand against a range this tight is exactly the discipline that separates winners from losers.':
+    'De raise-range van een nit is ruwweg de bovenste 5% van de handen. AJo wordt door bijna alles daarin gedomineerd. Een mooi ogende hand folden tegen zo een strakke range is precies de discipline die winnaars van verliezers scheidt.',
+  'You are on the button. Rocky is in the big blind and has folded to every steal so far. You hold 96s. What is your play?':
+    'Je zit op de button. Rocky zit in de big blind en heeft tot nu toe tegen elke steal gefold. Je hebt 96s. Wat doe je?',
+  'Raise to steal the blinds': 'Raisen om de blinds te stelen',
+  'Fold, the hand is too weak': 'Folden, de hand is te zwak',
+  'Limp to see a cheap flop': 'Limpen om een goedkope flop te zien',
+  'Call the big blind': 'De big blind callen',
+  'Against a player who folds his blind too often, your cards barely matter. Every fold he makes is free money, and 96s still flops well when he does defend.':
+    'Tegen een speler die zijn blind te vaak foldt, doen je kaarten er nauwelijks toe. Elke fold van hem is gratis geld, en 96s flopt nog steeds goed als hij wel verdedigt.',
+  'Max has raised eight hands in a row. You pick up JJ in the big blind and he raises again. What is your play?':
+    'Max heeft acht handen op rij geraiset. Je krijgt JJ in de big blind en hij raiset weer. Wat doe je?',
+  '3-bet and be happy to get it in': '3-betten en blij zijn als alles erin gaat',
+  'Fold, he might have aces': 'Folden, hij kan azen hebben',
+  'Call and see a flop': 'Callen en een flop zien',
+  'Call and fold to a continuation bet': 'Callen en folden tegen een continuation bet',
+  'Against a range this wide, jacks are a monster. You do not need to hit a set — you are simply far ahead of the hands he is raising with. Let him pay you off.':
+    'Tegen zo een brede range zijn boeren een monster. Je hoeft geen set te raken — je staat gewoon ver voor op de handen waarmee hij raiset. Laat hem betalen.',
+  'Max is betting every street with huge sizings. You hold second pair on the river. What is your play?':
+    'Max bet elke street met enorme sizings. Je hebt second pair op de river. Wat doe je?',
+  'Call — he bluffs far too often': 'Callen — hij bluft veel te vaak',
+  'Fold, the bet is too large': 'Folden, de bet is te groot',
+  'Raise to represent a monster': 'Raisen om een monster te representeren',
+  'Fold and note the pattern': 'Folden en het patroon onthouden',
+  'A maniac’s bluff frequency is far above what any bet size requires you to defend. Second pair is a fine bluff catcher against someone whose range is mostly air.':
+    'De bluffrequentie van een maniak ligt ver boven wat welke betgrootte dan ook van je vraagt om te verdedigen. Second pair is een prima bluff catcher tegen iemand wiens range vooral lucht is.',
+  'Leo has bet the flop and the turn, then checks the river. What does this usually mean?':
+    'Leo heeft de flop en de turn gebet en checkt dan de river. Wat betekent dat meestal?',
+  'He gave up on a busted bluff': 'Hij gaf op met een mislukte bluff',
+  'He is trapping with the nuts': 'Hij zet een val met de nuts',
+  'He has a medium-strength hand': 'Hij heeft een hand van gemiddelde kracht',
+  'He wants a cheap showdown with top pair': 'Hij wil een goedkope showdown met top pair',
+  'An aggressive player who fires twice and then checks has almost always run out of steam with a missed draw. This is the moment to bet — his checking range is full of hands that must fold.':
+    'Een agressieve speler die twee keer vuurt en dan checkt, is bijna altijd stukgelopen op een gemiste draw. Dit is het moment om te betten — zijn checkrange zit vol handen die moeten folden.',
+  'Tessa, a solid regular, 4-bets you after your 3-bet. You hold AQo. What is your play?':
+    'Tessa, een solide regular, 4-bet je na jouw 3-bet. Je hebt AQo. Wat doe je?',
+  '5-bet shove': '5-bet shove',
+  'Call and hope to flop an ace': 'Callen en hopen op een aas op de flop',
+  'Call to keep her honest': 'Callen om haar eerlijk te houden',
+  'A good regular’s 4-betting range is roughly QQ+ and AK. AQo is crushed by all of it. Against a balanced opponent you cannot manufacture an edge — you simply fold and wait.':
+    'De 4-betrange van een goede regular is ruwweg QQ+ en AK. AQo wordt daar volledig door verpletterd. Tegen een gebalanceerde tegenstander kun je geen edge verzinnen — je foldt gewoon en wacht.',
+  'Remember: {counter}': 'Onthoud: {counter}',
+  'You': 'Jij',
+  'Shover': 'De shover',
+  'Third player': 'Derde speler',
+  'Three players left and the prizes are {payouts}. You are in the big blind ({bb}) and the other big stack shoves {shove} into you. You estimate {equity} equity if you call. Call or fold?':
+    'Nog drie spelers over en de prijzen zijn {payouts}. Jij zit in de big blind ({bb}) en de andere grote stack shoved {shove} naar je. Je schat {equity} equity als je callt. Call of fold?',
+  'Folding leaves you worth about {fold} in prize money. Calling is worth {call} — more, so the call is correct.':
+    'Folden laat je ongeveer {fold} aan prijzengeld waard. Callen is {call} waard — meer, dus de call is juist.',
+  'Folding leaves you worth about {fold} in prize money. Calling is worth {call} — less, so folding is correct.':
+    'Folden laat je ongeveer {fold} aan prijzengeld waard. Callen is {call} waard — minder, dus folden is juist.',
+  'This is the ICM trap: with {equity} equity you would call instantly for chips, but chips are not money once there are pay jumps. Busting costs you a guaranteed ladder, while doubling up only improves your share of a prize you might have won anyway.':
+    'Dit is de ICM-val: met {equity} equity zou je meteen callen als het om chips ging, maar chips zijn geen geld zodra er prijssprongen zijn. Uitgaan kost je een gegarandeerde ladder, terwijl verdubbelen alleen je aandeel vergroot in een prijs die je toch al had kunnen winnen.',
+  'Yes — sit down at {stake}': 'Ja — ga zitten op {stake}',
+  'No — move down in stakes': 'Nee — zak een stake omlaag',
+  'Yes, but only with half a buy-in': 'Ja, maar alleen met een halve buy-in',
+  'Your bankroll is ${bankroll} and you are thinking about playing {stake} (${buyIn} buy-in). Should you?':
+    'Je bankroll is ${bankroll} en je overweegt {stake} te spelen (buy-in ${buyIn}). Zou je dat doen?',
+  '{n} buy-ins. The standard rule for no-limit cash is 30 to 50 buy-ins, because a winning player still runs 20 buy-ins below expectation from time to time.':
+    '{n} buy-ins. De standaardregel voor no-limit cash is 30 tot 50 buy-ins, want ook een winnende speler loopt af en toe 20 buy-ins onder verwachting.',
+  '{n} buy-ins is not enough for {stake}. You want at least {want}.':
+    '{n} buy-ins is niet genoeg voor {stake}. Je wilt er minstens {want}.',
+  'Move down to {stake} until you rebuild.': 'Zak naar {stake} tot je weer opgebouwd hebt.',
+  'Rebuild at NL2 — there is no shame in it, and the games are the softest you will ever see.':
+    'Bouw opnieuw op bij NL2 — daar is niets mis mee, en de games zijn de zachtste die je ooit ziet.',
+  '{n} buy-ins deep.': '{n} buy-ins diep.',
+  'You are rolled for {stake}. Take the shot.': 'Je hebt genoeg bankroll voor {stake}. Waag de sprong.',
+  '{n} buy-ins for {stake}. Comfortable.': '{n} buy-ins voor {stake}. Comfortabel.',
+  'About {pct}%': 'Ongeveer {pct}%',
+  'You win at {rate}bb/100 with a standard deviation of 100bb/100, and your bankroll is {roll} big blinds. Roughly what is your risk of going broke?':
+    'Je wint {rate}bb/100 met een standaarddeviatie van 100bb/100, en je bankroll is {roll} big blinds. Hoe groot is ruwweg je kans om blut te gaan?',
+  'Risk of ruin ≈ e^(−2 × {rate} × {roll} ÷ 100²) = {risk}. A bankroll of {safe}bb would bring that down to 5%. Notice how much harder a small edge has to work: halving your win rate does not double your risk, it squares the problem.':
+    'Risk of ruin ≈ e^(−2 × {rate} × {roll} ÷ 100²) = {risk}. Een bankroll van {safe}bb zou dat terugbrengen naar 5%. Merk op hoeveel harder een kleine edge moet werken: je winrate halveren verdubbelt je risico niet, het kwadrateert het probleem.',
+  'A pot reaches {pot} big blinds. The site takes 5% capped at 3bb. What fraction of the pot goes to the house?':
+    'Een pot bereikt {pot} big blinds. De site neemt 5% met een maximum van 3bb. Welk deel van de pot gaat naar het huis?',
+  'The house takes {taken}bb, which is {share} of the pot.':
+    'Het huis neemt {taken}bb, oftewel {share} van de pot.',
+  'Small pots are raked hardest in percentage terms — this is exactly why limping and playing tiny pots out of position loses money even when you "break even" on the cards.':
+    'Kleine potten worden procentueel het zwaarst geraket — precies daarom verliest limpen en kleine potten spelen uit positie geld, zelfs als je op de kaarten "break-even" draait.',
+  'The cap means big pots are raked far more gently. Winning players make their money in the pots that reach the cap.':
+    'De cap zorgt ervoor dat grote potten veel milder geraket worden. Winnende spelers verdienen hun geld in de potten die de cap halen.',
+  'Four tables have open seats. Which do you join?': 'Vier tafels hebben vrije plekken. Bij welke ga je zitten?',
+  '3 players, all tight regulars, 18% average VPIP': '3 spelers, allemaal strakke regulars, gemiddeld 18% VPIP',
+  '6 players, one player seeing 68% of flops': '6 spelers, één speler ziet 68% van de flops',
+  '6 players, average VPIP 21%, no obvious weak spot':
+    '6 spelers, gemiddeld 21% VPIP, geen duidelijke zwakke plek',
+  '5 players, two seats waiting, average VPIP 24%': '5 spelers, twee plekken vrij, gemiddeld 24% VPIP',
+  'A short table of good regulars is the worst game on the site. Everyone is competent, the rake per hand is high, and there is no weak player to win from.':
+    'Een korte tafel met goede regulars is de slechtste game op de site. Iedereen is competent, de rake per hand is hoog, en er is geen zwakke speler om van te winnen.',
+  'One very loose player is the single best indicator of a beatable table. Most of your profit comes from the worst player in the game.':
+    'Eén heel losse speler is de beste aanwijzing dat een tafel te verslaan is. Het grootste deel van je winst komt van de slechtste speler aan tafel.',
+  'A normal, competent table. You can beat it, but slowly.':
+    'Een normale, competente tafel. Je kunt hem verslaan, maar langzaam.',
+  'Reasonable, but you have no read yet on who is weak.':
+    'Redelijk, maar je hebt nog geen read op wie er zwak is.',
+  'Game selection is the highest-value habit in online poker. A mediocre player at a great table beats a great player at a bad one.':
+    'Game selection is de waardevolste gewoonte in online poker. Een middelmatige speler aan een geweldige tafel verslaat een geweldige speler aan een slechte.',
+  'You beat {stake} ({bb}/big blind) for {rate}bb/100 over {hands} hands. How much did you make?':
+    'Je verslaat {stake} ({bb} per big blind) met {rate}bb/100 over {hands} handen. Hoeveel heb je verdiend?',
+  '{rate}bb/100 × {hands} hands = {bbWon}bb, and at ${bb} per big blind that is ${money}. Verify with the formula: {check}bb/100. This is the honest arithmetic of online poker — the edges are small, and volume is what turns them into money.':
+    '{rate}bb/100 × {hands} handen = {bbWon}bb, en tegen ${bb} per big blind is dat ${money}. Controleer met de formule: {check}bb/100. Dit is de eerlijke rekensom van online poker — de edges zijn klein, en volume is wat ze in geld omzet.',
+  'Tap every card that would put you in front **if it came next**.':
+    'Tik elke kaart aan die je op voorsprong zou zetten **als hij als volgende komt**.',
+  'Both players are all-in. Tap the hand that wins.': 'Beide spelers zijn all-in. Tik de hand aan die wint.',
+  'Hand A': 'Hand A',
+  'Hand B': 'Hand B',
+  'Both make {hand} — the board plays and the pot is split.':
+    'Beiden maken {hand} — het board speelt en de pot wordt gedeeld.',
+  'Hand A has {a}. Hand B has {b}.': 'Hand A heeft {a}. Hand B heeft {b}.',
+  'Type the equity you need to call, as a percentage.':
+    'Typ de equity die je nodig hebt om te callen, als percentage.',
+  'Type a number — the percentage you need.': 'Typ een getal — het percentage dat je nodig hebt.',
+  'Type a number.': 'Typ een getal.',
+  'Their bet fits into the pot {fits} times, plus 2 is {plus2} — so you need 1 in {plus2}, which is {pct}%. The long way: {bet} ÷ {final} = {pct}%.':
+    'Hun bet past {fits} keer in de pot, plus 2 is {plus2} — dus je hebt 1 op {plus2} nodig, oftewel {pct}%. De lange weg: {bet} ÷ {final} = {pct}%.',
+  'Their hand is face up. Count what saves you, price the bet, then decide.':
+    'Hun hand ligt open. Tel wat je redt, bepaal de prijs van de bet, en beslis dan.',
+  'That is about {have}%. The price demands {bet} ÷ {final} = {need}%, so you have enough — calling wins about {chips} chips every time.':
+    'Dat is ongeveer {have}%. De prijs eist {bet} ÷ {final} = {need}%, dus je hebt genoeg — callen wint ongeveer {chips} chips per keer.',
+  'That is about {have}%. The price demands {bet} ÷ {final} = {need}%, so you fall short — calling loses about {chips} chips every time.':
+    'Dat is ongeveer {have}%. De prijs eist {bet} ÷ {final} = {need}%, dus je komt tekort — callen verliest ongeveer {chips} chips per keer.',
+  'Everybody has folded to you. Raise or fold?': 'Iedereen heeft naar je gefold. Raise of fold?',
+  'Your hand': 'Jouw hand',
+  'Your seat': 'Jouw plek',
+  'Players behind you': 'Spelers achter je',
+  'Same hand, two seats. From which one is this a raise?':
+    'Dezelfde hand, twee plekken. Vanaf welke is dit een raise?',
+  'Under the gun': 'Under the gun',
+  'On the button': 'Op de button',
+  'Both': 'Beide',
+  'You raised before the flop and they called. They check. Bet small, or check back?':
+    'Je raisede voor de flop en ze callden. Ze checken. Klein betten, of terugchecken?',
+  'The flop': 'De flop',
+  'Bet small': 'Bet klein',
+  'Check back': 'Terugchecken',
+  'What share of your range do you have to keep defending?': 'Welk deel van je range moet je blijven verdedigen?',
+  'In the pot': 'In de pot',
+  'They bet': 'Zij betten',
+  'You are bluffing with a hand that cannot win a showdown. How often must they fold?':
+    'Je bluft met een hand die geen showdown kan winnen. Hoe vaak moeten ze folden?',
+  'Your bluff': 'Jouw bluff',
+  'What is the stack-to-pot ratio?': 'Wat is de stack-to-pot ratio?',
+  'Pot on the flop': 'Pot op de flop',
+  'Your stack': 'Jouw stack',
+  'Their stack': 'Hun stack',
+  'It is the bubble — one more out and everyone left is paid. You can call an all-in. Do you?':
+    'Het is de bubble — nog één speler eruit en iedereen die over is krijgt betaald. Je kunt een all-in callen. Doe je dat?',
+  'Your equity if you call': 'Jouw equity als je callt',
+  'Players left': 'Spelers over',
+  'Places paid': 'Betaalde plekken',
+  'Folds to a bet': 'Foldt tegen een bet',
+  'Never bluff, value bet wider': 'Nooit bluffen, breder value betten',
+  'Steal relentlessly, fold to his raises': 'Meedogenloos stelen, folden tegen zijn raises',
+  'Stop bluffing, call him down lighter': 'Stop met bluffen, call hem lichter uit',
+  'Your bankroll': 'Jouw bankroll',
+  'Buy-in': 'Buy-in',
+  'That is': 'Dat is',
+  'Play lower': 'Lager spelen',
+  'connected': 'aaneengesloten',
+  'paired': 'gepaard',
+  'monotone': 'monotoon',
+  'two-tone': 'tweekleurig',
+  'rainbow': 'rainbow',
+  'low': 'laag',
+  'ace/king-high': 'aas/heer-hoog',
+  'dry': 'droog',
+  'wet': 'nat',
+  'Under the Gun': 'Under the gun',
+  'Big Blind': 'Big blind',
+  'Small Blind': 'Small blind',
+  'The Nit': 'De nit',
+  'Tight-Aggressive': 'Tight-aggressief',
+  'Loose-Aggressive': 'Loose-aggressief',
+  'Calling Station': 'Calling station',
+  'The Maniac': 'De maniak',
+  'First to act, five players behind. Open tight — you will be out of position on almost every hand you play.':
+    'Als eerste aan zet, met vijf spelers achter je. Open strak — je zit bij bijna elke hand die je speelt uit positie.',
+  'Only the button and blinds behind. Steal wide and isolate limpers.':
+    'Alleen de button en de blinds nog achter je. Steel breed en isoleer limpers.',
+  'The most profitable seat in poker. You act last on every postflop street — open close to half your hands.':
+    'De winstgevendste plek in poker. Je bent op elke postflop street als laatste aan zet — open bijna de helft van je handen.',
+  'Already invested, but out of position for the rest of the hand. Raise or fold; limping invites punishment.':
+    'Je hebt al ingelegd, maar zit de rest van de hand uit positie. Raise of fold; limpen vraagt om straf.',
+  'If Rocky raises, Rocky has it. He has never bluffed in his life.':
+    'Als Rocky raiset, heeft Rocky hem. Hij heeft van zijn leven nog nooit gebluft.',
+  'Steal his blinds relentlessly, and fold the moment he raises you.':
+    'Steel zijn blinds meedogenloos, en fold zodra hij je raiset.',
+  'She only continues with real equity, and she barrels when the board favours her range.':
+    'Ze gaat alleen door met echte equity, en ze barrelt als het board haar range past.',
+  'Give her credit on scary boards, but attack when she checks twice — she gives up.':
+    'Geef haar krediet op enge boards, maar val aan als ze twee keer checkt — dan geeft ze op.',
+  'He calls with any piece of the board, and almost never raises.':
+    'Hij callt met elk stukje van het board, en raiset bijna nooit.',
+  'Never bluff him. Value bet thin, three streets, and size up — he will pay.':
+    'Bluf nooit tegen hem. Value bet dun, over drie streets, en maak ze groter — hij betaalt.',
+  'He bets far too often for his range to be strong.':
+    'Hij bet veel te vaak om een sterke range te kunnen hebben.',
+  'Enormous bets with nothing at all, over and over.': 'Enorme bets met helemaal niets, keer op keer.',
+  'Tighten up, stop bluffing, and wait to snap him off with a real hand.':
+    'Speel strakker, stop met bluffen, en wacht tot je hem met een echte hand kunt afmaken.',
+  'Two seats off the button. You can add suited broadways and more suited connectors.':
+    'Twee plekken voor de button. Je kunt suited broadways en meer suited connectors toevoegen.',
+  'Widen your calling range and let him bluff into you. Trap with strong hands.':
+    'Verbreed je callrange en laat hem in je bluffen. Zet vallen met sterke handen.',
+
+  /* ---- Screen chrome that is assembled at run time ---- */
+
+  'they bet {bet}': 'zij betten {bet}',
+  '✓ Correct — {answer}': '✓ Goed — {answer}',
+  '✗ Not quite — you said {answer}': '✗ Net niet — je zei {answer}',
+  'Spot {n} of {total} · {kind}': 'Spot {n} van {total} · {kind}',
+  'name the price': 'noem de prijs',
+  'size the bet': 'bepaal de betgrootte',
+  'make the call': 'maak de call',
+  '{n} chips': '{n} chips',
+  '{pct} accuracy': '{pct} juist',
+  'best streak {n}': 'beste reeks {n}',
+  'Drill {module}': 'Drill {module}',
+  '{correct} of {answered} correct — {pct}': '{correct} van {answered} goed — {pct}',
+  '{module} is now {tier}': '{module} is nu {tier}',
+  'Next: {tier}': 'Volgende: {tier}',
+  'Needs {requirement}. Still to go: {missing}.': 'Vereist {requirement}. Nog te gaan: {missing}.',
+  'You have mastered {module}. It will come back for spaced review so it stays that way.':
+    'Je beheerst {module}. Hij komt terug voor herhaling zodat dat zo blijft.',
+  'Endless practice · question {n}': 'Eindeloos oefenen · vraag {n}',
+  '🔥 {n} streak': '🔥 {n} op rij',
+  '{n} streak': '{n} op rij',
+  '✓ Correct': '✓ Goed',
+  '✗ Not quite': '✗ Net niet',
+  '{n} questions at {pct}%': '{n} vragen op {pct}%',
+  ', plus the lesson': ', plus de les',
+  'the guided lesson': 'de begeleide les',
+  '1 more question': 'nog 1 vraag',
+  '{n} more questions': 'nog {n} vragen',
+  '{need}% accuracy (you are at {have}%)': '{need}% juist (je zit op {have}%)',
+  'not started': 'niet begonnen',
+  'due now': 'nu aan de beurt',
+  'due tomorrow': 'morgen aan de beurt',
+  'due in {n} days': 'over {n} dagen aan de beurt',
+  '{stake} costs {money}.': '{stake} kost {money}.',
+  '{n} sessions': '{n} sessies',
+  '{n} hands': '{n} handen',
+  'Lifetime {amount}': 'Totaal {amount}',
+  'needs {money}': 'vereist {money}',
+  '{money} buy-in': 'buy-in {money}',
+  '{n} buy-ins deep': '{n} buy-ins diep',
+  'cannot afford a buy-in': 'kan geen buy-in betalen',
+  '{pct} of {n}': '{pct} van {n}',
+  'Answer {n} more in the Lab and this will tell you whether your confidence is trustworthy.':
+    'Beantwoord er nog {n} in het Lab en dit vertelt je of je zekerheid te vertrouwen is.',
+  '3-betting from {seat}': '3-betten vanaf {seat}',
+  'Opening from {seat}': 'Openen vanaf {seat}',
+  '{hand} — {pct} against a random hand, ranked {rank} of 169.':
+    '{hand} — {pct} tegen een willekeurige hand, plek {rank} van 169.',
+  'In this range.': 'Zit in deze range.',
+  'Not in this range.': 'Zit niet in deze range.',
+  'Everything you have studied is still fresh. {module} is {when}.':
+    'Alles wat je hebt geleerd is nog vers. {module} is {when}.',
+  'Unlocks at {rank}': 'Ontgrendelt bij {rank}',
+  '{tier} at {requirement}': '{tier} bij {requirement}',
+  '**Solid** and **Mastered** measure how widely. A skill is Solid at 15 questions and 75%, and Mastered at 30 questions and 90% with its guided lesson finished. There are {total} skills in all.':
+    '**Solid** en **Mastered** meten hoe breed. Een vaardigheid is Solid bij 15 vragen en 75%, en Mastered bij 30 vragen en 90% met de begeleide les afgerond. Er zijn in totaal {total} vaardigheden.',
+
+  /* ---- The table: the log, the buttons and the result line ---- */
+
+  'A {stake} buy-in costs {cost} and you have {have}.': 'Een buy-in van {stake} kost {cost} en jij hebt {have}.',
+  '— Hand #{n} —': '— Hand #{n} —',
+  'You show {hand}': 'Jij toont {hand}',
+  '{name} shows {hand}': '{name} toont {hand}',
+  '{names} split the {pot} pot': '{names} delen de pot van {pot}',
+  'You take the {pot} pot': 'Jij pakt de pot van {pot}',
+  '{name} takes the {pot} pot': '{name} pakt de pot van {pot}',
+  'Cashed out {money}': 'Uitgecasht: {money}',
+  'You lost that buy-in. Bankroll: {money}.': 'Je verloor die buy-in. Bankroll: {money}.',
+  'Rebuy {money}': 'Rebuy {money}',
+  'Call {amount}': 'Call {amount}',
+  'Bet {amount}': 'Bet {amount}',
+  'Raise to {amount}': 'Raise naar {amount}',
+  'You win with {hand}': 'Jij wint met {hand}',
+  'You win the pot': 'Jij wint de pot',
+  '{names} wins with {hand}': '{names} wint met {hand}',
+  '{names} wins the pot': '{names} wint de pot',
+  'Level {n} — {rank}': 'Level {n} — {rank}',
+
+  /* ---- Headings and buttons the screens write out in full ---- */
+
+  '✅ Nothing due for review': '✅ Niets aan de beurt om te herhalen',
+  'Practise anyway': 'Toch oefenen',
+  'How sure are you?': 'Hoe zeker ben je?',
+  'You bet': 'Je bet',
+  'chips': 'chips',
+  '⅓ pot': '⅓ pot',
+  '½ pot': '½ pot',
+  '¾ pot': '¾ pot',
+  'Pot': 'Pot',
+  '2× pot': '2× pot',
+  'All-in': 'All-in',
+  '📋 Range charts': '📋 Range charts',
+  'These are the ranges the drills grade you against, and the ranges the "Solid Regular" bot plays. Learn one position at a time — the button and the big blind matter most.':
+    'Dit zijn de ranges waar de drills je op beoordelen, en de ranges die de "Solid Regular"-bot speelt. Leer één positie tegelijk — de button en de big blind tellen het zwaarst.',
+  'Open {pos}': 'Open {pos}',
+  '3-bet {pos}': '3-bet {pos}',
+  '📖 Glossary': '📖 Woordenlijst',
+  '{n} terms': '{n} termen',
+  '🔁 Retention': '🔁 Vasthouden',
+  'spaced review schedule': 'schema voor gespreide herhaling',
+  'built {date}': 'gebouwd op {date}',
+  '🔄 Sync progress': '🔄 Voortgang synchroniseren',
+  'no account needed': 'geen account nodig',
+  'automatic': 'automatisch',
+  '💰 Bankroll Challenge': '💰 Bankroll Challenge',
+  'Start at NL2 with $200. Beat each level, build a proper roll, and move up. Bust and you move back down — exactly like the real thing.':
+    'Begin op NL2 met $200. Versla elk niveau, bouw een fatsoenlijke roll op en ga omhoog. Ga je stuk, dan zak je weer — precies zoals in het echt.',
+  'Take a shot': 'Waag een poging',
+  'Sit down': 'Ga zitten',
+  'A good small-stakes win rate is 3-8bb/100. At NL10 that is roughly $3-8 an hour for a full-time grinder playing multiple tables.':
+    'Een goede winrate op small stakes is 3-8bb/100. Op NL10 is dat ruwweg $3-8 per uur voor een fulltime grinder die meerdere tafels speelt.',
+  'Standard deviation is around 100bb/100. Over 10,000 hands a 5bb/100 winner still loses money about 30% of the time.':
+    'De standaarddeviatie is ongeveer 100bb/100. Over 10.000 handen verliest een winnaar van 5bb/100 nog steeds ongeveer 30% van de tijd geld.',
+  'Keep 30-50 buy-ins for the stake you play. Below that, a normal downswing busts you even though your edge is real.':
+    'Houd 30-50 buy-ins aan voor de stake die je speelt. Daaronder maakt een normale downswing je stuk, ook al is je edge echt.',
+  'Ten questions drawn at random from every module you have unlocked. You will not know which skill is coming, which is exactly the point — at the table, nobody tells you that this is a pot-odds spot.':
+    'Tien vragen, willekeurig getrokken uit elke module die je hebt ontgrendeld. Je weet niet welke vaardigheid eraan komt, en dat is precies de bedoeling — aan tafel vertelt niemand je dat dit een pot-oddsspot is.',
+  'Press 1-4 to answer': 'Druk op 1-4 om te antwoorden',
+  'Your results': 'Jouw resultaten',
+  'The stakes ladder': 'De stakeladder',
+  'current': 'huidig',
+  'rolled': 'genoeg bankroll',
+  'Lifetime results': 'Resultaten over alles',
+  'Playing poker for money — the honest version': 'Poker voor geld — de eerlijke versie',
+
+  /* ---- Sync panel and the bankroll footnotes ---- */
+
+  'Next:': 'Volgende:',
+  'Create a token ↗': 'Maak een token ↗',
+  'Under ': 'Onder ',
+  'Expiration': 'Expiration',
+  ', pick ': ', kies ',
+  'No expiration': 'No expiration',
+  ' (recommended) — GitHub does not let a link pre-select this part, so it defaults to 30 days if you leave it. An expired token just pauses sync until you reconnect; it does not lose anything.':
+    ' (aanbevolen) — GitHub laat een link dit deel niet vooraf invullen, dus zonder aanpassing staat het op 30 dagen. Een verlopen token pauzeert alleen de sync tot je opnieuw verbindt; er gaat niets verloren.',
+  'Generate code': 'Code genereren',
+  'Download file': 'Bestand downloaden',
+  'Click "Generate code", then copy it to your other device…':
+    'Klik op "Code genereren" en kopieer hem naar je andere apparaat…',
+  'Rake takes 5% of most pots. It is the reason marginal spots that look break-even are actually losing.':
+    'Rake pakt 5% van de meeste potten. Dat is de reden dat marginale spots die break-even lijken in werkelijkheid verliezen.',
+  'Real-money online poker is legal in some places and not in others, and the money at risk is genuinely yours. Treat the bankroll rules as the floor, not the target.':
+    'Online poker om echt geld is op sommige plekken legaal en op andere niet, en het geld dat je riskeert is echt van jou. Behandel de bankrollregels als ondergrens, niet als doel.',
+  '{pct} of hands': '{pct} van de handen',
+  'You fold': 'Jij foldt',
+  'You check': 'Jij checkt',
+  'You call {amount}': 'Jij callt {amount}',
+  'You raise to {amount}': 'Jij raiset naar {amount}',
+
+  /* ---- Achievements, the confidence buttons and the Lab's footer ---- */
+
+  'First Blood': 'Eerste bloed',
+  'Answer your first drill correctly.': 'Beantwoord je eerste drill goed.',
+  'On a Heater': 'Op dreef',
+  'Get 10 drill answers right in a row.': 'Geef 10 drillantwoorden op rij goed.',
+  'Ice Cold': 'IJskoud',
+  'Get 25 drill answers right in a row.': 'Geef 25 drillantwoorden op rij goed.',
+  'Module Master': 'Modulemeester',
+  'Reach 90% accuracy in a module over at least 20 attempts.':
+    'Haal 90% juist in een module over minstens 20 pogingen.',
+  'Well Rounded': 'Breed onderlegd',
+  'Attempt every unlocked training module.': 'Probeer elke ontgrendelde trainingsmodule.',
+  'Flawless': 'Foutloos',
+  'Complete a Gauntlet run without a single mistake.': 'Voltooi een Gauntlet-run zonder één fout.',
+  'Sat Down': 'Aangeschoven',
+  'Play your first hand at the table.': 'Speel je eerste hand aan tafel.',
+  'Play 100 hands.': 'Speel 100 handen.',
+  'Volume': 'Volume',
+  'Play 1,000 hands.': 'Speel 1.000 handen.',
+  'Double Up': 'Verdubbeld',
+  'Double your starting stack in a single session.': 'Verdubbel je startstack in één sessie.',
+  'Predator': 'Roofdier',
+  'Bust an opponent.': 'Maak een tegenstander stuk.',
+  'Once in a Lifetime': 'Eens in je leven',
+  'Make a royal flush.': 'Maak een royal flush.',
+  'Make four of a kind.': 'Maak four of a kind.',
+  'Hero Call': 'Hero call',
+  'Win a pot by calling a river bluff.': 'Win een pot door een riverbluff te callen.',
+  'Moving Up': 'Omhoog',
+  'Move up a stake with a proper bankroll.': 'Ga een stake omhoog met een fatsoenlijke bankroll.',
+  'Six Figures of Hands': 'Zes cijfers aan handen',
+  'Reach NL100 in the bankroll challenge.': 'Bereik NL100 in de bankroll challenge.',
+  'Discipline': 'Discipline',
+  'Move down in stakes when your bankroll says you should.': 'Zak een stake omlaag wanneer je bankroll dat zegt.',
+  'Reach the Regular rank.': 'Bereik de rang Regular.',
+  'Turning Pro': 'Prof worden',
+  'Reach the Pro rank.': 'Bereik de rang Pro.',
+  'Mastery': 'Meesterschap',
+  'Reach GTO Master.': 'Bereik GTO Master.',
+  'Certain': 'Zeker',
+  'I know this': 'Ik weet dit',
+  'Fairly sure': 'Redelijk zeker',
+  'Pretty confident': 'Best wel zeker',
+  'Guessing': 'Gokken',
+  'No real idea': 'Geen idee',
+  'Work it out, then say how sure you are — that is the answer submitted.':
+    'Reken het uit en zeg dan hoe zeker je bent — daarmee is je antwoord ingediend.',
+  'Choose an action.': 'Kies een actie.',
+  'Session complete': 'Sessie voltooid',
+  'Solved': 'Opgelost',
+  'Accuracy': 'Juist',
+  'Another session': 'Nog een sessie',
+  'Back to dashboard': 'Terug naar het dashboard',
+  'See results →': 'Bekijk resultaten →',
+  'Next spot →': 'Volgende spot →',
+  'Leave': 'Verlaten',
 };

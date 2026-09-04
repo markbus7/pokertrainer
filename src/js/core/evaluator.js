@@ -11,6 +11,7 @@
  */
 
 import { rankOf, suitOf, RANK_NAMES, RANK_PLURALS } from './cards.js';
+import { t } from '../i18n/index.js';
 
 export const CAT = {
   HIGH_CARD: 0,
@@ -199,17 +200,22 @@ export function describeScore(score, shortDeck = false) {
     if (back[cat] !== undefined) cat = back[cat];
   }
   const k = kickersOf(score);
+  // Category names stay English — they are the words every room, chat box and
+  // hand history uses — while the rank words are translated, and the shapes
+  // are keys of their own so a language can order them differently.
+  const one = (r) => t(RANK_NAMES[r]);
+  const many = (r) => t(RANK_PLURALS[r]);
   switch (cat) {
     case CAT.STRAIGHT_FLUSH:
-      return k[0] === 14 ? 'Royal Flush' : `Straight Flush, ${RANK_NAMES[k[0]]} high`;
-    case CAT.QUADS: return `Four of a Kind, ${RANK_PLURALS[k[0]]}`;
-    case CAT.FULL_HOUSE: return `Full House, ${RANK_PLURALS[k[0]]} full of ${RANK_PLURALS[k[1]]}`;
-    case CAT.FLUSH: return `Flush, ${RANK_NAMES[k[0]]} high`;
-    case CAT.STRAIGHT: return `Straight, ${RANK_NAMES[k[0]]} high`;
-    case CAT.TRIPS: return `Three of a Kind, ${RANK_PLURALS[k[0]]}`;
-    case CAT.TWO_PAIR: return `Two Pair, ${RANK_PLURALS[k[0]]} and ${RANK_PLURALS[k[1]]}`;
-    case CAT.PAIR: return `Pair of ${RANK_PLURALS[k[0]]}`;
-    default: return `${RANK_NAMES[k[0]]} high`;
+      return k[0] === 14 ? t('Royal Flush') : t('Straight Flush, {rank} high', { rank: one(k[0]) });
+    case CAT.QUADS: return t('Four of a Kind, {ranks}', { ranks: many(k[0]) });
+    case CAT.FULL_HOUSE: return t('Full House, {ranks} full of {others}', { ranks: many(k[0]), others: many(k[1]) });
+    case CAT.FLUSH: return t('Flush, {rank} high', { rank: one(k[0]) });
+    case CAT.STRAIGHT: return t('Straight, {rank} high', { rank: one(k[0]) });
+    case CAT.TRIPS: return t('Three of a Kind, {ranks}', { ranks: many(k[0]) });
+    case CAT.TWO_PAIR: return t('Two Pair, {ranks} and {others}', { ranks: many(k[0]), others: many(k[1]) });
+    case CAT.PAIR: return t('Pair of {ranks}', { ranks: many(k[0]) });
+    default: return t('{rank} high', { rank: one(k[0]) });
   }
 }
 

@@ -3,6 +3,7 @@
 import { el, fmt } from './dom.js';
 import { cardRow } from './cardView.js';
 import { POSITION_INFO } from '../data/ranges.js';
+import { t } from '../i18n/index.js';
 
 export function scenarioView(scenario, settings = {}) {
   if (!scenario) return null;
@@ -34,7 +35,10 @@ export function scenarioView(scenario, settings = {}) {
 
   if (scenario.compare) {
     parts.push(el('div.row', { style: { gap: '24px' } },
-      scenario.compare.map((hand, i) => labelled(`Hand ${'AB'[i]}`, cardRow(hand, { size: 'lg', fourColour: four }))),
+      scenario.compare.map((hand, i) => labelled(
+        i === 0 ? t('Hand A') : t('Hand B'),
+        cardRow(hand, { size: 'lg', fourColour: four }),
+      )),
     ));
   }
 

@@ -20,6 +20,7 @@ import { renderFelt } from './feltView.js';
 import { renderGauge } from './visuals.js';
 import { getProfile } from '../engine/bots.js';
 import { potOddsRatio } from '../core/odds.js';
+import { describeScore } from '../core/evaluator.js';
 import {
   recentHands, findHand, removeHand, clearHands, handSummary,
   frameAt, frameCount, reviewOf, MISTAKE_CAP, COOLER_BB,
@@ -367,7 +368,10 @@ function resultPanel(hand, review) {
           hand.result.showdown.map((s) => {
             const seat = hand.seats.find((x) => x.id === s.id);
             const who = seat ? t(seat.name) : s.id;
-            return el('div.faint', `${who}: ${t(s.description)}`);
+            // Named `held`, not `hand`: `hand` is this function's own record,
+            // and shadowing it here reads fine and throws at run time.
+            const held = s.score !== undefined ? describeScore(s.score) : t(s.description || '');
+            return el('div.faint', `${who}: ${held}`);
           }))
       : el('div.faint', { style: { marginTop: '8px' } }, 'Everybody else folded, so no cards were shown.'),
     review.kind === 'cooler'

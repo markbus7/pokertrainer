@@ -51,7 +51,7 @@ function renderCurrent(profile, rank, next) {
     next
       ? el('div', { style: { marginTop: '14px' } },
           el('div.spread', { style: { marginBottom: '6px' } },
-            el('span.faint', `Next: ${next.emoji} ${next.name}`),
+            el('span.faint', t('Next:'), ` ${next.emoji} `, t(next.name)),
             el('span.faint.mono', `${Math.round(profile.progress * 100)}%`),
           ),
           el('div.bar', el('span', { style: { width: `${Math.round(profile.progress * 100)}%` } })),
@@ -72,7 +72,7 @@ function renderNext(profile, next, go) {
 
   return el('div.panel',
     el('div.panel-title',
-      el('h2', `${next.emoji} ${next.name}`),
+      el('h2', next.emoji, ' ', t(next.name)),
       el('span.faint', t('{done} of {total} done', { done, total: rows.length })),
     ),
     el('div.faint', { style: { marginBottom: '12px' } }, next.blurb),
@@ -243,7 +243,8 @@ function renderHowItWorks() {
   const total = MODULE_META.length;
   const lines = [
     '**XP** measures how much you have played — every drill answer, guided lesson, Lab spot and hand at the table adds to it.',
-    `**Solid** and **Mastered** measure how widely. A skill is Solid at 15 questions and 75%, and Mastered at 30 questions and 90% with its guided lesson finished. There are ${total} skills in all.`,
+    t('**Solid** and **Mastered** measure how widely. A skill is Solid at 15 questions and 75%, and Mastered at '
+      + '30 questions and 90% with its guided lesson finished. There are {total} skills in all.', { total }),
     'Both matter, because XP on its own could be earned by repeating one drill forever — which would have unlocked the whole curriculum for somebody who had only ever practised one thing.',
     'A rank reflects what you can do now, so it can go down as well as up — if the skills behind it fade, the rank goes with them until you have them back. The date you first reached it is kept either way.',
   ];

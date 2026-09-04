@@ -4,6 +4,7 @@
  */
 
 import { bbPer100 } from '../core/odds.js';
+import { t } from '../i18n/index.js';
 
 export class SessionStats {
   constructor() { this.reset(); }
@@ -227,13 +228,26 @@ export function bankrollAdvice(bankroll, stakeKey) {
     return {
       ok: false,
       buyIns,
-      message: `${buyIns.toFixed(0)} buy-ins is not enough for ${stake.name}. You want at least ${(stake.minBankroll / stake.buyIn).toFixed(0)}.`,
-      suggestion: drop ? `Move down to ${drop.name} until you rebuild.` : 'Rebuild at NL2 — there is no shame in it, and the games are the softest you will ever see.',
+      message: t('{n} buy-ins is not enough for {stake}. You want at least {want}.',
+        { n: buyIns.toFixed(0), stake: stake.name, want: (stake.minBankroll / stake.buyIn).toFixed(0) }),
+      suggestion: drop
+        ? t('Move down to {stake} until you rebuild.', { stake: drop.name })
+        : t('Rebuild at NL2 — there is no shame in it, and the games are the softest you will ever see.'),
     };
   }
   const next = STAKES[STAKES.indexOf(stake) + 1];
   if (next && bankroll >= next.minBankroll * 1.2) {
-    return { ok: true, buyIns, message: `${buyIns.toFixed(0)} buy-ins deep.`, suggestion: `You are rolled for ${next.name}. Take the shot.` };
+    return {
+      ok: true,
+      buyIns,
+      message: t('{n} buy-ins deep.', { n: buyIns.toFixed(0) }),
+      suggestion: t('You are rolled for {stake}. Take the shot.', { stake: next.name }),
+    };
   }
-  return { ok: true, buyIns, message: `${buyIns.toFixed(0)} buy-ins for ${stake.name}. Comfortable.`, suggestion: null };
+  return {
+    ok: true,
+    buyIns,
+    message: t('{n} buy-ins for {stake}. Comfortable.', { n: buyIns.toFixed(0), stake: stake.name }),
+    suggestion: null,
+  };
 }

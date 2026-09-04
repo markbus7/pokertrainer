@@ -9,6 +9,7 @@ import { countOuts, describeOuts, exactOutsEquity, handEquity } from '../core/eq
 import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 import { buildChoices, numericDistractors, percentDistractors, attempt, pct } from './helpers.js';
+import { t } from '../i18n/index.js';
 
 /** "Which hand wins?" — the first thing a beginner must never get wrong. */
 export function handRankingDrill(rng, difficulty = 1) {
@@ -28,21 +29,25 @@ export function handRankingDrill(rng, difficulty = 1) {
   if (!spot) return null;
 
   const { board, a, b, scoreA, scoreB } = spot;
-  const winner = scoreA > scoreB ? 'Player A' : scoreB > scoreA ? 'Player B' : 'Split pot';
-  const { options, answer } = buildChoices(rng, winner, ['Player A', 'Player B', 'Split pot']);
+  const winner = scoreA > scoreB ? t('Player A') : scoreB > scoreA ? t('Player B') : t('Split pot');
+  const { options, answer } = buildChoices(rng, winner, [t('Player A'), t('Player B'), t('Split pot')]);
+
+  const holdings = t('Player A has {a}. Player B has {b}.',
+    { a: describeScore(scoreA), b: describeScore(scoreB) });
+  const outcome = scoreA === scoreB
+    ? t('Identical hands — the pot is chopped.')
+    : (scoreA >> 20) === (scoreB >> 20)
+      ? t('{winner} wins on the kicker.', { winner })
+      : t('{winner} wins.', { winner });
 
   return {
     module: 'hand-rankings',
     difficulty,
-    scenario: { board, hands: [{ label: 'Player A', cards: a }, { label: 'Player B', cards: b }] },
-    question: 'Both players are all-in. Who takes it down?',
+    scenario: { board, hands: [{ label: t('Player A'), cards: a }, { label: t('Player B'), cards: b }] },
+    question: t('Both players are all-in. Who takes it down?'),
     options,
     answer,
-    explanation: `Player A has ${describeScore(scoreA)}. Player B has ${describeScore(scoreB)}. ${
-      scoreA === scoreB
-        ? 'Identical hands — the pot is chopped.'
-        : `${winner} wins${(scoreA >> 20) === (scoreB >> 20) ? ' on the kicker' : ''}.`
-    }`,
+    explanation: `${holdings} ${outcome}`,
     xp: 8 + difficulty * 2,
   };
 }
@@ -62,10 +67,11 @@ export function nameThatHandDrill(rng, difficulty = 1) {
     module: 'hand-rankings',
     difficulty,
     scenario: { board, hole },
-    question: 'What is your best five-card hand?',
+    question: t('What is your best five-card hand?'),
     options,
     answer,
-    explanation: `${describeScore(score)} — using ${cardsToString(hole)} with ${cardsToString(board)}.`,
+    explanation: t('{hand} — using {hole} with {board}.',
+      { hand: describeScore(score), hole: cardsToString(hole), board: cardsToString(board) }),
     xp: 6 + difficulty,
   };
 }
@@ -93,13 +99,14 @@ export function outsDrill(rng, difficulty = 2) {
     module: 'outs',
     difficulty,
     scenario: { board, hole: hero, villain, revealVillain: true },
-    question: 'You are behind. How many cards on the turn put you in front?',
+    question: t('You are behind. How many cards on the turn put you in front?'),
     options,
     answer,
     // Naming the cards is the whole lesson: a bare count asks you to take the
     // number on trust, which teaches nothing you can repeat at a table.
-    explanation: `${describeOuts(hero, villain, board).sentence} With two cards to come that is about ${
-      pct(equity)} — the rule of 4 gives you ${count * 4}%, which is close enough to act on.`,
+    explanation: `${describeOuts(hero, villain, board).sentence} `
+      + t('With two cards to come that is about {exact} — the rule of 4 gives you {rough}%, which is close '
+        + 'enough to act on.', { exact: pct(equity), rough: count * 4 }),
     xp: 10 + difficulty * 3,
   };
 }
@@ -119,12 +126,16 @@ export function ruleOfFourDrill(rng, difficulty = 2) {
     module: 'outs',
     difficulty,
     scenario: null,
-    question: `You have ${outs} outs on the ${street}. Use the rule of ${street === 'flop' ? 4 : 2} — roughly what is your equity?`,
+    question: t('You have {outs} outs on the {street}. Use the rule of {rule} — roughly what is your equity?',
+      { outs, street: t(street), rule: street === 'flop' ? 4 : 2 }),
     options,
     answer,
     explanation: street === 'flop'
-      ? `Two cards to come, so multiply by 4: ${outs} × 4 = ${shortcut}%. The exact figure is ${pct(equity, 1)} — the shortcut drifts a little high with many outs, which is close enough at the table.`
-      : `One card to come, so multiply by 2: ${outs} × 2 = ${shortcut}%. The exact figure is ${pct(equity, 1)}, since ${outs} of the 46 unseen cards win.`,
+      ? t('Two cards to come, so multiply by 4: {outs} × 4 = {shortcut}%. The exact figure is {exact} — the '
+        + 'shortcut drifts a little high with many outs, which is close enough at the table.',
+        { outs, shortcut, exact: pct(equity, 1) })
+      : t('One card to come, so multiply by 2: {outs} × 2 = {shortcut}%. The exact figure is {exact}, since '
+        + '{outs} of the 46 unseen cards win.', { outs, shortcut, exact: pct(equity, 1) }),
     xp: 8 + difficulty * 2,
   };
 }
@@ -146,10 +157,12 @@ export function potOddsDrill(rng, difficulty = 2) {
     module: 'pot-odds',
     difficulty,
     scenario: { pot, toCall: bet, potFacing },
-    question: `There is ${pot} in the pot. Your opponent bets ${bet}. What equity do you need to call profitably?`,
+    question: t('There is {pot} in the pot. Your opponent bets {bet}. What equity do you need to call profitably?',
+      { pot, bet }),
     options,
     answer,
-    explanation: `You call ${bet} to win ${potFacing}, so you need ${bet} ÷ ${potFacing + bet} = ${pct(need, 1)}. That is ${potOddsRatio(bet, potFacing).toFixed(1)} to 1.`,
+    explanation: t('You call {bet} to win {potFacing}, so you need {bet} ÷ {final} = {need}. That is {ratio} to 1.',
+      { bet, potFacing, final: potFacing + bet, need: pct(need, 1), ratio: potOddsRatio(bet, potFacing).toFixed(1) }),
     xp: 10 + difficulty * 2,
   };
 }
@@ -173,24 +186,25 @@ export function equityGivenDrill(rng, difficulty = 2) {
 
   const { pot, bet, need, equity } = spot;
   const shouldCall = equity > need;
-  const { options, answer } = buildChoices(rng, shouldCall ? 'Call' : 'Fold', ['Call', 'Fold']);
+  const { options, answer } = buildChoices(rng, shouldCall ? t('Call') : t('Fold'), [t('Call'), t('Fold')]);
   const ev = callEV(equity, bet, pot + bet);
+  const final = pot + bet + bet;
 
   return {
     module: 'pot-odds',
     difficulty,
     scenario: { pot, toCall: bet, potFacing: pot + bet },
-    question: `You will win this hand ${pct(equity)} of the time. There is ${
-      pot} in the pot and they bet ${bet}. Call or fold?`,
+    question: t('You will win this hand {equity} of the time. There is {pot} in the pot and they bet {bet}. '
+      + 'Call or fold?', { equity: pct(equity), pot, bet }),
     options,
     answer,
-    explanation: `You call ${bet} to win ${pot + bet + bet}, so you need ${bet} ÷ ${
-      pot + bet + bet} = ${pct(need, 1)}. You have ${pct(equity)}, which is ${
-      shouldCall ? 'more than' : 'less than'} the price asks. ${
-      shouldCall
-        ? `Calling wins about ${ev.toFixed(1)} chips every time.`
-        : `Calling loses about ${Math.abs(ev).toFixed(1)} chips every time.`
-    }`,
+    explanation: shouldCall
+      ? t('You call {bet} to win {final}, so you need {bet} ÷ {final} = {need}. You have {equity}, which is more '
+        + 'than the price asks. Calling wins about {chips} chips every time.',
+        { bet, final, need: pct(need, 1), equity: pct(equity), chips: ev.toFixed(1) })
+      : t('You call {bet} to win {final}, so you need {bet} ÷ {final} = {need}. You have {equity}, which is less '
+        + 'than the price asks. Calling loses about {chips} chips every time.',
+        { bet, final, need: pct(need, 1), equity: pct(equity), chips: Math.abs(ev).toFixed(1) }),
     xp: 12 + difficulty * 2,
   };
 }
@@ -220,7 +234,7 @@ export function callOrFoldDrill(rng, difficulty = 3) {
 
   const { hero, villain, board, equity, pot, bet, need, count } = spot;
   const shouldCall = equity > need;
-  const { options, answer } = buildChoices(rng, shouldCall ? 'Call' : 'Fold', ['Call', 'Fold']);
+  const { options, answer } = buildChoices(rng, shouldCall ? t('Call') : t('Fold'), [t('Call'), t('Fold')]);
   const ev = callEV(equity, bet, pot + bet);
 
   // The outs figure and the engine's equity rarely match exactly, and the gap
@@ -232,24 +246,29 @@ export function callOrFoldDrill(rng, difficulty = 3) {
   const reconcile = Math.abs(drift) < 0.015
     ? ''
     : drift > 0
-      ? ` It comes out a little above that because some runner-runner cards win for you too.`
-      : ` It comes out a little below that because a few of those cards can still be beaten by the river.`;
+      ? ` ${t('It comes out a little above that because some runner-runner cards win for you too.')}`
+      : ` ${t('It comes out a little below that because a few of those cards can still be beaten by the river.')}`;
+
+  const price = shouldCall
+    ? t('The price demands {bet} ÷ {final} = {need}, so you have more than enough. Calling wins about {chips} '
+      + 'chips every time you make it.',
+      { bet, final: pot + bet + bet, need: pct(need, 1), chips: ev.toFixed(1) })
+    : t('The price demands {bet} ÷ {final} = {need}, so you fall short. Calling loses about {chips} chips every '
+      + 'time — a fold is a profit.',
+      { bet, final: pot + bet + bet, need: pct(need, 1), chips: Math.abs(ev).toFixed(1) });
 
   return {
     module: 'outs',
     difficulty,
     scenario: { board, hole: hero, villain, revealVillain: true, pot, toCall: bet },
-    question: `The pot is ${pot} and you face a bet of ${bet}. Your opponent's hand is face up. Call or fold?`,
+    question: t("The pot is {pot} and you face a bet of {bet}. Your opponent's hand is face up. Call or fold?",
+      { pot, bet }),
     options,
     answer,
-    explanation: `${describeOuts(hero, villain, board).sentence} With two cards to come, ${count} outs is roughly ${
-      count * 4}% by the rule of 4; the exact figure is ${pct(equity, 1)}.${reconcile
-    } The price demands ${bet} ÷ ${pot + bet + bet} = ${pct(need, 1)}, so you ${
-      shouldCall ? 'have more than enough' : 'fall short'}. ${
-      shouldCall
-        ? `Calling wins about ${ev.toFixed(1)} chips every time you make it.`
-        : `Calling loses about ${Math.abs(ev).toFixed(1)} chips every time — a fold is a profit.`
-    }`,
+    explanation: `${describeOuts(hero, villain, board).sentence} `
+      + t('With two cards to come, {count} outs is roughly {rough}% by the rule of 4; the exact figure is {exact}.',
+        { count, rough: count * 4, exact: pct(equity, 1) })
+      + `${reconcile} ${price}`,
     xp: 14 + difficulty * 3,
   };
 }
