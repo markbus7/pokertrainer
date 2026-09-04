@@ -13,10 +13,14 @@ import {
 import { shuffle, randInt } from '../core/rng.js';
 import { PROFILES } from '../engine/bots.js';
 import { buildChoices, percentDistractors, attempt, describeTexture, pct } from './helpers.js';
+import { t } from '../i18n/index.js';
 
-const SIZE_SMALL = 'Bet small (about a third of the pot)';
-const SIZE_BIG = 'Bet big (about three quarters of the pot)';
-const CHECK = 'Check';
+// Read through t() at call time rather than once at module load: the language
+// can change while the app is open, and a constant captured at import would
+// still be in whichever language happened to be current then.
+const SIZE_SMALL = () => t('Bet small (about a third of the pot)');
+const SIZE_BIG = () => t('Bet big (about three quarters of the pot)');
+const CHECK = () => t('Check');
 
 /**
  * Should you continuation bet, and how big?
@@ -41,32 +45,39 @@ export function cbetDrill(rng, difficulty = 3) {
   let why;
 
   if (equity >= 0.70) {
-    correct = texture.wet ? SIZE_BIG : SIZE_SMALL;
+    correct = texture.wet ? SIZE_BIG() : SIZE_SMALL();
     why = texture.wet
-      ? `You are well ahead (${pct(equity)} equity) on a board that gives them plenty of draws. Bet big: charge the draws and build the pot while you are in front.`
-      : `You are well ahead (${pct(equity)} equity) on a dry board. Bet small — they have few draws to charge, and a small bet keeps their weak hands in.`;
+      ? t('You are well ahead ({equity} equity) on a board that gives them plenty of draws. Bet big: charge the '
+        + 'draws and build the pot while you are in front.', { equity: pct(equity) })
+      : t('You are well ahead ({equity} equity) on a dry board. Bet small — they have few draws to charge, and a '
+        + 'small bet keeps their weak hands in.', { equity: pct(equity) });
   } else if (equity >= 0.48) {
-    correct = texture.wet ? SIZE_BIG : SIZE_SMALL;
+    correct = texture.wet ? SIZE_BIG() : SIZE_SMALL();
     why = texture.wet
-      ? `${pct(equity)} equity on a coordinated board. Bet big to deny equity — checking lets every draw see a free card.`
-      : `${pct(equity)} equity on a dry board. A small bet works with your whole range: they missed this flop as often as you did.`;
+      ? t('{equity} equity on a coordinated board. Bet big to deny equity — checking lets every draw see a free '
+        + 'card.', { equity: pct(equity) })
+      : t('{equity} equity on a dry board. A small bet works with your whole range: they missed this flop as '
+        + 'often as you did.', { equity: pct(equity) });
   } else if (!texture.wet) {
-    correct = SIZE_SMALL;
-    why = `You only have ${pct(equity)} equity, but this board is dry and disconnected. A small continuation bet folds out everything that missed, and that is most of their range.`;
+    correct = SIZE_SMALL();
+    why = t('You only have {equity} equity, but this board is dry and disconnected. A small continuation bet '
+      + 'folds out everything that missed, and that is most of their range.', { equity: pct(equity) });
   } else {
-    correct = CHECK;
-    why = `${pct(equity)} equity on a wet, connected board. They have too many hands that will continue — a bluff here just donates chips. Check and give up cheaply.`;
+    correct = CHECK();
+    why = t('{equity} equity on a wet, connected board. They have too many hands that will continue — a bluff '
+      + 'here just donates chips. Check and give up cheaply.', { equity: pct(equity) });
   }
 
-  const { options, answer } = buildChoices(rng, correct, [SIZE_SMALL, SIZE_BIG, CHECK]);
+  const { options, answer } = buildChoices(rng, correct, [SIZE_SMALL(), SIZE_BIG(), CHECK()]);
   return {
     module: 'cbet',
     difficulty,
     scenario: { board, hole: hero, texture: texture.tags },
-    question: 'You raised preflop and the big blind called. They check to you on the flop. What now?',
+    question: t('You raised preflop and the big blind called. They check to you on the flop. What now?'),
     options,
     answer,
-    explanation: `${cardsToString(board)} is ${texture.tags.join(', ')}. ${why}`,
+    explanation: `${t('{board} is {tags}.',
+      { board: cardsToString(board), tags: texture.tags.map((tag) => t(tag)).join(', ') })} ${why}`,
     xp: 14 + difficulty * 3,
   };
 }
@@ -86,10 +97,14 @@ export function mdfDrill(rng, difficulty = 4) {
     module: 'mdf',
     difficulty,
     scenario: { pot, toCall: bet },
-    question: `The pot is ${pot} and your opponent bets ${bet}. What share of your range must you continue with to stop a pure bluff from printing money?`,
+    question: t('The pot is {pot} and your opponent bets {bet}. What share of your range must you continue with '
+      + 'to stop a pure bluff from printing money?', { pot, bet }),
     options,
     answer,
-    explanation: `Minimum defence frequency is pot ÷ (pot + bet) = ${pot} ÷ ${pot + bet} = ${pct(mdf, 1)}. Fold more often than that and any two cards can profitably bluff you. Note this is a defensive guideline, not a law: against someone who never bluffs, over-folding is correct.`,
+    explanation: t('Minimum defence frequency is pot ÷ (pot + bet) = {pot} ÷ {total} = {mdf}. Fold more often '
+      + 'than that and any two cards can profitably bluff you. Note this is a defensive guideline, not a law: '
+      + 'against someone who never bluffs, over-folding is correct.',
+      { pot, total: pot + bet, mdf: pct(mdf, 1) }),
     xp: 16 + difficulty * 3,
   };
 }
@@ -109,10 +124,13 @@ export function bluffMathDrill(rng, difficulty = 4) {
     module: 'bluffing',
     difficulty,
     scenario: { pot, betSize: bet },
-    question: `You want to bluff ${bet} into a pot of ${pot} with a hand that never wins at showdown. How often must they fold for this to break even?`,
+    question: t('You want to bluff {bet} into a pot of {pot} with a hand that never wins at showdown. How often '
+      + 'must they fold for this to break even?', { bet, pot }),
     options,
     answer,
-    explanation: `You risk ${bet} to win ${pot}, so you need ${bet} ÷ ${bet + pot} = ${pct(need, 1)}. Bigger bluffs need to work more often — which is why sizing up is not automatically better.`,
+    explanation: t('You risk {bet} to win {pot}, so you need {bet} ÷ {total} = {need}. Bigger bluffs need to work '
+      + 'more often — which is why sizing up is not automatically better.',
+      { bet, pot, total: bet + pot, need: pct(need, 1) }),
     xp: 16 + difficulty * 3,
   };
 }
@@ -132,10 +150,14 @@ export function balanceDrill(rng, difficulty = 5) {
     module: 'bluffing',
     difficulty,
     scenario: { pot, betSize: bet },
-    question: `You bet ${bet} into ${pot} on the river. For a balanced range that gives your opponent no profitable choice, what share of your betting hands should be bluffs?`,
+    question: t('You bet {bet} into {pot} on the river. For a balanced range that gives your opponent no '
+      + 'profitable choice, what share of your betting hands should be bluffs?', { bet, pot }),
     options,
     answer,
-    explanation: `Your opponent needs ${pct(requiredEquity(bet, pot + bet), 1)} to call. To make them exactly indifferent, bluffs should be ${pct(share, 1)} of your betting range — roughly ${(share / (1 - share)).toFixed(2)} bluffs for every value hand. At pot size that is the familiar 1 bluff per 2 value bets.`,
+    explanation: t('Your opponent needs {need} to call. To make them exactly indifferent, bluffs should be {share} '
+      + 'of your betting range — roughly {ratio} bluffs for every value hand. At pot size that is the familiar '
+      + '1 bluff per 2 value bets.',
+      { need: pct(requiredEquity(bet, pot + bet), 1), share: pct(share, 1), ratio: (share / (1 - share)).toFixed(2) }),
     xp: 20 + difficulty * 3,
   };
 }
@@ -156,20 +178,24 @@ export function bluffCatchDrill(rng, difficulty = 4) {
   if (Math.abs(bluffFreq - need) < 0.05) return null;
 
   const shouldCall = bluffFreq > need;
-  const { options, answer } = buildChoices(rng, shouldCall ? 'Call' : 'Fold', ['Call', 'Fold']);
+  const { options, answer } = buildChoices(rng, shouldCall ? t('Call') : t('Fold'), [t('Call'), t('Fold')]);
+  const opener = t('You need to be right {need} of the time. {name} bluffs about {freq} of the time — {tell}',
+    { need: pct(need, 1), name: villain.name, freq: pct(bluffFreq), tell: t(villain.tell).toLowerCase() });
+  const verdict = shouldCall
+    ? t('Since {freq} beats the {need} you need, this is a profitable call.',
+      { freq: pct(bluffFreq), need: pct(need) })
+    : t('Since {freq} falls short of the {need} you need, folding is correct.',
+      { freq: pct(bluffFreq), need: pct(need) });
 
   return {
     module: 'exploit',
     difficulty,
-    scenario: { pot, toCall: bet, villain: { name: villain.name, style: villain.style, emoji: villain.emoji, tell: villain.tell } },
-    question: `River. You hold a hand that beats a bluff and nothing else. ${villain.name} (${villain.style}) bets ${bet} into ${pot}. Call or fold?`,
+    scenario: { pot, toCall: bet, villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) } },
+    question: t('River. You hold a hand that beats a bluff and nothing else. {name} ({style}) bets {bet} into '
+      + '{pot}. Call or fold?', { name: villain.name, style: t(villain.style), bet, pot }),
     options,
     answer,
-    explanation: `You need to be right ${pct(need, 1)} of the time. ${villain.name} bluffs about ${pct(bluffFreq)} of the time — ${villain.tell.toLowerCase()} ${
-      shouldCall
-        ? `Since ${pct(bluffFreq)} beats the ${pct(need)} you need, this is a profitable call. ${villain.counter}`
-        : `Since ${pct(bluffFreq)} falls short of the ${pct(need)} you need, folding is correct. ${villain.counter}`
-    }`,
+    explanation: `${opener} ${verdict} ${t(villain.counter)}`,
     xp: 18 + difficulty * 4,
   };
 }
@@ -184,19 +210,20 @@ export function sprDrill(rng, difficulty = 4) {
     rng, String(rounded), [rounded + 2, Math.max(1, rounded - 2), rounded + 5].map(String),
   );
   const guidance = ratio <= 3
-    ? 'With an SPR of 3 or less, top pair is usually committed: plan to get all the chips in.'
+    ? t('With an SPR of 3 or less, top pair is usually committed: plan to get all the chips in.')
     : ratio <= 6
-      ? 'A medium SPR means you need a strong hand — overpairs and better — to play a big pot.'
-      : 'A deep SPR means one pair is just one pair. Keep the pot small and look for a hand that can stack them.';
+      ? t('A medium SPR means you need a strong hand — overpairs and better — to play a big pot.')
+      : t('A deep SPR means one pair is just one pair. Keep the pot small and look for a hand that can stack them.');
 
   return {
     module: 'spr',
     difficulty,
     scenario: { pot, effectiveStack: stack },
-    question: `The pot is ${pot} on the flop and the effective stack is ${stack}. What is the stack-to-pot ratio?`,
+    question: t('The pot is {pot} on the flop and the effective stack is {stack}. What is the stack-to-pot ratio?',
+      { pot, stack }),
     options,
     answer,
-    explanation: `SPR = ${stack} ÷ ${pot} = ${ratio.toFixed(1)}. ${guidance}`,
+    explanation: `${t('SPR = {stack} ÷ {pot} = {ratio}.', { stack, pot, ratio: ratio.toFixed(1) })} ${guidance}`,
     xp: 14 + difficulty * 3,
   };
 }

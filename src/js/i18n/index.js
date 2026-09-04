@@ -44,8 +44,13 @@ export const KEEP_ENGLISH = new Set([
   'Check',
   'Dominated', 'The nuts', 'bb/100',
   // Hand categories: the names every room, chat box and hand history uses.
+  // Both casings, because the lessons write them in a sentence and the
+  // evaluator titles them — and a set only helps if it matches what the code
+  // actually produces.
   'High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush',
   'Full house', 'Four of a kind', 'Straight flush', 'Royal Flush',
+  'High Card', 'One Pair', 'Two Pair', 'Three of a Kind',
+  'Full House', 'Four of a Kind', 'Straight Flush',
   // Formulas are notation, not language. The one below that does contain
   // words ("required equity = your call ...") is translated like any prose.
   '`W × 150  =  (100 − W) × 50`', '`150W = 5000 − 50W`', '`200W = 5000`', '`W = 25`',
@@ -83,14 +88,27 @@ export function onLangChange(fn) {
 }
 
 /**
+ * Optional recorder. The coverage tool for generated text needs the keys the
+ * generators ask for, not the sentences that come back with the numbers
+ * already in them — in English those two are the same string, and there is no
+ * way to tell them apart from outside.
+ *
+ * @param {Set<string>|null} into  collect keys here, or null to stop.
+ */
+let recorder = null;
+
+export function recordKeys(into) { recorder = into; }
+
+/**
  * Translate, then fill in {placeholders}.
  *
- * Numbers are interpolated after lookup rather than baked into the key, so
- * one entry covers every value a screen can show and a translator never has
- * to guess which digits are part of the sentence.
+ * Numbers are interpolated after lookup rather than baked into the key, so one
+ * entry covers every value a screen can show and a translator never has to
+ * guess which digits are part of the sentence.
  */
 export function t(text, params = null) {
   if (text == null) return text;
+  if (recorder && typeof text === 'string') recorder.add(text);
   const table = TABLES[current];
   let out = (table && Object.prototype.hasOwnProperty.call(table, text)) ? table[text] : text;
   if (params) {

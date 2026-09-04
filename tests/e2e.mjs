@@ -451,6 +451,98 @@ await step('the language switch turns the whole app Dutch and persists', async (
   await page.waitForTimeout(300);
 });
 
+await step('no screen is half in English when the app is in Dutch', async () => {
+  // Rendered twice, once per language, and compared. Checking the Dutch text
+  // against the translation table would answer the wrong question: once a
+  // string is translated the reader never sees the English, so what matters
+  // is text that comes out the same in both — which is text that never
+  // reached t(). Randomly dealt content differs between renders anyway, so
+  // what this actually measures is the fixed chrome of every screen.
+  const routes = [
+    '#home', '#lab-run', '#review', '#charts?chart=BTN', '#glossary', '#stats',
+    '#levels', '#grind', '#gauntlet', '#drill?module=outs', '#walkthrough?module=pot-odds',
+  ];
+
+  // domcontentloaded rather than networkidle: the app fires an update check
+  // at raw.githubusercontent.com on every load, and in a sandbox without
+  // egress that request never settles.
+  const textOf = async (route, lang) => {
+    await page.goto(`${BASE}/${route}`, { waitUntil: 'domcontentloaded' });
+    await page.evaluate(async (code) => {
+      const i18n = await import('/src/js/i18n/index.js');
+      const { Profile } = await import('/src/js/state/profile.js');
+      i18n.setLang(code);
+      Profile.load().updateSettings({ lang: code });
+    }, lang);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(350);
+    // Render once more with t() recording, so the check can tell a line that
+    // was never translated from one deliberately left as it is.
+    await page.evaluate(async (target) => {
+      const i18n = await import('/src/js/i18n/index.js');
+      const keys = new Set();
+      i18n.recordKeys(keys);
+      location.hash = '#glossary';
+      await new Promise((r) => setTimeout(r, 120));
+      location.hash = target;
+      await new Promise((r) => setTimeout(r, 220));
+      i18n.recordKeys(null);
+      window.__keys = [...keys];
+    }, route);
+    return page.evaluate(() => {
+      const seen = new Set();
+      for (const node of document.querySelectorAll('#screen *')) {
+        for (const child of node.childNodes) {
+          if (child.nodeType !== 3) continue;
+          const text = child.textContent.trim();
+          if (text) seen.add(text);
+        }
+      }
+      return [...seen];
+    });
+  };
+
+  const untranslated = [];
+  for (const route of routes) {
+    const en = await textOf(route, 'en');
+    const nl = new Set(await textOf(route, 'nl'));
+    const same = en.filter((text) => nl.has(text));
+    const suspects = await page.evaluate(async (list) => {
+      const i18n = await import('/src/js/i18n/index.js');
+      const { NL } = await import('/src/js/i18n/nl.js');
+      // Some text is deliberately the same in both languages — rank names,
+      // "Call", "Pot Odds" — and some of it arrives already stitched to an
+      // emoji or a number, so looking the whole line up in the table says
+      // nothing. window.__keys holds what t() was actually asked for during
+      // this render, so a line explained by a translated key is finished.
+      const settled = (window.__keys || [])
+        .filter((key) => NL[key])
+        .map((key) => new RegExp(`^${key
+          .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          .replace(/\\\{\w+\\\}/g, '[\\s\\S]*?')}`));
+      return list.filter((text) => i18n.needsTranslation(text)
+        && !i18n.KEEP_ENGLISH.has(text)
+        && !NL[text]
+        && /[a-z]{3}/.test(text)
+        && /\s/.test(text)                // single words are usually jargon or data
+        && !settled.some((re) => re.test(text)));
+    }, same);
+    if (suspects.length) untranslated.push(`${route}: ${suspects.slice(0, 6).join(' | ')}`);
+  }
+
+  await page.evaluate(async () => {
+    const i18n = await import('/src/js/i18n/index.js');
+    const { Profile } = await import('/src/js/state/profile.js');
+    i18n.setLang('en');
+    Profile.load().updateSettings({ lang: 'en' });
+  });
+
+  if (untranslated.length) {
+    throw new Error(`English left on ${untranslated.length} screen(s):\n      ${untranslated.join('\n      ')}`);
+  }
+  console.log(`      ${routes.length} screens checked in both languages`);
+});
+
 await step('layout holds up on phone and tablet viewports', async () => {
   // iPad first, then iPhone, then desktop — the order this actually gets
   // used in. Checks the three things that break on touch and are invisible

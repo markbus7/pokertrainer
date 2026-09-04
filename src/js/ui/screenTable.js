@@ -33,7 +33,8 @@ export function renderTable(ctx, params = {}) {
   if (grind && profile.data.bankroll < buyInCost) {
     return el('div.screen', el('div.panel',
       el('h1', 'Not enough bankroll'),
-      el('p.muted', `A ${stake.name} buy-in costs ${fmt.money(stake.buyIn)} and you have ${fmt.money(profile.data.bankroll)}.`),
+      el('p.muted', t('A {stake} buy-in costs {cost} and you have {have}.',
+        { stake: stake.name, cost: fmt.money(stake.buyIn), have: fmt.money(profile.data.bankroll) })),
       el('button.btn.primary', { onclick: () => go('grind') }, 'Choose a lower stake'),
     ));
   }
@@ -112,7 +113,7 @@ export function renderTable(ctx, params = {}) {
     session.verdict = null;
     session.snapshot = null;
     session.savedHand = null;
-    log(`— Hand #${table.handNumber} —`, true);
+    log(t('— Hand #{n} —', { n: table.handNumber }), true);
     draw();
     step();
     return null;
@@ -141,9 +142,9 @@ export function renderTable(ctx, params = {}) {
     session.timer = setTimeout(() => {
       if (session.cancelled || table.handOver) return;
       const action = botAction(table, actor, rng);
-      const label = describeAction(action, table, actor);
+      const label = describeAction(action, table, actor, actor.name);
       session.recorder.act(table, action);
-      log(`${actor.name} ${label}`);
+      log(label);
       draw();
       step();
     }, BOT_DELAY);
@@ -176,9 +177,9 @@ export function renderTable(ctx, params = {}) {
     stats.recordAction(table.street, action.type, { facingRaise: snap.toCall > table.bigBlind });
     if (table.street !== 'preflop') stats.markStreet(table.street);
 
-    const label = describeAction(action, table, hero);
+    const label = describeAction(action, table, hero, null);
     session.recorder.act(table, action, snap);
-    log(`You ${label}`);
+    log(label);
     draw();
     step();
   }
@@ -199,14 +200,20 @@ export function renderTable(ctx, params = {}) {
 
     if (showdown) {
       for (const s of result.showdown) {
-        log(`${s.name}${s.id === HERO_ID ? ' show' : ' shows'} ${describeScore(s.score, table.variant.shortDeck)}`);
+        const hand = describeScore(s.score, table.variant.shortDeck);
+        log(s.id === HERO_ID
+          ? t('You show {hand}', { hand })
+          : t('{name} shows {hand}', { name: s.name, hand }));
       }
     }
     const winners = Object.entries(result.payouts).filter(([, v]) => v > 0)
       .map(([id]) => table.player(id).name);
     const potTotal = result.pots.reduce((s, p) => s + p.amount, 0);
-    const verb = winners.length > 1 ? 'split' : winners[0] === 'You' ? 'take' : 'takes';
-    log(`${winners.join(' and ')} ${verb} the ${fmt.chips(potTotal)} pot`, true);
+    log(winners.length > 1
+      ? t('{names} split the {pot} pot', { names: winners.join(` ${t('and')} `), pot: fmt.chips(potTotal) })
+      : winners[0] === 'You'
+        ? t('You take the {pot} pot', { pot: fmt.chips(potTotal) })
+        : t('{name} takes the {pot} pot', { name: winners[0], pot: fmt.chips(potTotal) }), true);
 
     profile.data.handsPlayed++;
     profile.save();
@@ -242,7 +249,7 @@ export function renderTable(ctx, params = {}) {
       const advice = bankrollAdvice(profile.data.bankroll, stake.key);
       toast({
         icon: stats.profitBb >= 0 ? '📈' : '📉',
-        title: `Cashed out ${fmt.money(cashOut)}`,
+        title: t('Cashed out {money}', { money: fmt.money(cashOut) }),
         desc: `${stats.hands} hands, ${fmt.bb(stats.profitBb)}. ${advice.message}`,
       });
     } else if (stats.hands) {
@@ -257,7 +264,8 @@ export function renderTable(ctx, params = {}) {
       el('h3', 'You are out of chips'),
       grind
         ? el('div.stack-sm',
-            el('p.muted', `You lost that buy-in. Bankroll: ${fmt.money(profile.data.bankroll)}.`),
+            el('p.muted', t('You lost that buy-in. Bankroll: {money}.',
+              { money: fmt.money(profile.data.bankroll) })),
             el('div.row',
               profile.data.bankroll >= stake.buyIn
                 ? el('button.btn.primary', {
@@ -267,7 +275,7 @@ export function renderTable(ctx, params = {}) {
                       session.buyInsUsed++;
                       startHand();
                     },
-                  }, `Rebuy ${fmt.money(stake.buyIn)}`)
+                  }, t('Rebuy {money}', { money: fmt.money(stake.buyIn) }))
                 : el('div.notice.warn', 'Your bankroll cannot cover another buy-in at this stake. Move down.'),
               el('button.btn.ghost', { onclick: leave }, 'Leave'),
             ),
@@ -411,12 +419,14 @@ export function renderTable(ctx, params = {}) {
           : null,
         callSpec
           ? el('button.btn.success', { onclick: () => heroAct({ type: 'call' }) },
-              `Call ${fmt.chips(callSpec.amount)}`)
+              t('Call {amount}', { amount: fmt.chips(callSpec.amount) }))
           : null,
         raiseSpec
           ? el('button.btn.primary', {
               onclick: () => heroAct({ type: raiseSpec.type, amount: session.raiseAmount }),
-            }, `${raiseSpec.type === 'bet' ? 'Bet' : 'Raise to'} ${fmt.chips(session.raiseAmount)}`)
+            }, raiseSpec.type === 'bet'
+              ? t('Bet {amount}', { amount: fmt.chips(session.raiseAmount) })
+              : t('Raise to {amount}', { amount: fmt.chips(session.raiseAmount) }))
           : null,
       ),
     ));
@@ -507,13 +517,26 @@ function judge(action, snap, table) {
 
 /* ---------------- helpers ---------------- */
 
-function describeAction(action, table, player) {
+/**
+ * One line of the hand log. `name` is null for the hero, which takes the
+ * second person: gluing a name onto a third-person verb produced "You calls
+ * 108" for as long as this log has existed.
+ */
+function describeAction(action, table, player, name) {
+  const you = name === null;
+  const amount = fmt.chips(Math.min(table.currentBet - player.committed, player.stack));
   switch (action.type) {
-    case 'fold': return 'folds';
-    case 'check': return 'checks';
-    case 'call': return `calls ${fmt.chips(Math.min(table.currentBet - player.committed, player.stack))}`;
-    case 'bet': return `bets ${fmt.chips(action.amount)}`;
-    case 'raise': return `raises to ${fmt.chips(action.amount)}`;
+    case 'fold': return you ? t('You fold') : t('{name} folds', { name });
+    case 'check': return you ? t('You check') : t('{name} checks', { name });
+    case 'call': return you
+      ? t('You call {amount}', { amount })
+      : t('{name} calls {amount}', { name, amount });
+    case 'bet': return you
+      ? t('You bet {amount}', { amount: fmt.chips(action.amount) })
+      : t('{name} bets {amount}', { name, amount: fmt.chips(action.amount) });
+    case 'raise': return you
+      ? t('You raise to {amount}', { amount: fmt.chips(action.amount) })
+      : t('{name} raises to {amount}', { name, amount: fmt.chips(action.amount) });
     default: return action.type;
   }
 }
@@ -522,11 +545,16 @@ function resultHeadline(result, table) {
   const winners = Object.entries(result.payouts).filter(([, v]) => v > 0).map(([id]) => table.player(id));
   if (winners.some((w) => w.isHero)) {
     const show = result.showdown.find((s) => s.id === HERO_ID);
-    return show ? `You win with ${describeScore(show.score, table.variant.shortDeck)}` : 'You win the pot';
+    return show
+      ? t('You win with {hand}', { hand: describeScore(show.score, table.variant.shortDeck) })
+      : t('You win the pot');
   }
   const names = winners.map((w) => w.name).join(' and ');
   const theirs = result.showdown.find((s) => winners.some((w) => w.id === s.id));
-  return theirs ? `${names} wins with ${describeScore(theirs.score, table.variant.shortDeck)}` : `${names} wins the pot`;
+  return theirs
+    ? t('{names} wins with {hand}',
+      { names, hand: describeScore(theirs.score, table.variant.shortDeck) })
+    : t('{names} wins the pot', { names });
 }
 
 function metric(k, v, tone = '') {

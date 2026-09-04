@@ -133,7 +133,7 @@ export function countOutsPractice(rng = makeRng()) {
     // "which cards help my hand", and a reader reasonably taps the flush and
     // straight cards — including suits they do not even hold, because the
     // board has two of them. One card, and it has to win outright.
-    prompt: 'Tap every card that would put you in front **if it came next**.',
+    prompt: t('Tap every card that would put you in front **if it came next**.'),
     // Stated before you start rather than only in the feedback, so "in front"
     // is anchored to a comparison you can see instead of a vague improvement.
     // When both hands are the same shape the line has to say what separates
@@ -202,19 +202,21 @@ export function pickWinnerPractice(rng = makeRng(), { subtle = false } = {}) {
   const winner = scoreA > scoreB ? 'a' : scoreB > scoreA ? 'b' : 'split';
   return {
     kind: 'pick-winner',
-    prompt: 'Both players are all-in. Tap the hand that wins.',
+    prompt: t('Both players are all-in. Tap the hand that wins.'),
     board,
-    hands: [{ key: 'a', label: 'Hand A', cards: a }, { key: 'b', label: 'Hand B', cards: b }],
+    hands: [{ key: 'a', label: t('Hand A'), cards: a }, { key: 'b', label: t('Hand B'), cards: b }],
     allowSplit: true,
     grade(picked) {
       return {
         correct: picked === winner,
         winner,
         explanation: winner === 'split'
-          ? `Both make ${handPhrase(scoreA)} — the board plays and the pot is split.`
-          : `Hand A has ${describeScore(scoreA)}. Hand B has ${describeScore(scoreB)}. `
-            + `${winner === 'a' ? 'Hand A' : 'Hand B'} wins${
-              (scoreA >> 20) === (scoreB >> 20) ? ' on the kicker' : ''}.`,
+          ? t('Both make {hand} — the board plays and the pot is split.', { hand: handPhrase(scoreA) })
+          : `${t('Hand A has {a}. Hand B has {b}.',
+            { a: describeScore(scoreA), b: describeScore(scoreB) })} ${
+            (scoreA >> 20) === (scoreB >> 20)
+              ? t('{winner} wins on the kicker.', { winner: winner === 'a' ? t('Hand A') : t('Hand B') })
+              : t('{winner} wins.', { winner: winner === 'a' ? t('Hand A') : t('Hand B') })}`,
       };
     },
   };
@@ -232,12 +234,12 @@ export function pricePractice(rng = makeRng()) {
 
   return {
     kind: 'price',
-    prompt: 'Type the equity you need to call, as a percentage.',
+    prompt: t('Type the equity you need to call, as a percentage.'),
     pot, bet, potNow: pot + bet,
     grade(value) {
       const given = Number(value);
       if (!Number.isFinite(given)) {
-        return { correct: false, explanation: 'Type a number — the percentage you need.' };
+        return { correct: false, explanation: t('Type a number — the percentage you need.') };
       }
       const truth = need * 100;
       const fits = pot / bet;
@@ -246,11 +248,14 @@ export function pricePractice(rng = makeRng()) {
         // not matching the engine's rounding.
         correct: Math.abs(given - truth) <= 2,
         exact: truth,
-        explanation: `Their bet fits into the pot ${
-          Number.isInteger(fits) ? fits : fits.toFixed(1)} times, plus 2 is ${
-          (fits + 2).toFixed(Number.isInteger(fits) ? 0 : 1)} — so you need 1 in ${
-          (fits + 2).toFixed(Number.isInteger(fits) ? 0 : 1)}, which is ${truth.toFixed(1)}%. `
-          + `The long way: ${bet} ÷ ${pot + bet + bet} = ${truth.toFixed(1)}%.`,
+        explanation: t('Their bet fits into the pot {fits} times, plus 2 is {plus2} — so you need 1 in {plus2}, '
+          + 'which is {pct}%. The long way: {bet} ÷ {final} = {pct}%.', {
+          fits: Number.isInteger(fits) ? fits : fits.toFixed(1),
+          plus2: (fits + 2).toFixed(Number.isInteger(fits) ? 0 : 1),
+          pct: truth.toFixed(1),
+          bet,
+          final: pot + bet + bet,
+        }),
       };
     },
   };
@@ -283,19 +288,24 @@ export function decidePractice(rng = makeRng()) {
   const shouldCall = equity > need;
   return {
     kind: 'decide',
-    prompt: 'Their hand is face up. Count what saves you, price the bet, then decide.',
+    prompt: t('Their hand is face up. Count what saves you, price the bet, then decide.'),
     hero, villain, board, pot, bet, potNow: pot + bet,
-    actions: [{ key: 'call', label: t('Call {amount}', { amount: bet }) }, { key: 'fold', label: 'Fold' }],
+    actions: [{ key: 'call', label: t('Call {amount}', { amount: bet }) }, { key: 'fold', label: t('Fold') }],
     grade(picked) {
       const ev = callEV(equity, bet, pot + bet);
       return {
         correct: picked === (shouldCall ? 'call' : 'fold'),
-        explanation: `${describeOuts(hero, villain, board).sentence} That is about ${
-          (equity * 100).toFixed(0)}%. The price demands ${bet} ÷ ${pot + bet + bet} = ${
-          (need * 100).toFixed(0)}%, so you ${shouldCall ? 'have enough' : 'fall short'} — ${
-          shouldCall
-            ? `calling wins about ${ev.toFixed(0)} chips every time.`
-            : `calling loses about ${Math.abs(ev).toFixed(0)} chips every time.`}`,
+        explanation: `${describeOuts(hero, villain, board).sentence} ${shouldCall
+          ? t('That is about {have}%. The price demands {bet} ÷ {final} = {need}%, so you have enough — calling '
+            + 'wins about {chips} chips every time.', {
+            have: (equity * 100).toFixed(0), bet, final: pot + bet + bet,
+            need: (need * 100).toFixed(0), chips: ev.toFixed(0),
+          })
+          : t('That is about {have}%. The price demands {bet} ÷ {final} = {need}%, so you fall short — calling '
+            + 'loses about {chips} chips every time.', {
+            have: (equity * 100).toFixed(0), bet, final: pot + bet + bet,
+            need: (need * 100).toFixed(0), chips: Math.abs(ev).toFixed(0),
+          })}`,
       };
     },
   };
@@ -318,7 +328,7 @@ const numberSpot = ({ prompt, tiles, exact, tolerance = 2, unit = '%', explain }
   grade(value) {
     const given = Number(String(value).replace(',', '.'));
     if (!Number.isFinite(given)) {
-      return { correct: false, explanation: 'Type a number.' };
+      return { correct: false, explanation: t('Type a number.') };
     }
     return { correct: Math.abs(given - exact) <= tolerance, exact, explanation: explain(given) };
   },
@@ -348,10 +358,13 @@ export function openOrFoldPractice(rng = makeRng()) {
   const pct = (rangePercent(CHARTS.rfi[seat]) * 100).toFixed(0);
 
   return choiceSpot({
-    prompt: 'Everybody has folded to you. Raise or fold?',
-    cards: { label: 'Your hand', cards: hero },
-    tiles: [{ label: 'Your seat', value: seat }, { label: 'Players behind you', value: POSITIONS.length - 1 - POSITIONS.indexOf(seat) }],
-    options: [{ key: 'raise', label: 'Raise' }, { key: 'fold', label: 'Fold' }],
+    prompt: t('Everybody has folded to you. Raise or fold?'),
+    cards: { label: t('Your hand'), cards: hero },
+    tiles: [
+      { label: t('Your seat'), value: seat },
+      { label: t('Players behind you'), value: POSITIONS.length - 1 - POSITIONS.indexOf(seat) },
+    ],
+    options: [{ key: 'raise', label: t('Raise') }, { key: 'fold', label: t('Fold') }],
     answer: advice.action,
     explain: () => t('{hand} from {seat}. That seat opens about {pct}% of hands, and this one is {inside} it.',
       { hand: key, seat, pct, inside: advice.action === 'raise' ? t('inside') : t('outside') }),
@@ -375,12 +388,12 @@ export function seatMattersPractice(rng = makeRng()) {
   const { hero, key } = spot;
 
   return choiceSpot({
-    prompt: 'Same hand, two seats. From which one is this a raise?',
-    cards: { label: 'Your hand', cards: hero },
+    prompt: t('Same hand, two seats. From which one is this a raise?'),
+    cards: { label: t('Your hand'), cards: hero },
     options: [
-      { key: 'utg', label: 'Under the gun' },
-      { key: 'btn', label: 'On the button' },
-      { key: 'both', label: 'Both' },
+      { key: 'utg', label: t('Under the gun') },
+      { key: 'btn', label: t('On the button') },
+      { key: 'both', label: t('Both') },
     ],
     answer: 'btn',
     explain: () => t('{hand} is a fold under the gun and a raise on the button. The cards did not change — five players can still wake up behind you in the first seat, and only two on the button.', { hand: key }),
@@ -409,9 +422,9 @@ export function cbetPractice(rng = makeRng()) {
   const { board, dry, suits } = spot;
 
   return choiceSpot({
-    prompt: 'You raised before the flop and they called. They check. Bet small, or check back?',
-    cards: { label: 'The flop', cards: board },
-    options: [{ key: 'bet', label: 'Bet small' }, { key: 'check', label: 'Check back' }],
+    prompt: t('You raised before the flop and they called. They check. Bet small, or check back?'),
+    cards: { label: t('The flop'), cards: board },
+    options: [{ key: 'bet', label: t('Bet small') }, { key: 'check', label: t('Check back') }],
     answer: dry ? 'bet' : 'check',
     explain: () => (dry
       ? t('Three different suits and nothing connected — a dry board. Very little of their calling range hit this, so a small bet folds out most of it. Bet your whole range here.')
@@ -427,8 +440,8 @@ export function defendPractice(rng = makeRng()) {
   const bet = Math.max(10, Math.round((pot * [0.25, 1 / 3, 0.5, 0.75, 1][randInt(rng, 5)]) / 10) * 10);
   const mdf = minimumDefenceFrequency(bet, pot) * 100;
   return numberSpot({
-    prompt: 'What share of your range do you have to keep defending?',
-    tiles: [{ label: 'In the pot', value: pot }, { label: 'They bet', value: bet }],
+    prompt: t('What share of your range do you have to keep defending?'),
+    tiles: [{ label: t('In the pot'), value: pot }, { label: t('They bet'), value: bet }],
     exact: mdf,
     explain: () => t('MDF = pot ÷ (pot + bet) = {pot} ÷ {total} = {pct}%. Fold more often than that and they can bluff you with any two cards.',
       { pot, total: pot + bet, pct: mdf.toFixed(0) }),
@@ -440,8 +453,8 @@ export function bluffPractice(rng = makeRng()) {
   const bet = Math.max(10, Math.round((pot * [0.5, 0.75, 1, 1.5, 2][randInt(rng, 5)]) / 10) * 10);
   const need = breakEvenBluffFrequency(bet, pot) * 100;
   return numberSpot({
-    prompt: 'You are bluffing with a hand that cannot win a showdown. How often must they fold?',
-    tiles: [{ label: 'In the pot', value: pot }, { label: 'Your bluff', value: bet }],
+    prompt: t('You are bluffing with a hand that cannot win a showdown. How often must they fold?'),
+    tiles: [{ label: t('In the pot'), value: pot }, { label: t('Your bluff'), value: bet }],
     exact: need,
     explain: () => t('You risk {bet} to win {pot}, so break-even is {bet} ÷ {total} = {pct}%. A bigger bluff wins more when it works and has to work more often.',
       { bet, pot, total: bet + pot, pct: need.toFixed(0) }),
@@ -455,11 +468,11 @@ export function sprPractice(rng = makeRng()) {
   const effective = Math.min(yours, theirs);
   const value = spr(effective, pot);
   return numberSpot({
-    prompt: 'What is the stack-to-pot ratio?',
+    prompt: t('What is the stack-to-pot ratio?'),
     tiles: [
-      { label: 'Pot on the flop', value: pot },
-      { label: 'Your stack', value: yours },
-      { label: 'Their stack', value: theirs },
+      { label: t('Pot on the flop'), value: pot },
+      { label: t('Your stack'), value: yours },
+      { label: t('Their stack'), value: theirs },
     ],
     exact: value,
     tolerance: 0.6,
@@ -478,14 +491,14 @@ export function bubblePractice(rng = makeRng()) {
   const equity = 0.52 + randInt(rng, 8) / 100;      // a genuine chip favourite
   const before = icmEquity(stacks, payouts)[0];
   return choiceSpot({
-    prompt: 'It is the bubble — one more out and everyone left is paid. You can call an all-in. Do you?',
+    prompt: t('It is the bubble — one more out and everyone left is paid. You can call an all-in. Do you?'),
     tiles: [
-      { label: 'Your equity if you call', value: `${(equity * 100).toFixed(0)}%` },
-      { label: 'Your stack', value: stacks[0] },
-      { label: 'Players left', value: stacks.length },
-      { label: 'Places paid', value: payouts.length },
+      { label: t('Your equity if you call'), value: `${(equity * 100).toFixed(0)}%` },
+      { label: t('Your stack'), value: stacks[0] },
+      { label: t('Players left'), value: stacks.length },
+      { label: t('Places paid'), value: payouts.length },
     ],
-    options: [{ key: 'fold', label: 'Fold' }, { key: 'call', label: 'Call' }],
+    options: [{ key: 'fold', label: t('Fold') }, { key: 'call', label: t('Call') }],
     answer: 'fold',
     explain: () => t('You are a favourite in chips at {pct}%, and that is not the question. Busting costs a payout you were about to lock up, while winning only slightly improves one you might have got anyway — your prize equity is about {equity} of a {pool} pool. On the bubble you fold hands you would happily get in with at any other stage.',
       { pct: (equity * 100).toFixed(0), equity: before.toFixed(0), pool: payouts.reduce((a, b) => a + b, 0) }),
@@ -517,12 +530,12 @@ export function leakPractice(rng = makeRng()) {
     tiles: [
       { label: 'VPIP', value: `${villain.vpip}%` },
       { label: 'PFR', value: `${villain.pfr}%` },
-      { label: 'Folds to a bet', value: `${villain.folds}%` },
+      { label: t('Folds to a bet'), value: `${villain.folds}%` },
     ],
     options: [
-      { key: 'value', label: 'Never bluff, value bet wider' },
-      { key: 'steal', label: 'Steal relentlessly, fold to his raises' },
-      { key: 'callDown', label: 'Stop bluffing, call him down lighter' },
+      { key: 'value', label: t('Never bluff, value bet wider') },
+      { key: 'steal', label: t('Steal relentlessly, fold to his raises') },
+      { key: 'callDown', label: t('Stop bluffing, call him down lighter') },
     ],
     answer: answer.key,
     explain: () => answer.why(),
@@ -541,11 +554,14 @@ export function rollPractice(rng = makeRng()) {
   return choiceSpot({
     prompt: t('You have this roll and want to sit at {stake}. Should you?', { stake: stake.name }),
     tiles: [
-      { label: 'Your bankroll', value: `$${roll}` },
-      { label: 'Buy-in', value: `$${stake.buyIn}` },
-      { label: 'That is', value: t('{n} buy-ins', { n: buyIns }) },
+      { label: t('Your bankroll'), value: `$${roll}` },
+      { label: t('Buy-in'), value: `$${stake.buyIn}` },
+      { label: t('That is'), value: t('{n} buy-ins', { n: buyIns }) },
     ],
-    options: [{ key: 'yes', label: t('Sit at {stake}', { stake: stake.name }) }, { key: 'no', label: 'Play lower' }],
+    options: [
+      { key: 'yes', label: t('Sit at {stake}', { stake: stake.name }) },
+      { key: 'no', label: t('Play lower') },
+    ],
     answer: advice.ok ? 'yes' : 'no',
     explain: () => (advice.ok
       ? t('{n} buy-ins is enough for {stake}, which wants at least {wanted}.', { n: buyIns, stake: stake.name, wanted })

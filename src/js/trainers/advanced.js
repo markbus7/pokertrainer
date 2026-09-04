@@ -9,6 +9,7 @@ import { randInt, shuffle } from '../core/rng.js';
 import { PROFILES } from '../engine/bots.js';
 import { STAKES, bankrollAdvice } from '../state/stats.js';
 import { buildChoices, percentDistractors, pct } from './helpers.js';
+import { t } from '../i18n/index.js';
 
 /** Given a player type, choose the line that exploits them. */
 export function exploitDrill(rng, difficulty = 5) {
@@ -73,16 +74,16 @@ export function exploitDrill(rng, difficulty = 5) {
 
   const spot = scenarios[randInt(rng, scenarios.length)];
   const villain = PROFILES[spot.profile];
-  const { options, answer } = buildChoices(rng, spot.correct, spot.wrong);
+  const { options, answer } = buildChoices(rng, t(spot.correct), spot.wrong.map((w) => t(w)));
 
   return {
     module: 'exploit',
     difficulty,
-    scenario: { villain: { name: villain.name, style: villain.style, emoji: villain.emoji, tell: villain.tell } },
-    question: spot.question,
+    scenario: { villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) } },
+    question: t(spot.question),
     options,
     answer,
-    explanation: `${spot.explain}\n\nRemember: ${villain.counter}`,
+    explanation: `${t(spot.explain)}\n\n${t('Remember: {counter}', { counter: t(villain.counter) })}`,
     xp: 20 + difficulty * 4,
   };
 }
@@ -111,25 +112,32 @@ export function icmDrill(rng, difficulty = 6) {
   const shouldCall = callValue > foldValue;
   if (Math.abs(callValue - foldValue) < 4) return null;   // too close to grade
 
-  const { options, answer } = buildChoices(rng, shouldCall ? 'Call' : 'Fold', ['Call', 'Fold']);
+  const { options, answer } = buildChoices(rng, shouldCall ? t('Call') : t('Fold'), [t('Call'), t('Fold')]);
+  const compare = shouldCall
+    ? t('Folding leaves you worth about {fold} in prize money. Calling is worth {call} — more, so the call is '
+      + 'correct.', { fold: foldValue.toFixed(0), call: callValue.toFixed(0) })
+    : t('Folding leaves you worth about {fold} in prize money. Calling is worth {call} — less, so folding is '
+      + 'correct.', { fold: foldValue.toFixed(0), call: callValue.toFixed(0) });
 
   return {
     module: 'icm',
     difficulty,
     scenario: {
       stacks: [
-        { label: 'You', chips: heroStack },
-        { label: 'Shover', chips: shoverStack },
-        { label: 'Third player', chips: thirdStack },
+        { label: t('You'), chips: heroStack },
+        { label: t('Shover'), chips: shoverStack },
+        { label: t('Third player'), chips: thirdStack },
       ],
       payouts,
     },
-    question: `Three players left and the prizes are ${payouts.join(' / ')}. You are in the big blind (${bigBlind}) and the other big stack shoves ${shove} into you. You estimate ${pct(equity)} equity if you call. Call or fold?`,
+    question: t('Three players left and the prizes are {payouts}. You are in the big blind ({bb}) and the other '
+      + 'big stack shoves {shove} into you. You estimate {equity} equity if you call. Call or fold?',
+      { payouts: payouts.join(' / '), bb: bigBlind, shove, equity: pct(equity) }),
     options,
     answer,
-    explanation: `Folding leaves you worth about ${foldValue.toFixed(0)} in prize money. Calling is worth ${callValue.toFixed(0)} — ${
-      shouldCall ? 'more, so the call is correct' : 'less, so folding is correct'
-    }. This is the ICM trap: with ${pct(equity)} equity you would call instantly for chips, but chips are not money once there are pay jumps. Busting costs you a guaranteed ladder, while doubling up only improves your share of a prize you might have won anyway.`,
+    explanation: `${compare} ${t('This is the ICM trap: with {equity} equity you would call instantly for chips, '
+      + 'but chips are not money once there are pay jumps. Busting costs you a guaranteed ladder, while doubling '
+      + 'up only improves your share of a prize you might have won anyway.', { equity: pct(equity) })}`,
     xp: 25 + difficulty * 4,
   };
 }
@@ -141,21 +149,25 @@ export function bankrollDrill(rng, difficulty = 3) {
   const buyIns = [4, 8, 15, 22, 30, 45, 70][randInt(rng, 7)];
   const bankroll = Math.round(stake.buyIn * buyIns);
   const advice = bankrollAdvice(bankroll, stake.key);
-  const correct = advice.ok ? `Yes — sit down at ${stake.name}` : `No — move down in stakes`;
+  const sitDown = t('Yes — sit down at {stake}', { stake: stake.name });
+  const correct = advice.ok ? sitDown : t('No — move down in stakes');
   const { options, answer } = buildChoices(rng, correct, [
-    `Yes — sit down at ${stake.name}`,
-    'No — move down in stakes',
-    'Yes, but only with half a buy-in',
+    sitDown,
+    t('No — move down in stakes'),
+    t('Yes, but only with half a buy-in'),
   ]);
 
   return {
     module: 'bankroll',
     difficulty,
     scenario: { bankroll, stake: stake.name, buyIns },
-    question: `Your bankroll is $${bankroll.toFixed(2)} and you are thinking about playing ${stake.name} ($${stake.buyIn} buy-in). Should you?`,
+    question: t('Your bankroll is ${bankroll} and you are thinking about playing {stake} (${buyIn} buy-in). '
+      + 'Should you?', { bankroll: bankroll.toFixed(2), stake: stake.name, buyIn: stake.buyIn }),
     options,
     answer,
-    explanation: `${buyIns} buy-ins. The standard rule for no-limit cash is 30 to 50 buy-ins, because a winning player still runs 20 buy-ins below expectation from time to time. ${advice.message}${advice.suggestion ? ` ${advice.suggestion}` : ''}`,
+    explanation: `${t('{n} buy-ins. The standard rule for no-limit cash is 30 to 50 buy-ins, because a winning '
+      + 'player still runs 20 buy-ins below expectation from time to time.', { n: buyIns })
+    } ${advice.message}${advice.suggestion ? ` ${advice.suggestion}` : ''}`,
     xp: 12 + difficulty * 3,
   };
 }
@@ -166,18 +178,23 @@ export function varianceDrill(rng, difficulty = 5) {
   const bankrollBb = [500, 1000, 2000, 3000, 5000][randInt(rng, 5)];
   const risk = riskOfRuin(bankrollBb, winRate, 100);
   const truePct = Math.max(1, Math.round(risk * 100));
+  const about = (p) => t('About {pct}%', { pct: p });
   const { options, answer } = buildChoices(
-    rng, `About ${truePct}%`, percentDistractors(rng, truePct, 3, 20, 8).map((p) => `About ${p}%`),
+    rng, about(truePct), percentDistractors(rng, truePct, 3, 20, 8).map(about),
   );
 
   return {
     module: 'bankroll',
     difficulty,
     scenario: { winRate, bankrollBb },
-    question: `You win at ${winRate}bb/100 with a standard deviation of 100bb/100, and your bankroll is ${bankrollBb} big blinds. Roughly what is your risk of going broke?`,
+    question: t('You win at {rate}bb/100 with a standard deviation of 100bb/100, and your bankroll is {roll} big '
+      + 'blinds. Roughly what is your risk of going broke?', { rate: winRate, roll: bankrollBb }),
     options,
     answer,
-    explanation: `Risk of ruin ≈ e^(−2 × ${winRate} × ${bankrollBb} ÷ 100²) = ${pct(risk, 1)}. A bankroll of ${Math.round(bankrollForRisk(winRate, 100, 0.05))}bb would bring that down to 5%. Notice how much harder a small edge has to work: halving your win rate does not double your risk, it squares the problem.`,
+    explanation: t('Risk of ruin ≈ e^(−2 × {rate} × {roll} ÷ 100²) = {risk}. A bankroll of {safe}bb would bring '
+      + 'that down to 5%. Notice how much harder a small edge has to work: halving your win rate does not double '
+      + 'your risk, it squares the problem.',
+      { rate: winRate, roll: bankrollBb, risk: pct(risk, 1), safe: Math.round(bankrollForRisk(winRate, 100, 0.05)) }),
     xp: 20 + difficulty * 3,
   };
 }
@@ -196,13 +213,17 @@ export function rakeDrill(rng, difficulty = 4) {
     module: 'bankroll',
     difficulty,
     scenario: { potBb, rakeBb: taken },
-    question: `A pot reaches ${potBb} big blinds. The site takes 5% capped at 3bb. What fraction of the pot goes to the house?`,
+    question: t('A pot reaches {pot} big blinds. The site takes 5% capped at 3bb. What fraction of the pot goes '
+      + 'to the house?', { pot: potBb }),
     options,
     answer,
-    explanation: `The house takes ${taken.toFixed(2)}bb, which is ${pct(share, 1)} of the pot. ${
+    explanation: `${t('The house takes {taken}bb, which is {share} of the pot.',
+      { taken: taken.toFixed(2), share: pct(share, 1) })} ${
       share >= 0.049
-        ? 'Small pots are raked hardest in percentage terms — this is exactly why limping and playing tiny pots out of position loses money even when you "break even" on the cards.'
-        : 'The cap means big pots are raked far more gently. Winning players make their money in the pots that reach the cap.'
+        ? t('Small pots are raked hardest in percentage terms — this is exactly why limping and playing tiny pots '
+          + 'out of position loses money even when you "break even" on the cards.')
+        : t('The cap means big pots are raked far more gently. Winning players make their money in the pots that '
+          + 'reach the cap.')
     }`,
     xp: 16 + difficulty * 3,
   };
@@ -217,16 +238,18 @@ export function gameSelectionDrill(rng, difficulty = 4) {
     { label: '5 players, two seats waiting, average VPIP 24%', score: 3, why: 'Reasonable, but you have no read yet on who is weak.' },
   ]);
   const best = tables.reduce((a, b) => (b.score > a.score ? b : a));
-  const { options, answer } = buildChoices(rng, best.label, tables.filter((t) => t !== best).map((t) => t.label));
+  const { options, answer } = buildChoices(rng, t(best.label),
+    tables.filter((table) => table !== best).map((table) => t(table.label)));
 
   return {
     module: 'bankroll',
     difficulty,
     scenario: null,
-    question: 'Four tables have open seats. Which do you join?',
+    question: t('Four tables have open seats. Which do you join?'),
     options,
     answer,
-    explanation: `${best.why}\n\nGame selection is the highest-value habit in online poker. A mediocre player at a great table beats a great player at a bad one.`,
+    explanation: `${t(best.why)}\n\n${t('Game selection is the highest-value habit in online poker. A mediocre '
+      + 'player at a great table beats a great player at a bad one.')}`,
     xp: 18 + difficulty * 3,
   };
 }
@@ -246,10 +269,15 @@ export function winRateDrill(rng, difficulty = 4) {
     module: 'bankroll',
     difficulty,
     scenario: { stake: stake.name, winRate, hands },
-    question: `You beat ${stake.name} (${stake.bb.toFixed(2)}/big blind) for ${winRate}bb/100 over ${hands.toLocaleString('en-US')} hands. How much did you make?`,
+    question: t('You beat {stake} ({bb}/big blind) for {rate}bb/100 over {hands} hands. How much did you make?',
+      { stake: stake.name, bb: stake.bb.toFixed(2), rate: winRate, hands: hands.toLocaleString('en-US') }),
     options,
     answer,
-    explanation: `${winRate}bb/100 × ${hands.toLocaleString('en-US')} hands = ${((winRate / 100) * hands).toFixed(0)}bb, and at $${stake.bb.toFixed(2)} per big blind that is $${rounded}. Verify with the formula: ${bbPer100(profit / stake.bb, hands).toFixed(1)}bb/100. This is the honest arithmetic of online poker — the edges are small, and volume is what turns them into money.`,
+    explanation: t('{rate}bb/100 × {hands} hands = {bbWon}bb, and at ${bb} per big blind that is ${money}. Verify '
+      + 'with the formula: {check}bb/100. This is the honest arithmetic of online poker — the edges are small, and '
+      + 'volume is what turns them into money.',
+      { rate: winRate, hands: hands.toLocaleString('en-US'), bbWon: ((winRate / 100) * hands).toFixed(0),
+        bb: stake.bb.toFixed(2), money: rounded, check: bbPer100(profit / stake.bb, hands).toFixed(1) }),
     xp: 16 + difficulty * 3,
   };
 }

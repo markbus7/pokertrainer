@@ -37,8 +37,11 @@ export function renderLearn(ctx, params) {
         ? el('div.row', { style: { marginTop: '14px' } },
             el('span.badge', `${stats.attempts} attempts`),
             el('span.badge', `${stats.correct} correct`),
-            acc !== null ? el(`span.badge.${acc >= 0.9 ? 'green' : acc >= 0.7 ? 'gold' : 'red'}`, `${fmt.pct(acc)} accuracy`) : null,
-            stats.bestStreak ? el('span.badge', `best streak ${stats.bestStreak}`) : null,
+            acc !== null
+              ? el(`span.badge.${acc >= 0.9 ? 'green' : acc >= 0.7 ? 'gold' : 'red'}`,
+                t('{pct} accuracy', { pct: fmt.pct(acc) }))
+              : null,
+            stats.bestStreak ? el('span.badge', t('best streak {n}', { n: stats.bestStreak })) : null,
           )
         : null,
     ),
@@ -53,7 +56,8 @@ export function renderLearn(ctx, params) {
     ),
     el('div.row',
       el('button.btn.primary', { onclick: () => go('walkthrough', { module: meta.id }) }, 'Walk me through it, step by step'),
-      el('button.btn.ghost', { onclick: () => go('drill', { module: meta.id }) }, `Drill ${meta.name}`),
+      el('button.btn.ghost', { onclick: () => go('drill', { module: meta.id }) },
+        t('Drill {module}', { module: t(meta.name) })),
       el('button.btn.ghost', { onclick: () => go('home') }, 'Back'),
     ),
   );
@@ -121,7 +125,12 @@ export function renderDrill(ctx, params) {
     const tierAfter = gauntlet ? null : masteryTier(profile, meta.id);
     const promoted = tierBefore ? promotion(tierBefore, tierAfter) : null;
     if (promoted) {
-      toast({ icon: '🎓', title: `${meta.name}: ${promoted.name}`, desc: promoted.blurb, duration: 7000 });
+      toast({
+        icon: '🎓',
+        title: `${t(meta.name)}: ${t(promoted.name)}`,
+        desc: t(promoted.blurb),
+        duration: 7000,
+      });
     }
     const goal = gauntlet ? null : nextTierGoal(profile, meta.id);
 
@@ -130,7 +139,8 @@ export function renderDrill(ctx, params) {
         el('span', { style: { fontSize: '2rem' } }, passed ? '✅' : '📘'),
         el('div',
           el('h1', { style: { margin: 0 } }, gauntlet ? 'Gauntlet complete' : passed ? 'Session passed' : 'Session complete'),
-          el('div.muted', `${state.correct} of ${state.answered} correct — ${fmt.pct(pct)}`
+          el('div.muted', t('{correct} of {answered} correct — {pct}',
+            { correct: state.correct, answered: state.answered, pct: fmt.pct(pct) })
             + (bounded ? t(' · pass mark was {pass}', { pass: gauntlet ? 8 : PASS_MARK }) : '')),
         ),
       ),
@@ -148,7 +158,8 @@ export function renderDrill(ctx, params) {
             el('div.row',
               el('span', { style: { fontSize: '1.8rem' } }, promoted.icon),
               el('div',
-                el('h3', { style: { margin: 0 } }, `${meta.name} is now ${promoted.name}`),
+                el('h3', { style: { margin: 0 } },
+                  t('{module} is now {tier}', { module: t(meta.name), tier: t(promoted.name) })),
                 el('div.faint', promoted.blurb),
               ),
             ),
@@ -159,8 +170,9 @@ export function renderDrill(ctx, params) {
         ? el('div.panel', { style: { marginTop: '16px', background: 'var(--bg-raised)' } },
             el('div.spread',
               el('div',
-                el('div', { style: { fontWeight: '650' } }, `Next: ${goal.name}`),
-                el('div.faint', `Needs ${goal.requirement}. Still to go: ${goal.missing.join(', ')}.`),
+                el('div', { style: { fontWeight: '650' } }, t('Next: {tier}', { tier: t(goal.name) })),
+                el('div.faint', t('Needs {requirement}. Still to go: {missing}.',
+                  { requirement: t(goal.requirement), missing: goal.missing.map((m) => t(m)).join(', ') })),
               ),
             ),
             el('div.bar', { style: { marginTop: '10px' } },
@@ -168,7 +180,8 @@ export function renderDrill(ctx, params) {
           )
         : !gauntlet
           ? el('div.notice', { style: { marginTop: '16px' } },
-              `You have mastered ${meta.name}. It will come back for spaced review so it stays that way.`)
+              t('You have mastered {module}. It will come back for spaced review so it stays that way.',
+                { module: t(meta.name) }))
           : null,
 
       el('p.muted', { style: { marginTop: '16px' } }, verdictText(pct, gauntlet)),
@@ -201,7 +214,11 @@ export function renderDrill(ctx, params) {
       const before = profile.level;
       profile.addXp(gained);
       if (profile.level > before) {
-        toast({ icon: profile.rank.emoji, title: `Level ${profile.level} — ${profile.rank.name}`, desc: profile.rank.blurb });
+        toast({
+          icon: profile.rank.emoji,
+          title: t('Level {n} — {rank}', { n: profile.level, rank: t(profile.rank.name) }),
+          desc: t(profile.rank.blurb),
+        });
       }
     } else {
       state.streak = 0;
@@ -225,11 +242,13 @@ export function renderDrill(ctx, params) {
               ? t('Question {n} of {total} · {module}', { n: state.index, total: queue.length, module: t(q.moduleName) })
               : bounded
                 ? t('Question {n} of {total} · pass mark {pass}', { n: Math.min(state.index, sessionLength), total: sessionLength, pass: PASS_MARK })
-                : `Endless practice · question ${state.index}`),
+                : t('Endless practice · question {n}', { n: state.index })),
           ),
         ),
         el('div.row',
-          el(`span.streak-pill${state.streak >= 3 ? '.hot' : ''}`, state.streak >= 3 ? `🔥 ${state.streak} streak` : `${state.streak} streak`),
+          el(`span.streak-pill${state.streak >= 3 ? '.hot' : ''}`, state.streak >= 3
+            ? t('🔥 {n} streak', { n: state.streak })
+            : t('{n} streak', { n: state.streak })),
           el('span.badge', `${state.correct}/${state.answered}`),
         ),
       ),
@@ -256,7 +275,7 @@ export function renderDrill(ctx, params) {
       el('div.question', { style: { marginTop: q.scenario ? '16px' : '0' } }, richText(q.question)),
       options,
       chosen === null ? null : el(`div.feedback.${chosen === q.answer ? 'correct' : 'wrong'}`,
-        el('div.verdict', chosen === q.answer ? '✓ Correct' : '✗ Not quite'),
+        el('div.verdict', chosen === q.answer ? t('✓ Correct') : t('✗ Not quite')),
         el('div', q.explanation),
       ),
     );
@@ -306,7 +325,7 @@ export function renderGauntletIntro(ctx) {
       el('h1', '⚡ The Gauntlet'),
       el('p.muted', 'Ten questions drawn at random from every module you have unlocked. You will not know which skill is coming, which is exactly the point — at the table, nobody tells you that this is a pot-odds spot.'),
       el('div.row', { style: { marginBottom: '16px' } },
-        unlocked.map((m) => el('span.badge', `${m.icon} ${m.name}`)),
+        unlocked.map((m) => el('span.badge', m.icon, ' ', t(m.name))),
       ),
       el('button.btn.primary.lg', { onclick: () => go('drill', { mode: 'gauntlet' }) }, 'Begin the run'),
     ),

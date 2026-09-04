@@ -15,6 +15,7 @@
  */
 
 import { el, mount, richText, toast, fmt } from './dom.js';
+import { t } from '../i18n/index.js';
 import { cardRow } from './cardView.js';
 import { potShareVisual, renderGauge } from './visuals.js';
 import { generateSession } from '../trainers/lab.js';
@@ -91,24 +92,24 @@ export function renderLab(ctx) {
 
   /* ---------------- rendering ---------------- */
 
-  function felt(s) {
-    const t = s.table;
+  function felt(spot) {
+    const { table } = spot;
     return el('div.lab-felt',
       el('div.lab-pot',
         el('span.label', 'pot'),
-        fmt.chips(t.potNow ?? t.pot),
-        t.bet ? el('span.lab-bet', `they bet ${fmt.chips(t.bet)}`) : null,
+        fmt.chips(table.potNow ?? table.pot),
+        table.bet ? el('span.lab-bet', t('they bet {bet}', { bet: fmt.chips(table.bet) })) : null,
       ),
-      el('div.lab-board', cardRow(t.board, { size: 'lg', fourColour: profile.settings.fourColour })),
+      el('div.lab-board', cardRow(table.board, { size: 'lg', fourColour: profile.settings.fourColour })),
       el('div.lab-hands',
         el('div.lab-hand',
           el('div.faint', 'You'),
-          cardRow(t.hole, { size: 'lg', fourColour: profile.settings.fourColour }),
+          cardRow(table.hole, { size: 'lg', fourColour: profile.settings.fourColour }),
         ),
-        t.revealVillain && t.villain
+        table.revealVillain && table.villain
           ? el('div.lab-hand',
               el('div.faint', 'Them'),
-              cardRow(t.villain, { size: 'lg', fourColour: profile.settings.fourColour }),
+              cardRow(table.villain, { size: 'lg', fourColour: profile.settings.fourColour }),
             )
           : null,
       ),
@@ -187,11 +188,13 @@ export function renderLab(ctx) {
   function feedback(s) {
     const r = state.result;
     const shown = s.inputKind === 'percent' ? `${state.value}%`
-      : s.inputKind === 'chips' ? `${fmt.chips(state.value)} chips`
+      : s.inputKind === 'chips' ? t('{n} chips', { n: fmt.chips(state.value) })
         : String(state.value);
 
     return el(`div.feedback.${r.correct ? 'correct' : 'wrong'}`,
-      el('div.verdict', r.correct ? `✓ Correct — ${shown}` : `✗ Not quite — you said ${shown}`),
+      el('div.verdict', r.correct
+        ? t('✓ Correct — {answer}', { answer: shown })
+        : t('✗ Not quite — you said {answer}', { answer: shown })),
       el('div.stack-sm', r.lines.map((line) => el('div', richText(line)))),
       r.visual && r.visual.have !== undefined
         ? renderGauge({ need: r.visual.need, have: r.visual.have, needLabel: 'Price demands', haveLabel: 'Your hand has' })
@@ -209,7 +212,8 @@ export function renderLab(ctx) {
           el('span', { style: { fontSize: '1.6rem' } }, '🎛️'),
           el('div',
             el('div', { style: { fontWeight: '650' } }, 'The Lab'),
-            el('div.faint', `Spot ${state.index + 1} of ${spots.length} · ${labelFor(s.type)}`),
+            el('div.faint', t('Spot {n} of {total} · {kind}',
+              { n: state.index + 1, total: spots.length, kind: labelFor(s.type) })),
           ),
         ),
         el('div.row',
@@ -250,7 +254,11 @@ export function renderLab(ctx) {
 }
 
 function labelFor(type) {
-  return { price: 'name the price', size: 'size the bet', decide: 'make the call' }[type] || type;
+  return {
+    price: t('name the price'),
+    size: t('size the bet'),
+    decide: t('make the call'),
+  }[type] || type;
 }
 
 /** Entry screen: says what the Lab is for before dropping you into it. */

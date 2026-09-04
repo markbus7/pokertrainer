@@ -85,7 +85,11 @@ export function renderWalkthrough(ctx, params) {
       const before = profile.level;
       profile.addXp(10);
       if (profile.level > before) {
-        toast({ icon: profile.rank.emoji, title: `Level ${profile.level} — ${profile.rank.name}`, desc: profile.rank.blurb });
+        toast({
+          icon: profile.rank.emoji,
+          title: t('Level {n} — {rank}', { n: profile.level, rank: t(profile.rank.name) }),
+          desc: t(profile.rank.blurb),
+        });
       }
     }
     draw();

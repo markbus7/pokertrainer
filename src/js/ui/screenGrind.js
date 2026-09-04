@@ -7,6 +7,7 @@
 import { el, fmt, toast, sparkline } from './dom.js';
 import { STAKES, stakeFor, bankrollAdvice } from '../state/stats.js';
 import { checkAchievements } from '../state/achievements.js';
+import { t } from '../i18n/index.js';
 
 export function renderGrind(ctx) {
   const { profile, go } = ctx;
@@ -21,7 +22,11 @@ export function renderGrind(ctx) {
 
   const sit = (stake) => {
     if (bankroll < stake.buyIn) {
-      return toast({ icon: '🚫', title: 'Not enough for a buy-in', desc: `${stake.name} costs ${fmt.money(stake.buyIn)}.` });
+      return toast({
+        icon: '🚫',
+        title: 'Not enough for a buy-in',
+        desc: t('{stake} costs {money}.', { stake: stake.name, money: fmt.money(stake.buyIn) }),
+      });
     }
     const direction = STAKES.indexOf(stake) > STAKES.indexOf(current) ? 'up'
       : STAKES.indexOf(stake) < STAKES.indexOf(current) ? 'down' : 'same';
@@ -54,11 +59,13 @@ export function renderGrind(ctx) {
 
     sessions.length >= 2
       ? el('div.panel',
-          el('div.panel-title', el('h3', 'Your results'), el('span.faint', `${sessions.length} sessions`)),
+          el('div.panel-title', el('h3', 'Your results'),
+            el('span.faint', t('{n} sessions', { n: sessions.length }))),
           sparkline(curve, { color: running >= 0 ? '#3ecf8e' : '#f2555a' }),
           el('div.spread', { style: { marginTop: '8px' } },
-            el('span.faint', `${fmt.chips(sessions.reduce((s, x) => s + (x.hands || 0), 0))} hands`),
-            el('span.faint', `Lifetime ${fmt.bb(running)}`),
+            el('span.faint', t('{n} hands',
+              { n: fmt.chips(sessions.reduce((sum, x) => sum + (x.hands || 0), 0)) })),
+            el('span.faint', t('Lifetime {amount}', { amount: fmt.bb(running) })),
           ),
         )
       : null,
@@ -82,13 +89,17 @@ export function renderGrind(ctx) {
               el('div.row',
                 el('h3', { style: { margin: 0 } }, stake.name),
                 isCurrent ? el('span.badge.gold', 'current') : null,
-                rolled ? el('span.badge.green', 'rolled') : el('span.badge.red', `needs ${fmt.money(stake.minBankroll)}`),
+                rolled
+                  ? el('span.badge.green', 'rolled')
+                  : el('span.badge.red', t('needs {money}', { money: fmt.money(stake.minBankroll) })),
               ),
-              el('span.faint.mono', `${fmt.money(stake.buyIn)} buy-in`),
+              el('span.faint.mono', t('{money} buy-in', { money: fmt.money(stake.buyIn) })),
             ),
             el('div.faint', { style: { margin: '8px 0 12px' } }, stake.blurb),
             el('div.spread',
-              el('span.faint', affordable ? `${buyIns.toFixed(0)} buy-ins deep` : 'cannot afford a buy-in'),
+              el('span.faint', affordable
+                ? t('{n} buy-ins deep', { n: buyIns.toFixed(0) })
+                : 'cannot afford a buy-in'),
               el('button.btn.sm', {
                 disabled: !affordable,
                 class: rolled ? 'primary' : '',
