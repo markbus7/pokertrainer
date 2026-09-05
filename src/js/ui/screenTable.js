@@ -6,13 +6,16 @@
 import { el, mount, toast, fmt } from './dom.js';
 import { t } from '../i18n/index.js';
 import { renderFelt } from './feltView.js';
-import { createTable } from '../engine/table.js';
+import { createTable, STREETS } from '../engine/table.js';
 import { botAction, getProfile, pickOpponents } from '../engine/bots.js';
 import { VARIANTS, VARIANT_KEYS } from '../engine/variants.js';
-import { equityVsField } from '../core/equity.js';
+import { equityVsField, outsToImprove } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, spr } from '../core/odds.js';
 import { evaluateHand, describeScore, categoryOf, CAT } from '../core/evaluator.js';
-import { judgeDecision } from '../core/judge.js';
+import { judgeSpot } from '../core/coach.js';
+import { conceptOf } from '../core/spotConcept.js';
+import { moduleMeta } from '../data/curriculum.js';
+import { review } from '../state/spacing.js';
 import { SessionStats, leakReport, stakeFor, bankrollAdvice } from '../state/stats.js';
 import { HandRecorder, keepHand } from '../state/handHistory.js';
 import { checkAchievements } from '../state/achievements.js';
@@ -68,6 +71,12 @@ export function renderTable(ctx, params = {}) {
     logLines: [],
     recorder: null,
     savedHand: null,
+    // Who took the lead on each street, so a flop decision knows whether it
+    // is a continuation bet. The engine's lastAggressor is reset per street,
+    // and "were you the preflop raiser" is a question about the street before.
+    aggressor: {},
+    opener: null,
+    learned: [],
   };
   if (grind) profile.setBankroll(profile.data.bankroll - buyInCost);
 
@@ -113,6 +122,9 @@ export function renderTable(ctx, params = {}) {
     session.verdict = null;
     session.snapshot = null;
     session.savedHand = null;
+    session.aggressor = {};
+    session.opener = null;
+    session.learned = [];
     log(t('— Hand #{n} —', { n: table.handNumber }), true);
     draw();
     step();
@@ -143,6 +155,10 @@ export function renderTable(ctx, params = {}) {
       if (session.cancelled || table.handOver) return;
       const action = botAction(table, actor, rng);
       const label = describeAction(action, table, actor, actor.name);
+      if (action.type === 'bet' || action.type === 'raise') {
+        session.aggressor[table.street] = actor.id;
+        if (table.street === 'preflop' && !session.opener) session.opener = actor.position;
+      }
       session.recorder.act(table, action);
       log(label);
       draw();
@@ -151,12 +167,19 @@ export function renderTable(ctx, params = {}) {
     return null;
   }
 
-  /** What the coach knows at the moment it becomes your turn. */
+  /**
+   * What the coach knows at the moment it becomes your turn.
+   *
+   * This carries the whole spot rather than just the price, because the price
+   * is only the right question in some of them. The seat, the board and what
+   * you are holding are what say which skill the decision is really about.
+   */
   function takeSnapshot() {
     const live = table.contestants.filter((p) => !p.isHero).length;
     const toCall = Math.max(0, table.currentBet - hero.committed);
     const pot = table.totalPot;
     const equity = equityVsField(hero.hole, table.board, Math.max(1, live), table.variant, rng, 900);
+    const previous = STREETS[Math.max(0, STREETS.indexOf(table.street) - 1)];
     return {
       equity,
       toCall,
@@ -165,14 +188,56 @@ export function renderTable(ctx, params = {}) {
       opponents: live,
       spr: spr(table.effectiveStack(hero), pot),
       street: table.street,
+      // Everything the coach needs to name the skill this spot is asking.
+      hole: hero.hole.slice(),
+      board: table.board.slice(),
+      position: hero.position,
+      bigBlind: table.bigBlind,
+      effectiveStack: table.effectiveStack(hero),
+      currentBet: table.currentBet,
+      // First in means nobody has voluntarily put money in yet — not merely
+      // that nobody has raised. A limper leaves currentBet at the big blind,
+      // and treating that as first in would ask the opening chart about a
+      // seat it has no opinion on.
+      firstIn: table.street === 'preflop' && !table.history.some((h) => h.street === 'preflop'
+        && (h.type === 'call' || h.type === 'bet' || h.type === 'raise')),
+      raiser: session.opener,
+      wasAggressor: session.aggressor[previous] === HERO_ID,
+      madeCategory: table.board.length
+        ? categoryOf(evaluateHand(hero.hole, table.board, table.variant))
+        : CAT.HIGH_CARD,
+      outs: table.board.length >= 3 ? outsToImprove(hero.hole, table.board, table.variant) : 0,
     };
+  }
+
+  /**
+   * One decision, recorded against the skill it exercised.
+   *
+   * Playing used to feed nothing: a hand was worth a few XP and counted
+   * toward no skill, so the ladder could only be climbed by answering
+   * multiple-choice questions. A decision at a table is better evidence than
+   * a drill answer — nobody told you which skill it was — so it counts the
+   * same way, under the name the coach gave it.
+   */
+  function recordLearning(verdict) {
+    const id = verdict.concept.id;
+    const right = verdict.level !== 'bad';
+    profile.recordDrill(id, right);
+    review(profile, id, right);
+    const meta = moduleMeta(id);
+    session.learned.push({ id, name: meta ? meta.name : id, right });
+    // Getting it right at a table is worth more than getting it right in a
+    // drill, and getting it wrong still teaches — so it is never zero.
+    profile.addXp(right ? 12 : 4);
   }
 
   function heroAct(action) {
     if (session.cancelled || table.handOver || !table.actor || !table.actor.isHero) return;
     const snap = session.snapshot || takeSnapshot();
-    const verdict = judge(action, snap, table);
+    const verdict = judgeSpot({ ...snap, action: action.type, amount: action.amount });
     session.verdict = verdict;
+    recordLearning(verdict);
+    if (action.type === 'bet' || action.type === 'raise') session.aggressor[table.street] = HERO_ID;
     stats.recordDecision({ kind: action.type, verdict: verdict.level, street: table.street });
     stats.recordAction(table.street, action.type, { facingRaise: snap.toCall > table.bigBlind });
     if (table.street !== 'preflop') stats.markStreet(table.street);
@@ -229,8 +294,6 @@ export function renderTable(ctx, params = {}) {
     };
     checkAchievements(profile, events).forEach((a) => toast({ icon: a.icon, title: a.name, desc: a.description }));
 
-    // Small XP for playing hands: volume is part of the job.
-    profile.addXp(net > 0 ? 6 : 3);
     draw();
   }
 
@@ -438,8 +501,24 @@ export function renderTable(ctx, params = {}) {
     const summary = stats.summary();
     const isHeroTurn = table.actor && table.actor.isHero && !table.handOver;
 
+    // Naming the skill before you act is the whole point of playing to learn:
+    // at a table nobody tells you which chapter the spot belongs to, and
+    // working that out is most of the job. It says what kind of question this
+    // is, never what the answer is.
+    const spot = isHeroTurn && snap ? conceptOf(snap) : null;
+    const spotMeta = spot ? moduleMeta(spot.id) : null;
+
     mount(coachHost,
       el('h3', '🧭 Coach'),
+      spot
+        ? el('div.spot-tag',
+            el('span.spot-icon', spotMeta ? spotMeta.icon : '🎯'),
+            el('div',
+              el('div.spot-name', spotMeta ? t(spotMeta.name) : spot.id),
+              el('div.spot-why', t(spot.why)),
+            ),
+          )
+        : null,
       isHeroTurn && snap
         ? el('div',
             metric('Your equity', fmt.pct(snap.equity, 1), snap.equity >= snap.needed ? 'good' : 'bad'),
@@ -463,7 +542,26 @@ export function renderTable(ctx, params = {}) {
         ? el(`div.verdict-box.${session.verdict.level}`,
             el('div.head', session.verdict.head),
             el('div', t(session.verdict.body, session.verdict.params)),
+            session.verdict.better
+              ? el('div.verdict-better', t('Instead:'), ' ', t(session.verdict.better, session.verdict.params))
+              : null,
+            // Straight from the mistake into the chapter that explains it —
+            // the moment you want the theory is the moment it cost you.
+            session.verdict.level === 'bad' && moduleMeta(session.verdict.concept.id)
+              ? el('button.btn.sm.ghost.block', { style: { marginTop: '10px' },
+                onclick: () => go('walkthrough', { module: session.verdict.concept.id }) },
+              t('Teach me {skill}', { skill: t(moduleMeta(session.verdict.concept.id).name) }))
+              : null,
           )
+        : null,
+
+      session.learned.length
+        ? el('div', { style: { marginTop: '16px' } },
+            el('h3', t('🎓 What this hand asked you')),
+            el('div.stack-sm', session.learned.map((entry) => el('div.learned-row',
+              el(`span.${entry.right ? 'right' : 'wrong'}`, entry.right ? '✓' : '✗'),
+              el('span', t(entry.name)),
+            ))))
         : null,
 
       el('h3', { style: { marginTop: '18px' } }, '📊 This session'),
@@ -498,22 +596,6 @@ export function renderTable(ctx, params = {}) {
 }
 
 /* ---------------- coaching ---------------- */
-
-/**
- * Grade a decision. The grading itself lives in core/judge.js so that the
- * replay screen says exactly the same thing about the hand afterwards.
- */
-function judge(action, snap, table) {
-  return judgeDecision({
-    action: action.type,
-    equity: snap.equity,
-    needed: snap.needed,
-    toCall: snap.toCall,
-    pot: snap.pot,
-    amount: action.amount,
-    currentBet: table.currentBet,
-  });
-}
 
 /* ---------------- helpers ---------------- */
 

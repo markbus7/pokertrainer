@@ -169,6 +169,47 @@ await step('a second hand deals cleanly', async () => {
 });
 if (SHOT) await page.screenshot({ path: `${SHOT}/06-showdown.png` });
 
+await step('playing a hand teaches a named skill and counts toward it', async () => {
+  // The point of the whole thing: a decision at a table is graded against
+  // the skill it exercises and recorded the same way a drill answer is.
+  // Before this, playing fed nothing at all — the ladder could only be
+  // climbed by answering multiple-choice questions.
+  // Via the dashboard: a goto to the hash we are already on is a fragment
+  // navigation, so the previous step's half-played hand would still be there
+  // and there would be no Deal button to click.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.felt', { timeout: 5000 });
+  await page.click('button.btn.primary.lg');
+  await page.waitForSelector('.action-buttons button', { timeout: 20000 });
+
+  const named = await page.textContent('.spot-tag');
+  if (!named || !named.trim()) throw new Error('the coach did not name the skill before you acted');
+  console.log(`      before acting: ${named.replace(/\s+/g, ' ').trim().slice(0, 80)}`);
+
+  const before = await page.evaluate(async () => {
+    const { Profile } = await import('/src/js/state/profile.js');
+    const p = Profile.load();
+    return { xp: p.xp, drills: JSON.stringify(p.data.drills) };
+  });
+
+  const act = (await page.$('.action-buttons .btn.success')) || (await page.$('.action-buttons .btn'));
+  await act.click();
+  await page.waitForSelector('.verdict-box', { timeout: 8000 });
+  const verdict = await page.textContent('.verdict-box');
+  const learned = await page.textContent('.learned-row');
+  console.log(`      graded: ${verdict.replace(/\s+/g, ' ').trim().slice(0, 80)}`);
+  console.log(`      recorded against: ${learned.replace(/\s+/g, ' ').trim()}`);
+
+  const after = await page.evaluate(async () => {
+    const { Profile } = await import('/src/js/state/profile.js');
+    const p = Profile.load();
+    return { xp: p.xp, drills: JSON.stringify(p.data.drills) };
+  });
+  if (after.drills === before.drills) throw new Error('the decision was not recorded against any skill');
+  if (after.xp <= before.xp) throw new Error('playing a decision earned nothing');
+});
+
 await step('a misplayed hand is recorded and replays', async () => {
   // Played inside the page against the real engine, through the same recorder
   // the table screen uses. Driving the UI to a bad decision would depend on

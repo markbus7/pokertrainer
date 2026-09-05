@@ -69,18 +69,31 @@ export function renderHome(ctx) {
       ),
     ),
 
-    /* ---- next step ---- */
-    el('div.panel',
-      el('div.panel-title', el('h3', '▶ Pick up where you left off')),
+    /* ---- next step: the table, with the lesson behind it ---- */
+    // Playing is the front door now. Every decision at a table is graded
+    // against the skill it exercises and counts toward mastery the same as a
+    // drill answer, so sitting down is not a break from training — it is the
+    // training, and the lesson is what you open when the coach names
+    // something you do not know yet.
+    el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
+      el('div.panel-title', el('h3', '▶ Sit down and play')),
       el('div.spread',
         el('div.row',
-          el('div', { style: { fontSize: '2rem' } }, recommended.icon),
+          el('div', { style: { fontSize: '2rem' } }, '🃏'),
           el('div',
-            el('div', { style: { fontWeight: '650' } }, recommended.name),
-            el('div.faint', describeProgress(profile, recommended.id)),
+            el('div', { style: { fontWeight: '650' } },
+              t('Six seats, and a coach that names the skill before you act')),
+            el('div.faint', t('Every decision counts toward a skill. {weakest} is the one to work on.',
+              { weakest: t(recommended.name) })),
           ),
         ),
-        el('button.btn.primary.lg', { onclick: () => go('learn', { module: recommended.id }) }, 'Train this'),
+        el('button.btn.primary.lg', { onclick: () => go('play') }, 'Play a hand'),
+      ),
+      el('div.row', { style: { marginTop: '12px', flexWrap: 'wrap' } },
+        el('span.faint', t('Rather read first?')),
+        el('button.btn.sm.ghost', { onclick: () => go('learn', { module: recommended.id }) },
+          t('The {module} lesson', { module: t(recommended.name) })),
+        el('span.faint', describeProgress(profile, recommended.id)),
       ),
     ),
 
@@ -90,7 +103,7 @@ export function renderHome(ctx) {
     /* ---- quick actions ---- */
     el('div.grid.cols-3',
       quickCard('🎛️', 'The Lab', 'Solve spots at a table — type the equity, size the bet. No multiple choice.', 'Open the Lab', () => go('lab')),
-      quickCard('🃏', 'Play a Table', 'Six seats, real opponents, a coach watching every decision.', 'Sit down', () => go('play')),
+      quickCard('🔍', 'Hand review', 'The hands you misplayed, replayed one action at a time so you can see where they turned.', 'Look back', () => go('review')),
       quickCard('💰', 'Bankroll Challenge', t('Climb from NL2 to NL500. You are at {stake} with {money}.', { stake: stake.name, money: fmt.money(profile.data.bankroll) }), 'Grind', () => go('grind')),
     ),
 
@@ -191,12 +204,13 @@ function mistakesPanel(go) {
 
 function describeProgress(profile, moduleId) {
   const stats = profile.drillStats(moduleId);
-  if (!stats.attempts) return 'Not started yet — begin with the lesson.';
+  if (!stats.attempts) return t('Not started yet.');
   const acc = profile.accuracy(moduleId);
-  if (acc === null) return `${stats.attempts} attempts so far. Keep going.`;
-  if (acc >= 0.9) return `${fmt.pct(acc)} accuracy — nearly mastered.`;
-  if (acc >= 0.7) return `${fmt.pct(acc)} accuracy — solid, but there is room.`;
-  return `${fmt.pct(acc)} accuracy — this is your weakest skill right now.`;
+  if (acc === null) return t('{n} so far. Keep going.', { n: stats.attempts });
+  const pct = fmt.pct(acc);
+  if (acc >= 0.9) return t('{pct} right — nearly mastered.', { pct });
+  if (acc >= 0.7) return t('{pct} right — solid, but there is room.', { pct });
+  return t('{pct} right — this is your weakest skill right now.', { pct });
 }
 
 function quickCard(icon, title, body, cta, onclick) {

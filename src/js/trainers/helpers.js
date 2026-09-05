@@ -2,6 +2,9 @@
 
 import { shuffle, randInt, pick } from '../core/rng.js';
 import { cardsToString } from '../core/cards.js';
+// Board reading moved to core so the table's coach grades a continuation bet
+// against the same texture the drills do.
+export { describeTexture } from '../core/board.js';
 
 /** Build shuffled options with a known-correct key. */
 export function buildChoices(rng, correctLabel, distractorLabels, extra = {}) {
@@ -61,26 +64,3 @@ export const cardText = cardsToString;
 export { pick, randInt, shuffle };
 
 /** Random board texture description, for coaching language. */
-export function describeTexture(board) {
-  const ranks = board.map((c) => (c >> 2) + 2);
-  const suits = board.map((c) => c & 3);
-  const suitCounts = [0, 0, 0, 0];
-  for (const s of suits) suitCounts[s]++;
-  const maxSuit = Math.max(...suitCounts);
-  const sorted = [...new Set(ranks)].sort((a, b) => b - a);
-  const paired = ranks.length !== new Set(ranks).size;
-  const connected = sorted.length >= 2 && (sorted[0] - sorted[sorted.length - 1]) <= 4;
-  const highCard = Math.max(...ranks);
-
-  const tags = [];
-  if (maxSuit >= 3) tags.push('monotone');
-  else if (maxSuit === 2) tags.push('two-tone');
-  else tags.push('rainbow');
-  if (paired) tags.push('paired');
-  if (connected) tags.push('connected');
-  if (highCard >= 13) tags.push('ace/king-high');
-  else if (highCard <= 9) tags.push('low');
-
-  const wet = (maxSuit >= 2 ? 1 : 0) + (connected ? 1 : 0) + (highCard <= 11 ? 1 : 0);
-  return { tags, wet: wet >= 2, dry: wet === 0, paired, monotone: maxSuit >= 3, twoTone: maxSuit === 2, highCard };
-}

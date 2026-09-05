@@ -6,7 +6,7 @@ import { generateQuestion, generateGauntlet, DRILL_MODULE_IDS, difficultyForLeve
 import { MODULE_META, unlockedModules, recommendedModule } from '../src/js/data/curriculum.js';
 import { makeRng } from '../src/js/core/rng.js';
 
-/** Earn a rank properly: the lessons, the drilling, and then the XP. */
+/** Earn a rank properly: the lessons, the drilling, the hands, then the XP. */
 const promoteTo = (p, level) => {
   const rank = RANKS[level - 1];
   const req = rank.requires || {};
@@ -16,6 +16,7 @@ const promoteTo = (p, level) => {
   for (let i = 0; i < (req.mastered || 0); i++) { p.markWalkthroughComplete(ids[i]); drill(ids[i], 30); }
   for (let i = 0; i < (req.solid || 0); i++) drill(ids[i], Math.max(0, 15 - p.drillStats(ids[i]).attempts));
   for (let i = 0; i < (req.lessons || 0); i++) p.markWalkthroughComplete(ids[i]);
+  if (req.hands) p.data.handsPlayed = Math.max(p.data.handsPlayed, req.hands);
   if (p.xp < rank.xp) p.addXp(rank.xp - p.xp);
   return p;
 };
@@ -188,8 +189,21 @@ describe('rank requirements are reachable', () => {
     }
   });
 
+  it('asks for hands played from the moment there is a table to play at', () => {
+    // Every other requirement can be met without ever sitting down. This is
+    // the one that says the ladder is for players, so it must actually be
+    // there — and it must not appear before the reader has a reason to play.
+    const withHands = RANKS.filter((r) => (r.requires || {}).hands);
+    assert(withHands.length >= RANKS.length - 2,
+      `only ${withHands.length} of ${RANKS.length} ranks ask for hands played`);
+    for (const rank of withHands) {
+      const rows = requirementRows(fresh(), rank);
+      assert(rows.some((r) => r.key === 'hands'), `${rank.name} hides its hands requirement`);
+    }
+  });
+
   it('never eases off as the ladder climbs', () => {
-    const keys = ['lessons', 'solid', 'mastered'];
+    const keys = ['lessons', 'solid', 'mastered', 'hands'];
     for (let i = 2; i < RANKS.length; i++) {
       for (const key of keys) {
         const prev = (RANKS[i - 1].requires || {})[key] || 0;

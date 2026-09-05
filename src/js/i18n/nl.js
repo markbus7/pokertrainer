@@ -3012,4 +3012,92 @@ export const NL = {
   'See results →': 'Bekijk resultaten →',
   'Next spot →': 'Volgende spot →',
   'Leave': 'Verlaten',
+
+  /* ---- The coach at the table: what the spot asks, and how it went ---- */
+
+  'Nobody has opened. This is your opening range.': 'Niemand heeft geopend. Dit is je openingsrange.',
+  'Somebody opened. This is 3-bet, call or fold.': 'Iemand heeft geopend. Dit is 3-betten, callen of folden.',
+  'You are in the blinds with a price. This is defending your seat.':
+    'Je zit in de blinds met een prijs. Dit is je plek verdedigen.',
+  'The stack is barely bigger than the pot. This is a commitment decision.':
+    'De stack is nauwelijks groter dan de pot. Dit is een beslissing over vastzitten.',
+  'You are drawing and being charged for it. Count the outs, then check the price.':
+    'Je trekt en je moet ervoor betalen. Tel de outs en kijk dan naar de prijs.',
+  'You are ahead and they are betting. What they do it with decides your answer.':
+    'Jij staat voor en zij betten. Waarmee ze dat doen bepaalt je antwoord.',
+  'Nothing made and a price to pay. This is arithmetic.':
+    'Niets gemaakt en een prijs te betalen. Dit is rekenwerk.',
+  'A hand that beats a bluff and not much else. This is how much you have to defend.':
+    'Een hand die een bluff verslaat en verder weinig. Dit gaat over hoeveel je moet verdedigen.',
+  'Several players in and a price to pay. Start with the arithmetic.':
+    'Meerdere spelers erin en een prijs te betalen. Begin met het rekenwerk.',
+  'You raised before the flop and they checked. This is the continuation bet.':
+    'Je raisede voor de flop en zij checkten. Dit is de continuation bet.',
+  'Nothing to show down. Betting here has to make them fold.':
+    'Niets om te showen. Hier betten moet ze doen folden.',
+  'You are well ahead and they have checked. Getting paid is the whole question.':
+    'Je staat ruim voor en zij hebben gecheckt. Betaald krijgen is de hele vraag.',
+  'A middling hand and chips behind. How big this pot gets is the decision.':
+    'Een middelmatige hand en chips achter je. Hoe groot deze pot wordt is de beslissing.',
+  'Limping gives the pot away': 'Limpen geeft de pot weg',
+  'Calling the big blind first in lets everyone behind you play cheaply while you hold a hand you were not confident enough to raise. Raise {hand} or fold it.':
+    'Als eerste de big blind callen laat iedereen achter je goedkoop meespelen terwijl jij een hand hebt waarmee je niet durfde te raisen. Raise {hand} of gooi hem weg.',
+  'Right side of the chart': 'De goede kant van de chart',
+  'Correct against the open': 'Juist tegen de open',
+  'Outside the range': 'Buiten de range',
+  '{hand} is not in the {pct} of hands this seat plays. Hands like this are where a losing player quietly leaks their stack: they look playable, and they are dominated by everything that calls.':
+    '{hand} zit niet in de {pct} van de handen die deze plek speelt. Bij handen als deze lekt een verliezende speler stilletjes zijn stack weg: ze zien er speelbaar uit, en ze worden gedomineerd door alles dat callt.',
+  'You folded a hand this seat plays': 'Je foldde een hand die deze plek speelt',
+  '{hand} is inside the range for {seat}. Folding it is not safe — it is passing up the pots this seat is supposed to win, which is where the money in position comes from.':
+    '{hand} zit binnen de range voor {seat}. Hem folden is niet veilig — je laat de potten liggen die deze plek hoort te winnen, en daar komt het geld van positie vandaan.',
+  'Checked back a hand that wanted to bet': 'Je checkte een hand die wilde betten',
+  'You have {equity} on a {tags} board and they have shown weakness. Checking here wins the smallest pot available with the best hand.':
+    'Je hebt {equity} op een {tags} board en zij hebben zwakte getoond. Hier checken wint de kleinst mogelijke pot met de beste hand.',
+  'Bet big': 'Bet groot',
+  'Right bet on the right board': 'De juiste bet op het juiste board',
+  'A {tags} board gives them draws, and a big bet charges every one of them while you are ahead.':
+    'Een {tags} board geeft ze draws, en een grote bet laat elke draw betalen terwijl jij voorstaat.',
+  'A {tags} board missed them as often as it missed you. Small is enough, and it keeps their weak hands in.':
+    'Een {tags} board miste hen even vaak als jou. Klein is genoeg, en het houdt hun zwakke handen erin.',
+  'Too small for this board': 'Te klein voor dit board',
+  'Bigger than it needs to be': 'Groter dan nodig',
+  'A {tags} board is full of draws. At {size} of the pot you are charging them almost nothing to draw out.':
+    'Een {tags} board zit vol draws. Met {size} van de pot laat je ze bijna niets betalen om je in te halen.',
+  'Nothing much can beat you on a {tags} board and nothing much is drawing. A smaller bet gets called by more of the hands you beat.':
+    'Op een {tags} board kan weinig je verslaan en trekt er weinig. Een kleinere bet wordt gecalld door meer van de handen die je verslaat.',
+  'Bet about three quarters': 'Bet ongeveer driekwart',
+  'Bet about a third': 'Bet ongeveer een derde',
+  'Good spot to bet': 'Goede plek om te betten',
+  'A {tags} board missed their calling range too. A small bet folds out everything that missed, and that is most of what they have.':
+    'Een {tags} board miste hun callrange ook. Een kleine bet foldt alles weg dat miste, en dat is het grootste deel van wat ze hebben.',
+  'A bet was free money here': 'Een bet was hier gratis geld',
+  'You have {equity}, but on a {tags} board so do they. This is the flop your whole range can bet small on, and checking gives up a pot nobody wanted.':
+    'Je hebt {equity}, maar op een {tags} board hebben zij dat ook. Dit is de flop waarop je hele range klein kan betten, en checken geeft een pot op die niemand wilde.',
+  'Bet small': 'Bet klein',
+  'Bluffing into the wrong board': 'Bluffen op het verkeerde board',
+  'You have {equity} on a {tags} board. That is a board they connect with — too many of their hands will call, and the ones that fold were folding anyway.':
+    'Je hebt {equity} op een {tags} board. Dat is een board waar zij op aansluiten — te veel van hun handen callen, en die die folden foldden toch al.',
+  'Check and give up cheaply': 'Check en geef goedkoop op',
+  'Right to give up': 'Terecht opgegeven',
+  '{equity} on a {tags} board. They have too many hands that continue — betting here donates chips. Checking costs nothing and keeps the pot small.':
+    '{equity} op een {tags} board. Ze hebben te veel handen die doorgaan — hier betten doneert chips. Checken kost niets en houdt de pot klein.',
+  '🎓 What this hand asked you': '🎓 Wat deze hand van je vroeg',
+  'Teach me {skill}': 'Leer me {skill}',
+  '▶ Sit down and play': '▶ Ga zitten en speel',
+  'Six seats, and a coach that names the skill before you act':
+    'Zes plekken, en een coach die de vaardigheid benoemt voordat je handelt',
+  'Every decision counts toward a skill. {weakest} is the one to work on.':
+    'Elke beslissing telt mee voor een vaardigheid. {weakest} is degene om aan te werken.',
+  'Play a hand': 'Speel een hand',
+  'Rather read first?': 'Liever eerst lezen?',
+  'The {module} lesson': 'De les {module}',
+  'Hand review': 'Handen terugkijken',
+  'The hands you misplayed, replayed one action at a time so you can see where they turned.':
+    'De handen die je verkeerd speelde, actie voor actie teruggespeeld zodat je ziet waar ze kantelden.',
+  'Look back': 'Terugkijken',
+  'Not started yet.': 'Nog niet begonnen.',
+  '{n} so far. Keep going.': '{n} tot nu toe. Ga zo door.',
+  '{pct} right — nearly mastered.': '{pct} goed — bijna beheerst.',
+  '{pct} right — solid, but there is room.': '{pct} goed — solide, maar er is ruimte.',
+  '{pct} right — this is your weakest skill right now.': '{pct} goed — dit is nu je zwakste vaardigheid.',
 };

@@ -317,3 +317,39 @@ export function exactOutsEquity(outs, street) {
   // Flop, two cards to come: 1 - P(miss both).
   return 1 - ((47 - outs) / 47) * ((46 - outs) / 46);
 }
+
+/**
+ * Cards left in the deck that would give you a hand worth continuing with.
+ *
+ * countOuts needs to see the opponent's cards, which is right for a lesson
+ * where their hand is face up and wrong at a real table. This asks the
+ * question a player asks themselves — how many cards actually save me — and
+ * it is deliberately stricter than "any improvement": pairing your seven on a
+ * board with two overcards to it is an improvement and is not an out.
+ *
+ * What counts is a card reaching two pair or better (so sets, straights and
+ * flushes), plus pairing a hole card that outranks the whole board — the four
+ * draws the outs lesson names, and nothing else.
+ *
+ * Note that a flush draw with two overcards comes back as fifteen, not nine:
+ * the overcards are counted because they are outs, even though a player
+ * saying "I have a flush draw" means the nine. Read it as "cards that save
+ * me", not as the name of the draw.
+ */
+export function outsToImprove(hole, board, variant = HOLDEM) {
+  if (board.length >= 5 || board.length < 3) return 0;
+  const now = categoryOf(evaluateHand(hole, board, variant));
+  if (now >= CAT.TWO_PAIR) return 0;
+  const seen = new Set([...hole, ...board]);
+  const boardHigh = Math.max(...board.map(rankOf));
+  const overcards = new Set(hole.filter((c) => rankOf(c) > boardHigh).map(rankOf));
+
+  let count = 0;
+  for (let card = 0; card < 52; card++) {
+    if (seen.has(card)) continue;
+    const after = categoryOf(evaluateHand(hole, [...board, card], variant));
+    if (after >= CAT.TWO_PAIR) { count++; continue; }
+    if (now === CAT.HIGH_CARD && after === CAT.PAIR && overcards.has(rankOf(card))) count++;
+  }
+  return count;
+}

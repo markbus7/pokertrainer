@@ -548,3 +548,33 @@ input[type="range"] {
 }
 
 .hand-card-label { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.66rem; }
+
+/* ---- the coach naming the spot ---- */
+
+.spot-tag {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(214, 168, 63, 0.08);
+  border: 1px solid var(--gold-dim);
+}
+.spot-icon { font-size: 1.3rem; line-height: 1.2; }
+.spot-name { font-weight: 650; font-size: 0.92rem; }
+.spot-why { font-size: 0.82rem; color: var(--text-dim); margin-top: 2px; }
+
+.verdict-better {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-weight: 550;
+}
+
+.learned-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.86rem;
+  padding: 4px 0;
+}
+.learned-row .right, .learned-row .wrong { width: 1em; flex: none; font-weight: 700; }
+.learned-row .right { color: var(--green); }
+.learned-row .wrong { color: var(--red); }
