@@ -24,7 +24,7 @@
  * every one of those pushes. These stay on the device that played them.
  */
 
-import { judgeDecision } from '../core/judge.js';
+import { judgeSpot } from '../core/coach.js';
 
 const STORAGE_KEY = 'poker-trainer.hands.v1';
 
@@ -297,10 +297,20 @@ export const frameCount = (hand) => hand.steps.length + 1;
  * the ones from here on.
  */
 export function reviewOf(hand) {
-  const verdicts = (hand.decisions || []).map((d) => ({ ...judgeDecision(d), decision: d }));
+  const verdicts = (hand.decisions || []).map((d) => ({ ...judgeSpot(d), decision: d }));
   const bb = hand.bigBlind || 1;
   const mistakes = verdicts.filter((v) => v.level === 'bad');
-  const worst = mistakes.reduce((best, v) => (!best || v.cost > best.cost ? v : best), null);
+  // A priced mistake outranks an unpriced one however small it is. A range
+  // error is real but costs over a career rather than in this pot, so it must
+  // not be allowed to sort above a call that burned eighty chips — and
+  // inventing a number for it so the sort works would be worse.
+  const worst = mistakes.reduce((best, v) => {
+    if (!best) return v;
+    const priced = v.costKnown !== false;
+    const bestPriced = best.costKnown !== false;
+    if (priced !== bestPriced) return priced ? v : best;
+    return v.cost > best.cost ? v : best;
+  }, null);
   const lostBb = -(hand.result.net || 0) / bb;
 
   if (worst) {
@@ -310,6 +320,7 @@ export function reviewOf(hand) {
       worst,
       worstIndex: verdicts.indexOf(worst),
       costBb: worst.cost / bb,
+      costKnown: worst.costKnown !== false,
       lostBb,
       headline: worst.head,
       street: worst.decision.street,
@@ -323,6 +334,7 @@ export function reviewOf(hand) {
       worst: null,
       worstIndex: -1,
       costBb: 0,
+      costKnown: true,
       lostBb,
       headline: 'Lost, but played right',
       street: hand.result.reason === 'showdown' ? 'river' : 'preflop',
@@ -335,6 +347,7 @@ export function reviewOf(hand) {
     worst: null,
     worstIndex: -1,
     costBb: 0,
+    costKnown: true,
     lostBb,
     headline: 'Nothing to fix',
     street: null,

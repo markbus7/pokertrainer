@@ -6,6 +6,9 @@ import { judgeDecision } from '../src/js/core/judge.js';
 import { coverage as generatedCoverage, untemplated } from '../tools/i18n-generated.mjs';
 import { generateQuestion, DRILL_MODULE_IDS } from '../src/js/trainers/index.js';
 import { makeRng } from '../src/js/core/rng.js';
+import { judgeSpot } from '../src/js/core/coach.js';
+import { conceptOf } from '../src/js/core/spotConcept.js';
+import { parseCards } from '../src/js/core/cards.js';
 
 describe('i18n: the mechanism', () => {
   it('falls back to English rather than showing a missing key', () => {
@@ -290,6 +293,73 @@ describe('i18n: the coach speaks Dutch too', () => {
     }
     assert(missing.size === 0,
       `no Dutch for:\n      ${[...missing].map((s) => s.slice(0, 70)).join('\n      ')}`);
+  });
+
+  it('has Dutch for everything the table coach can say', () => {
+    // The coach is the whole of "learning while playing": it names the skill
+    // before you act and explains after. A branch of it in English would land
+    // in the middle of a Dutch session, which is exactly the complaint that
+    // started this.
+    const missing = new Set();
+    const base = { pot: 100, bigBlind: 2, opponents: 1, effectiveStack: 200, currentBet: 0 };
+    const boards = ['Ks 7d 2c', '9h 8h 7s', '9h 8h 7h', '2c 7d Ts', 'Ah Kd Qc'];
+
+    for (const board of boards) {
+      for (const equity of [0.15, 0.45, 0.75, 0.95]) {
+        for (const action of ['bet', 'check']) {
+          for (const amount of [4, 9, 18]) {
+            const v = judgeSpot({
+              ...base, street: 'flop', toCall: 0, pot: 20, wasAggressor: true,
+              board: parseCards(board), hole: parseCards('Ad Qh'),
+              action, amount, equity, madeCategory: 0, outs: 0,
+            });
+            collect(v);
+          }
+        }
+      }
+    }
+    for (const position of ['UTG', 'HJ', 'CO', 'BTN', 'SB']) {
+      for (const hand of ['Ad As', '7d 2c', 'Ks Qh', 'Td 9d']) {
+        for (const action of ['raise', 'fold', 'call']) {
+          collect(judgeSpot({
+            ...base, street: 'preflop', toCall: 2, pot: 3, firstIn: true,
+            action, hole: parseCards(hand), position,
+          }));
+        }
+      }
+    }
+    // Every way the coach can name a spot, so no "why" line is left behind.
+    for (const street of ['preflop', 'flop', 'turn', 'river']) {
+      for (const toCall of [0, 20, 90]) {
+        for (const equity of [0.1, 0.3, 0.5, 0.7, 0.95]) {
+          for (const outs of [0, 8]) {
+            for (const made of [0, 1, 3]) {
+              for (const wasAggressor of [true, false]) {
+                for (const effectiveStack of [40, 400]) {
+                  const why = conceptOf({
+                    ...base, street, toCall, equity, outs, madeCategory: made,
+                    wasAggressor, effectiveStack, firstIn: street === 'preflop' && toCall === 0,
+                  }).why;
+                  if (needsTranslation(why) && !NL[why]) missing.add(why);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function collect(v) {
+      for (const text of [v.head, v.body, v.better, v.concept && v.concept.why]) {
+        if (!text || KEEP_ENGLISH.has(text) || !needsTranslation(text)) continue;
+        // preflopAdvice hands back a sentence it has already translated.
+        if (/opening range from/.test(text)) continue;
+        if (!NL[text]) missing.add(text);
+      }
+    }
+
+    assert(missing.size === 0,
+      `no Dutch for:\n      ${[...missing].map((s) => s.slice(0, 80)).join('\n      ')}`);
   });
 
   it('keeps the poker Check apart from the verb', () => {

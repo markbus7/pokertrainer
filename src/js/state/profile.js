@@ -6,6 +6,12 @@
  * the whole curriculum — ICM included — for somebody who had only ever
  * practised pot odds. XP still measures how much work you have put in; the
  * mastery requirements alongside it measure how widely.
+ *
+ * Hands played sits alongside them because every other requirement could be
+ * met without ever playing a hand. Skills are proved at the table now — a
+ * decision there counts toward mastery the same as a drill answer — so the
+ * ladder asks for both: that you can do it, and that you have done it where
+ * nobody tells you which skill the spot is testing.
  */
 
 import { masteryTier } from './mastery.js';
@@ -27,42 +33,42 @@ export const RANKS = [
   {
     level: 3, xp: 1100, name: 'Nit', emoji: '🪨',
     blurb: 'Tight and safe. Solid foundations, but too many folds.',
-    requires: { lessons: 2, solid: 2 },
+    requires: { lessons: 2, solid: 2, hands: 50 },
   },
   {
     level: 4, xp: 2300, name: 'Grinder', emoji: '⚙️',
     blurb: 'Putting in volume and making fewer mistakes.',
-    requires: { lessons: 3, solid: 3, mastered: 1 },
+    requires: { lessons: 3, solid: 3, mastered: 1, hands: 150 },
   },
   {
     level: 5, xp: 4200, name: 'Regular', emoji: '📊',
     blurb: 'You hold your own in any small-stakes game.',
-    requires: { lessons: 5, solid: 5, mastered: 2 },
+    requires: { lessons: 5, solid: 5, mastered: 2, hands: 400 },
   },
   {
     level: 6, xp: 7000, name: 'Crusher', emoji: '💪',
     blurb: 'Beating the games you play, consistently.',
-    requires: { lessons: 6, solid: 6, mastered: 3 },
+    requires: { lessons: 6, solid: 6, mastered: 3, hands: 800 },
   },
   {
     level: 7, xp: 11000, name: 'Shark', emoji: '🦈',
     blurb: 'Hunting weak players and finding thin value.',
-    requires: { lessons: 8, solid: 8, mastered: 5 },
+    requires: { lessons: 8, solid: 8, mastered: 5, hands: 1500 },
   },
   {
     level: 8, xp: 17000, name: 'Pro', emoji: '🎩',
     blurb: 'Poker pays your bills. Game selection is second nature.',
-    requires: { lessons: 10, solid: 10, mastered: 7 },
+    requires: { lessons: 10, solid: 10, mastered: 7, hands: 2500 },
   },
   {
     level: 9, xp: 26000, name: 'Elite', emoji: '👑',
     blurb: 'You beat other winning players.',
-    requires: { lessons: 12, solid: 12, mastered: 9 },
+    requires: { lessons: 12, solid: 12, mastered: 9, hands: 4000 },
   },
   {
     level: 10, xp: 40000, name: 'GTO Master', emoji: '🧠',
     blurb: 'Balanced, unexploitable, and ruthless when they are not.',
-    requires: { lessons: 12, solid: 12, mastered: 12 },
+    requires: { lessons: 12, solid: 12, mastered: 12, hands: 6000 },
   },
 ];
 
@@ -91,6 +97,10 @@ export function requirementRows(profile, rank) {
   if (req.lessons) rows.push({ key: 'lessons', label: 'Guided lessons finished', have: lessons, need: req.lessons });
   if (req.solid) rows.push({ key: 'solid', label: 'Skills at Solid or better', have: solid, need: req.solid });
   if (req.mastered) rows.push({ key: 'mastered', label: 'Skills Mastered', have: mastered, need: req.mastered });
+  // Hands played, because the other three can all be earned without ever
+  // sitting down. A ladder that a reader can climb by answering questions is
+  // a ladder for readers.
+  if (req.hands) rows.push({ key: 'hands', label: 'Hands played', have: profile.data.handsPlayed || 0, need: req.hands });
   return rows.map((r) => ({ ...r, met: r.have >= r.need }));
 }
 
