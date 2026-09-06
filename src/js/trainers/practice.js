@@ -19,7 +19,7 @@ import { countOuts, describeOuts, handEquity, exactOutsEquity, handPhrase } from
 import { requiredEquity, callEV, minimumDefenceFrequency, breakEvenBluffFrequency, spr, icmEquity } from '../core/odds.js';
 import { handKey } from '../core/cards.js';
 import { preflopAdvice, POSITIONS, POSITION_INFO, CHARTS, rangePercent } from '../data/ranges.js';
-import { readShape, explainShape, SHAPES, shapeByKey } from '../core/handShape.js';
+import { readShape, explainShape, shapePhrase, SHAPES, shapeByKey } from '../core/handShape.js';
 import {
   seatRing, seatName, seatChoices, playersAfter, preflopOrder, postflopOrder,
 } from '../core/seatMap.js';
@@ -574,7 +574,7 @@ export function shapeDecisionPractice(rng = makeRng()) {
 
   return feltSpot({
     prompt: t('You have {shape}. There is {pot} in the pot and they bet {bet}.',
-      { shape: t(read.shape.label), pot, bet }),
+      { shape: shapePhrase(read.shape), pot, bet }),
     question: t('Call or fold?'),
     hero,
     board,

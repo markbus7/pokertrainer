@@ -478,6 +478,65 @@ await step('a graded question can be copied out as text', async () => {
   console.log(`      copied ${text.split('\n').length} lines`);
 });
 
+await step('jargon explains itself wherever it appears, in both languages', async () => {
+  // Wrapped so that a failure here still hands the next step an English
+  // app: leaving the language switched knocks over every check that
+  // follows and buries the real failure under three fake ones.
+  try {
+    // The glossary was built on hand-written [[markup]], so it worked in the
+    // lessons and nowhere else — a reader met "flush draw" in a drill with no
+    // way to ask what it meant, which is exactly where they most need to.
+    const seen = { en: 0, nl: 0 };
+    for (const lang of ['en', 'nl']) {
+      await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(300);
+      // The language lives in the profile settings, so it is switched the way a
+      // reader switches it — through the chip in the header.
+      const wanted = lang.toUpperCase();
+      const chip = await page.$(`.lang-chip:not(.active):has-text("${wanted}")`);
+      if (chip) { await chip.click(); await page.waitForTimeout(400); }
+
+      for (const mod of ['outs', 'pot-odds', 'spr']) {
+        await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+        await page.goto(`${BASE}/#drill?module=${mod}`, { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(500);
+        const entry = await page.$('.drill-entry-input');
+        if (entry) { await entry.fill('1'); await page.click('.drill-entry button'); }
+        else { await (await page.$('.option')).click(); }
+        await page.waitForTimeout(300);
+        seen[lang] += await page.$$eval('.term', (n) => n.length);
+
+        // Budget: no single block may turn into a page of links.
+        const worst = await page.$$eval('.question, .feedback > div',
+          (blocks) => Math.max(0, ...blocks.map((b) => b.querySelectorAll('.term').length)));
+        if (worst > 3) throw new Error(`${lang}/${mod}: one block auto-linked ${worst} terms`);
+
+        // And a term must never be linked twice inside the same block.
+        const dupes = await page.$$eval('.question, .feedback > div', (blocks) => blocks.filter((b) => {
+          const words = [...b.querySelectorAll('.term')].map((x) => x.textContent.toLowerCase());
+          return new Set(words).size !== words.length;
+        }).length);
+        if (dupes) throw new Error(`${lang}/${mod}: the same word was linked twice in one block`);
+      }
+    }
+    if (!seen.en) throw new Error('no jargon was linked in English');
+    if (!seen.nl) throw new Error('no jargon was linked in Dutch');
+    console.log(`      linked ${seen.en} terms in English, ${seen.nl} in Dutch`);
+
+    // Tapping one has to actually explain it.
+    await page.click('.term');
+    await page.waitForTimeout(250);
+    const def = await page.$('.term-def');
+    if (!def) throw new Error('tapping a term did not open a definition');
+    if ((await def.textContent()).length < 40) throw new Error('the definition is empty');
+  } finally {
+    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(300);
+    const back = await page.$('.lang-chip:not(.active):has-text("EN")');
+    if (back) { await back.click(); await page.waitForTimeout(300); }
+  }
+});
+
 await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);
@@ -615,6 +674,11 @@ await step('no screen is half in English when the app is in Dutch', async () => 
     return page.evaluate(() => {
       const seen = new Set();
       for (const node of document.querySelectorAll('#screen *')) {
+        // A glossary chip is a word lifted out of a sentence this check
+        // already covers, and the jargon inside it is deliberately English in
+        // both languages. Reading it as a line of its own would report "pot
+        // odds" as untranslated every time the auto-linker marks one.
+        if (node.classList.contains('term')) continue;
         for (const child of node.childNodes) {
           if (child.nodeType !== 3) continue;
           const text = child.textContent.trim();

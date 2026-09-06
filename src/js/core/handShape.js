@@ -21,22 +21,34 @@ import { rankOf, suitOf, RANK_NAMES } from './cards.js';
 import { evaluateHand, categoryOf, CAT } from './evaluator.js';
 import { t } from '../i18n/index.js';
 
-/** Every shape the game names, in the order a player would say them. */
+/**
+ * Every shape the game names, in the order a player would say them.
+ *
+ * `label` is the name standing on its own — on a button, as an answer. It is
+ * capitalised and carries no article. `phrase` is the same thing inside a
+ * sentence, where "You have Flush draw" is not English and "Je hebt Flush
+ * draw" is not Dutch either. The two are separate strings because the article
+ * belongs to the language and the term itself deliberately does not: the
+ * jargon stays English in both.
+ */
 export const SHAPES = [
-  { key: 'made', label: 'A made hand', outs: 0 },
+  { key: 'made', label: 'A made hand', phrase: 'a made hand', outs: 0 },
   // A combo draw's count depends on the overlap — a card that is both a
   // heart and a straight card is one out, not two — so it is computed rather
   // than listed. The rest are fixed: nine, eight, four, six.
-  { key: 'combo', label: 'Flush draw and a straight draw', outs: null },
-  { key: 'flush-draw', label: 'Flush draw', outs: 9 },
-  { key: 'open-ended', label: 'Open-ended straight draw', outs: 8 },
-  { key: 'gutshot', label: 'Gutshot', outs: 4 },
-  { key: 'overcards', label: 'Two overcards', outs: 6 },
-  { key: 'backdoor-flush', label: 'Backdoor flush draw', outs: 0 },
-  { key: 'nothing', label: 'Nothing yet', outs: 0 },
+  { key: 'combo', label: 'Flush draw and a straight draw', phrase: 'a flush draw and a straight draw', outs: null },
+  { key: 'flush-draw', label: 'Flush draw', phrase: 'a flush draw', outs: 9 },
+  { key: 'open-ended', label: 'Open-ended straight draw', phrase: 'an open-ended straight draw', outs: 8 },
+  { key: 'gutshot', label: 'Gutshot', phrase: 'a gutshot', outs: 4 },
+  { key: 'overcards', label: 'Two overcards', phrase: 'two overcards', outs: 6 },
+  { key: 'backdoor-flush', label: 'Backdoor flush draw', phrase: 'a backdoor flush draw', outs: 0 },
+  { key: 'nothing', label: 'Nothing yet', phrase: 'nothing yet', outs: 0 },
 ];
 
 export const shapeByKey = (key) => SHAPES.find((s) => s.key === key);
+
+/** The name as it reads inside a sentence, article and all. */
+export const shapePhrase = (shape) => t(shape.phrase);
 
 /**
  * What two cards and a board add up to.
