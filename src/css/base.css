@@ -593,6 +593,11 @@ main {
   padding-top: 14px;
   border-top: 1px solid var(--border);
 }
+/* An armed answer, waiting on "how sure are you?" to send it. */
+.action-buttons .btn.chosen {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
 .confidence-btn { border-color: var(--gold-dim); }
 .confidence-btn:hover:not(:disabled) { background: var(--gold); color: #23180a; border-color: var(--gold); }
 
@@ -1014,7 +1019,7 @@ input, textarea, select { font-size: max(16px, 1rem); }
 
 /* ---- exercises asked over a real felt ---- */
 
-.felt.practice-felt {
+.felt.spot-felt {
   /* The game's felt is 16:10 and 420px tall because it has six seats around
      it. This one has a board and your two cards, so it is sized to them.
      Compounded with .felt because table.css loads after this file. */
@@ -1027,7 +1032,7 @@ input, textarea, select { font-size: max(16px, 1rem); }
   padding: 22px 14px;
   margin-bottom: 14px;
 }
-.felt.practice-felt .board-area {
+.felt.spot-felt .board-area {
   position: static;
   left: auto; top: auto;
   transform: none;
@@ -1035,21 +1040,24 @@ input, textarea, select { font-size: max(16px, 1rem); }
   justify-items: center;
   gap: 8px;
 }
-.felt.practice-felt .board { min-height: 0; }
-.felt.practice-felt::before { font-size: 6rem; }
-.practice-hole {
+.felt.spot-felt .board { min-height: 0; }
+.felt.spot-felt::before { font-size: 6rem; }
+.spot-hole {
   display: grid;
   justify-items: center;
   gap: 4px;
   position: relative;
   z-index: 1;
 }
-.practice-hole-label {
+.spot-hole.villain { opacity: 0.92; }
+.spot-hole-label {
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.62);
 }
+.felt.spot-felt .spot-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.felt.spot-felt .pot-chip { position: static; transform: none; }
 
 .practice-question { font-size: 1.08rem; font-weight: 650; margin-bottom: 12px; }
 
@@ -1063,3 +1071,44 @@ input, textarea, select { font-size: max(16px, 1rem); }
 @media (min-width: 640px) {
   .practice-options { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---- The seat ring, used to ask about position ---------------------- *
+   Same table as the game, stripped of everything the question is not
+   about: no pot, no board, no stacks. Compounded with .felt because
+   table.css loads after this file and would otherwise win. */
+.felt.seat-felt {
+  aspect-ratio: 16 / 9;
+  min-height: 300px;
+  max-height: 420px;
+  margin-bottom: 14px;
+}
+.felt.seat-felt .pot-chip,
+.felt.seat-felt .street-tag,
+.felt.seat-felt .board,
+.felt.seat-felt .seat-stack { display: none; }
+.felt.seat-felt .seat-pos:empty { display: none; }
+.felt.seat-felt::before { font-size: 7rem; }
+
+/* ---- Typing the answer instead of picking it ------------------------ */
+.drill-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.drill-entry-input {
+  flex: 1 1 120px;
+  min-width: 110px;
+  max-width: 200px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-bright);
+  background: var(--bg-raised);
+  color: var(--text);
+}
+.drill-entry-input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.drill-entry-unit { font-size: 1.3rem; font-weight: 700; color: var(--text-dim); }

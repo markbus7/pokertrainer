@@ -5,11 +5,73 @@
  */
 
 import { icmEquity, riskOfRuin, bankrollForRisk, bbPer100, rake } from '../core/odds.js';
+import { makeDeck, rankOf, suitOf, RANK_CHARS } from '../core/cards.js';
+import { evaluate, categoryOf, CAT } from '../core/evaluator.js';
+import { equityVsField } from '../core/equity.js';
 import { randInt, shuffle } from '../core/rng.js';
 import { PROFILES } from '../engine/bots.js';
 import { STAKES, bankrollAdvice } from '../state/stats.js';
-import { buildChoices, percentDistractors, pct } from './helpers.js';
+import { buildChoices, percentDistractors, attempt, pct } from './helpers.js';
 import { t } from '../i18n/index.js';
+
+/**
+ * These scenarios used to describe the hand in words — "you hold second pair
+ * on the river" — which asks the reader to picture a board instead of reading
+ * one. Each now names the holding it wants and the cards get dealt to match,
+ * so the words sit under a table you can actually look at.
+ */
+const HOLDINGS = {
+  'top-pair-good-kicker': (hero, board) => {
+    const score = evaluate([...hero, ...board]);
+    if (categoryOf(score) !== CAT.PAIR) return false;
+    const top = Math.max(...board.map(rankOf));
+    const pairs = hero.filter((c) => board.some((b) => rankOf(b) === rankOf(c)));
+    if (pairs.length !== 1 || rankOf(pairs[0]) !== top) return false;
+    const kicker = hero.find((c) => c !== pairs[0]);
+    return rankOf(kicker) >= 12;                    // queen or better
+  },
+  'second-pair': (hero, board) => {
+    const score = evaluate([...hero, ...board]);
+    if (categoryOf(score) !== CAT.PAIR) return false;
+    const ranks = [...new Set(board.map(rankOf))].sort((a, b) => b - a);
+    if (ranks.length < 2) return false;
+    return hero.some((c) => rankOf(c) === ranks[1]) && !hero.some((c) => rankOf(c) === ranks[0]);
+  },
+  'busted': (hero, board) => categoryOf(evaluate([...hero, ...board])) === CAT.HIGH_CARD,
+};
+
+/** Deal until the hand matches what the scenario says you are holding. */
+function dealHolding(rng, spec) {
+  if (!spec) return {};                       // a read question with no hand of your own
+  if (spec.boardOnly) {
+    return { board: shuffle(rng, makeDeck()).slice(0, spec.boardOnly) };
+  }
+  if (spec.combo) {
+    const hole = comboCards(rng, spec.combo);
+    return hole ? { hole } : null;
+  }
+  const test = HOLDINGS[spec.made];
+  const board = spec.board || 5;
+  return attempt(() => {
+    const deck = shuffle(rng, makeDeck());
+    const hero = deck.slice(0, 2);
+    const cards = deck.slice(2, 2 + board);
+    return test(hero, cards) ? { hole: hero, board: cards } : null;
+  }, 400);
+}
+
+/** "AJo", "96s", "JJ" — the exact hand the scenario names, in some suits. */
+function comboCards(rng, combo) {
+  const idx = (ch) => RANK_CHARS.indexOf(ch) + 2;
+  const a = idx(combo[0]);
+  const b = idx(combo[1]);
+  const suited = combo[2] === 's';
+  const deck = shuffle(rng, makeDeck());
+  const first = deck.find((c) => rankOf(c) === a);
+  const second = deck.find((c) => c !== first && rankOf(c) === b
+    && (a === b || (suited ? suitOf(c) === suitOf(first) : suitOf(c) !== suitOf(first))));
+  return second ? [first, second] : null;
+}
 
 /** Given a player type, choose the line that exploits them. */
 export function exploitDrill(rng, difficulty = 5) {
@@ -17,6 +79,7 @@ export function exploitDrill(rng, difficulty = 5) {
     {
       profile: 'station',
       question: 'You have top pair with a good kicker on the river against Stan, who has called every street. What is your play?',
+      deal: { made: 'top-pair-good-kicker' },
       correct: 'Bet big for value',
       wrong: ['Check behind to avoid a raise', 'Bluff-shove to fold out better', 'Bet tiny to induce a raise'],
       explain: 'A calling station calls. Against someone who never folds, thin value bets are the whole strategy — and you should size them larger than normal, because he is not folding to that either.',
@@ -24,6 +87,7 @@ export function exploitDrill(rng, difficulty = 5) {
     {
       profile: 'station',
       question: 'You missed your draw completely on the river against Stan. What is your play?',
+      deal: { made: 'busted' },
       correct: 'Give up and check',
       wrong: ['Bluff half pot', 'Bluff the whole pot', 'Overbet to force a fold'],
       explain: 'Never bluff a calling station. His entire leak is that he cannot fold; a bluff turns your zero-equity hand into a guaranteed loss.',
@@ -31,6 +95,7 @@ export function exploitDrill(rng, difficulty = 5) {
     {
       profile: 'rock',
       question: 'Rocky has folded 40 hands in a row. He raises from early position and you hold AJo on the button. What is your play?',
+      deal: { combo: 'AJo' },
       correct: 'Fold',
       wrong: ['3-bet for value', 'Call and outplay him postflop', 'Shove all-in'],
       explain: 'A nit’s raising range is roughly the top 5% of hands. AJo is dominated by almost all of it. Folding a good-looking hand against a range this tight is exactly the discipline that separates winners from losers.',
@@ -38,6 +103,7 @@ export function exploitDrill(rng, difficulty = 5) {
     {
       profile: 'rock',
       question: 'You are on the button. Rocky is in the big blind and has folded to every steal so far. You hold 96s. What is your play?',
+      deal: { combo: '96s' },
       correct: 'Raise to steal the blinds',
       wrong: ['Fold, the hand is too weak', 'Limp to see a cheap flop', 'Call the big blind'],
       explain: 'Against a player who folds his blind too often, your cards barely matter. Every fold he makes is free money, and 96s still flops well when he does defend.',
@@ -45,6 +111,7 @@ export function exploitDrill(rng, difficulty = 5) {
     {
       profile: 'maniac',
       question: 'Max has raised eight hands in a row. You pick up JJ in the big blind and he raises again. What is your play?',
+      deal: { combo: 'JJ' },
       correct: '3-bet and be happy to get it in',
       wrong: ['Fold, he might have aces', 'Call and see a flop', 'Call and fold to a continuation bet'],
       explain: 'Against a range this wide, jacks are a monster. You do not need to hit a set — you are simply far ahead of the hands he is raising with. Let him pay you off.',
@@ -52,6 +119,7 @@ export function exploitDrill(rng, difficulty = 5) {
     {
       profile: 'maniac',
       question: 'Max is betting every street with huge sizings. You hold second pair on the river. What is your play?',
+      deal: { made: 'second-pair' },
       correct: 'Call — he bluffs far too often',
       wrong: ['Fold, the bet is too large', 'Raise to represent a monster', 'Fold and note the pattern'],
       explain: 'A maniac’s bluff frequency is far above what any bet size requires you to defend. Second pair is a fine bluff catcher against someone whose range is mostly air.',
@@ -59,6 +127,7 @@ export function exploitDrill(rng, difficulty = 5) {
     {
       profile: 'lag',
       question: 'Leo has bet the flop and the turn, then checks the river. What does this usually mean?',
+      deal: { boardOnly: 5 },
       correct: 'He gave up on a busted bluff',
       wrong: ['He is trapping with the nuts', 'He has a medium-strength hand', 'He wants a cheap showdown with top pair'],
       explain: 'An aggressive player who fires twice and then checks has almost always run out of steam with a missed draw. This is the moment to bet — his checking range is full of hands that must fold.',
@@ -66,6 +135,7 @@ export function exploitDrill(rng, difficulty = 5) {
     {
       profile: 'tag',
       question: 'Tessa, a solid regular, 4-bets you after your 3-bet. You hold AQo. What is your play?',
+      deal: { combo: 'AQo' },
       correct: 'Fold',
       wrong: ['5-bet shove', 'Call and hope to flop an ace', 'Call to keep her honest'],
       explain: 'A good regular’s 4-betting range is roughly QQ+ and AK. AQo is crushed by all of it. Against a balanced opponent you cannot manufacture an edge — you simply fold and wait.',
@@ -74,12 +144,14 @@ export function exploitDrill(rng, difficulty = 5) {
 
   const spot = scenarios[randInt(rng, scenarios.length)];
   const villain = PROFILES[spot.profile];
+  const dealt = dealHolding(rng, spot.deal);
+  if (!dealt) return null;
   const { options, answer } = buildChoices(rng, t(spot.correct), spot.wrong.map((w) => t(w)));
 
   return {
     module: 'exploit',
     difficulty,
-    scenario: { villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) } },
+    scenario: { ...dealt, villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) } },
     question: t(spot.question),
     options,
     answer,
@@ -99,7 +171,11 @@ export function icmDrill(rng, difficulty = 6) {
   const thirdStack = (10 + randInt(rng, 25)) * 100;
   const bigBlind = 100;
   const shove = Math.min(heroStack, shoverStack);
-  const equity = 0.35 + rng() * 0.3;   // hero's equity if they call
+  // The equity used to be a random number. Now it belongs to two cards you can
+  // see, measured against one unknown hand — the shove is all-in preflop, so
+  // there is no board yet and nothing to count.
+  const hero = shuffle(rng, makeDeck()).slice(0, 2);
+  const equity = Math.round(equityVsField(hero, [], 1, undefined, rng, 1500) * 100) / 100;
 
   // Folding is not free: you are in the big blind and give it up.
   const foldValue = icmEquity([heroStack - bigBlind, shoverStack + bigBlind, thirdStack], payouts)[0];
@@ -123,6 +199,7 @@ export function icmDrill(rng, difficulty = 6) {
     module: 'icm',
     difficulty,
     scenario: {
+      hole: hero,
       stacks: [
         { label: t('You'), chips: heroStack },
         { label: t('Shover'), chips: shoverStack },
@@ -131,7 +208,7 @@ export function icmDrill(rng, difficulty = 6) {
       payouts,
     },
     question: t('Three players left and the prizes are {payouts}. You are in the big blind ({bb}) and the other '
-      + 'big stack shoves {shove} into you. You estimate {equity} equity if you call. Call or fold?',
+      + 'big stack shoves {shove} into you. These cards are worth {equity} against one unknown hand. Call or fold?',
       { payouts: payouts.join(' / '), bb: bigBlind, shove, equity: pct(equity) }),
     options,
     answer,

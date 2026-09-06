@@ -31,7 +31,7 @@ const TABLES = { nl: NL };
  * of teaching the vocabulary at all.
  */
 export const KEEP_ENGLISH = new Set([
-  'Out', 'Outs', 'Flush draw', 'Gutshot', 'Open-ended straight draw',
+  'Out', 'Outs', 'out', 'outs', 'Flush draw', 'Gutshot', 'Open-ended straight draw',
   'Equity', 'Pot odds', 'Open', '3-bet', 'Suited', 'Offsuit', 'Combo', 'Limp',
   'Value bet', 'Fold equity', 'Overcard', 'Rainbow', 'Dry board', 'Wet board',
   'Stack', 'Kicker', 'Semi-bluff', 'Bluff catcher', 'Range', 'Continuation bet',

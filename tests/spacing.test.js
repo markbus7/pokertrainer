@@ -167,7 +167,10 @@ describe('lab: spots are solvable and correct', () => {
         const s = generateSpot(type, rng);
         equal(s.type, type);
         assert(s.question && s.question.length > 10, `${type}: needs a question`);
-        assert(s.table && s.table.board.length === 3, `${type}: needs a board`);
+        // Every spot must give you something to look at: cards on a flop, or
+        // a ring of seats for a question about where you are sitting.
+        assert(s.table && ((s.table.board && s.table.board.length === 3) || s.table.ring),
+          `${type}: needs a board or a seat ring`);
         assert(typeof s.solve === 'function', `${type}: needs a solver`);
       }
     }

@@ -407,6 +407,47 @@ await step('lessons deal real cards and grade what you do with them', async () =
   }
 });
 
+await step('numeric drills make you produce the number, not pick it', async () => {
+  // MDF is the clean case: every question has a number for an answer, so the
+  // entry box must always be there and the options must not.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#drill?module=mdf`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+
+  const input = await page.$('.drill-entry-input');
+  if (!input) throw new Error('a numeric drill still offers a list to pick from');
+  if (await page.$('.option')) throw new Error('the options were on screen before the answer was given');
+
+  // Read the right answer off the question, then give a deliberately wrong one.
+  const q = await page.$eval('.question', (n) => n.textContent);
+  const [, pot, bet] = /pot is (\d+) and your opponent bets (\d+)/.exec(q) || [];
+  if (!pot) throw new Error(`could not read the numbers out of: "${q}"`);
+  await input.fill('1');
+  await page.click('.drill-entry button');
+  await page.waitForTimeout(300);
+  const wrong = await page.$('.feedback.wrong');
+  if (!wrong) throw new Error('a wrong typed answer was not marked wrong');
+  if (!/you said 1%/i.test(await wrong.textContent())) {
+    throw new Error('the feedback did not quote back what was typed');
+  }
+  // And the options appear afterwards so the right number is visible.
+  if (!(await page.$('.option.correct'))) throw new Error('the right answer was never shown');
+
+  // Now the right one, on a fresh question.
+  await page.click('button.btn.primary');
+  await page.waitForTimeout(400);
+  const q2 = await page.$eval('.question', (n) => n.textContent);
+  const m = /pot is (\d+) and your opponent bets (\d+)/.exec(q2);
+  const mdf = Math.round((Number(m[1]) / (Number(m[1]) + Number(m[2]))) * 100);
+  await (await page.$('.drill-entry-input')).fill(String(mdf));
+  await page.click('.drill-entry button');
+  await page.waitForTimeout(300);
+  if (!(await page.$('.feedback.correct'))) {
+    throw new Error(`typing the right answer (${mdf}%) was graded wrong`);
+  }
+  console.log(`      typed ${mdf}% and it graded correct`);
+});
+
 await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);

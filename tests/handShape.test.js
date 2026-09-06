@@ -13,6 +13,9 @@ import { parseCards, makeDeck } from '../src/js/core/cards.js';
 import { makeRng, shuffle } from '../src/js/core/rng.js';
 import { readShape, SHAPES, shapeByKey } from '../src/js/core/handShape.js';
 import { CAT } from '../src/js/core/evaluator.js';
+import { makePractice } from '../src/js/trainers/practice.js';
+import { generateQuestion } from '../src/js/trainers/index.js';
+import { t } from '../src/js/i18n/index.js';
 
 const read = (hand, board) => readShape(parseCards(hand), parseCards(board));
 
@@ -119,5 +122,47 @@ describe('the shape reader names the draw', () => {
       checked++;
     }
     assert(checked > 20, `expected flush draws in the sample, got ${checked}`);
+  });
+});
+
+describe('a named shape and a stated out count are the same fact', () => {
+  it('never states a count that belongs to a different shape', () => {
+    // readShape returns two numbers: shape.outs, which belongs to the word it
+    // gives you, and outs, which counts every card that helps across all the
+    // draws in the hand. A hand that is an open-ender AND two overcards has
+    // eight of the first and fourteen of the second. Any exercise that prints
+    // one and names the other teaches that an open-ender is fourteen outs.
+    const named = ['shape-decision'];
+    for (const kind of named) {
+      const rng = makeRng(4242);
+      for (let i = 0; i < 200; i++) {
+        const spot = makePractice(kind, rng);
+        const stated = Number(/is (\d+) outs/.exec(spot.grade('call').explanation)[1]);
+        const label = /You have (.+?)\. There/.exec(spot.prompt)[1];
+        const shape = SHAPES.find((sh) => sh.label === label);
+        assert(shape, `${kind}: named a shape that does not exist: "${label}"`);
+        if (shape.outs === null) continue;                 // combo draws vary
+        equal(stated, shape.outs, `${kind}: called ${label} ${stated} outs`);
+      }
+    }
+  });
+
+  it('states the count the rule of four is then applied to', () => {
+    // Three generators share this module and only one names a shape, so the
+    // sweep has to be long enough to see the mismatching cases at all: 400
+    // draws yields ~140 of them.
+    const rng = makeRng(99);
+    let seen = 0;
+    for (let i = 0; i < 400; i++) {
+      const q = generateQuestion('outs', rng, 3);
+      const m = /holding (.+?) — (\d+) outs/.exec(q.question);
+      if (!m) continue;                                    // a different outs drill
+      seen++;
+      const shape = SHAPES.find((sh) => t(sh.label) === m[1]);
+      assert(shape, `named a shape that does not exist: "${m[1]}"`);
+      if (shape.outs === null) continue;
+      equal(Number(m[2]), shape.outs, `called ${m[1]} ${m[2]} outs`);
+    }
+    assert(seen > 50, `only ${seen} rule-of-four spots seen — the sweep is too short to prove anything`);
   });
 });

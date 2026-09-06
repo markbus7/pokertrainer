@@ -13,13 +13,16 @@
  */
 
 import { makeDeck, removeCards, cardsToString, rankOf, RANK_NAMES } from '../core/cards.js';
-import { evaluate, describeScore, categoryOf, kickersOf } from '../core/evaluator.js';
+import { evaluate, describeScore, categoryOf, kickersOf, CAT } from '../core/evaluator.js';
 import { evaluateHand } from '../core/evaluator.js';
 import { countOuts, describeOuts, handEquity, exactOutsEquity, handPhrase } from '../core/equity.js';
 import { requiredEquity, callEV, minimumDefenceFrequency, breakEvenBluffFrequency, spr, icmEquity } from '../core/odds.js';
 import { handKey } from '../core/cards.js';
 import { preflopAdvice, POSITIONS, POSITION_INFO, CHARTS, rangePercent } from '../data/ranges.js';
 import { readShape, explainShape, SHAPES, shapeByKey } from '../core/handShape.js';
+import {
+  seatRing, seatName, seatChoices, playersAfter, preflopOrder, postflopOrder,
+} from '../core/seatMap.js';
 import { STAKES, bankrollAdvice } from '../state/stats.js';
 import { shuffle, randInt, makeRng } from '../core/rng.js';
 import { t } from '../i18n/index.js';
@@ -398,6 +401,95 @@ export function nameTheShapePractice(rng = makeRng()) {
   });
 }
 
+/* ---- Recognition: where am I sitting? ------------------------------- */
+
+/**
+ * Shared shape for a question asked over a ring of seats rather than cards.
+ * `hideSeatNames` blanks the position labels the felt would otherwise print,
+ * because leaving them on would put the answer on the table.
+ */
+const seatSpot = ({ prompt, question, ring, hideSeatNames, options, answer, explain }) => ({
+  kind: 'seat-choice',
+  prompt, question, ring, hideSeatNames, options,
+  grade(picked) {
+    return { correct: picked === answer, answer, explanation: explain(picked) };
+  },
+});
+
+/**
+ * The button is here. What is your seat called?
+ *
+ * Position is the other vocabulary this game used before it taught it: the
+ * lessons say "open wider on the button" long before anything asks you to
+ * find the button on a table and work out your own seat from it. The position
+ * labels are hidden for this one — that is the whole question.
+ */
+export function nameTheSeatPractice(rng = makeRng()) {
+  const ring = seatRing(rng);
+  if (!ring) return null;
+  const answer = ring.heroPosition;
+  const others = seatChoices().filter((p) => p !== answer);
+  const keys = shuffle(rng, [answer, ...shuffle(rng, others).slice(0, 3)]);
+
+  return seatSpot({
+    prompt: t('The dealer button is the D. Seats act clockwise from it.'),
+    question: t('Which seat are you in?'),
+    ring,
+    hideSeatNames: true,
+    options: keys.map((key) => ({ key, label: seatName(key) })),
+    answer,
+    explain: () => {
+      const gap = (ring.heroSeat - ring.button + ring.seatCount) % ring.seatCount;
+      const where = gap === 0
+        ? t('The button is in front of you — you have it.')
+        : gap === 1
+          ? t('The button is one seat to your right, so you are the seat straight after it.')
+          : t('The button is {gap} seats to your right.', { gap });
+      return `${where} ${t('That makes you the {seat}. {blurb}',
+        { seat: seatName(answer), blurb: t(POSITION_INFO[answer].blurb) })}`;
+    },
+  });
+}
+
+/**
+ * The reverse, and the half that actually matters: knowing the word is no use
+ * unless you know what it buys you. The labels stay on for this one, because
+ * the question is about the order of play, not the name.
+ */
+export function seatOrderPractice(rng = makeRng()) {
+  const street = rng() < 0.5 ? 'preflop' : 'flop';
+  const ring = seatRing(rng);
+  if (!ring) return null;
+  const after = playersAfter(ring, street);
+  const others = [0, 1, 2, 3, 4, 5].filter((n) => n !== after);
+  const keys = shuffle(rng, [after, ...shuffle(rng, others).slice(0, 3)]);
+  const order = street === 'preflop' ? preflopOrder(ring) : postflopOrder(ring);
+
+  return seatSpot({
+    prompt: street === 'preflop'
+      ? t('Before the flop, the seat left of the big blind acts first and the big blind acts last.')
+      : t('Once there is a board, the small blind acts first and the button acts last.'),
+    question: street === 'preflop'
+      ? t('You are the {seat}. How many players act after you before the flop?', { seat: seatName(ring.heroPosition) })
+      : t('You are the {seat}. How many players act after you on the flop?', { seat: seatName(ring.heroPosition) }),
+    ring,
+    hideSeatNames: false,
+    options: keys.map((key) => ({ key: String(key), label: String(key) })),
+    answer: String(after),
+    explain: () => {
+      const seq = t('The order is {order}.', { order: order.map((s) => seatName(s.position)).join(' → ') });
+      const meaning = after === 0
+        ? t('Nobody acts after you. You see every decision before you make yours, which is exactly what good '
+          + 'position buys you.')
+        : after === 1
+          ? t('One player acts behind you: they get to see what you do before deciding what to do themselves.')
+          : t('That puts {n} players behind you, and every one of them gets to see what you do before deciding '
+            + 'what to do themselves.', { n: after });
+      return `${seq} ${meaning}`;
+    },
+  });
+}
+
 /**
  * The same cards, the other half of the fact: how often does it get there?
  *
@@ -443,6 +535,68 @@ export function shapeOddsPractice(rng = makeRng()) {
 }
 
 /* ---- The price ladder: a quarter is 17%, half is 25% ---------------- */
+
+/**
+ * The whole chain in one question: name → outs → percentage → price.
+ *
+ * The recognition exercises run one way (cards, then the word) and the drills
+ * ran the other (a word you were assumed to know, then a decision). This is
+ * both at once and it is the only form that matters at a table: the shape is
+ * named for you in the question, the cards are in front of you, and the answer
+ * is what you actually do about it.
+ */
+export function shapeDecisionPractice(rng = makeRng()) {
+  const spot = attempt(() => {
+    const deck = shuffle(rng, makeDeck());
+    const hero = deck.slice(0, 2);
+    const board = deck.slice(2, 5);
+    const read = readShape(hero, board);
+    // Only a real draw has a price worth arguing about.
+    if (!read.outs || read.outs < 4) return null;
+    if (read.madeCategory > CAT.PAIR) return null;
+    // The question names one shape and states one number, so the two have to
+    // be the same fact. A hand that is an open-ender AND two overcards has
+    // fourteen outs and one name, which would teach that an open-ender is 14.
+    if (read.outs !== read.shape.outs) return null;
+
+    const pot = [60, 90, 120, 180][randInt(rng, 4)];
+    const fraction = [1 / 4, 1 / 3, 1 / 2, 3 / 4, 1][randInt(rng, 5)];
+    const bet = Math.round(pot * fraction);
+    const need = requiredEquity(bet, pot + bet);
+    const equity = exactOutsEquity(read.outs, 'flop');
+    // Skip the coin flips: a spot you could argue either way teaches nothing.
+    if (Math.abs(equity - need) < 0.05) return null;
+    return { hero, board, read, pot, bet, need, equity };
+  });
+  if (!spot) return null;
+  const { hero, board, read, pot, bet, need, equity } = spot;
+  const call = equity > need;
+
+  return feltSpot({
+    prompt: t('You have {shape}. There is {pot} in the pot and they bet {bet}.',
+      { shape: t(read.shape.label), pot, bet }),
+    question: t('Call or fold?'),
+    hero,
+    board,
+    pot,
+    toCall: bet,
+    options: shuffle(rng, [
+      { key: 'call', label: t('Call') },
+      { key: 'fold', label: t('Fold') },
+    ]),
+    answer: call ? 'call' : 'fold',
+    explain: () => t('{shape} is {outs} outs, which is about {equity} by the river. The price asks for {need}. '
+      + '{verdict}', {
+      shape: t(read.shape.label),
+      outs: read.outs,
+      equity: `${Math.round(equity * 100)}%`,
+      need: `${Math.round(need * 100)}%`,
+      verdict: call
+        ? t('You have more than it asks for, so you call.')
+        : t('You have less than it asks for, so you fold.'),
+    }),
+  });
+}
 
 /**
  * Five numbers worth knowing cold, drilled as the ladder they are.
@@ -718,8 +872,11 @@ export function rollPractice(rng = makeRng()) {
 
 export const PRACTICE = {
   'name-the-shape': nameTheShapePractice,
+  'name-the-seat': nameTheSeatPractice,
+  'seat-order': seatOrderPractice,
   'shape-odds': shapeOddsPractice,
   'price-ladder': priceLadderPractice,
+  'shape-decision': shapeDecisionPractice,
   'count-outs': countOutsPractice,
   'pick-winner': (rng) => pickWinnerPractice(rng, { subtle: false }),
   'pick-winner-kicker': (rng) => pickWinnerPractice(rng, { subtle: true }),

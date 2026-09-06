@@ -624,6 +624,15 @@ export const WALKTHROUGHS = {
         ],
         practice: 'count-outs',
       },
+      {
+        title: 'Now do all three at once',
+        body: [
+          'You have named it, you have priced it, and you have counted it. At a table those are not three jobs — they are one glance.',
+          'So here is the whole thing in one question. The shape is named for you, the cards are in front of you, and the pot is asking for money.',
+          '**Name → outs → percentage → price.** That is the sequence, every time, for the rest of your poker life.',
+        ],
+        practice: 'shape-decision',
+      },
 
       {
         title: 'The counts worth memorising',
@@ -1042,6 +1051,24 @@ export const WALKTHROUGHS = {
           ],
           answer: 'a',
         },
+      },
+      {
+        title: 'First, find yourself at the table',
+        body: [
+          'Every answer in this module is a seat name — **under the gun**, **hijack**, **cutoff**, **button**, **small blind**, **big blind** — and none of it is any use until you can look at a table and know which one you are.',
+          'It is read off one thing: the **dealer button**, the little D. The player with it is the button. The next seat clockwise is the small blind, then the big blind, then under the gun, the hijack, and the cutoff — and then the button again.',
+          'So you never memorise your seat. You find the D and count.',
+        ],
+        practice: 'name-the-seat',
+      },
+      {
+        title: 'And what the seat actually buys you',
+        body: [
+          'The name is only shorthand for a number: **how many players still get to act after you**.',
+          'Before the flop the order starts to the left of the big blind and ends with the big blind. Once there is a board it changes — the small blind acts first and the button acts last, every street.',
+          'That is why the button is the best seat and the blinds are the worst. Not the cards. The count.',
+        ],
+        practice: 'seat-order',
       },
       {
         title: 'The same hand, two seats',

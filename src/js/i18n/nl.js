@@ -2466,8 +2466,17 @@ export const NL = {
     'Er zit {pot} in de pot. Je tegenstander bet {bet}. Hoeveel equity heb je nodig om winstgevend te callen?',
   'You call {bet} to win {potFacing}, so you need {bet} ÷ {final} = {need}. That is {ratio} to 1.':
     'Je callt {bet} om {potFacing} te winnen, dus je hebt {bet} ÷ {final} = {need} nodig. Dat is {ratio} op 1.',
+  'You call {bet} to win {potFacing}, so you need {bet} ÷ {final} = {need}. That is {ratio} to 1. Notice your cards never entered that sum: the price is a property of the bet, not of your hand. What your cards decide is whether you can pay it.':
+    'Je callt {bet} om {potFacing} te winnen, dus je hebt {bet} ÷ {final} = {need} nodig. Dat is {ratio} op 1. Merk op dat je kaarten nooit in die som voorkwamen: de prijs hoort bij de bet, niet bij je hand. Wat je kaarten bepalen is of je hem kunt betalen.',
   'You will win this hand {equity} of the time. There is {pot} in the pot and they bet {bet}. Call or fold?':
     'Je wint deze hand {equity} van de tijd. Er zit {pot} in de pot en ze betten {bet}. Call of fold?',
+  'These are your cards, and against one unknown hand they win {equity} of the time. There is {pot} in the pot and they bet {bet}. Call or fold?':
+    'Dit zijn jouw kaarten, en tegen één onbekende hand winnen ze {equity} van de tijd. Er zit {pot} in de pot en ze betten {bet}. Call of fold?',
+  'You are holding {shape} — {outs} outs on the {street}. Use the rule of {rule}: roughly what is your equity?':
+    'Je hebt {shape} — {outs} outs op de {street}. Gebruik de regel van {rule}: hoeveel equity heb je ongeveer?',
+  'Them': 'Zij',
+  'they bet': 'zij betten',
+  'You — {seat}': 'Jij — {seat}',
   'You call {bet} to win {final}, so you need {bet} ÷ {final} = {need}. You have {equity}, which is more than the price asks. Calling wins about {chips} chips every time.':
     'Je callt {bet} om {final} te winnen, dus je hebt {bet} ÷ {final} = {need} nodig. Je hebt {equity}, meer dan de prijs vraagt. Callen wint ongeveer {chips} chips per keer.',
   'You call {bet} to win {final}, so you need {bet} ÷ {final} = {need}. You have {equity}, which is less than the price asks. Calling loses about {chips} chips every time.':
@@ -3169,4 +3178,69 @@ export const NL = {
   'Notice how slowly it climbs. Doubling the bet from a quarter to half only moves the price from 17% to 25% — which is why small bets are so hard to fold against, and why a player who folds too much to them leaks money without ever feeling it.':
     'Let op hoe langzaam hij klimt. De bet verdubbelen van een kwart naar de helft beweegt de prijs alleen van 17% naar 25% — en daarom zijn kleine bets zo lastig om tegen te folden, en lekt een speler die er te veel tegen foldt geld weg zonder het te voelen.',
   'Now put a number on one.': 'Zet er nu een getal op.',
+  'You have missed everything — this hand wins nothing at showdown. You want to bluff {bet} into a pot of {pot}. How often must they fold for this to break even?':
+    'Je hebt alles gemist — deze hand wint niets bij showdown. Je wilt {bet} bluffen in een pot van {pot}. Hoe vaak moeten ze folden om dit break-even te maken?',
+  'River. You have {hand} — it beats a bluff and nothing else. {name} ({style}) bets {bet} into {pot}. Call or fold?':
+    'River. Je hebt {hand} — het verslaat een bluf en verder niets. {name} ({style}) bet {bet} in {pot}. Call of fold?',
+  'Three players left and the prizes are {payouts}. You are in the big blind ({bb}) and the other big stack shoves {shove} into you. These cards are worth {equity} against one unknown hand. Call or fold?':
+    'Nog drie spelers over en de prijzen zijn {payouts}. Jij zit in de big blind ({bb}) en de andere grote stack shoved {shove} op jou. Deze kaarten zijn {equity} waard tegen één onbekende hand. Call of fold?',
+  'The dealer button is the D. Seats act clockwise from it.':
+    'De dealerknop is de D. De stoelen zijn er met de klok mee vanaf genummerd.',
+  'Which seat are you in?': 'In welke positie zit jij?',
+  'The button is in front of you — you have it.': 'De button ligt voor je — jij hebt hem.',
+  'The button is one seat to your right, so you are the seat straight after it.':
+    'De button ligt één stoel rechts van je, dus jij bent de stoel er direct na.',
+  'The button is {gap} seats to your right.': 'De button ligt {gap} stoelen rechts van je.',
+  'That makes you the {seat}. {blurb}': 'Daarmee ben jij de {seat}. {blurb}',
+  'Before the flop, the seat left of the big blind acts first and the big blind acts last.':
+    'Voor de flop is de stoel links van de big blind als eerste aan zet en de big blind als laatste.',
+  'Once there is a board, the small blind acts first and the button acts last.':
+    'Zodra er een board ligt, is de small blind als eerste aan zet en de button als laatste.',
+  'You are the {seat}. How many players act after you before the flop?':
+    'Jij bent de {seat}. Hoeveel spelers zijn er na jou aan zet voor de flop?',
+  'You are the {seat}. How many players act after you on the flop?':
+    'Jij bent de {seat}. Hoeveel spelers zijn er na jou aan zet op de flop?',
+  'The order is {order}.': 'De volgorde is {order}.',
+  'Nobody acts after you. You see every decision before you make yours, which is exactly what good position buys you.':
+    'Niemand is na jou aan zet. Jij ziet elke beslissing voordat je die van jezelf maakt, en dat is precies wat goede positie je oplevert.',
+  'One player acts behind you: they get to see what you do before deciding what to do themselves.':
+    'Eén speler zit achter je: die ziet wat jij doet voordat hij zelf beslist.',
+  'That puts {n} players behind you, and every one of them gets to see what you do before deciding what to do themselves.':
+    'Dat zet {n} spelers achter je, en die zien allemaal wat jij doet voordat ze zelf beslissen.',
+  'name the seat': 'benoem de positie',
+  'You get a discount to continue, so you defend very wide — but you play every pot out of position.':
+    'Je krijgt korting om door te gaan, dus je verdedigt heel breed — maar je speelt elke pot uit positie.',
+  'First, find yourself at the table': 'Zoek eerst jezelf aan tafel',
+  'Every answer in this module is a seat name — **under the gun**, **hijack**, **cutoff**, **button**, **small blind**, **big blind** — and none of it is any use until you can look at a table and know which one you are.':
+    'Elk antwoord in deze module is een positienaam — **under the gun**, **hijack**, **cutoff**, **button**, **small blind**, **big blind** — en je hebt er niets aan zolang je niet naar een tafel kunt kijken en weet welke jij bent.',
+  'It is read off one thing: the **dealer button**, the little D. The player with it is the button. The next seat clockwise is the small blind, then the big blind, then under the gun, the hijack, and the cutoff — and then the button again.':
+    'Je leest het af aan één ding: de **dealerknop**, dat kleine D\'tje. De speler die hem heeft is de button. De volgende stoel met de klok mee is de small blind, dan de big blind, dan under the gun, de hijack en de cutoff — en dan weer de button.',
+  'So you never memorise your seat. You find the D and count.':
+    'Je leert je positie dus nooit uit je hoofd. Je zoekt de D en telt.',
+  'And what the seat actually buys you': 'En wat die positie je werkelijk oplevert',
+  'The name is only shorthand for a number: **how many players still get to act after you**.':
+    'De naam is alleen maar een afkorting voor een getal: **hoeveel spelers er na jou nog aan zet zijn**.',
+  'Before the flop the order starts to the left of the big blind and ends with the big blind. Once there is a board it changes — the small blind acts first and the button acts last, every street.':
+    'Voor de flop begint de volgorde links van de big blind en eindigt bij de big blind. Zodra er een board ligt verandert dat — de small blind is als eerste aan zet en de button als laatste, elke straat.',
+  'That is why the button is the best seat and the blinds are the worst. Not the cards. The count.':
+    'Daarom is de button de beste stoel en zijn de blinds de slechtste. Niet vanwege de kaarten. Vanwege dat getal.',
+  'You have {shape}. There is {pot} in the pot and they bet {bet}.':
+    'Je hebt {shape}. Er zit {pot} in de pot en ze betten {bet}.',
+  'Call or fold?': 'Call of fold?',
+  '{shape} is {outs} outs, which is about {equity} by the river. The price asks for {need}. {verdict}':
+    '{shape} is {outs} outs, dat is ongeveer {equity} tegen de river. De prijs vraagt {need}. {verdict}',
+  'You have more than it asks for, so you call.': 'Je hebt meer dan hij vraagt, dus je callt.',
+  'You have less than it asks for, so you fold.': 'Je hebt minder dan hij vraagt, dus je foldt.',
+  'What you are holding is called {shape}.': 'Wat je hebt heet {shape}.',
+  'Choose an answer first.': 'Kies eerst een antwoord.',
+  'Now do all three at once': 'Doe nu alle drie tegelijk',
+  'You have named it, you have priced it, and you have counted it. At a table those are not three jobs — they are one glance.':
+    'Je hebt hem benoemd, je hebt de prijs bepaald en je hebt geteld. Aan tafel zijn dat geen drie klussen — het is één blik.',
+  'So here is the whole thing in one question. The shape is named for you, the cards are in front of you, and the pot is asking for money.':
+    'Hier is dus het geheel in één vraag. De naam krijg je erbij, de kaarten liggen voor je, en de pot vraagt om geld.',
+  '**Name → outs → percentage → price.** That is the sequence, every time, for the rest of your poker life.':
+    '**Naam → outs → percentage → prijs.** Dat is de volgorde, elke keer, de rest van je pokerleven.',
+  'Type your answer, then press Enter': 'Typ je antwoord en druk op Enter',
+  'Answer': 'Antwoord',
+  '✗ Not quite — you said {said}': '✗ Net niet — jij zei {said}',
 };

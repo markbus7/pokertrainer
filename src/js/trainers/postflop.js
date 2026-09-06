@@ -4,7 +4,8 @@
  * not from a table of hand-written verdicts.
  */
 
-import { makeDeck, cardsToString } from '../core/cards.js';
+import { makeDeck, cardsToString, rankOf } from '../core/cards.js';
+import { evaluate, categoryOf, describeScore, CAT } from '../core/evaluator.js';
 import { handEquity } from '../core/equity.js';
 import {
   minimumDefenceFrequency, breakEvenBluffFrequency, bluffShareOfRange,
@@ -21,6 +22,43 @@ import { t } from '../i18n/index.js';
 const SIZE_SMALL = () => t('Bet small (about a third of the pot)');
 const SIZE_BIG = () => t('Bet big (about three quarters of the pot)');
 const CHECK = () => t('Check');
+
+/**
+ * A dealt spot for a question that is really about arithmetic.
+ *
+ * "The pot is 100 and they bet 75" is an exam question; the same numbers with
+ * a flop and your two cards under them is a hand of poker. The maths does not
+ * change — that is the point, and the explanation says so where it matters.
+ *
+ * @param {function} rng
+ * @param {number} boardSize  3 for a flop, 4 a turn, 5 a river
+ * @param {function} [wanted] optional predicate on (hero, board) to keep the
+ *                            picture honest when the question claims something
+ *                            about what you are holding
+ */
+function dealtSpot(rng, boardSize, wanted) {
+  return attempt(() => {
+    const deck = shuffle(rng, makeDeck());
+    const hero = deck.slice(0, 2);
+    const board = deck.slice(2, 2 + boardSize);
+    if (wanted && !wanted(hero, board)) return null;
+    return { hole: hero, board };
+  }, 200);
+}
+
+/** Nothing at all: the hand a pure bluff is made with. */
+const missedEverything = (hero, board) => categoryOf(evaluate([...hero, ...board])) === CAT.HIGH_CARD;
+
+/**
+ * A pair that is not the best pair available — the hand that can only beat a
+ * bluff, which is exactly what a bluff catcher is.
+ */
+function bluffCatcher(hero, board) {
+  const score = evaluate([...hero, ...board]);
+  if (categoryOf(score) !== CAT.PAIR) return false;
+  const topBoard = Math.max(...board.map(rankOf));
+  return !hero.some((c) => rankOf(c) >= topBoard);
+}
 
 /**
  * Should you continuation bet, and how big?
@@ -84,6 +122,8 @@ export function cbetDrill(rng, difficulty = 3) {
 
 /** Minimum defence frequency: how much you must call to stop being bluffed. */
 export function mdfDrill(rng, difficulty = 4) {
+  const dealt = dealtSpot(rng, 3 + randInt(rng, 2));
+  if (!dealt) return null;
   const pot = (4 + randInt(rng, 10)) * 10;
   const fraction = [0.33, 0.5, 0.66, 0.75, 1][randInt(rng, 5)];
   const bet = Math.round(pot * fraction / 5) * 5;
@@ -96,11 +136,12 @@ export function mdfDrill(rng, difficulty = 4) {
   return {
     module: 'mdf',
     difficulty,
-    scenario: { pot, toCall: bet },
+    scenario: { ...dealt, pot, toCall: bet },
     question: t('The pot is {pot} and your opponent bets {bet}. What share of your range must you continue with '
       + 'to stop a pure bluff from printing money?', { pot, bet }),
     options,
     answer,
+    entry: { unit: '%', value: truePct, tolerance: 2 },
     explanation: t('Minimum defence frequency is pot ÷ (pot + bet) = {pot} ÷ {total} = {mdf}. Fold more often '
       + 'than that and any two cards can profitably bluff you. Note this is a defensive guideline, not a law: '
       + 'against someone who never bluffs, over-folding is correct.',
@@ -111,6 +152,8 @@ export function mdfDrill(rng, difficulty = 4) {
 
 /** How often does a bluff have to work? */
 export function bluffMathDrill(rng, difficulty = 4) {
+  const dealt = dealtSpot(rng, 5, missedEverything);
+  if (!dealt) return null;
   const pot = (4 + randInt(rng, 10)) * 10;
   const fraction = [0.5, 0.66, 0.75, 1, 1.5][randInt(rng, 5)];
   const bet = Math.round(pot * fraction / 5) * 5;
@@ -123,11 +166,12 @@ export function bluffMathDrill(rng, difficulty = 4) {
   return {
     module: 'bluffing',
     difficulty,
-    scenario: { pot, betSize: bet },
-    question: t('You want to bluff {bet} into a pot of {pot} with a hand that never wins at showdown. How often '
-      + 'must they fold for this to break even?', { bet, pot }),
+    scenario: { ...dealt, pot, betSize: bet },
+    question: t('You have missed everything — this hand wins nothing at showdown. You want to bluff {bet} into '
+      + 'a pot of {pot}. How often must they fold for this to break even?', { bet, pot }),
     options,
     answer,
+    entry: { unit: '%', value: truePct, tolerance: 2 },
     explanation: t('You risk {bet} to win {pot}, so you need {bet} ÷ {total} = {need}. Bigger bluffs need to work '
       + 'more often — which is why sizing up is not automatically better.',
       { bet, pot, total: bet + pot, need: pct(need, 1) }),
@@ -137,6 +181,10 @@ export function bluffMathDrill(rng, difficulty = 4) {
 
 /** Balanced bluff-to-value ratio for a river bet. */
 export function balanceDrill(rng, difficulty = 5) {
+  // A range question, not a hand question: the board is the shared context,
+  // so this one shows the river and no hole cards.
+  const dealt = dealtSpot(rng, 5);
+  if (!dealt) return null;
   const pot = 100;
   const fraction = [0.5, 0.75, 1][randInt(rng, 3)];
   const bet = Math.round(pot * fraction);
@@ -149,11 +197,12 @@ export function balanceDrill(rng, difficulty = 5) {
   return {
     module: 'bluffing',
     difficulty,
-    scenario: { pot, betSize: bet },
+    scenario: { board: dealt.board, pot, betSize: bet },
     question: t('You bet {bet} into {pot} on the river. For a balanced range that gives your opponent no '
       + 'profitable choice, what share of your betting hands should be bluffs?', { bet, pot }),
     options,
     answer,
+    entry: { unit: '%', value: truePct, tolerance: 2 },
     explanation: t('Your opponent needs {need} to call. To make them exactly indifferent, bluffs should be {share} '
       + 'of your betting range — roughly {ratio} bluffs for every value hand. At pot size that is the familiar '
       + '1 bluff per 2 value bets.',
@@ -169,6 +218,8 @@ export function balanceDrill(rng, difficulty = 5) {
 export function bluffCatchDrill(rng, difficulty = 4) {
   const keys = ['rock', 'tag', 'lag', 'station', 'maniac'];
   const villain = PROFILES[keys[randInt(rng, keys.length)]];
+  const dealt = dealtSpot(rng, 5, bluffCatcher);
+  if (!dealt) return null;
   const pot = (4 + randInt(rng, 8)) * 10;
   const fraction = [0.5, 0.75, 1][randInt(rng, 3)];
   const bet = Math.round(pot * fraction / 5) * 5;
@@ -190,9 +241,10 @@ export function bluffCatchDrill(rng, difficulty = 4) {
   return {
     module: 'exploit',
     difficulty,
-    scenario: { pot, toCall: bet, villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) } },
-    question: t('River. You hold a hand that beats a bluff and nothing else. {name} ({style}) bets {bet} into '
-      + '{pot}. Call or fold?', { name: villain.name, style: t(villain.style), bet, pot }),
+    scenario: { ...dealt, pot, toCall: bet, villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) } },
+    question: t('River. You have {hand} — it beats a bluff and nothing else. {name} ({style}) bets {bet} into '
+      + '{pot}. Call or fold?',
+    { hand: describeScore(evaluate([...dealt.hole, ...dealt.board])), name: villain.name, style: t(villain.style), bet, pot }),
     options,
     answer,
     explanation: `${opener} ${verdict} ${t(villain.counter)}`,
@@ -202,6 +254,8 @@ export function bluffCatchDrill(rng, difficulty = 4) {
 
 /** Stack-to-pot ratio: the number that decides whether you can fold later. */
 export function sprDrill(rng, difficulty = 4) {
+  const dealt = dealtSpot(rng, 3);
+  if (!dealt) return null;
   const pot = (2 + randInt(rng, 8)) * 10;
   const stack = pot * (1 + randInt(rng, 12));
   const ratio = spr(stack, pot);
@@ -218,11 +272,12 @@ export function sprDrill(rng, difficulty = 4) {
   return {
     module: 'spr',
     difficulty,
-    scenario: { pot, effectiveStack: stack },
+    scenario: { ...dealt, pot, effectiveStack: stack },
     question: t('The pot is {pot} on the flop and the effective stack is {stack}. What is the stack-to-pot ratio?',
       { pot, stack }),
     options,
     answer,
+    entry: { unit: '', value: rounded, tolerance: 0 },
     explanation: `${t('SPR = {stack} ÷ {pot} = {ratio}.', { stack, pot, ratio: ratio.toFixed(1) })} ${guidance}`,
     xp: 14 + difficulty * 3,
   };
