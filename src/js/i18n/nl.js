@@ -3243,4 +3243,16 @@ export const NL = {
   'Type your answer, then press Enter': 'Typ je antwoord en druk op Enter',
   'Answer': 'Antwoord',
   '✗ Not quite — you said {said}': '✗ Net niet — jij zei {said}',
+  'You are behind. How many cards left in the deck put you in front?':
+    'Je staat achter. Hoeveel kaarten in het overgebleven deck zetten je op voorsprong?',
+  'Two cards are still to come — the turn and the river — so the rule of 4 turns {count} outs into {rough}%. The exact figure is {exact}.':
+    'Er komen nog twee kaarten — de turn en de river — dus de regel van 4 maakt van {count} outs {rough}%. Precies gerekend is het {exact}.',
+  'You also hold three {suit} — but a backdoor flush needs the turn **and** the river to come {suit}. That is two cards, so none of them counts here.':
+    'Je hebt ook drie {suit} — maar een backdoor flush heeft zowel de turn **als** de river in {suit} nodig. Dat zijn twee kaarten, dus die tellen hier niet mee.',
+  'It is worth nothing even then: they hold better {suit} than you do, so every flush you make is second best.':
+    'En zelfs dan is hij niets waard: zij hebben betere {suit} dan jij, dus elke flush die je maakt is de op één na beste.',
+  'And of the {total} ways two more {suit} can arrive, only {wins} win — they hold better {suit} than you do.':
+    'En van de {total} manieren waarop er nog twee {suit} kunnen komen, winnen er maar {wins} — zij hebben betere {suit} dan jij.',
+  '📋 Copy this question': '📋 Kopieer deze vraag',
+  'Copied ✓': 'Gekopieerd ✓',
 };

@@ -448,6 +448,36 @@ await step('numeric drills make you produce the number, not pick it', async () =
   console.log(`      typed ${mdf}% and it graded correct`);
 });
 
+await step('a graded question can be copied out as text', async () => {
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+
+  if (await page.$('button:has-text("Copy this question")')) {
+    throw new Error('the copy button appeared before the question was answered');
+  }
+  await (await page.$('.option')).click();
+  await page.waitForTimeout(300);
+
+  // The clipboard is not reachable from a headless page without a permission
+  // grant, so the fallback is what gets checked: the text has to be gettable
+  // by hand when the copy itself fails.
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: () => Promise.reject(new Error('no clipboard here')) },
+    });
+  });
+  await page.click('button:has-text("Copy this question")');
+  await page.waitForTimeout(200);
+  const text = await page.$eval('.copy-fallback', (n) => n.value || n.textContent);
+  for (const want of ['Poker Trainer v', 'Q: ', 'Correct answer:', 'The game explained:']) {
+    if (!text.includes(want)) throw new Error(`copied text is missing "${want}":\n${text}`);
+  }
+  if (/\*\*/.test(text)) throw new Error('copied text still carries ** markup');
+  console.log(`      copied ${text.split('\n').length} lines`);
+});
+
 await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);
