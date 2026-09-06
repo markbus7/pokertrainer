@@ -170,13 +170,20 @@ export function learningReport(profile) {
   if (calib.total) {
     lines.push('');
     lines.push('CONFIDENCE vs REALITY');
-    for (const band of calib.bands) {
-      if (!band.total) continue;
-      lines.push(`  Said "${band.label}": right ${pct(band.accuracy)} of ${band.total}`);
+    // calibrationReport returns `rows`, and each row counts `attempts`. This
+    // read `bands` and `total`, neither of which has ever existed — so the
+    // whole report threw the moment a single confidence answer was recorded,
+    // which the Lab does on every spot, and took the Progress screen with it.
+    for (const band of calib.rows) {
+      if (!band.attempts) continue;
+      lines.push(`  Said "${band.label}": right ${pct(band.accuracy)} of ${band.attempts}`);
     }
     if (calib.overconfidence > 0.1) {
       lines.push(`  Overconfident by ${pct(calib.overconfidence)} — feeling sure is running ahead of being right.`);
     }
+    // The verdict weighs both directions and is the line worth reading; the
+    // number above only measures one of them.
+    if (calib.verdict) lines.push(`  ${calib.verdict}`);
   }
 
   lines.push('');

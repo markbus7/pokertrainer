@@ -38,7 +38,10 @@ export function renderHome(ctx) {
     (acc, d) => ({ attempts: acc.attempts + d.attempts, correct: acc.correct + d.correct }),
     { attempts: 0, correct: 0 },
   );
-  const accuracy = totals.attempts ? totals.correct / totals.attempts : null;
+  // The same bar the module tiles use. Without it the headline number
+  // reported 100% off a single answer, while the tile right beneath it
+  // correctly refused to show anything.
+  const accuracy = totals.attempts >= EVIDENCE_BAR ? totals.correct / totals.attempts : null;
 
   return el('div.screen',
     /* ---- rank header ---- */
@@ -114,7 +117,11 @@ export function renderHome(ctx) {
     /* ---- stats strip ---- */
     el('div.grid.cols-4',
       statTile('Hands played', fmt.chips(profile.data.handsPlayed)),
-      statTile('Drill accuracy', accuracy === null ? '—' : fmt.pct(accuracy), accuracy === null ? 'answer a few first' : t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
+      statTile('Drill accuracy',
+        accuracy === null ? '—' : fmt.pct(accuracy),
+        accuracy === null
+          ? t('{n} more before this is a score', { n: EVIDENCE_BAR - totals.attempts })
+          : t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
       statTile('Achievements', `${profile.data.achievements.length} / ${ACHIEVEMENTS.length}`),
       statTile('Lifetime', fmt.bb(profile.data.lifetimeProfitBb), 'across all sessions'),
     ),

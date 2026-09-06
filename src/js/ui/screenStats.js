@@ -3,13 +3,15 @@
 import { el, mount, fmt, sparkline, toast } from './dom.js';
 import { t } from '../i18n/index.js';
 import { MODULE_META } from '../data/curriculum.js';
-import { scoreLine } from '../state/mastery.js';
+import { scoreLine, EVIDENCE_BAR } from '../state/mastery.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { RANKS } from '../state/profile.js';
 import { exportCode, importCode, decodeSyncCode, summarize } from '../state/sync.js';
 import * as cloudSync from '../state/cloudSync.js';
 import { VERSION, BUILT, REPO, checkForUpdate } from '../version.js';
-import { calibrationReport, nextReviewLabel, strength, hasStudied } from '../state/spacing.js';
+import {
+  calibrationReport, nextReviewLabel, strength, hasStudied, CALIBRATION_BAR,
+} from '../state/spacing.js';
 import { handGrid } from '../core/cards.js';
 import { CHARTS, POSITION_INFO, rangePercent, RFI, THREE_BET } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
@@ -23,7 +25,10 @@ export function renderStats(ctx) {
     (acc, d) => ({ attempts: acc.attempts + d.attempts, correct: acc.correct + d.correct }),
     { attempts: 0, correct: 0 },
   );
-  const accuracy = totals.attempts ? totals.correct / totals.attempts : null;
+  // The same bar the module tiles use. Without it the headline number
+  // reported 100% off a single answer, while the tile right beneath it
+  // correctly refused to show anything.
+  const accuracy = totals.attempts >= EVIDENCE_BAR ? totals.correct / totals.attempts : null;
   const sessions = profile.data.sessions;
 
   const curve = [];
@@ -35,7 +40,11 @@ export function renderStats(ctx) {
       tile('Rank', [profile.rank.emoji, ' ', t(profile.rank.name)],
         t('Level {level} of {total}', { level: profile.level, total: RANKS.length })),
       tile('Total XP', fmt.chips(profile.xp)),
-      tile('Drill accuracy', accuracy === null ? '—' : fmt.pct(accuracy), t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
+      tile('Drill accuracy',
+        accuracy === null ? '—' : fmt.pct(accuracy),
+        accuracy === null
+          ? t('{n} more before this is a score', { n: EVIDENCE_BAR - totals.attempts })
+          : t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
       tile('Hands played', fmt.chips(profile.data.handsPlayed)),
     ),
 
@@ -251,20 +260,24 @@ function renderCalibration(profile) {
   return el('div.panel',
     el('div.panel-title',
       el('h2', '🎯 Calibration'),
-      el('span.faint', `${report.total} judged answers`),
+      el('span.faint', t('{n} judged answers', { n: report.total })),
     ),
     el('p.muted', 'How often you were right, split by how sure you felt at the time.'),
     el('div',
       report.rows.map((row) => el('div.calib-row',
         el('div.calib-label', row.label),
         el('div.calib-track',
-          el(`div.calib-fill${row.accuracy !== null && row.accuracy < 0.6 ? '.low' : ''}`, {
-            style: { width: `${Math.round((row.accuracy || 0) * 100)}%` },
+          el(`div.calib-fill${row.attempts >= CALIBRATION_BAR && row.accuracy < 0.6 ? '.low' : ''}`, {
+            style: { width: `${row.attempts >= CALIBRATION_BAR ? Math.round(row.accuracy * 100) : 0}%` },
           }),
         ),
-        el('div.calib-value', row.attempts
+        // The verdict below waits for 15 answers; these rows used to show
+        // "100% of 1" above it and undercut the whole panel.
+        el('div.calib-value', row.attempts >= CALIBRATION_BAR
           ? t('{pct} of {n}', { pct: fmt.pct(row.accuracy), n: row.attempts })
-          : '—'),
+          : row.attempts
+            ? t('{n} of {need}', { n: row.attempts, need: CALIBRATION_BAR })
+            : '—'),
       )),
     ),
     report.verdict

@@ -120,6 +120,60 @@ describe('i18n: Dutch coverage', () => {
 });
 
 describe('the learning report', () => {
+  it('survives a profile that has answered a confidence question', async () => {
+    // Every one of these tests built a profile that had never touched the
+    // Lab, so nothing ever reached the calibration section — which read
+    // `calib.bands` and `band.total` while calibrationReport has always
+    // returned `rows` and `attempts`. The report threw on the first
+    // confidence answer, and it took the whole Progress screen with it.
+    const { Profile } = await import('../src/js/state/profile.js');
+    const { learningReport } = await import('../src/js/state/learningReport.js');
+    const { recordConfidence, CALIBRATION_BAR } = await import('../src/js/state/spacing.js');
+    const mem = new Map();
+    const p = new Profile({}, {
+      getItem: (k) => (mem.has(k) ? mem.get(k) : null),
+      setItem: (k, v) => mem.set(k, String(v)),
+      removeItem: (k) => mem.delete(k),
+    });
+    p.recordDrill('outs', true);
+
+    recordConfidence(p, 'sure', true);
+    const first = learningReport(p);           // one answer used to throw here
+    assert(first.length > 100, 'the report still has to build');
+
+    for (let i = 0; i < CALIBRATION_BAR * 2; i++) recordConfidence(p, 'sure', false);
+    const report = learningReport(p);
+    assert(/CONFIDENCE vs REALITY/.test(report), 'the calibration section must appear');
+    assert(/Said "Certain"/.test(report), 'and name what was claimed');
+    assert(/Overconfident/.test(report),
+      'being wrong nearly every time you were certain is the whole point of the section');
+    assert(!/undefined|NaN/.test(report), `no holes in the report:\n${report}`);
+  });
+
+  it('counts overconfidence on the bands that claim confidence', async () => {
+    // Being right when you guessed is under-confidence, a different fault.
+    // Averaging it in let it cancel out being wrong when certain.
+    const { calibrationReport, recordConfidence, CALIBRATION_BAR } = await import('../src/js/state/spacing.js');
+    const { Profile } = await import('../src/js/state/profile.js');
+    const mem = new Map();
+    const p = new Profile({}, {
+      getItem: (k) => (mem.has(k) ? mem.get(k) : null),
+      setItem: (k, v) => mem.set(k, String(v)),
+      removeItem: (k) => mem.delete(k),
+    });
+    for (let i = 0; i < 10; i++) recordConfidence(p, 'sure', i < 5);      // 50% when certain
+    for (let i = 0; i < 10; i++) recordConfidence(p, 'guess', i < 9);     // 90% when guessing
+    assert(calibrationReport(p).overconfidence > 0.3,
+      'a good guessing record must not hide a bad certain record');
+
+    const clean = new Profile({}, {
+      getItem: () => null, setItem: () => {}, removeItem: () => {},
+    });
+    for (let i = 0; i < CALIBRATION_BAR - 1; i++) recordConfidence(clean, 'sure', false);
+    equal(calibrationReport(clean).overconfidence, 0,
+      'too few answers to call anyone overconfident');
+  });
+
   it('says where the teaching is failing, not just how the player is doing', async () => {
     const { Profile } = await import('../src/js/state/profile.js');
     const { learningReport } = await import('../src/js/state/learningReport.js');

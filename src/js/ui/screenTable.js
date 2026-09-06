@@ -5,6 +5,12 @@
 
 import { el, mount, toast, fmt } from './dom.js';
 import { t } from '../i18n/index.js';
+
+/**
+ * What a metric says when the sample cannot support a number yet. Reads the
+ * same everywhere: a dash, and how much further there is to go.
+ */
+const shortfall = (have, need) => t('— {n} more hands', { n: need - have });
 import { renderFelt } from './feltView.js';
 import { createTable, STREETS } from '../engine/table.js';
 import { botAction, getProfile, pickOpponents } from '../engine/bots.js';
@@ -16,7 +22,7 @@ import { judgeSpot } from '../core/coach.js';
 import { conceptOf } from '../core/spotConcept.js';
 import { moduleMeta } from '../data/curriculum.js';
 import { review } from '../state/spacing.js';
-import { SessionStats, leakReport, stakeFor, bankrollAdvice } from '../state/stats.js';
+import { SessionStats, leakReport, stakeFor, bankrollAdvice, SAMPLE } from '../state/stats.js';
 import { HandRecorder, keepHand } from '../state/handHistory.js';
 import { checkAchievements } from '../state/achievements.js';
 
@@ -565,11 +571,25 @@ export function renderTable(ctx, params = {}) {
         : null,
 
       el('h3', { style: { marginTop: '18px' } }, '📊 This session'),
+      // Hands and result are facts about what happened. Everything below them
+      // is a rate estimated from those hands, and a rate needs a sample: VPIP
+      // after one hand is 0% or 100%, and bb/100 after one hand is four
+      // thousand. Below the bar each says how far off it is instead.
       metric('Hands', String(summary.hands)),
       metric('Result', fmt.bb(summary.profitBb), summary.profitBb >= 0 ? 'good' : 'bad'),
-      summary.hands >= 10 ? metric('Win rate', `${summary.winRate.toFixed(1)}bb/100`, summary.winRate >= 0 ? 'good' : 'bad') : null,
-      metric('VPIP / PFR', `${fmt.pct(summary.vpip)} / ${fmt.pct(summary.pfr)}`),
-      metric('Aggression', summary.af.toFixed(1)),
+      summary.hands >= SAMPLE.winRate
+        ? metric('Win rate', t('{n}bb/100 — still rough at {hands} hands',
+          { n: summary.winRate.toFixed(1), hands: summary.hands }),
+        summary.winRate >= 0 ? 'good' : 'bad')
+        : metric('Win rate', shortfall(summary.hands, SAMPLE.winRate)),
+      summary.hands >= SAMPLE.playStyle
+        ? metric('VPIP / PFR', `${fmt.pct(summary.vpip)} / ${fmt.pct(summary.pfr)}`)
+        : metric('VPIP / PFR', shortfall(summary.hands, SAMPLE.playStyle)),
+      summary.hands >= SAMPLE.playStyle && summary.af !== null
+        ? metric('Aggression', summary.af.toFixed(1))
+        : metric('Aggression', summary.af === null
+          ? t('no calls yet')
+          : shortfall(summary.hands, SAMPLE.playStyle)),
 
       el('h3', { style: { marginTop: '18px' } }, '📜 Hand log'),
       el('div.log', session.logLines.slice().reverse().map((l) =>

@@ -83,7 +83,17 @@ export class SessionStats {
   get vpip() { return this.hands ? this.vpipHands / this.hands : 0; }
   get pfr() { return this.hands ? this.pfrHands / this.hands : 0; }
   get threeBet() { return this.threeBetChances ? this.threeBetHands / this.threeBetChances : 0; }
-  get aggressionFactor() { return this.calls > 0 ? (this.bets + this.raises) / this.calls : (this.bets + this.raises) || 0; }
+  /**
+   * Bets and raises per call — undefined until you have called something.
+   *
+   * This used to fall back to the raw count when calls were zero, so four
+   * bets and no calls reported "4.0" as an aggression *factor*: a count
+   * wearing a ratio's clothes. And with nothing at all it reported 0.0,
+   * which reads as maximally passive rather than as no data.
+   */
+  get aggressionFactor() {
+    return this.calls > 0 ? (this.bets + this.raises) / this.calls : null;
+  }
   get wtsd() { return this.sawFlop ? this.wentToShowdown / this.sawFlop : 0; }
   get wsd() { return this.wentToShowdown ? this.wonAtShowdown / this.wentToShowdown : 0; }
   get profitBb() { return this.profitChips / this.bigBlind; }
@@ -109,16 +119,39 @@ export class SessionStats {
  * Turn a session into plain-English coaching. Thresholds are the ones a
  * winning 6-max reg actually sits at.
  */
+/**
+ * How much play a statistic needs before it is worth showing.
+ *
+ * Every one of these is a number that looks authoritative and is noise below
+ * its bar: VPIP after one hand is 0% or 100%, and bb/100 after one hand is
+ * four thousand. The leak report has always refused to speak below 20 hands;
+ * these extend the same courtesy to the numbers above it.
+ */
+export const SAMPLE = {
+  /** VPIP, PFR and aggression only start to settle once a range has shown. */
+  playStyle: 30,
+  /** What leakReport needs before it will name a leak. */
+  leaks: 20,
+  /**
+   * bb/100 is the worst offender. This game's own Bankroll lesson says the
+   * standard deviation is about 100bb/100 and that a 5bb/100 winner still
+   * loses money over 10,000 hands three times in ten. A hundred hands is not
+   * enough either — it is the point at which the figure stops being absurd,
+   * and the label says so.
+   */
+  winRate: 100,
+};
+
 export function leakReport(stats) {
   const leaks = [];
   const strengths = [];
   const { hands } = stats;
-  if (hands < 20) {
+  if (hands < SAMPLE.leaks) {
     return {
       ready: false,
       leaks: [],
       strengths: [],
-      message: `Play ${20 - hands} more hands and I can tell you what to fix.`,
+      message: `Play ${SAMPLE.leaks - hands} more hands and I can tell you what to fix.`,
     };
   }
 
@@ -156,7 +189,10 @@ export function leakReport(stats) {
   }
 
   const af = stats.aggressionFactor;
-  if (af < 1 && hands >= 30) {
+  if (af === null) {
+    // No calls yet, so there is no ratio to judge. Saying nothing is the
+    // only honest option; the caller already reports the hand count.
+  } else if (af < 1 && hands >= 30) {
     leaks.push({
       id: 'passive-postflop',
       title: 'You are too passive after the flop',

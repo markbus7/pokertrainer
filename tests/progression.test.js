@@ -1,6 +1,6 @@
 import { describe, it, assert, equal, close } from './harness.js';
 import { Profile, RANKS, rankForXp, rankProgress, requirementRows, meetsRank } from '../src/js/state/profile.js';
-import { SessionStats, leakReport, bankrollAdvice, STAKES } from '../src/js/state/stats.js';
+import { SessionStats, leakReport, bankrollAdvice, STAKES, SAMPLE } from '../src/js/state/stats.js';
 import { checkAchievements, ACHIEVEMENTS } from '../src/js/state/achievements.js';
 import { generateQuestion, generateGauntlet, DRILL_MODULE_IDS, difficultyForLevel } from '../src/js/trainers/index.js';
 import {
@@ -357,6 +357,44 @@ describe('progression: drill tracking', () => {
     // Break one open again and it must be the pick.
     for (let i = 0; i < 40; i++) p.recordDrill('outs', false);
     equal(nextUp(p).module.id, 'outs', 'a module that fell out of mastery is the one to fix');
+  });
+});
+
+describe('statistics refuse to speak without a sample', () => {
+  it('has no aggression factor until you have called something', () => {
+    // (bets + raises) / calls is undefined at zero calls. It used to fall
+    // back to the raw count, so four bets and no calls reported "4.0" as a
+    // ratio — a count wearing a ratio's clothes — and nothing at all
+    // reported 0.0, which reads as maximally passive rather than as no data.
+    const s = new SessionStats(2);
+    equal(s.aggressionFactor, null, 'nothing played is not an aggression of zero');
+
+    s.bets = 4;
+    equal(s.aggressionFactor, null, 'four bets and no calls is still not a ratio');
+
+    s.calls = 2;
+    equal(s.aggressionFactor, 2, 'once there are calls it is bets and raises per call');
+  });
+
+  it('still produces a leak report when there is no aggression factor', () => {
+    const s = new SessionStats(2);
+    s.hands = 40;
+    s.vpipHands = 9;
+    s.pfrHands = 7;
+    const report = leakReport(s);            // must not throw on a null AF
+    assert(report.ready, 'forty hands is past the bar');
+    assert(!report.leaks.some((l) => /aggression/i.test(l.title + l.detail)),
+      'it cannot name an aggression leak it has no number for');
+    assert(!report.strengths.some((x) => /AF/.test(x)),
+      'nor call an absent number well balanced');
+  });
+
+  it('names the number of hands it is still waiting for', () => {
+    const s = new SessionStats(2);
+    s.hands = SAMPLE.leaks - 3;
+    const report = leakReport(s);
+    equal(report.ready, false);
+    assert(report.message.includes('3'), `should say how many are missing: "${report.message}"`);
   });
 });
 
