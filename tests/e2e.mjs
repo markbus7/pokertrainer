@@ -537,6 +537,29 @@ await step('jargon explains itself wherever it appears, in both languages', asyn
   }
 });
 
+await step('the home screen names one module and the grid marks the same one', async () => {
+  // Reported: the banner named a module, the grid showed two tiles both
+  // reading "Learning", and nothing said which one was meant or why.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  const marked = await page.$$eval('.module-tile.next-up .name', (n) => n.map((x) => x.textContent.trim()));
+  if (marked.length !== 1) throw new Error(`expected exactly one marked tile, got ${marked.length}`);
+
+  const banner = await page.$eval('.panel', (p) => p.textContent);
+  const named = await page.$eval('.panel .btn.sm.ghost', (b) => b.textContent);
+  if (!named.includes(marked[0])) {
+    throw new Error(`the banner points at "${named}" but the grid marks "${marked[0]}"`);
+  }
+
+  // And it has to say on what grounds, not just which.
+  const why = await page.$$eval('.panel .faint', (n) => n.map((x) => x.textContent.trim()));
+  if (!why.some((line) => line.length > 40 && /\b(yet|tried|questions|lesson|accuracy|mastered)\b/i.test(line))) {
+    throw new Error(`no reason given for the recommendation; saw: ${JSON.stringify(why)}`);
+  }
+  console.log(`      points at ${marked[0]}, and says why`);
+});
+
 await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);

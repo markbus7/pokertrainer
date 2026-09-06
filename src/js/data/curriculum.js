@@ -1,3 +1,5 @@
+import { masteryTier } from '../state/mastery.js';
+
 /**
  * The curriculum: what to learn, in what order, and why it matters.
  * Each module gates the next, so the path from beginner to winning player
@@ -223,17 +225,85 @@ export function unlockedModules(level) {
   return MODULE_META.filter((m) => m.unlockLevel <= level);
 }
 
+/**
+ * Where the raw accuracy of a module sits once you account for how little you
+ * might have tried it.
+ *
+ * Plain accuracy makes one wrong answer out of one look like a 0% catastrophe
+ * and rank above a module you have genuinely struggled with for thirty
+ * questions. This is the centre of the Wilson interval, which pulls a small
+ * sample toward the middle in proportion to how small it is: 0 of 1 comes out
+ * at 40% rather than 0%, while 28 of 37 barely moves.
+ */
+export function confidenceAdjusted(correct, attempts) {
+  if (!attempts) return null;
+  const z2 = 3.8416;                       // 1.96², the 95% interval
+  const p = correct / attempts;
+  return (p + z2 / (2 * attempts)) / (1 + z2 / attempts);
+}
+
+/** Below this, "your weakest skill" is a claim the evidence cannot support. */
+const ENOUGH_EVIDENCE = 8;
+
+/** The accuracy a module has to clear before it stops being a weak spot. */
+const SOLID_BAR = 0.75;
+
+/**
+ * What to work on next, and — the part that was missing — why.
+ *
+ * The old rule was "anything untouched, else the lowest accuracy", and it
+ * never said so anywhere. The home screen named a module and the module grid
+ * showed nothing, so with two modules both reading "Learning" there was no
+ * way to tell which one the app meant or what it was going on.
+ *
+ * @returns {{module: object, reason: string, stats: object}|null}
+ *   reason is one of: 'untouched', 'thin', 'lesson', 'weakest', 'fresh'
+ */
+export function nextUp(profile) {
+  const unlocked = unlockedModules(profile.level);
+  if (!unlocked.length) return null;
+  const statsOf = (m) => profile.drillStats(m.id);
+
+  // Something never tried beats anything else: you cannot be weak at a skill
+  // you have not attempted, and finding out is one drill away.
+  const untouched = unlocked.find((m) => statsOf(m).attempts === 0);
+  if (untouched) return { module: untouched, reason: 'untouched', stats: statsOf(untouched) };
+
+  // Never recommend a module that is already finished, unless they all are.
+  const open = unlocked.filter((m) => masteryTier(profile, m.id) !== 'mastered');
+  const pool = open.length ? open : unlocked;
+  const score = (m) => confidenceAdjusted(statsOf(m).correct, statsOf(m).attempts);
+
+  // A real hole beats an unknown. Among modules you have answered enough of
+  // to judge, anything below the Solid bar is a genuine weakness and outranks
+  // a module you have merely not done much of — one wrong answer out of one
+  // is not evidence of anything, however bad the percentage looks.
+  const judged = pool.filter((m) => statsOf(m).attempts >= ENOUGH_EVIDENCE);
+  const weak = judged.filter((m) => score(m) < SOLID_BAR).sort((a, b) => score(a) - score(b))[0];
+  if (weak) {
+    const stats = statsOf(weak);
+    // The lesson comes before more drilling. Getting under half of them right
+    // is not a practice problem, and doing another ten is the slow way to
+    // find out what the page would have told you in two minutes.
+    const reason = stats.correct / stats.attempts < 0.5 && !profile.hasCompletedWalkthrough(weak.id)
+      ? 'lesson'
+      : 'weakest';
+    return { module: weak, reason, stats };
+  }
+
+  // Nothing is demonstrably weak. Whatever you have done least of is where
+  // the next answer tells the game the most.
+  const thin = pool
+    .filter((m) => statsOf(m).attempts < ENOUGH_EVIDENCE)
+    .sort((a, b) => statsOf(a).attempts - statsOf(b).attempts)[0];
+  if (thin) return { module: thin, reason: 'thin', stats: statsOf(thin) };
+
+  const worst = pool.slice().sort((a, b) => score(a) - score(b))[0];
+  return { module: worst, reason: open.length ? 'weakest' : 'fresh', stats: statsOf(worst) };
+}
+
 /** What the player should work on next. */
 export function recommendedModule(profile) {
-  const unlocked = unlockedModules(profile.level);
-  // Anything untouched comes first, then the weakest accuracy.
-  const untouched = unlocked.find((m) => profile.drillStats(m.id).attempts === 0);
-  if (untouched) return untouched;
-  let worst = null;
-  let worstAcc = 1.1;
-  for (const m of unlocked) {
-    const acc = profile.accuracy(m.id);
-    if (acc !== null && acc < worstAcc) { worstAcc = acc; worst = m; }
-  }
-  return worst || unlocked[unlocked.length - 1];
+  const next = nextUp(profile);
+  return next ? next.module : null;
 }
