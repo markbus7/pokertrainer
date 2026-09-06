@@ -46,6 +46,39 @@ export const REQUIREMENTS = {
   mastered: { attempts: 30, accuracy: 0.9, lesson: true },
 };
 
+/**
+ * How many answers a module needs before a percentage means anything.
+ *
+ * One number, used by every screen that shows a score and by the rule that
+ * picks what to work on next. It used to be five in the profile and eight in
+ * the recommendation, which is how a tile could read "3/3" — a perfect record
+ * on the face of it, and worth nothing: three right in a row is what a coin
+ * does one time in eight.
+ */
+export const EVIDENCE_BAR = 8;
+
+/**
+ * The honest one-line score for a module.
+ *
+ * Below the bar it says how many more answers it needs instead of printing a
+ * percentage, because a number that cannot be trusted is worse than no number
+ * — it reads as a verdict.
+ */
+export function scoreLine(profile, moduleId) {
+  const stats = profile.drillStats(moduleId);
+  if (!stats.attempts) return t('Not started');
+  if (stats.attempts >= EVIDENCE_BAR) {
+    return t('{correct}/{attempts} correct · {pct}%', {
+      correct: stats.correct,
+      attempts: stats.attempts,
+      pct: Math.round((stats.correct / stats.attempts) * 100),
+    });
+  }
+  const short = EVIDENCE_BAR - stats.attempts;
+  return t('{correct}/{attempts} — {n} more before this counts as a score',
+    { correct: stats.correct, attempts: stats.attempts, n: short });
+}
+
 export const tierByKey = (key) => TIERS.find((t) => t.key === key) || TIERS[0];
 
 /** Which tier a module currently sits at. */

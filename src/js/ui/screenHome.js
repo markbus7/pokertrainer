@@ -4,7 +4,7 @@ import { el, fmt } from './dom.js';
 import { t } from '../i18n/index.js';
 import { MODULE_META, nextUp } from '../data/curriculum.js';
 import { dueConcepts, nextReviewLabel, hasStudied } from '../state/spacing.js';
-import { masteryTier, nextTierGoal, tierByKey } from '../state/mastery.js';
+import { masteryTier, nextTierGoal, tierByKey, scoreLine, EVIDENCE_BAR } from '../state/mastery.js';
 import { RANKS, requirementRows } from '../state/profile.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { stakeFor } from '../state/stats.js';
@@ -209,13 +209,17 @@ function mistakesPanel(go) {
 function describeProgress(profile, moduleId) {
   const stats = profile.drillStats(moduleId);
   if (!stats.attempts) return t('Not started yet.');
+  // Thin evidence is checked before anything else. Six right out of six is
+  // 100%, and calling that "nearly mastered" is the same mistake as calling
+  // one wrong answer a catastrophe.
+  if (stats.attempts < EVIDENCE_BAR) {
+    return t('Only {n} answered — {short} more before there is a score to read.',
+      { n: stats.attempts, short: EVIDENCE_BAR - stats.attempts });
+  }
   const acc = profile.accuracy(moduleId);
-  if (acc === null) return t('{n} so far. Keep going.', { n: stats.attempts });
   const pct = fmt.pct(acc);
   if (acc >= 0.9) return t('{pct} right — nearly mastered.', { pct });
   if (acc >= 0.7) return t('{pct} right — solid, but there is room.', { pct });
-  if (stats.attempts < 8) return t('{pct} right, but only {n} questions in — too early to tell.',
-    { pct, n: stats.attempts });
   return t('{pct} right — this is your weakest skill right now.', { pct });
 }
 
@@ -287,9 +291,7 @@ function moduleTile(meta, profile, go, recommendedId) {
     el('div.tagline', meta.tagline),
     el('div.mastery', locked
       ? t('Unlocks at {rank}', { rank: t(RANKS[meta.unlockLevel - 1].name) })
-      : stats.attempts
-        ? t('{correct}/{attempts} correct', { correct: stats.correct, attempts: stats.attempts }) + (acc !== null ? ` · ${fmt.pct(acc)}` : '')
-        : 'Not started'),
+      : scoreLine(profile, meta.id)),
     !locked && goal
       ? el('div.mastery', { style: { color: 'var(--text-faint)' } },
           t('{tier} at {requirement}', { tier: t(goal.name), requirement: t(goal.requirement) }))
