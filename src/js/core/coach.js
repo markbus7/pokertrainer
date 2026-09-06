@@ -71,7 +71,7 @@ function judgePreflop(spot) {
     return {
       kind: 'preflop',
       level: 'bad',
-      head: 'Limping gives the pot away',
+      id: 'limped', head: 'Limping gives the pot away',
       body: 'Calling the big blind first in lets everyone behind you play cheaply while you hold a hand you were '
         + 'not confident enough to raise. Raise {hand} or fold it.',
       params,
@@ -100,7 +100,7 @@ function judgePreflop(spot) {
     return {
       kind: 'preflop',
       level: 'bad',
-      head: 'Outside the range',
+      id: 'opened-outside-range', head: 'Outside the range',
       body: '{hand} is not in the {pct} of hands this seat plays. Hands like this are where a losing player '
         + 'quietly leaks their stack: they look playable, and they are dominated by everything that calls.',
       params,
@@ -112,7 +112,7 @@ function judgePreflop(spot) {
   return {
     kind: 'preflop',
     level: 'bad',
-    head: 'You folded a hand this seat plays',
+    id: 'folded-in-range', head: 'You folded a hand this seat plays',
     body: '{hand} is inside the range for {seat}. Folding it is not safe — it is passing up the pots this seat '
       + 'is supposed to win, which is where the money in position comes from.',
     params,
@@ -146,7 +146,7 @@ function judgeCbet(spot) {
   if (equity >= 0.65) {
     if (!betting) {
       return {
-        kind: 'cbet', level: 'bad', head: 'Checked back a hand that wanted to bet',
+        kind: 'cbet', level: 'bad', id: 'checked-back-value', head: 'Checked back a hand that wanted to bet',
         body: 'You have {equity} on a {tags} board and they have shown weakness. Checking here wins the smallest '
           + 'pot available with the best hand.',
         params, better: texture.wet ? 'Bet big' : 'Bet small', cost: equity * pot * 0.5, costKnown: true,
@@ -156,7 +156,7 @@ function judgeCbet(spot) {
     const wentBig = size >= 0.6;
     if (wantsBig === wentBig) {
       return {
-        kind: 'cbet', level: 'good', head: 'Right bet on the right board',
+        kind: 'cbet', level: 'good', id: 'good-cbet', head: 'Right bet on the right board',
         body: wantsBig
           ? 'A {tags} board gives them draws, and a big bet charges every one of them while you are ahead.'
           : 'A {tags} board missed them as often as it missed you. Small is enough, and it keeps their weak '
@@ -177,13 +177,13 @@ function judgeCbet(spot) {
   if (texture.dry || !texture.wet) {
     return betting
       ? {
-        kind: 'cbet', level: 'good', head: 'Good spot to bet',
+        kind: 'cbet', level: 'good', id: 'good-cbet-spot', head: 'Good spot to bet',
         body: 'A {tags} board missed their calling range too. A small bet folds out everything that missed, and '
           + 'that is most of what they have.',
         params, better: null, cost: 0, costKnown: true,
       }
       : {
-        kind: 'cbet', level: 'ok', head: 'A bet was free money here',
+        kind: 'cbet', level: 'ok', id: 'missed-free-cbet', head: 'A bet was free money here',
         body: 'You have {equity}, but on a {tags} board so do they. This is the flop your whole range can bet '
           + 'small on, and checking gives up a pot nobody wanted.',
         params, better: 'Bet small', cost: 0, costKnown: true,
@@ -192,13 +192,13 @@ function judgeCbet(spot) {
 
   return betting
     ? {
-      kind: 'cbet', level: 'bad', head: 'Bluffing into the wrong board',
+      kind: 'cbet', level: 'bad', id: 'cbet-wrong-board', head: 'Bluffing into the wrong board',
       body: 'You have {equity} on a {tags} board. That is a board they connect with — too many of their hands '
         + 'will call, and the ones that fold were folding anyway.',
       params, better: 'Check and give up cheaply', cost: (amount - (spot.currentBet || 0)) * 0.5, costKnown: true,
     }
     : {
-      kind: 'cbet', level: 'good', head: 'Right to give up',
+      kind: 'cbet', level: 'good', id: 'good-giveup', head: 'Right to give up',
       body: '{equity} on a {tags} board. They have too many hands that continue — betting here donates chips. '
         + 'Checking costs nothing and keeps the pot small.',
       params, better: null, cost: 0, costKnown: true,

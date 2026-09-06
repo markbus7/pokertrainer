@@ -19,10 +19,13 @@ import { equityVsField, outsToImprove } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, spr } from '../core/odds.js';
 import { evaluateHand, describeScore, shortCategoryName, categoryOf, CAT } from '../core/evaluator.js';
 import { judgeSpot } from '../core/coach.js';
-import { conceptOf } from '../core/spotConcept.js';
-import { moduleMeta } from '../data/curriculum.js';
+import { conceptOf, isUnlocked } from '../core/spotConcept.js';
+import { moduleMeta, MODULE_META } from '../data/curriculum.js';
 import { lessonTable } from '../data/lessonTables.js';
 import { snapshotOf, autopilotAction, playUntilMySpot } from '../core/lessonRunner.js';
+import {
+  startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
+} from '../state/lessonRuns.js';
 import { review } from '../state/spacing.js';
 import { cardsToString } from '../core/cards.js';
 import { shuffle } from '../core/rng.js';
@@ -104,6 +107,10 @@ export function renderTable(ctx, params = {}) {
     // Set when the reader asks the coach to do the sum for them. Reset every
     // decision, so asking once does not silence the coach for the whole hand.
     peeked: false,
+    // A lesson is a fixed run of spots with a report at the end, not an
+    // endless table: without a last hand there is no moment where anyone
+    // says how it went.
+    run: lesson ? startRun(params.lesson) : null,
   };
   if (grind) profile.setBankroll(profile.data.bankroll - buyInCost);
 
@@ -111,6 +118,7 @@ export function renderTable(ctx, params = {}) {
   const feltHost = el('div');
   const actionHost = el('div');
   const coachHost = el('div.coach');
+  const lessonNoteHost = el('div');
   const root = el('div.screen',
     el('div.spread', { style: { marginBottom: '14px' } },
       el('div.row',
@@ -131,15 +139,7 @@ export function renderTable(ctx, params = {}) {
     // What has been taken away, and why. A table with two seats and a hand
     // that stops on the flop is not the game — saying so is the difference
     // between a simplification and a lie.
-    lesson
-      ? el('div.panel.lesson-note',
-          el('div', t(lesson.simplified)),
-          lesson.concept
-            ? el('div.faint', t('Everything this lesson has not covered is played for you. '
-              + 'You act when it is a {skill} decision.', { skill: t(lessonMeta.name) }))
-            : null,
-        )
-      : null,
+    lesson ? lessonNoteHost : null,
     el('div.table-wrap.with-coach', el('div', feltHost, actionHost), coachHost),
   );
 
@@ -174,7 +174,6 @@ export function renderTable(ctx, params = {}) {
     session.aggressor = {};
     session.opener = null;
     session.learned = [];
-    session.actedThisHand = false;
     session.namedThisHand = false;
     log(t('— Hand #{n} —', { n: table.handNumber }), true);
     draw();
@@ -269,7 +268,6 @@ export function renderTable(ctx, params = {}) {
     session.aggressor = {};
     session.opener = null;
     session.learned = [];
-    session.actedThisHand = false;
     session.namedThisHand = false;
     log(t('— Hand #{n} —', { n: table.handNumber }), true);
   }
@@ -377,11 +375,17 @@ export function renderTable(ctx, params = {}) {
 
   function heroAct(action) {
     if (session.cancelled || table.handOver || !table.actor || !table.actor.isHero) return;
-    session.actedThisHand = true;
     const snap = session.snapshot || takeSnapshot();
     const verdict = judgeSpot({ ...snap, action: action.type, amount: action.amount });
     session.verdict = verdict;
     recordLearning(verdict);
+    // Only the lesson's own spots count toward the run. A hand where the
+    // autopilot handed you a decision that belongs to another module would
+    // otherwise be marked against a lesson that never asked it.
+    if (session.run && !runComplete(session.run)) {
+      recordSpot(session.run, verdict);
+      if (runComplete(session.run)) finishRun();
+    }
     if (action.type === 'bet' || action.type === 'raise') session.aggressor[table.street] = HERO_ID;
     stats.recordDecision({ kind: action.type, verdict: verdict.level, street: table.street });
     stats.recordAction(table.street, action.type, { facingRaise: snap.toCall > table.bigBlind });
@@ -498,7 +502,32 @@ export function renderTable(ctx, params = {}) {
 
   /* ---------------- rendering ---------------- */
 
+  /**
+   * The lesson's own header: what it simplified, how far through the run you
+   * are, and — the part that makes it a lesson rather than a table — what
+   * caught you out last time.
+   */
+  function drawLessonNote() {
+    if (!lesson) return;
+    const done = session.run ? session.run.spots.length : 0;
+    const right = session.run ? session.run.spots.filter((sp) => sp.level !== 'bad').length : 0;
+    const warning = session.runOver ? null : watchFor(profile, params.lesson);
+    mount(lessonNoteHost, el('div.panel.lesson-note',
+      el('div.spread',
+        el('div', t(lesson.simplified)),
+        el('span.badge.gold', t('Spot {n} of {total}', { n: Math.min(done + 1, RUN_LENGTH), total: RUN_LENGTH })),
+      ),
+      lesson.concept
+        ? el('div.faint', t('Everything this lesson has not covered is played for you. '
+          + 'You act when it is a {skill} decision.', { skill: t(lessonMeta.name) }))
+        : null,
+      done ? el('div.faint', t('{right} of {done} right so far.', { right, done })) : null,
+      warning ? el('div.lesson-warning', warning) : null,
+    ));
+  }
+
   function draw() {
+    drawLessonNote();
     drawFelt();
     drawActions();
     drawCoach();
@@ -559,6 +588,11 @@ export function renderTable(ctx, params = {}) {
       if (session.namedThisHand) return;
       session.namedThisHand = true;
       const right = choice === correct;
+      // Reading your hand is this lesson's spot, so it is what the run marks.
+      if (session.run && !runComplete(session.run)) {
+        recordSpot(session.run, { id: right ? 'read-right' : 'misread-hand', level: right ? 'good' : 'bad' });
+        if (runComplete(session.run)) finishRun();
+      }
       profile.recordDrill('hand-rankings', right);
       review(profile, 'hand-rankings', right);
       profile.save();
@@ -590,8 +624,61 @@ export function renderTable(ctx, params = {}) {
     );
   }
 
+  /**
+   * The end of a run: how it went, what to fix, and what will be remembered.
+   *
+   * This is the difference between a lesson and a table. Ten spots, marked,
+   * with each mistake named and given one thing to do about it — and the
+   * mistakes filed so the next run can open by warning you about them.
+   */
+  function drawRunReport() {
+    const score = session.runScore;
+    const passed = score.right + score.ok >= Math.ceil(score.total * 0.7);
+    const history = runHistory(profile, params.lesson);
+
+    return mount(actionHost, el('div.action-bar.run-report',
+      el('div.spread',
+        el('h3', { style: { margin: 0 } }, passed
+          ? t('✓ {right} of {total} — that is a pass', { right: score.right + score.ok, total: score.total })
+          : t('{right} of {total} — worth another run', { right: score.right + score.ok, total: score.total })),
+        el('span.badge', t('run {n}', { n: history.runs })),
+      ),
+      score.mistakes.length
+        ? el('div.stack-sm', { style: { marginTop: '12px' } },
+            el('div.faint', t('What went wrong, most often first:')),
+            score.mistakes.map((m) => el('div.run-mistake',
+              el('div.run-mistake-head', `${m.count}× ${t(m.label)}`),
+              m.fix ? el('div.faint', t(m.fix)) : null,
+            )),
+            el('div.faint', { style: { marginTop: '8px' } },
+              t('Remembered for next time — the next run opens by warning you about it.')))
+        : el('div', { style: { marginTop: '10px' } },
+            t('No mistakes to name. Play a run of something else, or come back when this one has gone cold.')),
+      el('div.row', { style: { marginTop: '14px' } },
+        el('button.btn.primary', { onclick: () => startNewRun() }, t('Another {n} spots', { n: RUN_LENGTH })),
+        el('button.btn.ghost', { onclick: () => go('walkthrough', { module: params.lesson }) },
+          t('Back to the lesson')),
+      ),
+    ));
+  }
+
+  /** File the run and switch the table over to its report. */
+  function finishRun() {
+    session.runScore = saveRun(profile, session.run);
+    session.runOver = true;
+  }
+
+  /** Wipe the scorecard and deal again. */
+  function startNewRun() {
+    session.run = startRun(params.lesson);
+    session.runOver = false;
+    session.runScore = null;
+    startHand();
+  }
+
   function drawActions() {
     if (hero.stack <= 0 && !session.handStarted) return drawBust();
+    if (session.runOver) return drawRunReport();
 
     // Read your hand before you are allowed to bet it.
     if (lesson && lesson.ask === 'name-hand' && !session.namedThisHand
@@ -728,6 +815,12 @@ export function renderTable(ctx, params = {}) {
             el('div',
               el('div.spot-name', spotMeta ? t(spotMeta.name) : spot.id),
               el('div.spot-why', t(spot.why)),
+              // Pointing at a chapter the reader cannot open is worse than
+              // useless unless it says so. A quarter of the spots at level
+              // two land here.
+              spotMeta && !isUnlocked(spot.id, profile.level, MODULE_META)
+                ? el('div.faint', t('You unlock this one at level {n}.', { n: spotMeta.unlockLevel }))
+                : null,
             ),
           )
         : null,
@@ -789,22 +882,32 @@ export function renderTable(ctx, params = {}) {
             ))))
         : null,
 
-      el('h3', { style: { marginTop: '18px' } }, '📊 This session'),
+      // On a lesson table most of the hands were played by the autopilot
+      // while it searched for your spot, so a VPIP or a win rate built from
+      // them describes the autopilot and not you. The run is what you did.
+      lesson ? el('div',
+        el('h3', { style: { marginTop: '18px' } }, t('📊 This run')),
+        metric('Spots', `${session.run ? session.run.spots.length : 0} / ${RUN_LENGTH}`),
+        metric('Right', String(session.run
+          ? session.run.spots.filter((sp) => sp.level !== 'bad').length : 0)),
+        metric('Hands dealt to find them', String(summary.hands)),
+      ) : null,
+      lesson ? null : el('h3', { style: { marginTop: '18px' } }, '📊 This session'),
       // Hands and result are facts about what happened. Everything below them
       // is a rate estimated from those hands, and a rate needs a sample: VPIP
       // after one hand is 0% or 100%, and bb/100 after one hand is four
       // thousand. Below the bar each says how far off it is instead.
-      metric('Hands', String(summary.hands)),
-      metric('Result', fmt.bb(summary.profitBb), summary.profitBb >= 0 ? 'good' : 'bad'),
-      summary.hands >= SAMPLE.winRate
+      lesson ? null : metric('Hands', String(summary.hands)),
+      lesson ? null : metric('Result', fmt.bb(summary.profitBb), summary.profitBb >= 0 ? 'good' : 'bad'),
+      lesson ? null : summary.hands >= SAMPLE.winRate
         ? metric('Win rate', t('{n}bb/100 — still rough at {hands} hands',
           { n: summary.winRate.toFixed(1), hands: summary.hands }),
         summary.winRate >= 0 ? 'good' : 'bad')
         : metric('Win rate', shortfall(summary.hands, SAMPLE.winRate)),
-      summary.hands >= SAMPLE.playStyle
+      lesson ? null : summary.hands >= SAMPLE.playStyle
         ? metric('VPIP / PFR', `${fmt.pct(summary.vpip)} / ${fmt.pct(summary.pfr)}`)
         : metric('VPIP / PFR', shortfall(summary.hands, SAMPLE.playStyle)),
-      summary.hands >= SAMPLE.playStyle && summary.af !== null
+      lesson ? null : summary.hands >= SAMPLE.playStyle && summary.af !== null
         ? metric('Aggression', summary.af.toFixed(1))
         : metric('Aggression', summary.af === null
           ? t('no calls yet')
@@ -879,7 +982,9 @@ function resultHeadline(result, table) {
 }
 
 function metric(k, v, tone = '') {
-  return el('div.coach-metric', el('span.k', k), el(`span.v${tone ? `.${tone}` : ''}`, v));
+  // The label is chrome and goes through t(); the value is already formatted
+  // by the caller, who knows whether it is a number or a sentence.
+  return el('div.coach-metric', el('span.k', t(k)), el(`span.v${tone ? `.${tone}` : ''}`, v));
 }
 
 function variantSwitcher(current, go) {

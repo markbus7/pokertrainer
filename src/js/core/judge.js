@@ -68,7 +68,7 @@ function judgeFold({ equity, needed, toCall, pot, ev, params }) {
     return {
       kind: 'fold',
       level: 'bad',
-      head: 'Never fold for free',
+      id: 'fold-for-free', head: 'Never fold for free',
       body: 'Nobody had bet. Checking would have shown you the next card at no cost, and you gave up a pot '
         + 'you held {equity} of instead.',
       params,
@@ -80,7 +80,7 @@ function judgeFold({ equity, needed, toCall, pot, ev, params }) {
     return {
       kind: 'fold',
       level: 'bad',
-      head: 'You folded the best of it',
+      id: 'folded-the-best', head: 'You folded the best of it',
       body: 'You had {equity} and the price only asked for {needed}. Calling was worth about {gain} chips, '
         + 'and folding threw that away.',
       params: { ...params, gain: chips(ev) },
@@ -92,7 +92,7 @@ function judgeFold({ equity, needed, toCall, pot, ev, params }) {
     return {
       kind: 'fold',
       level: 'ok',
-      head: 'Close fold',
+      id: 'close-fold', head: 'Close fold',
       body: '{equity} against {needed} needed — a thin call. Folding is defensible against somebody who never '
         + 'bluffs, and this is not the kind of spot a session is won or lost on.',
       params,
@@ -103,7 +103,7 @@ function judgeFold({ equity, needed, toCall, pot, ev, params }) {
   return {
     kind: 'fold',
     level: 'good',
-    head: 'Good fold',
+    id: 'good-fold', head: 'Good fold',
     body: 'The price asked for {needed} and you had {equity}. Folding saves money, and the folds are where '
       + "most of a winning player's edge quietly comes from.",
     params,
@@ -117,7 +117,7 @@ function judgeCheck({ equity, params }) {
     return {
       kind: 'check',
       level: 'ok',
-      head: 'Missed value',
+      id: 'missed-value', head: 'Missed value',
       body: 'With {equity} you are well ahead. Betting here gets called by worse hands — money left behind, '
         + 'though how much depends on whether they would have paid.',
       params,
@@ -128,7 +128,7 @@ function judgeCheck({ equity, params }) {
   return {
     kind: 'check',
     level: 'good',
-    head: 'Fine check',
+    id: 'fine-check', head: 'Fine check',
     body: 'With {equity}, keeping the pot small is reasonable. Checking also protects the hands you check with '
       + 'on later streets.',
     params,
@@ -142,7 +142,7 @@ function judgeCall({ equity, needed, ev, params }) {
     return {
       kind: 'call',
       level: 'good',
-      head: 'Correct call',
+      id: 'correct-call', head: 'Correct call',
       body: 'You needed {needed} and had {equity}. This call wins about {gain} chips on average.',
       params: { ...params, gain: chips(ev) },
       better: null,
@@ -153,7 +153,7 @@ function judgeCall({ equity, needed, ev, params }) {
     return {
       kind: 'call',
       level: 'ok',
-      head: 'Marginal call',
+      id: 'marginal-call', head: 'Marginal call',
       body: '{equity} against {needed} needed — close enough to break-even that the answer comes from the later '
         + 'streets rather than from this one.',
       params,
@@ -164,6 +164,7 @@ function judgeCall({ equity, needed, ev, params }) {
   return {
     kind: 'call',
     level: 'bad',
+    id: 'called-without-odds',
     head: 'Called without the odds',
     body: 'The price asked for {needed} and you had {equity}. A call like this loses about {loss} chips every '
       + 'time you make it. Over a career these are the single biggest leak in small-stakes poker.',
@@ -181,7 +182,7 @@ function judgeBet(d) {
     return {
       kind: 'bet',
       level: 'good',
-      head: 'Value bet',
+      id: 'value-bet', head: 'Value bet',
       body: '{equity} — you are ahead, so betting builds the pot and charges their draws. Size it so worse hands '
         + 'can still call.',
       params,
@@ -193,7 +194,7 @@ function judgeBet(d) {
     return {
       kind: 'bet',
       level: 'ok',
-      head: 'Bluff',
+      id: 'bluff', head: 'Bluff',
       body: 'With {equity} this is a bluff. It has to work {folds} of the time to break even. Against somebody '
         + 'who folds too much that is a bargain; against a calling station it is a donation.',
       params: { ...params, folds: pct(foldsNeeded, 0) },
@@ -204,7 +205,7 @@ function judgeBet(d) {
   return {
     kind: 'bet',
     level: 'ok',
-    head: 'Thin bet',
+    id: 'thin-bet', head: 'Thin bet',
     body: '{equity} is the awkward middle. Ask the two questions: does a worse hand call, and does a better hand '
       + 'fold? If neither, checking is usually better.',
     params,
