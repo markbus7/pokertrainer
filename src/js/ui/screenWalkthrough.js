@@ -9,6 +9,7 @@
  */
 
 import { el, mount, richText, toast } from './dom.js';
+import { lessonTable } from '../data/lessonTables.js';
 import { makePractice } from '../trainers/practice.js';
 import { review } from '../state/spacing.js';
 import { practiceView } from './practiceView.js';
@@ -158,7 +159,15 @@ export function renderWalkthrough(ctx, params) {
             el('div.faint', t('Step {n} of {total}', { n: stepNumber, total: totalSteps })),
           ),
         ),
-        el('button.btn.sm.ghost', { onclick: () => go('learn', { module: meta.id }) }, 'Exit lesson'),
+        el('div.row',
+          // The reading is the short half. Every lesson that can be played
+          // says so at the top, because the point of the lesson is the table.
+          lessonTable(meta.id)
+            ? el('button.btn.sm.primary', { onclick: () => go('play', { lesson: meta.id }) },
+              t('▶ Play this lesson'))
+            : null,
+          el('button.btn.sm.ghost', { onclick: () => go('learn', { module: meta.id }) }, 'Exit lesson'),
+        ),
       ),
       el('div.bar', { style: { marginTop: '12px' } },
         el('span', { style: { width: `${(stepNumber / totalSteps) * 100}%` } })),

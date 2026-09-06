@@ -26,6 +26,11 @@ export class Table {
     this.rng = config.rng || makeRng();
     this.handNumber = 0;
     this.button = config.button ?? 0;
+    // Where the hand stops. A lesson about opening ranges has no business
+    // dragging the reader through three streets it has not taught yet, so it
+    // can end the hand once its own question has been answered. Defaults to
+    // the river, which is ordinary poker.
+    this.lastStreet = config.lastStreet || 'river';
 
     this.players = (config.players || []).map((p, i) => ({
       id: p.id ?? `p${i}`,
@@ -306,7 +311,13 @@ export class Table {
 
     if (this.bettingRoundComplete()) {
       this.collectBets();
-      if (this.street === 'river') return this.finish('showdown');
+      // Stopping early still deals the rest of the board before settling —
+      // the same as everyone being all-in. A preflop lesson that simply
+      // stopped would leave you staring at two cards and no result, and the
+      // evaluator has nothing to score without a board.
+      if (this.street === this.lastStreet) {
+        return this.street === 'river' ? this.finish('showdown') : this.runOutAndShowdown();
+      }
       this.nextStreet();
       return this;
     }

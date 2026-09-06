@@ -17,16 +17,27 @@ import { botAction, getProfile, pickOpponents } from '../engine/bots.js';
 import { VARIANTS, VARIANT_KEYS } from '../engine/variants.js';
 import { equityVsField, outsToImprove } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, spr } from '../core/odds.js';
-import { evaluateHand, describeScore, categoryOf, CAT } from '../core/evaluator.js';
+import { evaluateHand, describeScore, shortCategoryName, categoryOf, CAT } from '../core/evaluator.js';
 import { judgeSpot } from '../core/coach.js';
 import { conceptOf } from '../core/spotConcept.js';
 import { moduleMeta } from '../data/curriculum.js';
+import { lessonTable } from '../data/lessonTables.js';
+import { snapshotOf, autopilotAction, playUntilMySpot } from '../core/lessonRunner.js';
 import { review } from '../state/spacing.js';
+import { cardsToString } from '../core/cards.js';
+import { shuffle } from '../core/rng.js';
 import { SessionStats, leakReport, stakeFor, bankrollAdvice, SAMPLE } from '../state/stats.js';
 import { HandRecorder, keepHand } from '../state/handHistory.js';
 import { checkAchievements } from '../state/achievements.js';
 
 const BOT_DELAY = 620;
+/**
+ * How many hands a lesson table will deal looking for the reader's own spot.
+ * Measured over twelve fresh sessions per lesson, every one finds its spot;
+ * the slowest are the flop draw at 57 hands and the river bluff at 52, so
+ * this is roughly double the worst case seen.
+ */
+const MAX_SEARCH = 120;
 const HERO_ID = 'hero';
 
 export function renderTable(ctx, params = {}) {
@@ -48,12 +59,19 @@ export function renderTable(ctx, params = {}) {
     ));
   }
 
-  const opponents = pickOpponents(5, rng);
+  // A lesson gets a table cut down to it: fewer seats where the seats are
+  // not the point, and a hand that ends once its question is answered.
+  const lesson = params.lesson ? lessonTable(params.lesson) : null;
+  const lessonMeta = params.lesson ? moduleMeta(params.lesson) : null;
+  const seats = lesson ? lesson.seats : 6;
+
+  const opponents = pickOpponents(seats - 1, rng);
   const table = createTable({
     variant: variantKey,
     smallBlind: bigBlind / 2,
     bigBlind,
     rng,
+    lastStreet: lesson ? lesson.lastStreet : 'river',
     players: [
       { id: HERO_ID, name: 'You', stack: startingStack, isHero: true },
       ...opponents.map((key, i) => {
@@ -83,6 +101,9 @@ export function renderTable(ctx, params = {}) {
     aggressor: {},
     opener: null,
     learned: [],
+    // Set when the reader asks the coach to do the sum for them. Reset every
+    // decision, so asking once does not silence the coach for the whole hand.
+    peeked: false,
   };
   if (grind) profile.setBankroll(profile.data.bankroll - buyInCost);
 
@@ -93,14 +114,32 @@ export function renderTable(ctx, params = {}) {
   const root = el('div.screen',
     el('div.spread', { style: { marginBottom: '14px' } },
       el('div.row',
-        el('h1', { style: { margin: 0 } }, grind ? `${stake.name} — Bankroll Challenge` : VARIANTS[variantKey].name),
-        el('span.badge.gold', VARIANTS[variantKey].short),
+        el('h1', { style: { margin: 0 } }, lessonMeta
+          ? `${lessonMeta.icon} ${t(lessonMeta.name)}`
+          : grind ? `${stake.name} — Bankroll Challenge` : VARIANTS[variantKey].name),
+        el('span.badge.gold', lesson ? t('Lesson table') : VARIANTS[variantKey].short),
       ),
       el('div.row',
-        !grind ? variantSwitcher(variantKey, go) : null,
+        !grind && !lesson ? variantSwitcher(variantKey, go) : null,
+        lesson
+          ? el('button.btn.sm.ghost', { onclick: () => go('walkthrough', { module: params.lesson }) },
+            t('Read the lesson'))
+          : null,
         el('button.btn.sm.ghost', { onclick: () => leave() }, grind ? 'Cash out' : 'Leave table'),
       ),
     ),
+    // What has been taken away, and why. A table with two seats and a hand
+    // that stops on the flop is not the game — saying so is the difference
+    // between a simplification and a lie.
+    lesson
+      ? el('div.panel.lesson-note',
+          el('div', t(lesson.simplified)),
+          lesson.concept
+            ? el('div.faint', t('Everything this lesson has not covered is played for you. '
+              + 'You act when it is a {skill} decision.', { skill: t(lessonMeta.name) }))
+            : null,
+        )
+      : null,
     el('div.table-wrap.with-coach', el('div', feltHost, actionHost), coachHost),
   );
 
@@ -115,6 +154,9 @@ export function renderTable(ctx, params = {}) {
 
   function startHand() {
     if (session.cancelled) return;
+    // A lesson is not a bankroll test. Busting out of one would end the
+    // teaching over a variance run, so the seat is simply refilled.
+    if (lesson && hero.stack <= 0) hero.stack = startingStack;
     if (hero.stack <= 0) { draw(); return null; }
     if (table.players.filter((p) => p.stack > 0).length < 2) return topUpBots();
 
@@ -127,14 +169,109 @@ export function renderTable(ctx, params = {}) {
     session.handStarted = true;
     session.verdict = null;
     session.snapshot = null;
+    session.peeked = false;
     session.savedHand = null;
     session.aggressor = {};
     session.opener = null;
     session.learned = [];
+    session.actedThisHand = false;
+    session.namedThisHand = false;
     log(t('— Hand #{n} —', { n: table.handNumber }), true);
     draw();
+    if (lesson && (lesson.concept || lesson.ask)) return searchForMySpot();
     step();
     return null;
+  }
+
+  /**
+   * Deal until the reader's own spot arrives, without making them watch.
+   *
+   * Measured over 300 hands per lesson: a continuation-bet spot turns up once
+   * in twenty hands and a river bluff once in forty. Animating those at bot
+   * speed would be forty seconds of watching poker happen next to you before
+   * the lesson asked anything. So the hands that are not yours are played
+   * synchronously and silently, and the first one that is yours stops the
+   * loop with the felt exactly as it stands.
+   */
+  /**
+   * Record an action the autopilot took for the hero.
+   *
+   * Tracking who took the lead matters as much here as it does for a bot: a
+   * continuation bet is *by definition* a bet by the player who raised before
+   * the flop, so an autopilot raise that went unrecorded made the cbet spot
+   * unreachable. The lesson dealt hand after hand looking for something it
+   * had made impossible.
+   */
+  function applyHeroAuto(action) {
+    if (action.type === 'bet' || action.type === 'raise') {
+      session.aggressor[table.street] = HERO_ID;
+      if (table.street === 'preflop' && !session.opener) session.opener = hero.position;
+    }
+    session.recorder.act(table, action);
+    log(t('Played for you: {action}', { action: describeAction(action, table, hero, t('You')) }));
+  }
+
+  /**
+   * Whether this decision belongs to the reader.
+   *
+   * A lesson that asks you to read your hand has no concept tag to wait for:
+   * its moment is the river, five cards down. Folding 54o before the flop is
+   * correct poker and useless to a hand-reading lesson, so those decisions
+   * are played too — the reader is handed the one spot the lesson is about.
+   */
+  function isMySpot(snap) {
+    if (lesson.ask === 'name-hand') return table.board.length === 5;
+    return !lesson.concept || conceptOf(snap).id === lesson.concept;
+  }
+
+  function searchForMySpot() {
+    for (let dealt = 0; dealt < MAX_SEARCH; dealt++) {
+      const { found, snapshot } = playUntilMySpot(table, {
+        lesson,
+        rng,
+        isMine: isMySpot,
+        state: session,
+        // The recorder performs the action as well as recording it, so it is
+        // the one thing allowed to touch the table here.
+        apply: (action) => session.recorder.act(table, action),
+        onAuto: (action) => log(t('Played for you: {action}',
+          { action: describeAction(action, table, hero, t('You')) })),
+        onBot: (action, actor) => log(describeAction(action, table, actor, actor.name)),
+      });
+      if (found) {
+        session.snapshot = snapshot;
+        session.peeked = false;
+        draw();
+        return null;
+      }
+      // This hand had nothing to ask. Settle it and deal another.
+      endHand();
+      if (session.cancelled) return null;
+      if (dealt < MAX_SEARCH - 1) startNextSearchHand();
+    }
+    draw();
+    return null;
+  }
+
+  /** The bookkeeping half of startHand, without re-entering the search. */
+  function startNextSearchHand() {
+    if (lesson && hero.stack <= 0) hero.stack = startingStack;
+    if (table.players.filter((p) => p.stack > 0).length < 2) {
+      for (const p of table.players) if (!p.isHero) p.stack = startingStack;
+    }
+    table.startHand();
+    stats.startHand();
+    session.recorder = new HandRecorder(table, HERO_ID, { source: 'play', stake: null });
+    session.handStarted = true;
+    session.verdict = null;
+    session.snapshot = null;
+    session.savedHand = null;
+    session.aggressor = {};
+    session.opener = null;
+    session.learned = [];
+    session.actedThisHand = false;
+    session.namedThisHand = false;
+    log(t('— Hand #{n} —', { n: table.handNumber }), true);
   }
 
   function topUpBots() {
@@ -142,6 +279,26 @@ export function renderTable(ctx, params = {}) {
       if (!p.isHero && p.stack < table.bigBlind * 20) p.stack = startingStack;
     }
     return startHand();
+  }
+
+  /**
+   * Play the hero soundly through a decision this lesson is not about.
+   *
+   * It uses the same bot that runs a solid regular, so the parts you have not
+   * been taught are played correctly rather than randomly — and it says so in
+   * the log, because a hand where chips moved without you is a hand you are
+   * owed an explanation for.
+   */
+  function autoplayHero() {
+    session.timer = setTimeout(() => {
+      if (session.cancelled || table.handOver) return;
+      const actor = table.actor;
+      if (!actor || !actor.isHero) return;
+      applyHeroAuto(autopilotAction(table, actor, lesson, rng));
+      draw();
+      step();
+    }, Math.round(BOT_DELAY / 2));
+    return null;
   }
 
   function step() {
@@ -153,6 +310,18 @@ export function renderTable(ctx, params = {}) {
 
     if (actor.isHero) {
       session.snapshot = takeSnapshot();
+
+      // In a lesson, the hero is played for them through every decision the
+      // lesson has not taught yet, and handed back the moment its own spot
+      // arrives. That is what makes this poker rather than a questionnaire:
+      // you are never asked about a street you have not reached in the
+      // curriculum, and you never sit out the one you have.
+      if (lesson && (lesson.concept || lesson.ask) && !isMySpot(session.snapshot)) {
+        return autoplayHero();
+      }
+
+      // A new decision is a new chance to work it out yourself.
+      session.peeked = false;
       draw();
       return null;
     }
@@ -180,41 +349,10 @@ export function renderTable(ctx, params = {}) {
    * is only the right question in some of them. The seat, the board and what
    * you are holding are what say which skill the decision is really about.
    */
-  function takeSnapshot() {
-    const live = table.contestants.filter((p) => !p.isHero).length;
-    const toCall = Math.max(0, table.currentBet - hero.committed);
-    const pot = table.totalPot;
-    const equity = equityVsField(hero.hole, table.board, Math.max(1, live), table.variant, rng, 900);
-    const previous = STREETS[Math.max(0, STREETS.indexOf(table.street) - 1)];
-    return {
-      equity,
-      toCall,
-      pot,
-      needed: toCall > 0 ? requiredEquity(toCall, pot) : 0,
-      opponents: live,
-      spr: spr(table.effectiveStack(hero), pot),
-      street: table.street,
-      // Everything the coach needs to name the skill this spot is asking.
-      hole: hero.hole.slice(),
-      board: table.board.slice(),
-      position: hero.position,
-      bigBlind: table.bigBlind,
-      effectiveStack: table.effectiveStack(hero),
-      currentBet: table.currentBet,
-      // First in means nobody has voluntarily put money in yet — not merely
-      // that nobody has raised. A limper leaves currentBet at the big blind,
-      // and treating that as first in would ask the opening chart about a
-      // seat it has no opinion on.
-      firstIn: table.street === 'preflop' && !table.history.some((h) => h.street === 'preflop'
-        && (h.type === 'call' || h.type === 'bet' || h.type === 'raise')),
-      raiser: session.opener,
-      wasAggressor: session.aggressor[previous] === HERO_ID,
-      madeCategory: table.board.length
-        ? categoryOf(evaluateHand(hero.hole, table.board, table.variant))
-        : CAT.HIGH_CARD,
-      outs: table.board.length >= 3 ? outsToImprove(hero.hole, table.board, table.variant) : 0,
-    };
-  }
+  const takeSnapshot = () => snapshotOf(table, hero, {
+    rng, aggressor: session.aggressor, opener: session.opener,
+  });
+
 
   /**
    * One decision, recorded against the skill it exercised.
@@ -239,6 +377,7 @@ export function renderTable(ctx, params = {}) {
 
   function heroAct(action) {
     if (session.cancelled || table.handOver || !table.actor || !table.actor.isHero) return;
+    session.actedThisHand = true;
     const snap = session.snapshot || takeSnapshot();
     const verdict = judgeSpot({ ...snap, action: action.type, amount: action.amount });
     session.verdict = verdict;
@@ -301,6 +440,7 @@ export function renderTable(ctx, params = {}) {
     checkAchievements(profile, events).forEach((a) => toast({ icon: a.icon, title: a.name, desc: a.description }));
 
     draw();
+
   }
 
   function leave() {
@@ -396,8 +536,68 @@ export function renderTable(ctx, params = {}) {
     }));
   }
 
+  /**
+   * "What have you actually got?" asked at the table rather than on a
+   * worksheet.
+   *
+   * Hand Rankings is not a betting decision, so there is no concept tag to
+   * wait for — the lesson is reading your own hand, and the moment that
+   * matters is the river with five cards down and money still to be decided.
+   * The question goes in front of the action buttons: you say what you have,
+   * and only then do you get to act on it.
+   */
+  function nameYourHand() {
+    const score = evaluateHand(hero.hole, table.board, table.variant);
+    const correct = shortCategoryName(score, table.variant.shortDeck);
+    const all = ['High Card', 'One Pair', 'Two Pair', 'Three of a Kind', 'Straight',
+      'Flush', 'Full House', 'Four of a Kind', 'Straight Flush'];
+    const options = shuffle(rng, [correct, ...shuffle(rng, all.filter((n) => n !== correct)).slice(0, 3)]);
+
+    const feedback = el('div');
+    const buttons = [];
+    const pick = (choice) => {
+      if (session.namedThisHand) return;
+      session.namedThisHand = true;
+      const right = choice === correct;
+      profile.recordDrill('hand-rankings', right);
+      review(profile, 'hand-rankings', right);
+      profile.save();
+      for (const b of buttons) {
+        b.disabled = true;
+        if (b.dataset.key === correct) b.classList.add('correct');
+        else if (b.dataset.key === choice) b.classList.add('wrong');
+      }
+      feedback.appendChild(el(`div.feedback.${right ? 'correct' : 'wrong'}`,
+        el('div.verdict', right ? t('✓ Correct') : t('✗ Not quite — you said {said}', { said: t(choice) })),
+        el('div', t('{hand} — using {hole} with {board}.', {
+          hand: describeScore(score, table.variant.shortDeck),
+          hole: cardsToString(hero.hole),
+          board: cardsToString(table.board),
+        }))));
+      setTimeout(() => { if (!session.cancelled) draw(); }, 1600);
+    };
+
+    return el('div.action-bar',
+      el('div.practice-question', t('What is your best five-card hand?')),
+      el('div.practice-options', options.map((label) => {
+        const b = el('button.btn.practice-option', {
+          dataset: { key: label }, onclick: () => pick(label),
+        }, t(label));
+        buttons.push(b);
+        return b;
+      })),
+      feedback,
+    );
+  }
+
   function drawActions() {
     if (hero.stack <= 0 && !session.handStarted) return drawBust();
+
+    // Read your hand before you are allowed to bet it.
+    if (lesson && lesson.ask === 'name-hand' && !session.namedThisHand
+      && table.actor && table.actor.isHero && table.board.length === 5 && !table.handOver) {
+      return mount(actionHost, nameYourHand());
+    }
 
     if (table.handOver || !session.handStarted) {
       const result = table.result;
@@ -511,7 +711,13 @@ export function renderTable(ctx, params = {}) {
     // at a table nobody tells you which chapter the spot belongs to, and
     // working that out is most of the job. It says what kind of question this
     // is, never what the answer is.
-    const spot = isHeroTurn && snap ? conceptOf(snap) : null;
+    // A lesson with its own framing says that instead of naming whichever
+    // module the decision technically belongs to.
+    const spot = isHeroTurn && snap
+      ? (lesson && lesson.coachNote
+        ? { id: params.lesson, why: lesson.coachNote }
+        : conceptOf(snap))
+      : null;
     const spotMeta = spot ? moduleMeta(spot.id) : null;
 
     mount(coachHost,
@@ -525,22 +731,35 @@ export function renderTable(ctx, params = {}) {
             ),
           )
         : null,
+      // Before you act the coach names the skill and repeats the facts on the
+      // felt. It does not do the sum. Showing "your equity 41%" in green
+      // against "needed 30%" is the answer written out — the comment above
+      // has always said it never gives that away, and the code did exactly
+      // that. The numbers are worth seeing; they are worth seeing *after*.
       isHeroTurn && snap
         ? el('div',
-            metric('Your equity', fmt.pct(snap.equity, 1), snap.equity >= snap.needed ? 'good' : 'bad'),
-            snap.toCall > 0
-              ? metric('Equity needed', fmt.pct(snap.needed, 1))
-              : metric('Facing', 'no bet'),
-            snap.toCall > 0
-              ? metric('Pot odds', `${potOddsRatio(snap.toCall, snap.pot).toFixed(1)} : 1`)
-              : null,
             metric('Pot / to call', `${fmt.chips(snap.pot)} / ${fmt.chips(snap.toCall)}`),
-            metric('SPR', Number.isFinite(snap.spr) ? snap.spr.toFixed(1) : '∞'),
             metric('Opponents', String(snap.opponents)),
+            // Naming the hand in the coach panel would answer the question
+            // the lesson is about to ask, two inches above the buttons.
             el('div.faint', { style: { marginTop: '10px' } },
-              hero.hole.length && table.board.length
-                ? describeScore(evaluateHand(hero.hole, table.board, table.variant), table.variant.shortDeck)
-                : 'Preflop'),
+              lesson && lesson.ask === 'name-hand' && !session.namedThisHand
+                ? t('You tell me.')
+                : hero.hole.length && table.board.length
+                  ? describeScore(evaluateHand(hero.hole, table.board, table.variant), table.variant.shortDeck)
+                  : 'Preflop'),
+            session.peeked
+              ? el('div', { style: { marginTop: '10px' } },
+                  metric('Your equity', fmt.pct(snap.equity, 1)),
+                  snap.toCall > 0 ? metric('Equity needed', fmt.pct(snap.needed, 1)) : null,
+                  snap.toCall > 0
+                    ? metric('Pot odds', `${potOddsRatio(snap.toCall, snap.pot).toFixed(1)} : 1`)
+                    : null,
+                  metric('SPR', Number.isFinite(snap.spr) ? snap.spr.toFixed(1) : '∞'),
+                  el('div.faint', t('Asked for. This one will not count as solved on your own.')))
+              : el('button.btn.sm.ghost.block', { style: { marginTop: '10px' },
+                onclick: () => { session.peeked = true; draw(); } },
+              t('I am stuck — show me the numbers')),
           )
         : el('div.faint', table.handOver ? 'Hand complete. Review below, then deal again.' : 'Waiting for your turn…'),
 
