@@ -108,7 +108,19 @@ await step('table deals and plays', async () => {
   console.log(`      ${seats} seats, hero holds ${cards} cards`);
   if (seats !== 6) throw new Error(`expected 6 seats, got ${seats}`);
   if (cards !== 2) throw new Error(`expected 2 hole cards, got ${cards}`);
-  if (!/equity/i.test(coach)) throw new Error('coach panel not showing equity');
+  // The coach names the skill and repeats the felt. It must not do the sum
+  // for you before you have decided — "your equity 41%" in green next to
+  // "needed 30%" is the answer written out.
+  if (/equity/i.test(coach)) {
+    throw new Error(`the coach gave the answer away before the decision: "${coach.replace(/\n/g, ' · ').slice(0, 160)}"`);
+  }
+  const stuck = await page.$('button:has-text("show me the numbers")');
+  if (!stuck) throw new Error('there is no way to ask the coach for help');
+  await stuck.click();
+  await page.waitForTimeout(200);
+  const helped = await page.textContent('.coach');
+  if (!/equity/i.test(helped)) throw new Error('asking for the numbers did not produce them');
+  if (!/not count as solved/i.test(helped)) throw new Error('asking for help has to be marked as help');
 });
 if (SHOT) await page.screenshot({ path: `${SHOT}/04-table.png` });
 
@@ -602,6 +614,43 @@ await step('no screen prints a percentage it has no sample for', async () => {
   }
   if (faults.length) throw new Error(`a rate was shown without a sample:\n      ${faults.join('\n      ')}`);
   console.log('      3 answers and 3 calibration entries produced no percentages');
+});
+
+await step('a lesson is played, not answered', async () => {
+  // Four lessons covering the three shapes: one you act on every hand
+  // (preflop), one that waits for a tagged decision (cbet), one that plays
+  // everything and asks you to read your hand (hand-rankings), and one whose
+  // spot is rarest (bluffing).
+  for (const [id, seats] of [['preflop', 6], ['cbet', 2], ['hand-rankings', 2], ['bluffing', 2]]) {
+    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#play?lesson=${id}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.felt', { timeout: 8000 });
+
+    const seen = await page.$$eval('.seat', (n) => n.length);
+    if (seen !== seats) throw new Error(`${id}: expected ${seats} seats, got ${seen}`);
+    const note = await page.textContent('.lesson-note');
+    if (!note || note.length < 30) throw new Error(`${id}: the table does not say what it simplified`);
+
+    await page.click('button.btn.primary.lg');           // Deal me in
+    // A lesson that waits for a tagged spot searches synchronously and is
+    // there at once; one where every decision is yours still has to wait for
+    // the bots ahead of you to act at table speed.
+    let asked = null;
+    for (let i = 0; i < 40 && !asked; i++) {
+      asked = await page.$('.spot-name') || await page.$('.practice-question');
+      if (!asked) await page.waitForTimeout(400);
+    }
+    if (!asked) {
+      const log = await page.$$eval('.log div', (n) => n.slice(-4).map((x) => x.textContent));
+      throw new Error(`${id}: dealt but never asked the reader anything. Log: ${JSON.stringify(log)}`);
+    }
+    // And it must not have answered its own question on the way.
+    const coach = await page.textContent('.coach');
+    if (/\d+(\.\d+)?% *$/m.test(coach) && /equity/i.test(coach)) {
+      throw new Error(`${id}: the coach gave the numbers away unasked`);
+    }
+  }
+  console.log('      four lessons dealt straight to the reader\'s own decision');
 });
 
 await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {

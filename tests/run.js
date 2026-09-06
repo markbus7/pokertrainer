@@ -9,6 +9,7 @@ const modules = [
   './handHistory.test.js',
   './coach.test.js',
   './handShape.test.js',
+  './lessonTable.test.js',
   './bots.test.js',
   './progression.test.js',
   './sync.test.js',

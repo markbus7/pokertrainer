@@ -3291,4 +3291,38 @@ export const NL = {
   '{n} judged answers': '{n} beoordeelde antwoorden',
   'How often you were right, split by how sure you felt at the time.':
     'Hoe vaak je gelijk had, uitgesplitst naar hoe zeker je je op dat moment voelde.',
+  '▶ Play this lesson': '▶ Speel deze les',
+  'Lesson table': 'Lestafel',
+  'Read the lesson': 'Lees de les',
+  'Played for you: {action}': 'Voor jou gespeeld: {action}',
+  'Everything this lesson has not covered is played for you. You act when it is a {skill} decision.':
+    'Alles wat deze les nog niet behandelt wordt voor je gespeeld. Jij bent aan zet zodra het een {skill}-beslissing is.',
+  'I am stuck — show me the numbers': 'Ik kom er niet uit — laat de getallen zien',
+  'Asked for. This one will not count as solved on your own.':
+    'Gevraagd. Deze telt niet als zelf opgelost.',
+  'You tell me.': 'Zeg jij het maar.',
+  'Two players, and every hand runs to the river — so there is always a hand to read.':
+    'Twee spelers, en elke hand loopt tot de river — dus er is altijd een hand om te lezen.',
+  'Play the hand however you like. At the river, before you act, I will ask you what you have.':
+    'Speel de hand zoals je wilt. Bij de river, voordat je handelt, vraag ik je wat je hebt.',
+  'Heads up, and the hand stops on the flop. One price, one decision.':
+    'Heads up, en de hand stopt op de flop. Eén prijs, één beslissing.',
+  'Heads up, played to the river — so you find out whether the draw got there.':
+    'Heads up, gespeeld tot de river — zodat je merkt of de draw binnenkwam.',
+  'A full table, but the hand ends before the flop. This lesson is only about the first decision.':
+    'Een volle tafel, maar de hand eindigt voor de flop. Deze les gaat alleen over de eerste beslissing.',
+  'Six seats with the button moving round, because where you sit is the whole subject. The hand ends before the flop.':
+    'Zes stoelen met een roulerende button, want waar je zit is het hele onderwerp. De hand eindigt voor de flop.',
+  'Find the button, work out your seat, then decide. The hand ends before the flop.':
+    'Zoek de button, bepaal je positie, en beslis dan. De hand eindigt voor de flop.',
+  'Heads up, stopping on the flop — the street the continuation bet lives on.':
+    'Heads up, stoppend op de flop — de straat waar de continuation bet thuishoort.',
+  'Heads up to the river, where folding too much costs the most.':
+    'Heads up tot de river, waar te veel folden het meest kost.',
+  'Heads up to the river. A bluff only means anything when there is nothing left to catch up with.':
+    'Heads up tot de river. Een bluf betekent pas iets als er niets meer in te halen valt.',
+  'Three players, stopping on the turn — deep enough for the stack to matter, short enough to see it.':
+    'Drie spelers, stoppend op de turn — diep genoeg dat de stack telt, kort genoeg om het te zien.',
+  'Three players to the river, so there is a real opponent to read rather than a described one.':
+    'Drie spelers tot de river, zodat er een echte tegenstander te lezen valt in plaats van een beschreven.',
 };
