@@ -8,6 +8,7 @@ const modules = [
   './engine.test.js',
   './handHistory.test.js',
   './coach.test.js',
+  './handShape.test.js',
   './bots.test.js',
   './progression.test.js',
   './sync.test.js',

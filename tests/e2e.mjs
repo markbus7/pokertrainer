@@ -359,13 +359,24 @@ await step('lessons deal real cards and grade what you do with them', async () =
   await page.goto(`${BASE}/#walkthrough?module=outs`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
 
-  // Step one is an ordinary check; answer it to reach the exercise.
-  const first = await page.$$('.option');
-  if (first.length) { await first[0].click(); await page.waitForTimeout(200); }
-  for (const b of await page.$$('button.btn.primary')) {
-    if (/next step/i.test((await b.textContent()) || '')) { await b.click(); break; }
+  // Walk forward until the out-grid appears — the lesson gained naming and
+  // odds steps ahead of it, and it may gain more.
+  for (let i = 0; i < 8 && !(await page.$('.out-cell')); i++) {
+    const opts = await page.$$('.option:not([disabled]), .practice-option:not([disabled])');
+    if (opts.length) { await opts[0].click(); await page.waitForTimeout(250); }
+    const entry = await page.$('.practice-entry input');
+    if (entry) {
+      await entry.fill('25');
+      const send = await page.$('.practice-entry button');
+      if (send) { await send.click(); await page.waitForTimeout(250); }
+    }
+    let moved = false;
+    for (const b of await page.$$('button.btn.primary')) {
+      if (/next step/i.test((await b.textContent()) || '')) { await b.click(); moved = true; break; }
+    }
+    if (!moved) break;
+    await page.waitForTimeout(400);
   }
-  await page.waitForTimeout(500);
 
   const cells = await page.$$('.out-cell');
   if (cells.length !== 45) throw new Error(`expected 45 unseen cards, got ${cells.length}`);

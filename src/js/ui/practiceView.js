@@ -27,6 +27,8 @@ export function practiceView(spot, onDone, settings = {}) {
     case 'number': return numberView(spot, onDone);
     case 'choice': return choiceView(spot, onDone, settings);
     case 'decide': return decideView(spot, onDone, settings);
+    case 'felt-choice': return feltChoiceView(spot, onDone, settings);
+    case 'felt-number': return feltNumberView(spot, onDone, settings);
     default: return null;
   }
 }
@@ -35,6 +37,89 @@ const shell = (spot, ...children) => el('div.practice',
   el('div.practice-prompt', richText(t(spot.prompt))),
   ...children,
 );
+
+/**
+ * The question asked over the table it belongs to.
+ *
+ * These used to be tiles and labels — "Your hand", "The flop" — which reads
+ * like a worksheet. Recognising a gutshot is a thing you do while looking at
+ * a felt, so the practice happens on one: the same green, the same board in
+ * the middle, your two cards where your two cards are.
+ */
+const practiceFelt = (spot, settings) => el('div.felt.practice-felt',
+  el('div.board-area',
+    el('div.street-tag', t('flop')),
+    el('div.board', spot.board.map((c) => cardEl(c, { size: 'lg', fourColour: settings.fourColour, dealt: true }))),
+    spot.pot ? el('div.pot-chip', el('span.label', t('pot')), fmt.chips(spot.pot)) : null,
+  ),
+  el('div.practice-hole',
+    cardRow(spot.hero, { size: 'lg', fourColour: settings.fourColour, dealt: true }),
+    el('div.practice-hole-label', t('You')),
+  ),
+);
+
+/** Name what you are looking at: buttons under a real felt. */
+function feltChoiceView(spot, onDone, settings) {
+  let graded = null;
+  const feedback = el('div');
+  const buttons = [];
+
+  const pick = (key) => {
+    if (graded) return;
+    graded = spot.grade(key);
+    for (const b of buttons) {
+      b.disabled = true;
+      if (b.dataset.key === graded.answer) b.classList.add('correct');
+      else if (b.dataset.key === key) b.classList.add('wrong');
+    }
+    feedback.appendChild(gradeBox(graded));
+    onDone(graded);
+  };
+
+  return shell(spot,
+    practiceFelt(spot, settings),
+    el('div.practice-question', richText(t(spot.question))),
+    el('div.practice-options', spot.options.map((o) => {
+      const b = el('button.btn.practice-option', {
+        dataset: { key: o.key },
+        onclick: () => pick(o.key),
+      }, t(o.label));
+      buttons.push(b);
+      return b;
+    })),
+    feedback,
+  );
+}
+
+/** Produce the number, over a real felt. Typing it is the point. */
+function feltNumberView(spot, onDone, settings) {
+  let graded = null;
+  const feedback = el('div');
+  const input = el('input.lab-input', {
+    type: 'number', step: '1', placeholder: '—',
+    onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); submit.click(); } },
+  });
+  const submit = el('button.btn.primary', {
+    onclick: () => {
+      if (graded) return;
+      graded = spot.grade(input.value);
+      input.disabled = true;
+      submit.disabled = true;
+      feedback.appendChild(gradeBox(graded, graded.exact !== undefined
+        ? [t('The answer is {value}{unit}.', { value: graded.exact, unit: spot.unit || '' })] : []));
+      onDone(graded);
+    },
+  }, t('Check my answer'));
+
+  setTimeout(() => input.focus(), 30);
+
+  return shell(spot,
+    practiceFelt(spot, settings),
+    el('div.practice-question', richText(t(spot.question))),
+    el('div.practice-entry', input, spot.unit ? el('span.lab-unit', spot.unit) : null, submit),
+    feedback,
+  );
+}
 
 const seatBlock = (label, cards, settings, extraClass = '') => el(`div.practice-seat${extraClass}`,
   el('div.practice-label', t(label)),

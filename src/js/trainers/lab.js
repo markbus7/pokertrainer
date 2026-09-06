@@ -18,8 +18,9 @@ import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 import { CLEAR_MARGIN } from '../core/judge.js';
 import { t } from '../i18n/index.js';
+import { readShape, explainShape, SHAPES, shapeByKey } from '../core/handShape.js';
 
-export const LAB_TYPES = ['price', 'size', 'decide'];
+export const LAB_TYPES = ['shape', 'ladder', 'price', 'size', 'decide'];
 
 /** Pots divisible by 12, so a third and three quarters are both whole chips. */
 const CLEAN_POTS = [60, 120, 180, 240];
@@ -35,6 +36,104 @@ const SIZING_TARGETS = [
   { fraction: 1, label: 'the whole pot', needPct: 33 },
   { fraction: 2, label: 'twice the pot', needPct: 40 },
 ];
+
+/* ------------------------------------------------------------------ *
+ * 0. SHAPE — look at the cards and say what it is called
+ * ------------------------------------------------------------------ */
+
+/**
+ * The recognition half, which the Lab had none of.
+ *
+ * Every other spot here assumes you can already look at a board and know
+ * whether you are on a gutshot or an open-ender. That assumption is where a
+ * beginner falls off: the words appear in the lessons and the answers, and
+ * nothing ever asks you to produce one from cards.
+ */
+function shapeSpot(rng) {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const deck = shuffle(rng, makeDeck());
+    const hero = deck.slice(0, 2);
+    const board = deck.slice(2, 5);
+    const read = readShape(hero, board);
+    if (read.shape.key === 'nothing' || read.shape.key === 'backdoor-flush') continue;
+
+    const others = SHAPES
+      .filter((sh) => sh.key !== read.shape.key && sh.key !== 'nothing' && sh.key !== 'backdoor-flush')
+      .map((sh) => sh.key);
+    const keys = shuffle(rng, [read.shape.key, ...shuffle(rng, others).slice(0, 3)]);
+
+    return {
+      type: 'shape',
+      concept: 'outs',
+      table: { board, hole: hero },
+      prompt: t('Look at what you are holding, not at what you might make.'),
+      question: t('What is this called?'),
+      inputKind: 'action',
+      actions: keys.map((key) => ({ key, label: t(shapeByKey(key).label) })),
+      answer: read.shape.key,
+      solve: (given) => ({
+        correct: given === read.shape.key,
+        exact: t(read.shape.label),
+        lines: [
+          explainShape(hero, board),
+          read.shape.outs
+            ? t('That is {outs} outs, which is about {pct}% by the river.',
+              { outs: read.shape.outs, pct: (exactOutsEquity(read.shape.outs, 'flop') * 100).toFixed(0) })
+            : t('Nothing to count here — the hand is already made.'),
+        ],
+      }),
+    };
+  }
+  return priceSpot(rng);
+}
+
+/* ------------------------------------------------------------------ *
+ * 0b. LADDER — the five prices worth knowing cold
+ * ------------------------------------------------------------------ */
+
+/**
+ * A quarter is 17%, a third 20%, half 25%, three quarters 30%, the pot 33%.
+ * The lesson derives them and the decision card uses them; nothing ever asked
+ * for one directly, so they stayed a calculation to redo rather than five
+ * facts to recall.
+ */
+const LADDER = [
+  { fraction: 1 / 4, name: 'a quarter of the pot' },
+  { fraction: 1 / 3, name: 'a third of the pot' },
+  { fraction: 1 / 2, name: 'half the pot' },
+  { fraction: 3 / 4, name: 'three quarters of the pot' },
+  { fraction: 1, name: 'the whole pot' },
+];
+
+function ladderSpot(rng) {
+  const pot = CLEAN_POTS[randInt(rng, CLEAN_POTS.length)];
+  const rung = LADDER[randInt(rng, LADDER.length)];
+  const bet = Math.round(pot * rung.fraction);
+  const need = requiredEquity(bet, pot + bet);
+  const deck = shuffle(rng, makeDeck());
+
+  return {
+    type: 'ladder',
+    concept: 'pot-odds',
+    table: { board: deck.slice(0, 3), hole: deck.slice(3, 5), pot, bet, potNow: pot + bet },
+    prompt: t('They bet {name} — {bet} into {pot}.', { name: t(rung.name), bet, pot }),
+    question: t('What share of the time do you have to win for the call to break even?'),
+    inputKind: 'percent',
+    answer: need * 100,
+    tolerance: 2,
+    solve: (given) => ({
+      correct: Math.abs(given - need * 100) <= 2,
+      exact: `${(need * 100).toFixed(0)}%`,
+      lines: [
+        t('Your {bet} goes into a final pot of {final}, so you need {pct}%.',
+          { bet, final: pot + bet + bet, pct: (need * 100).toFixed(0) }),
+        t('The five worth knowing cold: a quarter asks 17%, a third 20%, half 25%, three quarters 30%, the whole '
+          + 'pot 33%.'),
+      ],
+      visual: { pot: pot + bet, call: bet },
+    }),
+  };
+}
 
 /* ------------------------------------------------------------------ *
  * 1. PRICE — face a bet, type the equity you need
@@ -192,7 +291,9 @@ function decideSpot(rng) {
  * Registry
  * ------------------------------------------------------------------ */
 
-const GENERATORS = { price: priceSpot, size: sizeSpot, decide: decideSpot };
+const GENERATORS = {
+  shape: shapeSpot, ladder: ladderSpot, price: priceSpot, size: sizeSpot, decide: decideSpot,
+};
 
 export function generateSpot(type, rng) {
   const gen = GENERATORS[type];
