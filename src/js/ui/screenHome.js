@@ -2,7 +2,7 @@
 
 import { el, fmt } from './dom.js';
 import { t } from '../i18n/index.js';
-import { MODULE_META, recommendedModule } from '../data/curriculum.js';
+import { MODULE_META, nextUp } from '../data/curriculum.js';
 import { dueConcepts, nextReviewLabel, hasStudied } from '../state/spacing.js';
 import { masteryTier, nextTierGoal, tierByKey } from '../state/mastery.js';
 import { RANKS, requirementRows } from '../state/profile.js';
@@ -30,7 +30,8 @@ export function renderHome(ctx) {
   const { profile, go } = ctx;
   const rank = profile.rank;
   const next = profile.nextRank;
-  const recommended = recommendedModule(profile);
+  const plan = nextUp(profile);
+  const recommended = plan.module;
   const stake = stakeFor(profile.data.stakeKey);
 
   const totals = Object.values(profile.data.drills).reduce(
@@ -85,6 +86,9 @@ export function renderHome(ctx) {
               t('Six seats, and a coach that names the skill before you act')),
             el('div.faint', t('Every decision counts toward a skill. {weakest} is the one to work on.',
               { weakest: t(recommended.name) })),
+            // Naming a module without saying why leaves the reader to guess,
+            // and the module grid below shows two things reading "Learning".
+            el('div.faint', whyThisOne(plan)),
           ),
         ),
         el('button.btn.primary.lg', { onclick: () => go('play') }, 'Play a hand'),
@@ -122,7 +126,7 @@ export function renderHome(ctx) {
         el('span.faint', t('{n} of {total} unlocked', { n: MODULE_META.filter((m) => m.unlockLevel <= profile.level).length, total: MODULE_META.length })),
       ),
       el('div.grid.cols-3',
-        MODULE_META.map((meta) => moduleTile(meta, profile, go)),
+        MODULE_META.map((meta) => moduleTile(meta, profile, go, recommended.id)),
       ),
     ),
   );
@@ -210,7 +214,30 @@ function describeProgress(profile, moduleId) {
   const pct = fmt.pct(acc);
   if (acc >= 0.9) return t('{pct} right — nearly mastered.', { pct });
   if (acc >= 0.7) return t('{pct} right — solid, but there is room.', { pct });
+  if (stats.attempts < 8) return t('{pct} right, but only {n} questions in — too early to tell.',
+    { pct, n: stats.attempts });
   return t('{pct} right — this is your weakest skill right now.', { pct });
+}
+
+/**
+ * The sentence that was missing: not just which module, but on what grounds.
+ * Every branch here matches a branch of nextUp(), so the two can never drift
+ * into saying different things.
+ */
+function whyThisOne(plan) {
+  const { reason, stats } = plan;
+  if (reason === 'untouched') return t('You have not tried this one yet, so it is the fastest thing to learn.');
+  if (reason === 'thin') {
+    return t('Only {n} questions so far — a few more and the game can tell how you are really doing.',
+      { n: stats.attempts });
+  }
+  if (reason === 'lesson') {
+    return t('Under half right, and you have not read the lesson yet. Read it first — another ten '
+      + 'questions is the slow way to find out what the page tells you in two minutes.');
+  }
+  if (reason === 'fresh') return t('Everything is mastered, so this is simply the one that is coldest.');
+  return t('Lowest accuracy of everything you have unlocked, weighted so that a module you have '
+    + 'barely tried cannot jump the queue.');
 }
 
 function quickCard(icon, title, body, cta, onclick) {
@@ -230,25 +257,31 @@ function statTile(label, value, sub = '') {
   );
 }
 
-function moduleTile(meta, profile, go) {
+function moduleTile(meta, profile, go, recommendedId) {
   const locked = meta.unlockLevel > profile.level;
+  // The banner above names one module; without a marker here the reader has
+  // to match a name against twelve tiles, several of which read "Learning".
+  const isNext = !locked && meta.id === recommendedId;
   const stats = profile.drillStats(meta.id);
   const acc = profile.accuracy(meta.id);
   const tier = locked ? 'untouched' : masteryTier(profile, meta.id);
   const tierInfo = tierByKey(tier);
   const goal = locked ? null : nextTierGoal(profile, meta.id);
 
-  return el(`button.module-tile${locked ? '.locked' : ''}`, {
+  return el(`button.module-tile${locked ? '.locked' : ''}${isNext ? '.next-up' : ''}`, {
     disabled: locked,
     onclick: () => !locked && go('learn', { module: meta.id }),
   },
     el('div.spread',
       el('span.icon', locked ? '🔒' : meta.icon),
-      locked
-        ? el('span.badge', t('Level {level}', { level: meta.unlockLevel }))
-        : tier !== 'untouched'
-          ? el(`span.badge${tierInfo.tone ? `.${tierInfo.tone}` : ''}`, tierInfo.icon, ' ', t(tierInfo.name))
-          : null,
+      el('div.row', { style: { gap: '6px' } },
+        isNext ? el('span.badge.next-badge', t('DO THIS NEXT')) : null,
+        locked
+          ? el('span.badge', t('Level {level}', { level: meta.unlockLevel }))
+          : tier !== 'untouched'
+            ? el(`span.badge${tierInfo.tone ? `.${tierInfo.tone}` : ''}`, tierInfo.icon, ' ', t(tierInfo.name))
+            : null,
+      ),
     ),
     el('div.name', meta.name),
     el('div.tagline', meta.tagline),

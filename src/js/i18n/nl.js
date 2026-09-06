@@ -3263,4 +3263,17 @@ export const NL = {
   'two overcards': 'twee overcards',
   'a backdoor flush draw': 'een backdoor flush draw',
   'nothing yet': 'nog niets',
+  'DO THIS NEXT': 'NU AAN DE BEURT',
+  'You have not tried this one yet, so it is the fastest thing to learn.':
+    'Deze heb je nog niet geprobeerd, dus hier valt het snelst iets te leren.',
+  'Only {n} questions so far — a few more and the game can tell how you are really doing.':
+    'Pas {n} vragen — nog een paar en het spel kan zien hoe je er echt voor staat.',
+  'Under half right, and you have not read the lesson yet. Read it first — another ten questions is the slow way to find out what the page tells you in two minutes.':
+    'Minder dan de helft goed, en je hebt de les nog niet gelezen. Lees die eerst — nog tien vragen is de trage manier om erachter te komen wat de les je in twee minuten vertelt.',
+  'Everything is mastered, so this is simply the one that is coldest.':
+    'Alles is mastered, dus dit is simpelweg degene die het langst geleden is.',
+  'Lowest accuracy of everything you have unlocked, weighted so that a module you have barely tried cannot jump the queue.':
+    'Laagste score van alles wat je hebt ontgrendeld, gewogen zodat een module die je nauwelijks hebt geprobeerd niet voordringt.',
+  '{pct} right, but only {n} questions in — too early to tell.':
+    '{pct} goed, maar pas {n} vragen ver — te vroeg om iets te zeggen.',
 };

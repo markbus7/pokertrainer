@@ -1129,3 +1129,19 @@ input, textarea, select { font-size: max(16px, 1rem); }
   color: var(--text);
   white-space: pre;
 }
+
+/* ---- The one module the home screen is pointing at ------------------ *
+   A tier badge says what state a module is in; several can read the same
+   thing at once. This says which one to open, so the banner above and the
+   grid below cannot disagree. */
+.module-tile.next-up {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold-dim) inset;
+}
+.badge.next-badge {
+  background: var(--gold);
+  color: #23180a;
+  border-color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}

@@ -3,7 +3,9 @@ import { Profile, RANKS, rankForXp, rankProgress, requirementRows, meetsRank } f
 import { SessionStats, leakReport, bankrollAdvice, STAKES } from '../src/js/state/stats.js';
 import { checkAchievements, ACHIEVEMENTS } from '../src/js/state/achievements.js';
 import { generateQuestion, generateGauntlet, DRILL_MODULE_IDS, difficultyForLevel } from '../src/js/trainers/index.js';
-import { MODULE_META, unlockedModules, recommendedModule } from '../src/js/data/curriculum.js';
+import {
+  MODULE_META, unlockedModules, recommendedModule, nextUp, confidenceAdjusted,
+} from '../src/js/data/curriculum.js';
 import { makeRng } from '../src/js/core/rng.js';
 
 /** Earn a rank properly: the lessons, the drilling, the hands, then the XP. */
@@ -18,6 +20,15 @@ const promoteTo = (p, level) => {
   for (let i = 0; i < (req.lessons || 0); i++) p.markWalkthroughComplete(ids[i]);
   if (req.hands) p.data.handsPlayed = Math.max(p.data.handsPlayed, req.hands);
   if (p.xp < rank.xp) p.addXp(rank.xp - p.xp);
+  return p;
+};
+
+/** Promoted, with every unlocked module answered enough to be judged. */
+const settled = (level) => {
+  const p = promoteTo(fresh(), level);
+  for (const m of unlockedModules(p.level)) {
+    for (let i = p.drillStats(m.id).attempts; i < 20; i++) p.recordDrill(m.id, true);
+  }
   return p;
 };
 
@@ -255,6 +266,64 @@ describe('progression: drill tracking', () => {
       for (let i = 0; i < 10; i++) p.recordDrill(m.id, m.id !== 'outs');
     }
     equal(recommendedModule(p).id, 'outs', 'points at the weakest skill');
+  });
+
+  it('does not let one bad answer outrank a module you have really struggled with', () => {
+    // Raw accuracy says 0 of 1 is a 0% disaster and 5 of 12 is 42%, so the
+    // module you have barely opened wins "your weakest skill" over the one
+    // you have genuinely fought with.
+    const p = settled(5);
+    for (let i = 0; i < 12; i++) p.recordDrill('pot-odds', i < 5);   // 5/12, a real hole
+    p.recordDrill('outs', false);                                     // 0/1, no evidence
+    equal(nextUp(p).module.id, 'pot-odds',
+      'a module with real evidence of trouble outranks one bad answer');
+
+    // A short perfect run is not proof of mastery either.
+    assert(confidenceAdjusted(3, 3) < confidenceAdjusted(26, 26),
+      'three right in a row is not the same as twenty-six');
+  });
+
+  it('says why, and the reason always matches what it picked', () => {
+    const p = promoteTo(fresh(), 5);
+    equal(nextUp(p).reason, 'untouched', 'nothing tried yet');
+
+    const ids = unlockedModules(p.level).map((m) => m.id);
+    for (const id of ids) {
+      for (let i = 0; i < 4 - p.drillStats(id).attempts; i++) p.recordDrill(id, true);
+    }
+    // promoteTo already drilled the early modules to mastery, so only the
+    // untouched tail is thin — which is exactly what should be recommended.
+    equal(nextUp(p).reason, 'thin', 'four questions each is not enough to judge');
+
+    // Now make one module genuinely bad, with its lesson unread.
+    const victim = ids.find((id) => !p.hasCompletedWalkthrough(id));
+    assert(victim, 'the fixture leaves at least one lesson unread');
+    for (let i = 0; i < 24; i++) p.recordDrill(victim, false);
+    for (const id of ids) {
+      if (id === victim) continue;
+      for (let i = 0; i < 24; i++) p.recordDrill(id, true);
+    }
+    const plan = nextUp(p);
+    equal(plan.module.id, victim);
+    equal(plan.reason, 'lesson', 'under half right with the lesson unread means read the lesson');
+
+    // Read it, and the advice becomes "this is your weakest — drill it".
+    p.markWalkthroughComplete(victim);
+    equal(nextUp(p).reason, 'weakest');
+  });
+
+  it('never points at a module that is already mastered while others are open', () => {
+    const p = promoteTo(fresh(), 5);
+    const open = unlockedModules(p.level);
+    for (const m of open) {
+      p.markWalkthroughComplete(m.id);
+      for (let i = 0; i < 40; i++) p.recordDrill(m.id, true);
+    }
+    // Everything mastered: it still has to name something, and say so.
+    equal(nextUp(p).reason, 'fresh', 'with nothing left open it says the queue is empty');
+    // Break one open again and it must be the pick.
+    for (let i = 0; i < 40; i++) p.recordDrill('outs', false);
+    equal(nextUp(p).module.id, 'outs', 'a module that fell out of mastery is the one to fix');
   });
 });
 
