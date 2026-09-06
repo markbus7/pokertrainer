@@ -3,9 +3,11 @@
  * what beats what, how many cards save you, and what the pot is offering.
  */
 
-import { makeDeck, cardsToString } from '../core/cards.js';
+import { makeDeck, cardsToString, SUIT_NAMES } from '../core/cards.js';
 import { evaluate, describeScore, shortCategoryName } from '../core/evaluator.js';
-import { countOuts, describeOuts, exactOutsEquity, handEquity, equityVsField } from '../core/equity.js';
+import {
+  countOuts, describeOuts, exactOutsEquity, handEquity, equityVsField, backdoorFlush,
+} from '../core/equity.js';
 import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 import { buildChoices, numericDistractors, percentDistractors, attempt, pct } from './helpers.js';
@@ -100,7 +102,11 @@ export function outsDrill(rng, difficulty = 2) {
     module: 'outs',
     difficulty,
     scenario: { board, hole: hero, villain, revealVillain: true },
-    question: t('You are behind. How many cards on the turn put you in front?'),
+    // "How many cards on the turn" and "with two cards to come" were both in
+    // this drill, and they contradict each other. Outs are a count of cards
+    // left in the deck; how many streets are left to find one is the next
+    // step, not part of the count.
+    question: t('You are behind. How many cards left in the deck put you in front?'),
     options,
     answer,
     // Say the number before you see any numbers. Picking the right one out of
@@ -109,11 +115,38 @@ export function outsDrill(rng, difficulty = 2) {
     entry: { unit: t('outs'), value: count, tolerance: 0 },
     // Naming the cards is the whole lesson: a bare count asks you to take the
     // number on trust, which teaches nothing you can repeat at a table.
-    explanation: `${describeOuts(hero, villain, board).sentence} `
-      + t('With two cards to come that is about {exact} — the rule of 4 gives you {rough}%, which is close '
-        + 'enough to act on.', { exact: pct(equity), rough: count * 4 }),
+    explanation: [
+      describeOuts(hero, villain, board).sentence,
+      backdoorNote(hero, villain, board),
+      t('Two cards are still to come — the turn and the river — so the rule of 4 turns {count} outs into '
+        + '{rough}%. The exact figure is {exact}.',
+      { count, rough: count * 4, exact: pct(equity) }),
+    ].filter(Boolean).join(' '),
     xp: 10 + difficulty * 3,
   };
+}
+
+/**
+ * Three of a suit is the shape most often miscounted as outs. It is two cards
+ * away rather than one, so none of it belongs in an out count — and it can be
+ * worth nothing at all, because you and your opponent play the same four board
+ * cards and only your own last card of the suit separates you.
+ */
+function backdoorNote(hero, villain, board) {
+  const bd = backdoorFlush(hero, villain, board);
+  if (!bd) return null;
+  const suit = t(SUIT_NAMES[bd.suit]);
+  const lead = t('You also hold three {suit} — but a backdoor flush needs the turn **and** the river to come '
+    + '{suit}. That is two cards, so none of them counts here.', { suit });
+  if (bd.wins === 0) {
+    return `${lead} ${t('It is worth nothing even then: they hold better {suit} than you do, so every flush '
+      + 'you make is second best.', { suit })}`;
+  }
+  if (bd.wins * 4 < bd.total) {
+    return `${lead} ${t('And of the {total} ways two more {suit} can arrive, only {wins} win — they hold '
+      + 'better {suit} than you do.', { total: bd.total, wins: bd.wins, suit })}`;
+  }
+  return lead;
 }
 
 /** Turning outs into equity with the rule of 2 and 4. */

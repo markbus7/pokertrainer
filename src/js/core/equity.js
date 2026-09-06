@@ -157,6 +157,44 @@ export function equityVsField(hole, board, opponents, variant = HOLDEM, rng = ma
 }
 
 /**
+ * Runner-runner flushes, and whether yours is worth anything.
+ *
+ * Three of a suit is the shape a beginner most often mistakes for outs: it
+ * looks like a flush draw and it is two cards away, not one. Worse, it can be
+ * drawing dead — hold the 3 of diamonds against someone holding the 7 and
+ * every diamond flush you make is second best, because you both play the same
+ * four board cards and only your own last diamond separates you.
+ *
+ * So this answers both halves honestly by dealing out every pair of remaining
+ * cards in the suit and asking the evaluator who won.
+ *
+ * @returns {null|{suit:number, held:number, wins:number, total:number}}
+ */
+export function backdoorFlush(hero, villain, board) {
+  const cards = [...hero, ...board];
+  for (let suit = 0; suit < 4; suit++) {
+    const held = cards.filter((c) => (c & 3) === suit).length;
+    if (held !== 3) continue;
+
+    const dead = new Set([...hero, ...villain, ...board]);
+    const left = [];
+    for (let card = suit; card < 52; card += 4) if (!dead.has(card)) left.push(card);
+
+    let wins = 0;
+    let total = 0;
+    for (let i = 0; i < left.length; i++) {
+      for (let j = i + 1; j < left.length; j++) {
+        const full = [...board, left[i], left[j]];
+        total++;
+        if (evaluateHand(hero, full) > evaluateHand(villain, full)) wins++;
+      }
+    }
+    return { suit, held, wins, total };
+  }
+  return null;
+}
+
+/**
  * Outs: cards that turn a losing hand into a winning one on the next street.
  * Counted by simulation against the actual opponent hand, which is how a
  * student should learn to see them — "which cards save me right now".

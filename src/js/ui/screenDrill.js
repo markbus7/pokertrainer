@@ -3,6 +3,7 @@
 import { el, mount, richText, toast, fmt } from './dom.js';
 import { t } from '../i18n/index.js';
 import { scenarioView } from './scenarioView.js';
+import { copyButton } from './copySpot.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
 import { generateQuestion, generateGauntlet, difficultyForLevel } from '../trainers/index.js';
 import { checkAchievements } from '../state/achievements.js';
@@ -209,8 +210,19 @@ export function renderDrill(ctx, params) {
     if (!Number.isFinite(value)) return;
     state.typed = value;
     const close = Math.abs(value - q.entry.value) <= q.entry.tolerance;
+    // A wrong typed answer is graded through some option key so that mastery,
+    // XP and the review schedule only ever see one kind of event — but that
+    // key is an implementation detail, not something the reader picked, so
+    // draw() knows not to paint it red. Saying "you said 16" and then
+    // highlighting 11 is a lie about what happened.
     const wrong = q.options.find((o) => o.key !== q.answer);
     answer(close ? q.answer : wrong.key);
+  };
+
+  /** "24%" but "6 outs" — a symbol hugs the number, a word does not. */
+  const withUnit = (value, entry) => {
+    if (!entry || !entry.unit) return String(value);
+    return /^[%°]/.test(entry.unit) ? `${value}${entry.unit}` : `${value} ${entry.unit}`;
   };
 
   const typedAnswer = (q) => {
@@ -290,7 +302,9 @@ export function renderDrill(ctx, params) {
 
     const options = el('div.options',
       q.options.map((option, i) => el(`button.option${
-        chosen === null ? '' : option.key === q.answer ? '.correct' : option.key === chosen ? '.wrong' : ''
+        chosen === null ? ''
+          : option.key === q.answer ? '.correct'
+            : option.key === chosen && state.typed == null ? '.wrong' : ''
       }`, {
         disabled: chosen !== null,
         onclick: () => answer(option.key),
@@ -315,7 +329,7 @@ export function renderDrill(ctx, params) {
         el('div.verdict', chosen === q.answer
           ? t('✓ Correct')
           : state.typed != null
-            ? t('✗ Not quite — you said {said}', { said: `${state.typed}${q.entry ? q.entry.unit : ''}` })
+            ? t('✗ Not quite — you said {said}', { said: withUnit(state.typed, q.entry) })
             : t('✗ Not quite')),
         el('div', q.explanation),
       ),
@@ -326,6 +340,21 @@ export function renderDrill(ctx, params) {
         ? el('span.faint', entryBox ? t('Type your answer, then press Enter') : 'Press 1-4 to answer')
         : el('button.btn.primary', { onclick: () => (sessionOver() ? finish() : nextQuestion()) },
             sessionOver() ? 'See results →' : 'Next question →'),
+      // Once it is graded there is something worth asking about, and asking
+      // well means reproducing the whole spot — five cards, the pot, the
+      // options and what you said. Retyping that is enough work that nobody
+      // does it, so the game writes it out.
+      chosen === null ? null : copyButton(() => ({
+        module: meta.name,
+        scenario: q.scenario,
+        question: q.question,
+        options: q.options,
+        given: state.typed != null
+          ? withUnit(state.typed, q.entry)
+          : (q.options.find((o) => o.key === chosen) || {}).label,
+        correct: (q.options.find((o) => o.key === q.answer) || {}).label,
+        explanation: q.explanation,
+      })),
       chosen !== null && !bounded ? el('button.btn.ghost', { onclick: finish }, 'End session') : null,
       !gauntlet && chosen === null ? el('button.btn.ghost', { onclick: () => go('learn', { module: meta.id }) }, 'Review the lesson') : null,
     );

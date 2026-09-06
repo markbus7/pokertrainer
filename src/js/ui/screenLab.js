@@ -18,6 +18,7 @@ import { el, mount, richText, toast, fmt } from './dom.js';
 import { t } from '../i18n/index.js';
 import { cardRow } from './cardView.js';
 import { seatFelt } from './spotFelt.js';
+import { copyButton } from './copySpot.js';
 import { potShareVisual, renderGauge } from './visuals.js';
 import { generateSession } from '../trainers/lab.js';
 import { CONFIDENCE, review, recordConfidence } from '../state/spacing.js';
@@ -232,6 +233,17 @@ export function renderLab(ctx) {
         : r.visual
           ? potShareVisual(r.visual.pot, r.visual.call)
           : null,
+      copyButton(() => ({
+        module: `Lab · ${labelFor(s.type)}`,
+        scenario: s.table && s.table.ring
+          ? { position: s.table.ring.heroPosition }
+          : s.table,
+        question: `${s.prompt} ${s.question}`,
+        options: s.actions,
+        given: shown,
+        correct: r.exact,
+        explanation: r.lines.filter(Boolean).join(' '),
+      })),
     );
   }
 

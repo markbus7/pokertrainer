@@ -1112,3 +1112,20 @@ input, textarea, select { font-size: max(16px, 1rem); }
 }
 .drill-entry-input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
 .drill-entry-unit { font-size: 1.3rem; font-weight: 700; color: var(--text-dim); }
+
+/* The clipboard can refuse; the text still has to be gettable by hand. */
+.copy-fallback {
+  display: block;
+  width: 100%;
+  min-height: 160px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-bright);
+  background: var(--bg-raised);
+  color: var(--text);
+  white-space: pre;
+}
