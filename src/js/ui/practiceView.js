@@ -11,6 +11,7 @@
 import { el, richText, fmt } from './dom.js';
 import { t } from '../i18n/index.js';
 import { cardEl, cardRow } from './cardView.js';
+import { spotFelt, seatFelt } from './spotFelt.js';
 import { rankOf, suitOf, RANK_CHARS, SUIT_SYMBOLS, makeCard } from '../core/cards.js';
 
 const cardName = (card) => RANK_CHARS[rankOf(card) - 2] + SUIT_SYMBOLS[suitOf(card)];
@@ -28,6 +29,7 @@ export function practiceView(spot, onDone, settings = {}) {
     case 'choice': return choiceView(spot, onDone, settings);
     case 'decide': return decideView(spot, onDone, settings);
     case 'felt-choice': return feltChoiceView(spot, onDone, settings);
+    case 'seat-choice': return seatChoiceView(spot, onDone, settings);
     case 'felt-number': return feltNumberView(spot, onDone, settings);
     default: return null;
   }
@@ -38,28 +40,26 @@ const shell = (spot, ...children) => el('div.practice',
   ...children,
 );
 
-/**
- * The question asked over the table it belongs to.
- *
- * These used to be tiles and labels — "Your hand", "The flop" — which reads
- * like a worksheet. Recognising a gutshot is a thing you do while looking at
- * a felt, so the practice happens on one: the same green, the same board in
- * the middle, your two cards where your two cards are.
- */
-const practiceFelt = (spot, settings) => el('div.felt.practice-felt',
-  el('div.board-area',
-    el('div.street-tag', t('flop')),
-    el('div.board', spot.board.map((c) => cardEl(c, { size: 'lg', fourColour: settings.fourColour, dealt: true }))),
-    spot.pot ? el('div.pot-chip', el('span.label', t('pot')), fmt.chips(spot.pot)) : null,
-  ),
-  el('div.practice-hole',
-    cardRow(spot.hero, { size: 'lg', fourColour: settings.fourColour, dealt: true }),
-    el('div.practice-hole-label', t('You')),
-  ),
-);
 
 /** Name what you are looking at: buttons under a real felt. */
 function feltChoiceView(spot, onDone, settings) {
+  return pictureChoiceView(spot, onDone, spotFelt(spot, settings));
+}
+
+/**
+ * The same question shape asked over a ring of seats: which chair am I in,
+ * and who is still to act. The position labels come off the plates when the
+ * name is what is being asked for — leaving them on prints the answer.
+ */
+function seatChoiceView(spot, onDone, settings) {
+  return pictureChoiceView(spot, onDone, seatFelt(spot.ring, {
+    hideSeatNames: spot.hideSeatNames,
+    fourColour: !!settings.fourColour,
+  }));
+}
+
+/** Buttons under a picture, graded in place. */
+function pictureChoiceView(spot, onDone, picture) {
   let graded = null;
   const feedback = el('div');
   const buttons = [];
@@ -77,7 +77,7 @@ function feltChoiceView(spot, onDone, settings) {
   };
 
   return shell(spot,
-    practiceFelt(spot, settings),
+    picture,
     el('div.practice-question', richText(t(spot.question))),
     el('div.practice-options', spot.options.map((o) => {
       const b = el('button.btn.practice-option', {
@@ -114,7 +114,7 @@ function feltNumberView(spot, onDone, settings) {
   setTimeout(() => input.focus(), 30);
 
   return shell(spot,
-    practiceFelt(spot, settings),
+    spotFelt(spot, settings),
     el('div.practice-question', richText(t(spot.question))),
     el('div.practice-entry', input, spot.unit ? el('span.lab-unit', spot.unit) : null, submit),
     feedback,

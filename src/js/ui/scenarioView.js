@@ -2,6 +2,7 @@
 
 import { el, fmt } from './dom.js';
 import { cardRow } from './cardView.js';
+import { spotFelt } from './spotFelt.js';
 import { POSITION_INFO } from '../data/ranges.js';
 import { t } from '../i18n/index.js';
 
@@ -29,7 +30,13 @@ export function scenarioView(scenario, settings = {}) {
     ));
   }
 
-  if (scenario.hole) {
+  // A spot with cards in it gets a table drawn round it. Two labelled rows —
+  // "Your hand", "Board" — read like a worksheet; the same cards on a felt
+  // read like poker, which is where the skill has to work.
+  const onFelt = Boolean(scenario.hole || scenario.board) && !scenario.compare && !Array.isArray(scenario.hands);
+  if (onFelt) parts.push(spotFelt(scenario, settings));
+
+  if (scenario.hole && !onFelt) {
     parts.push(labelled('Your hand', cardRow(scenario.hole, { size: 'lg', fourColour: four })));
   }
 
@@ -42,7 +49,7 @@ export function scenarioView(scenario, settings = {}) {
     ));
   }
 
-  if (scenario.board) {
+  if (scenario.board && !onFelt) {
     parts.push(labelled('Board', cardRow(scenario.board, { size: 'lg', fourColour: four })));
   }
 
@@ -52,13 +59,13 @@ export function scenarioView(scenario, settings = {}) {
     ));
   }
 
-  if (scenario.revealVillain && Array.isArray(scenario.villain)) {
+  if (scenario.revealVillain && Array.isArray(scenario.villain) && !onFelt) {
     parts.push(labelled('Their hand', cardRow(scenario.villain, { size: 'lg', fourColour: four })));
   }
 
   const numbers = [];
-  if (scenario.pot != null) numbers.push(['Pot', fmt.chips(scenario.pot)]);
-  if (scenario.toCall != null) numbers.push(['To call', fmt.chips(scenario.toCall)]);
+  if (scenario.pot != null && !onFelt) numbers.push(['Pot', fmt.chips(scenario.pot)]);
+  if (scenario.toCall != null && !onFelt) numbers.push(['To call', fmt.chips(scenario.toCall)]);
   if (scenario.betSize != null) numbers.push(['Your bet', fmt.chips(scenario.betSize)]);
   if (scenario.effectiveStack != null) numbers.push(['Effective stack', fmt.chips(scenario.effectiveStack)]);
   if (scenario.bankroll != null) numbers.push(['Bankroll', fmt.money(scenario.bankroll)]);

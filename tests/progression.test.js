@@ -467,7 +467,9 @@ describe('curriculum ordering: a drill never needs a later module', () => {
       const q = generateQuestion('pot-odds', rng, 3);
       if (/Call or fold/.test(q.question)) {
         seen++;
-        assert(/win this hand/.test(q.question), `equity must be given: "${q.question}"`);
+        // The invariant is that the equity is handed over rather than counted,
+        // whatever words the question uses to hand it over.
+        assert(/\d+% of the time/.test(q.question), `equity must be given: "${q.question}"`);
       }
     }
     assert(seen > 0, 'pot odds still practises the call/fold comparison');

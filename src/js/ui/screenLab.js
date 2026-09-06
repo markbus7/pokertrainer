@@ -17,6 +17,7 @@
 import { el, mount, richText, toast, fmt } from './dom.js';
 import { t } from '../i18n/index.js';
 import { cardRow } from './cardView.js';
+import { seatFelt } from './spotFelt.js';
 import { potShareVisual, renderGauge } from './visuals.js';
 import { generateSession } from '../trainers/lab.js';
 import { CONFIDENCE, review, recordConfidence } from '../state/spacing.js';
@@ -94,6 +95,13 @@ export function renderLab(ctx) {
 
   function felt(spot) {
     const { table } = spot;
+    // A position question is asked over seats, not cards.
+    if (table.ring) {
+      return seatFelt(table.ring, {
+        hideSeatNames: table.hideSeatNames,
+        fourColour: profile.settings.fourColour,
+      });
+    }
     return el('div.lab-felt',
       // Not every spot has a pot — naming a draw is a question about cards,
       // and a chip that reads "pot NaN" is worse than no chip.
@@ -140,10 +148,26 @@ export function renderLab(ctx) {
 
   function inputFor(s) {
     if (s.inputKind === 'action') {
-      return el('div.action-buttons',
-        s.actions.map((a) => el(`button.btn.lg.${a.key === 'fold' ? 'danger' : 'success'}`, {
-          onclick: () => submit(a.key, null),
-        }, a.label)),
+      // Action spots used to submit on the first tap, which meant naming a
+      // draw or a seat was the one thing in the Lab that never asked how sure
+      // you were — and knowing which answers you guessed is most of what the
+      // review schedule is for. Choosing now arms the answer; the confidence
+      // row sends it, exactly as it does for a number.
+      let chosen = null;
+      const buttons = s.actions.map((a) => el(
+        `button.btn.lg.${a.key === 'fold' ? 'danger' : 'success'}`,
+        {
+          onclick: () => {
+            chosen = a.key;
+            for (const b of buttons) b.classList.toggle('chosen', b.dataset.key === a.key);
+          },
+          dataset: { key: a.key },
+        },
+        a.label,
+      ));
+      return el('div',
+        el('div.action-buttons', buttons),
+        confidenceRow(() => chosen, (v) => (v ? null : t('Choose an answer first.'))),
       );
     }
 
@@ -202,7 +226,7 @@ export function renderLab(ctx) {
       el('div.verdict', r.correct
         ? t('✓ Correct — {answer}', { answer: shown })
         : t('✗ Not quite — you said {answer}', { answer: shown })),
-      el('div.stack-sm', r.lines.map((line) => el('div', richText(line)))),
+      el('div.stack-sm', r.lines.filter(Boolean).map((line) => el('div', richText(line)))),
       r.visual && r.visual.have !== undefined
         ? renderGauge({ need: r.visual.need, have: r.visual.have, needLabel: 'Price demands', haveLabel: 'Your hand has' })
         : r.visual
@@ -246,9 +270,7 @@ export function renderLab(ctx) {
       state.result
         ? el('button.btn.primary', { onclick: next },
             state.index >= spots.length - 1 ? 'See results →' : 'Next spot →')
-        : el('span.faint', s.inputKind === 'action'
-          ? 'Choose an action.'
-          : 'Work it out, then say how sure you are — that is the answer submitted.'),
+        : el('span.faint', t('Work it out, then say how sure you are — that is the answer submitted.')),
     );
   }
 
@@ -263,6 +285,7 @@ export function renderLab(ctx) {
 function labelFor(type) {
   return {
     shape: t('name the draw'),
+    seat: t('name the seat'),
     ladder: t('price the bet'),
     price: t('name the price'),
     size: t('size the bet'),

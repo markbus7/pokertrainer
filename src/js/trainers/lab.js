@@ -19,8 +19,10 @@ import { shuffle, randInt } from '../core/rng.js';
 import { CLEAR_MARGIN } from '../core/judge.js';
 import { t } from '../i18n/index.js';
 import { readShape, explainShape, SHAPES, shapeByKey } from '../core/handShape.js';
+import { seatRing, seatName, seatChoices } from '../core/seatMap.js';
+import { POSITION_INFO } from '../data/ranges.js';
 
-export const LAB_TYPES = ['shape', 'ladder', 'price', 'size', 'decide'];
+export const LAB_TYPES = ['shape', 'seat', 'ladder', 'price', 'size', 'decide'];
 
 /** Pots divisible by 12, so a third and three quarters are both whole chips. */
 const CLEAN_POTS = [60, 120, 180, 240];
@@ -85,6 +87,47 @@ function shapeSpot(rng) {
     };
   }
   return priceSpot(rng);
+}
+
+/* ------------------------------------------------------------------ *
+ * 0a. SEAT — find the button and say what your chair is called
+ * ------------------------------------------------------------------ */
+
+/**
+ * The same recognition gap as the draws, one street earlier. Every preflop
+ * answer in this app is phrased in seat names, and nothing ever asked the
+ * reader to work one out from a table with a button on it.
+ */
+function seatSpot(rng) {
+  const ring = seatRing(rng);
+  if (!ring) return priceSpot(rng);
+  const answer = ring.heroPosition;
+  const others = seatChoices().filter((p) => p !== answer);
+  const keys = shuffle(rng, [answer, ...shuffle(rng, others).slice(0, 3)]);
+  const gap = (ring.heroSeat - ring.button + ring.seatCount) % ring.seatCount;
+
+  return {
+    type: 'seat',
+    concept: 'position',
+    table: { ring, hideSeatNames: true },
+    prompt: t('The dealer button is the D. Seats act clockwise from it.'),
+    question: t('Which seat are you in?'),
+    inputKind: 'action',
+    actions: keys.map((key) => ({ key, label: seatName(key) })),
+    answer,
+    solve: (given) => ({
+      correct: given === answer,
+      exact: seatName(answer),
+      lines: [
+        gap === 0
+          ? t('The button is in front of you — you have it.')
+          : gap === 1
+            ? t('The button is one seat to your right, so you are the seat straight after it.')
+            : t('The button is {gap} seats to your right.', { gap }),
+        t(POSITION_INFO[answer].blurb),
+      ],
+    }),
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -245,6 +288,10 @@ function decideSpot(rng) {
     if (Math.abs(equity - need) < CLEAR_MARGIN) continue;
 
     const shouldCall = equity > need;
+    const read = readShape(hero, board);
+    const namedShape = read.shape.key === 'nothing' || read.shape.key === 'made'
+      ? null
+      : t(read.shape.label);
     return {
       type: 'decide',
       // Tagged to outs, not pot odds: the price here is the easy half, and a
@@ -270,6 +317,11 @@ function decideSpot(rng) {
         correct: given === (shouldCall ? 'call' : 'fold'),
         exact: shouldCall ? t('Call') : t('Fold'),
         lines: [
+          // Naming it first is deliberate: the recognition spots teach the
+          // word and this is where the word has to earn its keep. A reader
+          // who counts right but never learns "gutshot" has to redo the
+          // count every time instead of recalling a number.
+          namedShape ? t('What you are holding is called {shape}.', { shape: namedShape }) : null,
           describeOuts(hero, villain, board).sentence,
           t('That is about **{pct}%** by the river.', { pct: (equity * 100).toFixed(0) }),
           t('The price demands {bet} ÷ {final} = **{pct}%**.',
@@ -292,7 +344,7 @@ function decideSpot(rng) {
  * ------------------------------------------------------------------ */
 
 const GENERATORS = {
-  shape: shapeSpot, ladder: ladderSpot, price: priceSpot, size: sizeSpot, decide: decideSpot,
+  shape: shapeSpot, seat: seatSpot, ladder: ladderSpot, price: priceSpot, size: sizeSpot, decide: decideSpot,
 };
 
 export function generateSpot(type, rng) {

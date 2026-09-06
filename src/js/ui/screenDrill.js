@@ -109,6 +109,7 @@ export function renderDrill(ctx, params) {
     if (gauntlet && state.index >= queue.length) return finish();
     state.question = gauntlet ? queue[state.index] : generateQuestion(meta.id, rng, difficulty);
     state.locked = false;
+    state.typed = null;
     state.index++;
     draw();
     return null;
@@ -198,6 +199,35 @@ export function renderDrill(ctx, params) {
     return null;
   };
 
+  /**
+   * Grades a typed number through the same path a picked option takes, so
+   * mastery, XP and the review schedule only ever see one kind of event.
+   */
+  const submitTyped = (raw) => {
+    const q = state.question;
+    const value = Number(String(raw).replace(',', '.').replace('%', '').trim());
+    if (!Number.isFinite(value)) return;
+    state.typed = value;
+    const close = Math.abs(value - q.entry.value) <= q.entry.tolerance;
+    const wrong = q.options.find((o) => o.key !== q.answer);
+    answer(close ? q.answer : wrong.key);
+  };
+
+  const typedAnswer = (q) => {
+    const input = el('input.drill-entry-input', {
+      type: 'number', step: 'any', placeholder: '—', inputmode: 'decimal',
+      onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); submitTyped(input.value); } },
+    });
+    const box = el('div.drill-entry',
+      input,
+      q.entry.unit ? el('span.drill-entry-unit', q.entry.unit) : null,
+      el('button.btn.primary', { onclick: () => submitTyped(input.value) }, t('Answer')),
+    );
+    // Autofocus would pop the keyboard on a phone before the reader has even
+    // looked at the board, so the input waits to be tapped.
+    return box;
+  };
+
   const answer = (key) => {
     if (state.locked) return;
     state.locked = true;
@@ -270,19 +300,30 @@ export function renderDrill(ctx, params) {
       )),
     );
 
+    // A question with a number for an answer asks you to produce it rather
+    // than spot it in a list. Picking 25% from four options is a recognition
+    // task; saying "25%" is the one you have to do at a table, where nobody
+    // offers you a shortlist. The options still appear afterwards, marked, so
+    // you always see the right number next to the one you gave.
+    const entryBox = q.entry && chosen === null ? typedAnswer(q) : null;
+
     mount(body,
       scenarioView(q.scenario, ctx.profile.settings),
       el('div.question', { style: { marginTop: q.scenario ? '16px' : '0' } }, richText(q.question)),
-      options,
+      entryBox || options,
       chosen === null ? null : el(`div.feedback.${chosen === q.answer ? 'correct' : 'wrong'}`,
-        el('div.verdict', chosen === q.answer ? t('✓ Correct') : t('✗ Not quite')),
+        el('div.verdict', chosen === q.answer
+          ? t('✓ Correct')
+          : state.typed != null
+            ? t('✗ Not quite — you said {said}', { said: `${state.typed}${q.entry ? q.entry.unit : ''}` })
+            : t('✗ Not quite')),
         el('div', q.explanation),
       ),
     );
 
     mount(footer,
       chosen === null
-        ? el('span.faint', 'Press 1-4 to answer')
+        ? el('span.faint', entryBox ? t('Type your answer, then press Enter') : 'Press 1-4 to answer')
         : el('button.btn.primary', { onclick: () => (sessionOver() ? finish() : nextQuestion()) },
             sessionOver() ? 'See results →' : 'Next question →'),
       chosen !== null && !bounded ? el('button.btn.ghost', { onclick: finish }, 'End session') : null,
@@ -292,6 +333,9 @@ export function renderDrill(ctx, params) {
 
   root.addEventListener('keydown', (e) => {
     const n = Number(e.key);
+    // Number keys pick an option, but only when there are options on screen —
+    // otherwise typing "2" into the answer box would submit option 2.
+    if (state.question && state.question.entry && !state.locked) return;
     if (state.question && !state.locked && n >= 1 && n <= state.question.options.length) {
       answer(state.question.options[n - 1].key);
     } else if (state.locked && (e.key === 'Enter' || e.key === ' ')) {

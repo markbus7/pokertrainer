@@ -5,10 +5,11 @@
 
 import { makeDeck, cardsToString } from '../core/cards.js';
 import { evaluate, describeScore, shortCategoryName } from '../core/evaluator.js';
-import { countOuts, describeOuts, exactOutsEquity, handEquity } from '../core/equity.js';
+import { countOuts, describeOuts, exactOutsEquity, handEquity, equityVsField } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 import { buildChoices, numericDistractors, percentDistractors, attempt, pct } from './helpers.js';
+import { readShape, shapeName } from '../core/handShape.js';
 import { t } from '../i18n/index.js';
 
 /** "Which hand wins?" — the first thing a beginner must never get wrong. */
@@ -102,6 +103,10 @@ export function outsDrill(rng, difficulty = 2) {
     question: t('You are behind. How many cards on the turn put you in front?'),
     options,
     answer,
+    // Say the number before you see any numbers. Picking the right one out of
+    // four is a different, easier act than producing it, and it is the easier
+    // one that stops working the moment there is no list.
+    entry: { unit: t('outs'), value: count, tolerance: 0 },
     // Naming the cards is the whole lesson: a bare count asks you to take the
     // number on trust, which teaches nothing you can repeat at a table.
     explanation: `${describeOuts(hero, villain, board).sentence} `
@@ -113,8 +118,27 @@ export function outsDrill(rng, difficulty = 2) {
 
 /** Turning outs into equity with the rule of 2 and 4. */
 export function ruleOfFourDrill(rng, difficulty = 2) {
-  const outs = 4 + randInt(rng, 12);
+  // The outs used to be handed over as a number, which asks you to trust a
+  // figure you cannot see. Now they belong to a hand on a table: the draw is
+  // dealt, named, and only then turned into a percentage.
   const street = rng() < 0.5 ? 'flop' : 'turn';
+  const spot = attempt(() => {
+    const deck = shuffle(rng, makeDeck());
+    const hero = deck.slice(0, 2);
+    const board = deck.slice(2, street === 'flop' ? 5 : 6);
+    const read = readShape(hero, board);
+    if (!read.outs || read.outs < 4) return null;
+    // The question names the shape and states its out count, so they have to
+    // agree: an open-ender that is also two overcards has fourteen outs, and
+    // calling that "an open-ended straight draw — 14 outs" teaches a wrong
+    // number for the word.
+    if (read.outs !== read.shape.outs) return null;
+    return { hero, board, read };
+  });
+  if (!spot) return null;
+
+  const { hero, board, read } = spot;
+  const outs = read.outs;
   const equity = exactOutsEquity(outs, street);
   // The drill teaches the shortcut, so the shortcut is the graded answer.
   const shortcut = outs * (street === 'flop' ? 4 : 2);
@@ -125,11 +149,13 @@ export function ruleOfFourDrill(rng, difficulty = 2) {
   return {
     module: 'outs',
     difficulty,
-    scenario: null,
-    question: t('You have {outs} outs on the {street}. Use the rule of {rule} — roughly what is your equity?',
-      { outs, street: t(street), rule: street === 'flop' ? 4 : 2 }),
+    scenario: { board, hole: hero },
+    question: t('You are holding {shape} — {outs} outs on the {street}. Use the rule of {rule}: roughly what '
+      + 'is your equity?',
+    { shape: shapeName(read.shape), outs, street: t(street), rule: street === 'flop' ? 4 : 2 }),
     options,
     answer,
+    entry: { unit: '%', value: shortcut, tolerance: 2 },
     explanation: street === 'flop'
       ? t('Two cards to come, so multiply by 4: {outs} × 4 = {shortcut}%. The exact figure is {exact} — the '
         + 'shortcut drifts a little high with many outs, which is close enough at the table.',
@@ -142,6 +168,9 @@ export function ruleOfFourDrill(rng, difficulty = 2) {
 
 /** Pot odds: the price you are being offered. */
 export function potOddsDrill(rng, difficulty = 2) {
+  const deck = shuffle(rng, makeDeck());
+  const hero = deck.slice(0, 2);
+  const board = deck.slice(2, 5);
   const pot = (2 + randInt(rng, 12)) * 5;
   const betFraction = [0.33, 0.5, 0.66, 0.75, 1][randInt(rng, 5)];
   const bet = Math.max(5, Math.round(pot * betFraction / 5) * 5);
@@ -156,13 +185,16 @@ export function potOddsDrill(rng, difficulty = 2) {
   return {
     module: 'pot-odds',
     difficulty,
-    scenario: { pot, toCall: bet, potFacing },
+    scenario: { board, hole: hero, pot, toCall: bet, potFacing },
     question: t('There is {pot} in the pot. Your opponent bets {bet}. What equity do you need to call profitably?',
       { pot, bet }),
     options,
     answer,
-    explanation: t('You call {bet} to win {potFacing}, so you need {bet} ÷ {final} = {need}. That is {ratio} to 1.',
-      { bet, potFacing, final: potFacing + bet, need: pct(need, 1), ratio: potOddsRatio(bet, potFacing).toFixed(1) }),
+    entry: { unit: '%', value: truePct, tolerance: 2 },
+    explanation: t('You call {bet} to win {potFacing}, so you need {bet} ÷ {final} = {need}. That is {ratio} to 1. '
+      + 'Notice your cards never entered that sum: the price is a property of the bet, not of your hand. What '
+      + 'your cards decide is whether you can pay it.',
+    { bet, potFacing, final: potFacing + bet, need: pct(need, 1), ratio: potOddsRatio(bet, potFacing).toFixed(1) }),
     xp: 10 + difficulty * 2,
   };
 }
@@ -177,14 +209,21 @@ export function equityGivenDrill(rng, difficulty = 2) {
     const pot = (4 + randInt(rng, 10)) * 5;
     const bet = Math.max(5, Math.round(pot * [0.33, 0.5, 0.75, 1][randInt(rng, 4)] / 5) * 5);
     const need = requiredEquity(bet, pot + bet);
-    const equity = (10 + randInt(rng, 45)) / 100;
+    // The equity used to be a random number with nothing behind it. Now it is
+    // measured off the cards on the table — against one unknown hand, because
+    // Pot Odds unlocks before Outs & Equity and a face-up opponent would be
+    // asking you to count outs you have not been taught yet.
+    const deck = shuffle(rng, makeDeck());
+    const hero = deck.slice(0, 2);
+    const board = deck.slice(2, 5);
+    const equity = Math.round(equityVsField(hero, board, 1, undefined, rng, 1200) * 100) / 100;
     // Skip anything close enough that the right answer is a judgement call.
-    if (Math.abs(equity - need) < 0.05) return null;
-    return { pot, bet, need, equity };
-  });
+    if (Math.abs(equity - need) < 0.06) return null;
+    return { pot, bet, need, equity, hero, board };
+  }, 60);
   if (!spot) return null;
 
-  const { pot, bet, need, equity } = spot;
+  const { pot, bet, need, equity, hero, board } = spot;
   const shouldCall = equity > need;
   const { options, answer } = buildChoices(rng, shouldCall ? t('Call') : t('Fold'), [t('Call'), t('Fold')]);
   const ev = callEV(equity, bet, pot + bet);
@@ -193,9 +232,9 @@ export function equityGivenDrill(rng, difficulty = 2) {
   return {
     module: 'pot-odds',
     difficulty,
-    scenario: { pot, toCall: bet, potFacing: pot + bet },
-    question: t('You will win this hand {equity} of the time. There is {pot} in the pot and they bet {bet}. '
-      + 'Call or fold?', { equity: pct(equity), pot, bet }),
+    scenario: { board, hole: hero, pot, toCall: bet, potFacing: pot + bet },
+    question: t('These are your cards, and against one unknown hand they win {equity} of the time. There is '
+      + '{pot} in the pot and they bet {bet}. Call or fold?', { equity: pct(equity), pot, bet }),
     options,
     answer,
     explanation: shouldCall
