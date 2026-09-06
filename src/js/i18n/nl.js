@@ -3325,4 +3325,59 @@ export const NL = {
     'Drie spelers, stoppend op de turn — diep genoeg dat de stack telt, kort genoeg om het te zien.',
   'Three players to the river, so there is a real opponent to read rather than a described one.':
     'Drie spelers tot de river, zodat er een echte tegenstander te lezen valt in plaats van een beschreven.',
+  'Spot {n} of {total}': 'Moment {n} van {total}',
+  '{right} of {done} right so far.': '{right} van {done} goed tot nu toe.',
+  'Last time this caught you {n} times: {label}. {fix}':
+    'Vorige keer ging dit {n} keer mis: {label}. {fix}',
+  '✓ {right} of {total} — that is a pass': '✓ {right} van {total} — dat is voldoende',
+  '{right} of {total} — worth another run': '{right} van {total} — nog een ronde waard',
+  'run {n}': 'ronde {n}',
+  'What went wrong, most often first:': 'Wat er misging, het vaakst eerst:',
+  'Remembered for next time — the next run opens by warning you about it.':
+    'Onthouden voor de volgende keer — de volgende ronde begint met een waarschuwing hierover.',
+  'No mistakes to name. Play a run of something else, or come back when this one has gone cold.':
+    'Geen fouten te noemen. Speel een ronde van iets anders, of kom terug als deze is weggezakt.',
+  'Another {n} spots': 'Nog {n} momenten',
+  'Back to the lesson': 'Terug naar de les',
+  '📊 This run': '📊 Deze ronde',
+  'Spots': 'Momenten',
+  'Right': 'Goed',
+  'Hands dealt to find them': 'Handen gedeeld om ze te vinden',
+  'You unlock this one at level {n}.': 'Deze ontgrendel je op niveau {n}.',
+  'Calling without the price': 'Callen zonder de prijs',
+  'Work out what the pot is asking before you look at your hand. If your equity is under it, fold.':
+    'Reken uit wat de pot vraagt voordat je naar je hand kijkt. Zit je equity eronder, dan fold je.',
+  'Folding the best hand': 'De beste hand folden',
+  'When you are ahead there is no price too high. Count what beats you before you fold.':
+    'Als je voorstaat is geen prijs te hoog. Tel wat je verslaat voordat je foldt.',
+  'Folding when checking was free': 'Folden terwijl checken gratis was',
+  'If it costs nothing to see the next card, there is never a reason to fold.':
+    'Als de volgende kaart niets kost, is er nooit een reden om te folden.',
+  'Checking back a hand that should bet': 'Een hand die moet betten terugchecken',
+  'A hand that beats what they call with is a hand that should be betting.':
+    'Een hand die verslaat waarmee zij callen, is een hand die hoort te betten.',
+  'Betting a hand that cannot get called by worse': 'Betten met een hand die alleen door betere gecalld wordt',
+  'Ask what calls you. If only better hands call, the bet is losing money.':
+    'Vraag je af wat je callt. Als alleen betere handen callen, verliest de bet geld.',
+  'Opening hands the seat does not play': 'Handen openen die deze positie niet speelt',
+  'Check the chart for this seat. Early position is much tighter than the button.':
+    'Kijk in de chart voor deze positie. Vroege positie is veel tighter dan de button.',
+  'Folding hands the seat does play': 'Handen folden die deze positie wel speelt',
+  'The chart is the whole answer preflop. If it is in the range, open it.':
+    'Preflop is de chart het hele antwoord. Zit hij in de range, dan open je.',
+  'Limping instead of raising': 'Limpen in plaats van raisen',
+  'Raise or fold. Limping gives everyone behind you a cheap look at a flop.':
+    'Raise of fold. Limpen geeft iedereen achter je een goedkope blik op een flop.',
+  'Checking back after taking the lead': 'Terugchecken nadat je de leiding nam',
+  'You raised before the flop; on most boards the bet is automatic.':
+    'Je raisede voor de flop; op de meeste boards is de bet vanzelfsprekend.',
+  'Continuation betting into the wrong board': 'Continuation betten op het verkeerde board',
+  'Boards that hit their calling range are boards to give up on.':
+    'Boards die hun callrange raken zijn boards om op te geven.',
+  'Passing up a free continuation bet': 'Een gratis continuation bet laten lopen',
+  'A dry board they checked on is the cheapest pot in poker.':
+    'Een droog board waarop ze checkten is de goedkoopste pot in poker.',
+  'Reading your own hand wrong': 'Je eigen hand verkeerd lezen',
+  'Say the five cards out loud: three from the board and two from your hand, or four and one.':
+    'Zeg de vijf kaarten hardop: drie van het board en twee uit je hand, of vier en één.',
 };

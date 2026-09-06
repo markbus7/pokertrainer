@@ -102,7 +102,14 @@ export function conceptOf(spot) {
   return { id: 'spr', why: 'A middling hand and chips behind. How big this pot gets is the decision.' };
 }
 
-/** True when the spot turns on a skill the reader has not unlocked yet. */
+/**
+ * Whether the reader has reached the module a spot belongs to.
+ *
+ * This existed and nothing called it, so a quarter of the decisions at level
+ * two were tagged with a chapter that could not be opened — most often Stack
+ * Depth, which unlocks at six. Naming it is still better than saying nothing,
+ * but the reader has to be told they cannot go and read it yet.
+ */
 export const isUnlocked = (conceptId, level, modules) => {
   const meta = modules.find((m) => m.id === conceptId);
   return !meta || meta.unlockLevel <= level;

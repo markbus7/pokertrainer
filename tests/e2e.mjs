@@ -653,6 +653,56 @@ await step('a lesson is played, not answered', async () => {
   console.log('      four lessons dealt straight to the reader\'s own decision');
 });
 
+await step('a lesson run ends in a report and is remembered afterwards', async () => {
+  // The three properties that make a lesson out of a table: it ends, it is
+  // marked, and what you got wrong is still there next time.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#play?lesson=pot-odds`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.felt', { timeout: 8000 });
+  await page.click('button.btn.primary.lg');
+
+  // Play the run out, always taking the first action offered.
+  for (let i = 0; i < 400; i++) {
+    if (await page.$('.run-report')) break;
+    const opt = await page.$('.practice-option:not([disabled])');
+    if (opt) { await opt.click(); await page.waitForTimeout(120); continue; }
+    const act = await page.$('.action-buttons button');
+    if (act) { await act.click(); await page.waitForTimeout(120); continue; }
+    const deal = await page.$('.action-bar button.btn.primary');
+    if (deal) { await deal.click(); await page.waitForTimeout(160); continue; }
+    await page.waitForTimeout(150);
+  }
+
+  const report = await page.$('.run-report');
+  if (!report) throw new Error('ten spots did not produce a report');
+  const text = await report.innerText();
+  if (!/\d+ of 10/.test(text)) throw new Error(`the report does not say the score: "${text.slice(0, 80)}"`);
+
+  const stored = await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    return (raw.lessonRuns || {})['pot-odds'] || null;
+  });
+  if (!stored || stored.runs !== 1) throw new Error(`the run was not filed: ${JSON.stringify(stored)}`);
+
+  // A report naming mistakes must leave something behind to warn about.
+  const named = /\d+×/.test(text);
+  if (named && !Object.keys(stored.weak || {}).length) {
+    throw new Error('mistakes were reported and none were remembered');
+  }
+
+  // And the memory has to survive leaving the table entirely.
+  if (named) {
+    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#play?lesson=pot-odds`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.lesson-note', { timeout: 8000 });
+    const warning = await page.$('.lesson-warning');
+    if (!warning) throw new Error('a fresh visit did not warn about last time');
+    console.log(`      run scored, ${Object.keys(stored.weak).length} weak spot(s) carried over`);
+  } else {
+    console.log('      run scored with no mistakes to carry over');
+  }
+});
+
 await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);
