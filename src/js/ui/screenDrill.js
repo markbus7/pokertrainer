@@ -331,7 +331,9 @@ export function renderDrill(ctx, params) {
           : state.typed != null
             ? t('✗ Not quite — you said {said}', { said: withUnit(state.typed, q.entry) })
             : t('✗ Not quite')),
-        el('div', q.explanation),
+        // Through richText, not as a bare string: the explanations carry
+        // **emphasis**, and every jargon word in them can explain itself.
+        el('div', richText(q.explanation)),
       ),
     );
 

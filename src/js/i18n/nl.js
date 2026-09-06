@@ -3255,4 +3255,12 @@ export const NL = {
     'En van de {total} manieren waarop er nog twee {suit} kunnen komen, winnen er maar {wins} — zij hebben betere {suit} dan jij.',
   '📋 Copy this question': '📋 Kopieer deze vraag',
   'Copied ✓': 'Gekopieerd ✓',
+  'a made hand': 'een made hand',
+  'a flush draw and a straight draw': 'een flush draw en een straight draw',
+  'a flush draw': 'een flush draw',
+  'an open-ended straight draw': 'een open-ended straight draw',
+  'a gutshot': 'een gutshot',
+  'two overcards': 'twee overcards',
+  'a backdoor flush draw': 'een backdoor flush draw',
+  'nothing yet': 'nog niets',
 };

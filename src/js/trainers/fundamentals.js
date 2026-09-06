@@ -11,7 +11,7 @@ import {
 import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 import { buildChoices, numericDistractors, percentDistractors, attempt, pct } from './helpers.js';
-import { readShape, shapeName } from '../core/handShape.js';
+import { readShape, shapePhrase } from '../core/handShape.js';
 import { t } from '../i18n/index.js';
 
 /** "Which hand wins?" — the first thing a beginner must never get wrong. */
@@ -185,7 +185,7 @@ export function ruleOfFourDrill(rng, difficulty = 2) {
     scenario: { board, hole: hero },
     question: t('You are holding {shape} — {outs} outs on the {street}. Use the rule of {rule}: roughly what '
       + 'is your equity?',
-    { shape: shapeName(read.shape), outs, street: t(street), rule: street === 'flop' ? 4 : 2 }),
+    { shape: shapePhrase(read.shape), outs, street: t(street), rule: street === 'flop' ? 4 : 2 }),
     options,
     answer,
     entry: { unit: '%', value: shortcut, tolerance: 2 },

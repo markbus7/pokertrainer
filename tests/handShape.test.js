@@ -138,8 +138,10 @@ describe('a named shape and a stated out count are the same fact', () => {
       for (let i = 0; i < 200; i++) {
         const spot = makePractice(kind, rng);
         const stated = Number(/is (\d+) outs/.exec(spot.grade('call').explanation)[1]);
+        // Mid-sentence the shape uses its `phrase` form — "a gutshot" — so
+        // that the article belongs to the language and the term does not.
         const label = /You have (.+?)\. There/.exec(spot.prompt)[1];
-        const shape = SHAPES.find((sh) => sh.label === label);
+        const shape = SHAPES.find((sh) => sh.phrase === label);
         assert(shape, `${kind}: named a shape that does not exist: "${label}"`);
         if (shape.outs === null) continue;                 // combo draws vary
         equal(stated, shape.outs, `${kind}: called ${label} ${stated} outs`);
@@ -158,7 +160,7 @@ describe('a named shape and a stated out count are the same fact', () => {
       const m = /holding (.+?) — (\d+) outs/.exec(q.question);
       if (!m) continue;                                    // a different outs drill
       seen++;
-      const shape = SHAPES.find((sh) => t(sh.label) === m[1]);
+      const shape = SHAPES.find((sh) => t(sh.phrase) === m[1]);
       assert(shape, `named a shape that does not exist: "${m[1]}"`);
       if (shape.outs === null) continue;
       equal(Number(m[2]), shape.outs, `called ${m[1]} ${m[2]} outs`);

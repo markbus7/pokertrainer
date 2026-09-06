@@ -1,5 +1,5 @@
-import { lookupTerm } from '../data/glossary.js';
-import { t } from '../i18n/index.js';
+import { lookupTerm, TERMS } from '../data/glossary.js';
+import { t, getLang } from '../i18n/index.js';
 
 /** Minimal DOM helpers — enough to build the whole UI without a framework. */
 
@@ -91,23 +91,129 @@ export function richText(text) {
   // Translate the whole string once, here, then parse. Doing it inside the
   // parser would hit every recursive call, so an emphasised fragment lifted
   // out of a Dutch sentence would be looked up again as if it were English.
-  return parseRich(t(text));
+  //
+  // The context travels with the parse so that auto-linking is decided per
+  // rendered block rather than per fragment: one chip per term, a handful per
+  // sentence, however deeply the emphasis nests.
+  return parseRich(t(text), { linked: new Set(), budget: AUTO_LINK_BUDGET });
 }
 
-function parseRich(text) {
+/**
+ * How many words in one block may explain themselves without the block
+ * turning into a page of links. Three is enough for the longest explanation
+ * the generators write and few enough that the eye still reads prose.
+ */
+const AUTO_LINK_BUDGET = 3;
+
+function parseRich(text, ctx) {
   const frag = document.createDocumentFragment();
   for (const part of String(text).split(/(\[\[[^\]]+\]\]|\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)) {
     if (!part) continue;
     // Bold and italic recurse, so a marked term nested inside emphasis —
     // **[[combo|combinations]]** — still renders as a term rather than as
     // literal brackets. Without this the outer marker swallows the inner one.
-    if (part.startsWith('[[') && part.endsWith(']]')) frag.appendChild(termChip(part.slice(2, -2)));
-    else if (part.startsWith('**') && part.endsWith('**')) frag.appendChild(el('strong', parseRich(part.slice(2, -2))));
-    else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) frag.appendChild(el('em', parseRich(part.slice(1, -1))));
+    if (part.startsWith('[[') && part.endsWith(']]')) {
+      // A hand-written chip spends budget too, so a paragraph the author
+      // already marked up does not then collect three more of its own. The
+      // author's choices come first because they are already in the text.
+      const [name] = part.slice(2, -2).split('|');
+      if (ctx) {
+        ctx.linked.add(String(name).trim().toLowerCase());
+        ctx.budget--;
+      }
+      frag.appendChild(termChip(part.slice(2, -2)));
+    } else if (part.startsWith('**') && part.endsWith('**')) frag.appendChild(el('strong', parseRich(part.slice(2, -2), ctx)));
+    else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) frag.appendChild(el('em', parseRich(part.slice(1, -1), ctx)));
     else if (part.startsWith('`') && part.endsWith('`')) frag.appendChild(el('code.inline-code', part.slice(1, -1)));
-    else frag.appendChild(document.createTextNode(part));
+    else frag.appendChild(autoLink(part, ctx));
   }
   return frag;
+}
+
+/**
+ * Jargon that explains itself wherever it appears, not only where somebody
+ * remembered to type [[brackets]].
+ *
+ * The glossary was built on hand-written markup, which meant it worked in the
+ * twelve lessons and nowhere else: of 720 sentences the generators can write,
+ * 464 mention a term and not one carried the markup. So a reader met "flush
+ * draw" in a question with no way to ask what it meant — which is exactly
+ * where they most need to.
+ */
+function autoLink(text, ctx) {
+  const frag = document.createDocumentFragment();
+  if (!ctx || ctx.budget <= 0) {
+    frag.appendChild(document.createTextNode(text));
+    return frag;
+  }
+
+  // Collect first, choose second. Taking matches in the order they appear
+  // would spend the budget on whatever happened to come first in the
+  // sentence, and that is almost always the plainest word: "there is 60 in
+  // the pot and you have a gutshot" would explain *pot* and not *gutshot*.
+  // Longer names are the more specialised ones, so they win the chips.
+  const found = [];
+  const claimed = new Set();
+  for (const match of text.matchAll(autoLinkPattern())) {
+    const entry = lookupTerm(match[0]);
+    if (!entry) continue;
+    const id = entry.term.toLowerCase();
+    if (ctx.linked.has(id) || claimed.has(id)) continue;
+    claimed.add(id);
+    found.push({ entry, id, word: match[0], at: match.index });
+  }
+  const chosen = found
+    .slice()
+    .sort((a, b) => b.entry.term.length - a.entry.term.length)
+    .slice(0, ctx.budget)
+    .sort((a, b) => a.at - b.at);
+
+  let last = 0;
+  for (const hit of chosen) {
+    ctx.linked.add(hit.id);
+    ctx.budget--;
+    if (hit.at > last) frag.appendChild(document.createTextNode(text.slice(last, hit.at)));
+    // The chip shows the word as written — "Flush draw" mid-question stays
+    // capitalised, "outs" stays plural — and explains the entry behind it.
+    frag.appendChild(termChip(`${hit.entry.term}|${hit.word}`));
+    last = hit.at + hit.word.length;
+  }
+  if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+  return frag;
+}
+
+/**
+ * One alternation of every term, longest first so that "open-ended straight
+ * draw" wins over "open". Rebuilt when the language changes, because a term
+ * that is translated has to be recognised in its Dutch form too — most of the
+ * jargon is deliberately kept in English, so most entries match either way.
+ */
+let patternCache = null;
+let patternLang = null;
+function autoLinkPattern() {
+  const lang = getLang();
+  if (patternCache && patternLang === lang) return patternCache;
+
+  const words = new Set();
+  for (const entry of Object.values(TERMS)) {
+    for (const form of [entry.term, t(entry.term)]) {
+      // Terms this short collide with ordinary words far more often than they
+      // help — "out" inside "without", "nut" inside "nuts of the deck".
+      if (!form || form.length < 3) continue;
+      const low = form.toLowerCase();
+      words.add(low);
+      // The generators write "two overcards" and "nine outs"; the glossary
+      // keys the singular. lookupTerm already forgives the plural, but the
+      // word has to be matched before it can be looked up.
+      if (!low.endsWith('s')) words.add(`${low}s`);
+    }
+  }
+  const escaped = [...words]
+    .sort((a, b) => b.length - a.length)
+    .map((w) => w.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'));
+  patternCache = new RegExp(`\\b(?:${escaped.join('|')})\\b`, 'gi');
+  patternLang = lang;
+  return patternCache;
 }
 
 /**
