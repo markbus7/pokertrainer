@@ -95,11 +95,15 @@ export function renderLab(ctx) {
   function felt(spot) {
     const { table } = spot;
     return el('div.lab-felt',
-      el('div.lab-pot',
-        el('span.label', 'pot'),
-        fmt.chips(table.potNow ?? table.pot),
-        table.bet ? el('span.lab-bet', t('they bet {bet}', { bet: fmt.chips(table.bet) })) : null,
-      ),
+      // Not every spot has a pot — naming a draw is a question about cards,
+      // and a chip that reads "pot NaN" is worse than no chip.
+      table.potNow ?? table.pot
+        ? el('div.lab-pot',
+            el('span.label', 'pot'),
+            fmt.chips(table.potNow ?? table.pot),
+            table.bet ? el('span.lab-bet', t('they bet {bet}', { bet: fmt.chips(table.bet) })) : null,
+          )
+        : null,
       el('div.lab-board', cardRow(table.board, { size: 'lg', fourColour: profile.settings.fourColour })),
       el('div.lab-hands',
         el('div.lab-hand',
@@ -187,9 +191,12 @@ export function renderLab(ctx) {
 
   function feedback(s) {
     const r = state.result;
+    // An action spot's value is its key — 'call', or 'flush-draw' — so it is
+    // read back through the button the reader actually pressed.
+    const chosen = s.actions && s.actions.find((a) => a.key === state.value);
     const shown = s.inputKind === 'percent' ? `${state.value}%`
       : s.inputKind === 'chips' ? t('{n} chips', { n: fmt.chips(state.value) })
-        : String(state.value);
+        : chosen ? chosen.label : String(state.value);
 
     return el(`div.feedback.${r.correct ? 'correct' : 'wrong'}`,
       el('div.verdict', r.correct
@@ -255,6 +262,8 @@ export function renderLab(ctx) {
 
 function labelFor(type) {
   return {
+    shape: t('name the draw'),
+    ladder: t('price the bet'),
     price: t('name the price'),
     size: t('size the bet'),
     decide: t('make the call'),

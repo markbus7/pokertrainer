@@ -232,12 +232,16 @@ describe('lab: spots are solvable and correct', () => {
     }
   });
 
-  it('interleaves the three kinds rather than blocking them', () => {
-    const spots = generateSession(makeRng(47), 9);
-    equal(spots.length, 9);
-    equal(new Set(spots.map((s) => s.type)).size, 3, 'all three kinds should appear');
+  it('interleaves the kinds rather than blocking them', () => {
+    // Blocked practice — all the pot-odds questions in a row — feels easier
+    // and transfers worse: having to work out which calculation applies is
+    // most of the skill at a table, and blocking removes exactly that.
+    const spots = generateSession(makeRng(47), LAB_TYPES.length * 2);
+    equal(spots.length, LAB_TYPES.length * 2);
+    equal(new Set(spots.map((s) => s.type)).size, LAB_TYPES.length,
+      'every kind should appear across two passes');
     let runs = 1;
     for (let i = 1; i < spots.length; i++) if (spots[i].type !== spots[i - 1].type) runs++;
-    assert(runs >= 5, `expected the kinds to be mixed, got ${runs} switches in 9 spots`);
+    assert(runs >= spots.length - 2, `expected the kinds to be mixed, got ${runs} switches`);
   });
 });

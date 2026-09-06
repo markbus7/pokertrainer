@@ -3100,4 +3100,73 @@ export const NL = {
   '{pct} right — nearly mastered.': '{pct} goed — bijna beheerst.',
   '{pct} right — solid, but there is room.': '{pct} goed — solide, maar er is ruimte.',
   '{pct} right — this is your weakest skill right now.': '{pct} goed — dit is nu je zwakste vaardigheid.',
+
+  /* ---- Naming what you are looking at, and the price ladder ---- */
+
+  'A made hand': 'Een gemaakte hand',
+  'Flush draw and a straight draw': 'Flush draw én een straight draw',
+  'Two overcards': 'Twee overcards',
+  'Backdoor flush draw': 'Backdoor flush draw',
+  'Nothing yet': 'Nog niets',
+  'You hold two of a suit and two more are out there. Nine cards left in that suit fill it.':
+    'Je hebt er twee van een kleur en er liggen er nog twee. De negen kaarten die over zijn in die kleur maken hem af.',
+  'The run is open at both ends: {ranks} completes it, which is eight cards.':
+    'De reeks is aan beide kanten open: {ranks} maakt hem af, en dat zijn acht kaarten.',
+  'The run has one hole in it. Only {ranks} fills that gap — four cards, half an open-ender.':
+    'De reeks heeft één gat. Alleen {ranks} vult dat gat — vier kaarten, de helft van een open-ender.',
+  'Nothing yet, but both your cards beat the whole board. Six cards pair one of them.':
+    'Nog niets, maar allebei je kaarten verslaan het hele board. Zes kaarten pairen er een.',
+  'Four to a flush and an open end as well — {outs} cards give you one or the other, which is the biggest draw you can flop.':
+    'Vier naar een flush én een open einde — {outs} kaarten geven je het een of het ander, en dat is de grootste draw die je kunt floppen.',
+  'Three of a suit. You would need both of the next two cards, so it is not a draw yet — it is a reason to keep the hand alive cheaply.':
+    'Drie van een kleur. Je hebt allebei de volgende kaarten nodig, dus het is nog geen draw — het is een reden om de hand goedkoop in leven te houden.',
+  'You already have something. This is a hand to value, not a draw to complete.':
+    'Je hebt al iets. Dit is een hand om value mee te pakken, geen draw om af te maken.',
+  'No draw and nothing made. This is the flop to let go of.':
+    'Geen draw en niets gemaakt. Dit is de flop om los te laten.',
+  ' or ': ' of ',
+  'Look at what you are holding, not at what you might make.':
+    'Kijk naar wat je hebt, niet naar wat je zou kunnen maken.',
+  'What is this called?': 'Hoe heet dit?',
+  'That is {outs} outs, which is about {pct}% by the river.':
+    'Dat zijn {outs} outs, oftewel ongeveer {pct}% tegen de river.',
+  'Nothing to count here — the hand is already made.': 'Hier valt niets te tellen — de hand is al gemaakt.',
+  '{shape} — {outs} cards get you there.': '{shape} — {outs} kaarten brengen je er.',
+  'How often do you make it by the river?': 'Hoe vaak maak je hem tegen de river?',
+  'Type a percentage.': 'Typ een percentage.',
+  '{outs} outs with two cards to come. The rule of 4 says {rough}%, and the true figure is {exact}% — close enough that the shortcut is the one to carry.':
+    '{outs} outs met nog twee kaarten te komen. De regel van 4 zegt {rough}%, en het echte getal is {exact}% — dichtbij genoeg om de vuistregel mee te nemen.',
+  'The answer is {value}{unit}.': 'Het antwoord is {value}{unit}.',
+  'name the draw': 'benoem de draw',
+  'price the bet': 'bepaal de prijs',
+  'a quarter of the pot': 'een kwart van de pot',
+  'They bet {name} — {bet} into {pot}.': 'Ze betten {name} — {bet} in {pot}.',
+  'What share of the time do you have to win for the call to break even?':
+    'Welk deel van de tijd moet je winnen om de call break-even te maken?',
+  'Your {bet} goes into a final pot of {final}, so you need {pct}%.':
+    'Jouw {bet} gaat in een uiteindelijke pot van {final}, dus je hebt {pct}% nodig.',
+  'The five worth knowing cold: a quarter asks 17%, a third 20%, half 25%, three quarters 30%, the whole pot 33%.':
+    'De vijf die je uit je hoofd moet kennen: een kwart vraagt 17%, een derde 20%, de helft 25%, driekwart 30%, de hele pot 33%.',
+  'Your {bet} goes into a final pot of {final}, so you need {pct}%. Worth knowing cold: a quarter asks 17%, a third 20%, half 25%, three quarters 30%, the whole pot 33%.':
+    'Jouw {bet} gaat in een uiteindelijke pot van {final}, dus je hebt {pct}% nodig. Uit je hoofd kennen: een kwart vraagt 17%, een derde 20%, de helft 25%, driekwart 30%, de hele pot 33%.',
+  'First, what is it called?': 'Eerst: hoe heet het?',
+  'Before you can count a draw you have to know which one you are holding, and the words are doing a lot of quiet work: **flush draw**, **open-ended straight draw**, **gutshot**, **two overcards**. Every one of them carries its own number, and the number is only useful once the name is automatic.':
+    'Voordat je een draw kunt tellen moet je weten welke je hebt, en de woorden doen stilletjes veel werk: **flush draw**, **open-ended straight draw**, **gutshot**, **twee overcards**. Elk van hen heeft zijn eigen getal, en dat getal is pas bruikbaar als de naam vanzelf komt.',
+  'A **flush draw** is four of one suit — nine cards left in that suit fill it. An **open-ended straight draw** is a run of four with room at both ends, which is eight cards. A **gutshot** is a run with one hole in it: four cards, half as good. **Two overcards** means nothing made yet but both your cards beat the whole board — six cards pair one of them.':
+    'Een **flush draw** is vier van één kleur — de negen kaarten die over zijn in die kleur maken hem af. Een **open-ended straight draw** is een reeks van vier met ruimte aan beide kanten, oftewel acht kaarten. Een **gutshot** is een reeks met één gat erin: vier kaarten, half zo goed. **Twee overcards** betekent nog niets gemaakt, maar allebei je kaarten verslaan het hele board — zes kaarten pairen er een.',
+  'Here is a flop. Say what you are looking at before you count anything.':
+    'Hier is een flop. Zeg wat je ziet voordat je iets telt.',
+  'And how often does it get there?': 'En hoe vaak komt hij binnen?',
+  'Each name comes with a number, and this is the pairing worth burning in: **nine outs is about 35%**, **eight is 31%**, **four is 16%**, **six is 24%**. Those are the four draws you just learned to name, by the river, with two cards to come.':
+    'Bij elke naam hoort een getal, en dit is de koppeling om in te branden: **negen outs is ongeveer 35%**, **acht is 31%**, **vier is 16%**, **zes is 24%**. Dat zijn de vier draws die je net hebt leren benoemen, tegen de river, met nog twee kaarten te komen.',
+  'You do not need to memorise them as a table. Count the outs and multiply by four — the rule you are about to meet — and you land within a point or two of every one.':
+    'Je hoeft ze niet als tabel te onthouden. Tel de outs en vermenigvuldig met vier — de regel die je zo tegenkomt — en je zit bij allemaal een punt of twee ernaast.',
+  'Five prices worth knowing cold': 'Vijf prijzen die je uit je hoofd moet kennen',
+  'You have just worked one out. Here is the whole ladder, because these five come up over and over and a player who knows them answers in a second instead of doing the division every time.':
+    'Je hebt er net een uitgerekend. Hier is de hele ladder, want deze vijf komen keer op keer terug en een speler die ze kent antwoordt in een seconde in plaats van elke keer te delen.',
+  '**A quarter of the pot asks for 17%. A third asks 20%. Half asks 25%. Three quarters asks 30%. The whole pot asks 33%.**':
+    '**Een kwart van de pot vraagt 17%. Een derde vraagt 20%. De helft vraagt 25%. Driekwart vraagt 30%. De hele pot vraagt 33%.**',
+  'Notice how slowly it climbs. Doubling the bet from a quarter to half only moves the price from 17% to 25% — which is why small bets are so hard to fold against, and why a player who folds too much to them leaks money without ever feeling it.':
+    'Let op hoe langzaam hij klimt. De bet verdubbelen van een kwart naar de helft beweegt de prijs alleen van 17% naar 25% — en daarom zijn kleine bets zo lastig om tegen te folden, en lekt een speler die er te veel tegen foldt geld weg zonder het te voelen.',
+  'Now put a number on one.': 'Zet er nu een getal op.',
 };

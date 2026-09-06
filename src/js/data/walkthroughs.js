@@ -252,6 +252,16 @@ export const WALKTHROUGHS = {
         ],
         practice: 'price',
       },
+      {
+        title: 'Five prices worth knowing cold',
+        body: [
+          'You have just worked one out. Here is the whole ladder, because these five come up over and over and a player who knows them answers in a second instead of doing the division every time.',
+          '**A quarter of the pot asks for 17%. A third asks 20%. Half asks 25%. Three quarters asks 30%. The whole pot asks 33%.**',
+          'Notice how slowly it climbs. Doubling the bet from a quarter to half only moves the price from 17% to 25% — which is why small bets are so hard to fold against, and why a player who folds too much to them leaks money without ever feeling it.',
+          'Now put a number on one.',
+        ],
+        practice: 'price-ladder',
+      },
 
       {
         title: 'The five numbers worth memorising',
@@ -586,6 +596,23 @@ export const WALKTHROUGHS = {
           ],
           answer: 'a',
         },
+      },
+      {
+        title: 'First, what is it called?',
+        body: [
+          'Before you can count a draw you have to know which one you are holding, and the words are doing a lot of quiet work: **flush draw**, **open-ended straight draw**, **gutshot**, **two overcards**. Every one of them carries its own number, and the number is only useful once the name is automatic.',
+          'A **flush draw** is four of one suit — nine cards left in that suit fill it. An **open-ended straight draw** is a run of four with room at both ends, which is eight cards. A **gutshot** is a run with one hole in it: four cards, half as good. **Two overcards** means nothing made yet but both your cards beat the whole board — six cards pair one of them.',
+          'Here is a flop. Say what you are looking at before you count anything.',
+        ],
+        practice: 'name-the-shape',
+      },
+      {
+        title: 'And how often does it get there?',
+        body: [
+          'Each name comes with a number, and this is the pairing worth burning in: **nine outs is about 35%**, **eight is 31%**, **four is 16%**, **six is 24%**. Those are the four draws you just learned to name, by the river, with two cards to come.',
+          'You do not need to memorise them as a table. Count the outs and multiply by four — the rule you are about to meet — and you land within a point or two of every one.',
+        ],
+        practice: 'shape-odds',
       },
       {
         title: 'Now count a real one',

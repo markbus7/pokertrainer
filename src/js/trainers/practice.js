@@ -19,6 +19,7 @@ import { countOuts, describeOuts, handEquity, exactOutsEquity, handPhrase } from
 import { requiredEquity, callEV, minimumDefenceFrequency, breakEvenBluffFrequency, spr, icmEquity } from '../core/odds.js';
 import { handKey } from '../core/cards.js';
 import { preflopAdvice, POSITIONS, POSITION_INFO, CHARTS, rangePercent } from '../data/ranges.js';
+import { readShape, explainShape, SHAPES, shapeByKey } from '../core/handShape.js';
 import { STAKES, bankrollAdvice } from '../state/stats.js';
 import { shuffle, randInt, makeRng } from '../core/rng.js';
 import { t } from '../i18n/index.js';
@@ -334,6 +335,19 @@ const numberSpot = ({ prompt, tiles, exact, tolerance = 2, unit = '%', explain }
   },
 });
 
+/**
+ * Shared shape for a question asked over a real felt: your two cards, the
+ * board, and buttons underneath. `felt` distinguishes it from choiceSpot's
+ * tiles, which are numbers with no cards in sight.
+ */
+const feltSpot = ({ prompt, question, hero, board, options, answer, explain }) => ({
+  kind: 'felt-choice',
+  prompt, question, hero, board, options,
+  grade(picked) {
+    return { correct: picked === answer, answer, explanation: explain(picked) };
+  },
+});
+
 /** Shared shape: real context, two or three buttons, one right answer. */
 const choiceSpot = ({ prompt, tiles, cards, options, answer, explain }) => ({
   kind: 'choice',
@@ -342,6 +356,138 @@ const choiceSpot = ({ prompt, tiles, cards, options, answer, explain }) => ({
     return { correct: picked === answer, answer, explanation: explain(picked) };
   },
 });
+
+/* ---- Recognition: what am I even looking at? ------------------------ */
+
+/**
+ * Two cards, a flop, and one question: what is this called?
+ *
+ * This is the direction that was missing. The lessons say "gutshot" and
+ * "open-ended" and then ask what to do when you have one — which is a fair
+ * question only for somebody who can already spot one. Naming it has to come
+ * first, and it has to be asked over real cards rather than in words.
+ */
+export function nameTheShapePractice(rng = makeRng()) {
+  const spot = attempt(() => {
+    const deck = shuffle(rng, makeDeck());
+    const hero = deck.slice(0, 2);
+    const board = deck.slice(2, 5);
+    const read = readShape(hero, board);
+    // Nothing to name is not a question worth asking.
+    if (read.shape.key === 'nothing' || read.shape.key === 'backdoor-flush') return null;
+    return { hero, board, read };
+  });
+  if (!spot) return null;
+  const { hero, board, read } = spot;
+
+  // Distractors are the other shapes, so a wrong answer is always a real
+  // poker word rather than an obviously silly one.
+  const others = SHAPES
+    .filter((sh) => sh.key !== read.shape.key && sh.key !== 'nothing' && sh.key !== 'backdoor-flush')
+    .map((sh) => sh.key);
+  const keys = [read.shape.key, ...shuffle(rng, others).slice(0, 3)];
+
+  return feltSpot({
+    prompt: t('Look at what you are holding, not at what you might make.'),
+    question: t('What is this called?'),
+    hero,
+    board,
+    options: shuffle(rng, keys).map((key) => ({ key, label: t(shapeByKey(key).label) })),
+    answer: read.shape.key,
+    explain: () => explainShape(hero, board),
+  });
+}
+
+/**
+ * The same cards, the other half of the fact: how often does it get there?
+ *
+ * Asked as a number rather than a choice, because "about a third" is the
+ * shape of the answer a player carries and picking 35% from a list of four
+ * is not the same as knowing it.
+ */
+export function shapeOddsPractice(rng = makeRng()) {
+  const spot = attempt(() => {
+    const deck = shuffle(rng, makeDeck());
+    const hero = deck.slice(0, 2);
+    const board = deck.slice(2, 5);
+    const read = readShape(hero, board);
+    if (read.made || read.shape.outs === 0 || !read.shape.outs) return null;
+    return { hero, board, read };
+  });
+  if (!spot) return null;
+  const { hero, board, read } = spot;
+  const outs = read.shape.outs;
+  const exact = exactOutsEquity(outs, 'flop') * 100;
+
+  return {
+    kind: 'felt-number',
+    // The label is a noun phrase — "Gutshot", "Flush draw" — so it opens the
+    // sentence rather than being spliced into one that needs an article.
+    prompt: t('{shape} — {outs} cards get you there.', { shape: t(read.shape.label), outs }),
+    question: t('How often do you make it by the river?'),
+    hero,
+    board,
+    unit: '%',
+    grade(value) {
+      const given = Number(String(value).replace(',', '.'));
+      if (!Number.isFinite(given)) return { correct: false, explanation: t('Type a percentage.') };
+      return {
+        correct: Math.abs(given - exact) <= 5,
+        exact: exact.toFixed(0),
+        explanation: t('{outs} outs with two cards to come. The rule of 4 says {rough}%, and the true figure is '
+          + '{exact}% — close enough that the shortcut is the one to carry.',
+        { outs, rough: outs * 4, exact: exact.toFixed(0) }),
+      };
+    },
+  };
+}
+
+/* ---- The price ladder: a quarter is 17%, half is 25% ---------------- */
+
+/**
+ * Five numbers worth knowing cold, drilled as the ladder they are.
+ *
+ * The pot-odds lesson derives them and the decision card uses them, and
+ * nothing ever asked for them directly — so they stayed as arithmetic to be
+ * redone every time rather than five facts to recall.
+ */
+const LADDER = [
+  { fraction: 1 / 4, name: 'a quarter of the pot' },
+  { fraction: 1 / 3, name: 'a third of the pot' },
+  { fraction: 1 / 2, name: 'half the pot' },
+  { fraction: 3 / 4, name: 'three quarters of the pot' },
+  { fraction: 1, name: 'the whole pot' },
+];
+
+export function priceLadderPractice(rng = makeRng()) {
+  const pot = [40, 60, 80, 120][randInt(rng, 4)];
+  const rung = LADDER[randInt(rng, LADDER.length)];
+  const bet = Math.round(pot * rung.fraction);
+  const need = requiredEquity(bet, pot + bet) * 100;
+  const deck = shuffle(rng, makeDeck());
+
+  return {
+    kind: 'felt-number',
+    prompt: t('They bet {name} — {bet} into {pot}.', { name: t(rung.name), bet, pot }),
+    question: t('What share of the time do you have to win for the call to break even?'),
+    hero: deck.slice(0, 2),
+    board: deck.slice(2, 5),
+    unit: '%',
+    pot: pot + bet,
+    bet,
+    grade(value) {
+      const given = Number(String(value).replace(',', '.'));
+      if (!Number.isFinite(given)) return { correct: false, explanation: t('Type a percentage.') };
+      return {
+        correct: Math.abs(given - need) <= 2,
+        exact: need.toFixed(0),
+        explanation: t('Your {bet} goes into a final pot of {final}, so you need {pct}%. Worth knowing cold: a '
+          + 'quarter asks 17%, a third 20%, half 25%, three quarters 30%, the whole pot 33%.',
+        { bet, final: pot + bet + bet, pct: need.toFixed(0) }),
+      };
+    },
+  };
+}
 
 /* ---- Preflop: a real hand, a real seat, raise or fold -------------- */
 
@@ -571,6 +717,9 @@ export function rollPractice(rng = makeRng()) {
 }
 
 export const PRACTICE = {
+  'name-the-shape': nameTheShapePractice,
+  'shape-odds': shapeOddsPractice,
+  'price-ladder': priceLadderPractice,
   'count-outs': countOutsPractice,
   'pick-winner': (rng) => pickWinnerPractice(rng, { subtle: false }),
   'pick-winner-kicker': (rng) => pickWinnerPractice(rng, { subtle: true }),
