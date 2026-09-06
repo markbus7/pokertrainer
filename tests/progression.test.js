@@ -7,6 +7,7 @@ import {
   MODULE_META, unlockedModules, recommendedModule, nextUp, confidenceAdjusted,
 } from '../src/js/data/curriculum.js';
 import { makeRng } from '../src/js/core/rng.js';
+import { scoreLine, EVIDENCE_BAR } from '../src/js/state/mastery.js';
 
 /** Earn a rank properly: the lessons, the drilling, the hands, then the XP. */
 const promoteTo = (p, level) => {
@@ -266,6 +267,38 @@ describe('progression: drill tracking', () => {
       for (let i = 0; i < 10; i++) p.recordDrill(m.id, m.id !== 'outs');
     }
     equal(recommendedModule(p).id, 'outs', 'points at the weakest skill');
+  });
+
+  it('never prints a score it cannot back up', () => {
+    // "3/3" reads as a perfect record and is worth nothing — three right in a
+    // row is what a coin does one time in eight. Below the bar the line has to
+    // say what is missing rather than show a percentage.
+    const p = fresh();
+    for (let i = 0; i < EVIDENCE_BAR - 1; i++) {
+      p.recordDrill('outs', true);
+      const line = scoreLine(p, 'outs');
+      assert(!/%/.test(line), `${i + 1} answers should not produce a percentage: "${line}"`);
+      // The whole complaint was that "3/3" is a number that says nothing, so
+      // a bare fraction is the failure this is guarding against — not just
+      // the absence of a percent sign.
+      assert(!/^\s*\d+\s*\/\s*\d+\s*$/.test(line),
+        `"${line}" is a bare fraction — it tells the reader nothing`);
+      assert(line.includes(String(EVIDENCE_BAR - (i + 1))),
+        `the line has to say how many more are needed: "${line}"`);
+      equal(p.accuracy('outs'), null, `accuracy must stay unknown at ${i + 1} answers`);
+    }
+    p.recordDrill('outs', true);
+    assert(/100%/.test(scoreLine(p, 'outs')), 'at the bar it becomes a real score');
+    assert(p.accuracy('outs') !== null, 'and accuracy is finally knowable');
+  });
+
+  it('uses one evidence bar everywhere, not one per screen', () => {
+    // It used to be five in the profile and eight in the recommendation,
+    // which is how a tile could show a bare "3/3" that nothing explained.
+    const p = fresh();
+    for (let i = 0; i < EVIDENCE_BAR; i++) p.recordDrill('outs', i > 0);
+    equal(p.accuracy('outs') === null, false);
+    assert(scoreLine(p, 'outs').includes('%'), 'the same bar unlocks both');
   });
 
   it('does not let one bad answer outrank a module you have really struggled with', () => {

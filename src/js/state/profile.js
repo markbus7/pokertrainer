@@ -14,7 +14,7 @@
  * nobody tells you which skill the spot is testing.
  */
 
-import { masteryTier } from './mastery.js';
+import { masteryTier, EVIDENCE_BAR } from './mastery.js';
 import { MODULE_META } from '../data/curriculum.js';
 
 const STORAGE_KEY = 'poker-trainer.profile.v1';
@@ -316,7 +316,9 @@ export class Profile {
   /** 0..1 accuracy, or null when there is not enough data to judge. */
   accuracy(module) {
     const s = this.drillStats(module);
-    return s.attempts >= 5 ? s.correct / s.attempts : null;
+    // null means "not enough answers to say", and every screen that shows a
+    // score honours it. The bar lives in mastery.js so there is one of it.
+    return s.attempts >= EVIDENCE_BAR ? s.correct / s.attempts : null;
   }
 
   /** Guided lessons are tracked apart from drills so they cannot skew accuracy. */

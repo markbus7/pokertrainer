@@ -3276,4 +3276,11 @@ export const NL = {
     'Laagste score van alles wat je hebt ontgrendeld, gewogen zodat een module die je nauwelijks hebt geprobeerd niet voordringt.',
   '{pct} right, but only {n} questions in — too early to tell.':
     '{pct} goed, maar pas {n} vragen ver — te vroeg om iets te zeggen.',
+  '{correct}/{attempts} correct · {pct}%': '{correct}/{attempts} goed · {pct}%',
+  '{correct}/{attempts} — {n} more before this counts as a score':
+    '{correct}/{attempts} — nog {n} vragen voordat dit een score is',
+  'Only {n} answered — {short} more before there is a score to read.':
+    'Pas {n} beantwoord — nog {short} voordat er een score te lezen valt.',
+  '{n} more for a score': 'nog {n} voor een score',
+  'Not started': 'Nog niet begonnen',
 };

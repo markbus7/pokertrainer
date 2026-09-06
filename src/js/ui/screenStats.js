@@ -3,6 +3,7 @@
 import { el, mount, fmt, sparkline, toast } from './dom.js';
 import { t } from '../i18n/index.js';
 import { MODULE_META } from '../data/curriculum.js';
+import { scoreLine } from '../state/mastery.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { RANKS } from '../state/profile.js';
 import { exportCode, importCode, decodeSyncCode, summarize } from '../state/sync.js';
@@ -66,9 +67,7 @@ export function renderStats(ctx) {
                 el('span', { style: { fontWeight: '600' } }, meta.name),
                 locked ? el('span.badge', t('Level {level}', { level: meta.unlockLevel })) : null,
               ),
-              el('span.faint.mono', stats.attempts
-                ? `${stats.correct}/${stats.attempts}${acc !== null ? ` · ${fmt.pct(acc)}` : ''}`
-                : 'not started'),
+              el('span.faint.mono', scoreLine(profile, meta.id)),
             ),
             el('div.bar', { style: { marginTop: '6px', height: '6px' } },
               el('span', { style: { width: `${Math.round((acc ?? 0) * 100)}%` } })),

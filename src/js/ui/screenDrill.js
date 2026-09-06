@@ -7,7 +7,7 @@ import { copyButton } from './copySpot.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
 import { generateQuestion, generateGauntlet, difficultyForLevel } from '../trainers/index.js';
 import { checkAchievements } from '../state/achievements.js';
-import { masteryTier, nextTierGoal, promotion, tierByKey } from '../state/mastery.js';
+import { masteryTier, nextTierGoal, promotion, tierByKey, EVIDENCE_BAR } from '../state/mastery.js';
 import { review } from '../state/spacing.js';
 
 /** The lesson page for a module, with the drill entry point. */
@@ -38,10 +38,13 @@ export function renderLearn(ctx, params) {
         ? el('div.row', { style: { marginTop: '14px' } },
             el('span.badge', `${stats.attempts} attempts`),
             el('span.badge', `${stats.correct} correct`),
+            // Below the evidence bar there is no percentage to show, and a
+            // blank where a score should be tells the reader nothing about
+            // why. Say what is missing instead.
             acc !== null
               ? el(`span.badge.${acc >= 0.9 ? 'green' : acc >= 0.7 ? 'gold' : 'red'}`,
                 t('{pct} accuracy', { pct: fmt.pct(acc) }))
-              : null,
+              : el('span.badge', t('{n} more for a score', { n: EVIDENCE_BAR - stats.attempts })),
             stats.bestStreak ? el('span.badge', t('best streak {n}', { n: stats.bestStreak })) : null,
           )
         : null,

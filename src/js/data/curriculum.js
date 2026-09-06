@@ -1,4 +1,4 @@
-import { masteryTier } from '../state/mastery.js';
+import { masteryTier, EVIDENCE_BAR } from '../state/mastery.js';
 
 /**
  * The curriculum: what to learn, in what order, and why it matters.
@@ -242,9 +242,6 @@ export function confidenceAdjusted(correct, attempts) {
   return (p + z2 / (2 * attempts)) / (1 + z2 / attempts);
 }
 
-/** Below this, "your weakest skill" is a claim the evidence cannot support. */
-const ENOUGH_EVIDENCE = 8;
-
 /** The accuracy a module has to clear before it stops being a weak spot. */
 const SOLID_BAR = 0.75;
 
@@ -278,7 +275,7 @@ export function nextUp(profile) {
   // to judge, anything below the Solid bar is a genuine weakness and outranks
   // a module you have merely not done much of — one wrong answer out of one
   // is not evidence of anything, however bad the percentage looks.
-  const judged = pool.filter((m) => statsOf(m).attempts >= ENOUGH_EVIDENCE);
+  const judged = pool.filter((m) => statsOf(m).attempts >= EVIDENCE_BAR);
   const weak = judged.filter((m) => score(m) < SOLID_BAR).sort((a, b) => score(a) - score(b))[0];
   if (weak) {
     const stats = statsOf(weak);
@@ -294,7 +291,7 @@ export function nextUp(profile) {
   // Nothing is demonstrably weak. Whatever you have done least of is where
   // the next answer tells the game the most.
   const thin = pool
-    .filter((m) => statsOf(m).attempts < ENOUGH_EVIDENCE)
+    .filter((m) => statsOf(m).attempts < EVIDENCE_BAR)
     .sort((a, b) => statsOf(a).attempts - statsOf(b).attempts)[0];
   if (thin) return { module: thin, reason: 'thin', stats: statsOf(thin) };
 
