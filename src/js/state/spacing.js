@@ -18,10 +18,16 @@ import { t } from '../i18n/index.js';
 export const INTERVALS = [1, 3, 7, 16, 35, 75];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * `expected` is what each word claims about your chances. Calibration is the
+ * gap between that claim and what actually happened, so the number has to
+ * live next to the word rather than being invented separately wherever it is
+ * measured.
+ */
 export const CONFIDENCE = [
-  { key: 'sure', label: 'Certain', hint: 'I know this' },
-  { key: 'think', label: 'Fairly sure', hint: 'Pretty confident' },
-  { key: 'guess', label: 'Guessing', hint: 'No real idea' },
+  { key: 'sure', label: 'Certain', hint: 'I know this', expected: 0.9 },
+  { key: 'think', label: 'Fairly sure', hint: 'Pretty confident', expected: 0.7 },
+  { key: 'guess', label: 'Guessing', hint: 'No real idea', expected: 0.4 },
 ];
 
 const emptyCard = (concept) => ({
@@ -120,6 +126,14 @@ export function recordConfidence(profile, level, correct) {
  * The interesting row is "Certain" — being right less than ~90% of the time
  * when you felt certain is the specific blind spot worth knowing about.
  */
+/**
+ * Answers per confidence level before that row is worth reading.
+ *
+ * The verdict below has always waited for fifteen answers in total; the rows
+ * themselves showed "100% of 1" above it, which undercut the whole panel.
+ */
+export const CALIBRATION_BAR = 5;
+
 export function calibrationReport(profile) {
   const store = profile.data.calibration || {};
   const rows = CONFIDENCE.map(({ key, label }) => {
@@ -142,12 +156,29 @@ export function calibrationReport(profile) {
     if (sure.accuracy !== null && sure.accuracy < 0.75) {
       verdict = 'Overconfident: when you said you were certain, you were wrong about a quarter of the time. '
         + 'That gap is the most useful thing on this page — those are the spots you are not actually checking.';
-    } else if (guess.accuracy !== null && guess.attempts >= 5 && guess.accuracy > 0.7) {
+    } else if (guess.accuracy !== null && guess.attempts >= CALIBRATION_BAR && guess.accuracy > 0.7) {
       verdict = 'Underconfident: your guesses are landing far more often than guesses should. '
         + 'You know this better than you think — trust the calculation.';
     } else if (sure.accuracy !== null && sure.accuracy >= 0.85) {
       verdict = 'Well calibrated: when you feel certain, you generally are. That is exactly what you want.';
     }
   }
-  return { rows, total, verdict, ready: total >= 15 };
+  // How far confidence runs ahead of reality — measured only on the bands
+  // that claim confidence. Averaging the guessing band in would let being
+  // right when you guessed cancel out being wrong when you were certain, and
+  // those are two different faults: the verdict above names each separately.
+  // Bands under the bar are skipped, so one unlucky "certain" is not read as
+  // chronic overconfidence.
+  let weighted = 0;
+  let counted = 0;
+  for (const row of rows) {
+    if (row.key === 'guess') continue;
+    const band = CONFIDENCE.find((c) => c.key === row.key);
+    if (row.attempts < CALIBRATION_BAR || row.accuracy === null) continue;
+    weighted += (band.expected - row.accuracy) * row.attempts;
+    counted += row.attempts;
+  }
+  const overconfidence = counted ? Math.max(0, weighted / counted) : 0;
+
+  return { rows, total, verdict, overconfidence, ready: total >= 15 };
 }

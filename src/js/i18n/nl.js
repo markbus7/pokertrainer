@@ -3283,4 +3283,12 @@ export const NL = {
     'Pas {n} beantwoord — nog {short} voordat er een score te lezen valt.',
   '{n} more for a score': 'nog {n} voor een score',
   'Not started': 'Nog niet begonnen',
+  '{n} more before this is a score': 'nog {n} voordat dit een score is',
+  '{n} of {need}': '{n} van {need}',
+  '{n}bb/100 — still rough at {hands} hands': '{n}bb/100 — nog ruw na {hands} handen',
+  '— {n} more hands': '— nog {n} handen',
+  'no calls yet': 'nog geen calls',
+  '{n} judged answers': '{n} beoordeelde antwoorden',
+  'How often you were right, split by how sure you felt at the time.':
+    'Hoe vaak je gelijk had, uitgesplitst naar hoe zeker je je op dat moment voelde.',
 };

@@ -560,6 +560,50 @@ await step('the home screen names one module and the grid marks the same one', a
   console.log(`      points at ${marked[0]}, and says why`);
 });
 
+await step('no screen prints a percentage it has no sample for', async () => {
+  // The same fault as the "3/3" tile, hunted across every screen that shows a
+  // rate: the headline accuracy tile had no evidence bar at all while the
+  // module tiles under it had one, and the calibration rows showed "100% of
+  // 1" directly above a verdict that waits for fifteen answers.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    raw.drills = { 'hand-rankings': { attempts: 3, correct: 3 } };
+    raw.calibration = { sure: { attempts: 1, correct: 1 }, guess: { attempts: 2, correct: 2 } };
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+
+  const faults = [];
+  for (const [route, selector, what, least] of [
+    ['#home', '.stat', 'the home stat tiles', 4],
+    ['#stats', '.stat, .calib-value', 'the progress tiles and calibration rows', 5],
+  ]) {
+    // The reload above is what makes the seeded profile real: going straight
+    // from #home to #stats is only a fragment navigation, so the app keeps
+    // the profile it already holds and never re-reads storage — which is why
+    // the first version of this check was measuring an untouched profile.
+    await page.evaluate((hash) => { window.location.hash = hash; }, route);
+    await page.waitForTimeout(500);
+    const texts = await page.$$eval(selector, (ns) => ns.map((n) => n.innerText.trim()));
+    // A selector that matches nothing passes this test for free, which is
+    // exactly how the first version of it passed while both faults were
+    // still in place. Fail loudly instead.
+    if (texts.length < least) {
+      throw new Error(`"${selector}" matched ${texts.length} elements on ${route} — the check is not looking at anything`);
+    }
+    // Three answers and one calibration entry cannot produce a percentage
+    // anywhere. Achievements and rank counts are not rates, so only "%" is
+    // the thing being hunted here.
+    for (const text of texts) {
+      if (/\d+(\.\d+)?%/.test(text)) faults.push(`${what}: "${text.replace(/\n/g, ' · ')}"`);
+    }
+  }
+  if (faults.length) throw new Error(`a rate was shown without a sample:\n      ${faults.join('\n      ')}`);
+  console.log('      3 answers and 3 calibration entries produced no percentages');
+});
+
 await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);
