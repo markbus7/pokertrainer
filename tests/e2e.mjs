@@ -680,13 +680,21 @@ await step('a lesson run ends in a report and is remembered afterwards', async (
 
   const stored = await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
-    return (raw.lessonRuns || {})['pot-odds'] || null;
+    return { run: (raw.lessonRuns || {})['pot-odds'] || null, hands: raw.handsPlayed || 0 };
   });
-  if (!stored || stored.runs !== 1) throw new Error(`the run was not filed: ${JSON.stringify(stored)}`);
+  if (!stored.run || stored.run.runs !== 1) {
+    throw new Error(`the run was not filed: ${JSON.stringify(stored.run)}`);
+  }
+  // Finding ten spots deals well over a hundred hands, nearly all of them
+  // played by the autopilot. Counting those would advance the rank, the
+  // hands tile and the hand-count achievements on somebody else's play.
+  if (stored.hands > 20) {
+    throw new Error(`${stored.hands} hands credited for a ten-spot run — the autopilot's hands are being counted`);
+  }
 
   // A report naming mistakes must leave something behind to warn about.
   const named = /\d+×/.test(text);
-  if (named && !Object.keys(stored.weak || {}).length) {
+  if (named && !Object.keys(stored.run.weak || {}).length) {
     throw new Error('mistakes were reported and none were remembered');
   }
 
@@ -697,7 +705,8 @@ await step('a lesson run ends in a report and is remembered afterwards', async (
     await page.waitForSelector('.lesson-note', { timeout: 8000 });
     const warning = await page.$('.lesson-warning');
     if (!warning) throw new Error('a fresh visit did not warn about last time');
-    console.log(`      run scored, ${Object.keys(stored.weak).length} weak spot(s) carried over`);
+    console.log(`      run scored on ${stored.hands} hands, `
+      + `${Object.keys(stored.run.weak).length} weak spot(s) carried over`);
   } else {
     console.log('      run scored with no mistakes to carry over');
   }
@@ -908,7 +917,11 @@ await step('layout holds up on phone and tablet viewports', async () => {
     ['iPad portrait', 820, 1180],
     ['iPad landscape', 1180, 820],
   ];
-  const routes = ['#home', '#play', '#lab-run', '#review', '#walkthrough?module=pot-odds', '#charts?chart=BTN', '#stats'];
+  const routes = ['#home', '#play', '#lab-run', '#review', '#walkthrough?module=pot-odds',
+    '#charts?chart=BTN', '#stats',
+    // The lesson table adds two panels above the felt and a report below it,
+    // and it is the screen this app is now mostly used on.
+    '#play?lesson=pot-odds', '#play?lesson=preflop'];
   const faults = [];
 
   for (const [name, w, h] of viewports) {

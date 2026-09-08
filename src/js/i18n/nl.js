@@ -3380,4 +3380,12 @@ export const NL = {
   'Reading your own hand wrong': 'Je eigen hand verkeerd lezen',
   'Say the five cards out loud: three from the board and two from your hand, or four and one.':
     'Zeg de vijf kaarten hardop: drie van het board en twee uit je hand, of vier en één.',
+  'No table for that': 'Daar is geen tafel voor',
+  'ICM is a tournament idea and this is a cash table, so there is no honest way to play it here. The lesson and its drill still teach it.':
+    'ICM hoort bij toernooien en dit is een cashtafel, dus er is geen eerlijke manier om het hier te spelen. De les en de drill leren het wel.',
+  'Which table to sit at is the whole subject, so the Bankroll Challenge is this lesson — climbing the stakes with a real roll is the exercise.':
+    'Aan welke tafel je gaat zitten is het hele onderwerp, dus de Bankroll Challenge ís deze les — met een echte roll de limieten opklimmen is de oefening.',
+  'That is not a lesson this game can deal.': 'Dat is geen les die dit spel kan delen.',
+  'Open the Bankroll Challenge': 'Open de Bankroll Challenge',
+  'Back': 'Terug',
 };

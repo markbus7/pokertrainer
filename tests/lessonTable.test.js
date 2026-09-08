@@ -115,3 +115,17 @@ describe('lesson tables: the hand stops where the lesson does', () => {
     }
   });
 });
+
+describe('lesson tables: a lesson without a table does not pretend', () => {
+  it('has an entry for every module, and only real tables are playable', () => {
+    // #play?lesson=icm used to put "🏆 Tournament ICM" above an ordinary
+    // six-handed cash game: a header promising a lesson that was not there.
+    for (const id of MODULE_IDS) {
+      const cfg = lessonTable(id);
+      if (!cfg) continue;
+      assert(cfg.seats && cfg.lastStreet, `${id}: a playable lesson needs a table`);
+    }
+    assert(!playableModules().includes('icm'), 'ICM has no cash table to be played on');
+    assert(!playableModules().includes('bankroll'), 'Bankroll is the Bankroll Challenge');
+  });
+});

@@ -19,6 +19,7 @@
  */
 
 import { MODULE_META } from '../data/curriculum.js';
+import { weakSpots, runHistory } from './lessonRuns.js';
 import { masteryTier, REQUIREMENTS } from './mastery.js';
 import { calibrationReport, getCard, strength } from './spacing.js';
 import { RANKS, requirementRows } from './profile.js';
@@ -149,6 +150,27 @@ export function learningReport(profile) {
       for (const c of weak) {
         lines.push(`  ${named(c.module)}: ${c.correct} of ${c.attempts} — the steps here are not landing.`);
       }
+    }
+  }
+
+  /* ---- what the lesson tables keep catching ---- */
+  const runs = MODULE_META
+    .map((meta) => ({ meta, history: runHistory(profile, meta.id), weak: weakSpots(profile, meta.id) }))
+    .filter((r) => r.history.runs > 0);
+  if (runs.length) {
+    lines.push('');
+    lines.push('PLAYED LESSONS');
+    // The most useful thing this app knows about somebody is not their
+    // accuracy — it is the specific mistake they keep making. That lives in
+    // the lesson runs, and this report existed for a version without knowing
+    // about it at all.
+    for (const { meta, history, weak } of runs) {
+      const best = history.best === null ? '—' : `${Math.round(history.best * 100)}%`;
+      lines.push(`  ${meta.name}: ${history.runs} run(s), best ${best}`);
+      for (const w of weak) {
+        lines.push(`    keeps happening (${w.count}×): ${w.label}`);
+      }
+      if (!weak.length) lines.push('    nothing recurring right now.');
     }
   }
 
