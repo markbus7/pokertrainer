@@ -22,7 +22,7 @@ import { judgeSpot } from '../core/coach.js';
 import { conceptOf, isUnlocked } from '../core/spotConcept.js';
 import { moduleMeta, MODULE_META } from '../data/curriculum.js';
 import { lessonTable } from '../data/lessonTables.js';
-import { snapshotOf, autopilotAction, playUntilMySpot } from '../core/lessonRunner.js';
+import { snapshotOf, autopilotAction, playUntilMySpot, captureRange } from '../core/lessonRunner.js';
 import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
@@ -200,6 +200,7 @@ export function renderTable(ctx, params = {}) {
     session.savedHand = null;
     session.aggressor = {};
     session.opener = null;
+    session.ranges = {};
     session.learned = [];
     session.namedThisHand = false;
     session.playedByReader = false;
@@ -295,6 +296,7 @@ export function renderTable(ctx, params = {}) {
     session.savedHand = null;
     session.aggressor = {};
     session.opener = null;
+    session.ranges = {};
     session.learned = [];
     session.namedThisHand = false;
     session.playedByReader = false;
@@ -356,6 +358,9 @@ export function renderTable(ctx, params = {}) {
     session.timer = setTimeout(() => {
       if (session.cancelled || table.handOver) return;
       const action = botAction(table, actor, rng);
+      // What they would have bet with, taken while they are still the one
+      // deciding — after they pay, the same question returns "check".
+      captureRange(table, actor, action, session, rng);
       const label = describeAction(action, table, actor, actor.name);
       if (action.type === 'bet' || action.type === 'raise') {
         session.aggressor[table.street] = actor.id;
@@ -377,7 +382,7 @@ export function renderTable(ctx, params = {}) {
    * you are holding are what say which skill the decision is really about.
    */
   const takeSnapshot = () => snapshotOf(table, hero, {
-    rng, aggressor: session.aggressor, opener: session.opener,
+    rng, aggressor: session.aggressor, opener: session.opener, ranges: session.ranges,
   });
 
 

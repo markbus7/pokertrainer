@@ -14,8 +14,10 @@
  */
 
 import { botAction } from '../engine/bots.js';
+import { makeRng, shuffle } from './rng.js';
+import { makeDeck } from './cards.js';
 import { STREETS } from '../engine/table.js';
-import { equityVsField, outsToImprove } from './equity.js';
+import { equityVsField, equityVsHands, outsToImprove } from './equity.js';
 import { evaluateHand, categoryOf, CAT } from './evaluator.js';
 import { requiredEquity, spr } from './odds.js';
 
@@ -32,13 +34,13 @@ import { requiredEquity, spr } from './odds.js';
  * @param {object} hero
  * @param {object} ctx  { rng, aggressor: {street: playerId}, opener }
  */
-export function snapshotOf(table, hero, { rng, aggressor = {}, opener = null } = {}) {
+export function snapshotOf(table, hero, { rng, aggressor = {}, opener = null, ranges = null } = {}) {
   const live = table.contestants.filter((p) => !p.isHero).length;
   const toCall = Math.max(0, table.currentBet - hero.committed);
   const pot = table.totalPot;
   const previous = STREETS[Math.max(0, STREETS.indexOf(table.street) - 1)];
   return {
-    equity: equityVsField(hero.hole, table.board, Math.max(1, live), table.variant, rng, 900),
+    equity: heroEquity(table, hero, live, rng, ranges),
     toCall,
     pot,
     needed: toCall > 0 ? requiredEquity(toCall, pot) : 0,
@@ -103,6 +105,56 @@ export function autopilotAction(table, hero, lesson, rng) {
 }
 
 /**
+ * The hands this opponent would have bet with, captured at the moment they
+ * decide.
+ *
+ * It has to be here and not when the reader replies: by then the bet is paid,
+ * the bot owes nothing, and asking it what it would do returns "check" for
+ * every candidate. Sixty of sixty were rejected that way, silently, so the
+ * first version of this fell back to random cards on every spot.
+ *
+ * @returns {Array<Array<number>>} the accepted holdings, possibly empty
+ */
+export function bettingRangeOf(table, villain, rng, { want = 45, cap = 700 } = {}) {
+  const real = villain.hole;
+  const dead = new Set([...table.board, ...table.players.flatMap((p) => p.hole)]);
+  const deck = makeDeck(table.variant.shortDeck).filter((c) => !dead.has(c));
+  const holeCards = table.variant.holeCards || 2;
+  const kept = [];
+
+  // Sample until enough hands pass, not for a fixed number of tries. A fixed
+  // 120 left a tight opponent's range at five or seven hands, below the point
+  // where averaging means anything — so nine spots in forty-five quietly fell
+  // back to random cards, which is the whole bug this exists to fix.
+  for (let i = 0; i < cap && kept.length < want; i++) {
+    const draw = shuffle(rng, deck).slice(0, holeCards);
+    villain.hole = draw;
+    const guess = botAction(table, villain, makeRng(i + 1));
+    if (guess.type === 'bet' || guess.type === 'raise') kept.push(draw);
+  }
+  villain.hole = real;
+  return kept;
+}
+
+/**
+ * What the hero is actually worth here.
+ *
+ * Against a lone opponent who has bet, this is equity against the hands that
+ * opponent would have bet with. Everywhere else — nobody has bet, several
+ * players still in, or too few hands passed the filter to average — the plain
+ * field equity is the right question and much cheaper.
+ */
+function heroEquity(table, hero, live, rng, ranges) {
+  const toCall = Math.max(0, table.currentBet - hero.committed);
+  const range = ranges && ranges[table.street];
+
+  if (toCall > 0 && live === 1 && table.board.length >= 3 && range && range.length >= 20) {
+    return equityVsHands(hero.hole, table.board, range, { variant: table.variant, rng });
+  }
+  return equityVsField(hero.hole, table.board, Math.max(1, live), table.variant, rng, 900);
+}
+
+/**
  * Play a hand forward until the reader's own decision arrives.
  *
  * The table screen and the reachability test both run this, which is the
@@ -142,6 +194,7 @@ export function playUntilMySpot(table, { lesson, rng, isMine, state, apply, onAu
       perform(action, actor);
     } else {
       const action = botAction(table, actor, rng);
+      captureRange(table, actor, action, state, rng);
       noteAggressor(state, table, actor, action);
       if (onBot) onBot(action, actor);
       perform(action, actor);
@@ -155,4 +208,18 @@ function noteAggressor(state, table, player, action) {
   if (action.type !== 'bet' && action.type !== 'raise') return;
   state.aggressor[table.street] = player.id;
   if (table.street === 'preflop' && !state.opener) state.opener = player.position;
+}
+
+/**
+ * Stash what this opponent would have bet with, so the reader's next decision
+ * can be judged against it. Only heads-up and only after a flop: with several
+ * players in, one opponent's range is not what the reader is up against.
+ */
+export function captureRange(table, player, action, state, rng) {
+  if (action.type !== 'bet' && action.type !== 'raise') return;
+  if (player.isHero || !player.profile) return;
+  if (table.board.length < 3) return;
+  if (table.contestants.filter((p) => !p.isHero).length !== 1) return;
+  if (!state.ranges) state.ranges = {};
+  state.ranges[table.street] = bettingRangeOf(table, player, rng);
 }

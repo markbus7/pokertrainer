@@ -11,6 +11,7 @@ const modules = [
   './handShape.test.js',
   './lessonTable.test.js',
   './lessonRuns.test.js',
+  './coachEquity.test.js',
   './bots.test.js',
   './progression.test.js',
   './sync.test.js',
