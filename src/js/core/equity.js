@@ -126,6 +126,53 @@ export function equityVsRange(hero, rangeCombos, board = [], options = {}) {
  * how many opponents are still in. Used by both the bots and the coach, so
  * they always agree about how strong a hand is.
  */
+/**
+ * Your equity against a set of hands, rather than against random cards.
+ *
+ * The coach used to grade every decision on equity against random hands, and
+ * somebody who has just bet is not holding a random hand. Measured over 125
+ * spots facing a bet after the flop, that overstated the reader's equity by
+ * 20 points on average — 36 against the tightest opponent — and flipped the
+ * verdict on 46% of them. Always in the same direction: it said call. The Pot
+ * Odds lesson calls that "the single biggest leak in small-stakes poker", so
+ * the app was teaching the leak it warns about.
+ *
+ * The set has to be built at the moment the opponent decides, not when you
+ * reply: by then they have already paid, and asking the bot what it would do
+ * gets you "check" every time. That mistake made the first version of this
+ * fall back to random cards on every single spot without saying so.
+ *
+ * @param {Array<Array<number>>} hands the holdings they would have bet
+ * @returns {number} equity, or 0.5 if there is nothing to measure against
+ */
+export function equityVsHands(hole, board, hands, {
+  variant = HOLDEM, rng = makeRng(), rollouts = 6,
+} = {}) {
+  if (!hands || !hands.length) return 0.5;
+  const need = cardsToCome(board.length);
+  let total = 0;
+  let counted = 0;
+
+  for (const villain of hands) {
+    const used = new Set([...hole, ...board, ...villain]);
+    const deck = makeDeck(variant.shortDeck).filter((c) => !used.has(c));
+    if (need > deck.length) continue;
+    for (let r = 0; r < (need ? rollouts : 1); r++) {
+      for (let k = 0; k < need; k++) {
+        const j = k + Math.floor(rng() * (deck.length - k));
+        const tmp = deck[k]; deck[k] = deck[j]; deck[j] = tmp;
+      }
+      const full = board.concat(deck.slice(0, need));
+      const mine = evaluateHand(hole, full, variant);
+      const theirs = evaluateHand(villain, full, variant);
+      counted++;
+      if (mine > theirs) total += 1;
+      else if (mine === theirs) total += 0.5;
+    }
+  }
+  return counted ? total / counted : 0.5;
+}
+
 export function equityVsField(hole, board, opponents, variant = HOLDEM, rng = makeRng(), trials = 400) {
   const used = new Set([...hole, ...board]);
   const deck = makeDeck(variant.shortDeck).filter((c) => !used.has(c));
