@@ -13,6 +13,7 @@ import {
   weakSpots, watchFor, runHistory, mistakeInfo, MISTAKES, RUN_LENGTH,
 } from '../src/js/state/lessonRuns.js';
 import { judgeDecision } from '../src/js/core/judge.js';
+import { learningReport } from '../src/js/state/learningReport.js';
 import { judgeSpot } from '../src/js/core/coach.js';
 
 const fresh = () => {
@@ -127,5 +128,30 @@ describe('lesson runs: every mistake the coach can name is one the run can expla
       street: 'flop', hole: [], board: [1, 2, 3],
     });
     assert(spot.id, 'judgeSpot must pass the id through');
+  });
+});
+
+describe('lesson runs: the report knows what the runs learned', () => {
+  it('names the recurring mistake in the report meant to be shared', () => {
+    // The most useful thing this app knows about somebody is the mistake
+    // they keep making, and the report existed for a version without it.
+    const p = fresh();
+    p.recordDrill('pot-odds', false);
+    saveRun(p, fill(startRun('pot-odds'), [
+      bad('called-without-odds'), bad('called-without-odds'), bad('called-without-odds'), good(),
+    ]));
+    const report = learningReport(p);
+    assert(/PLAYED LESSONS/.test(report), 'the report must have a section for played lessons');
+    assert(/Pot Odds: 1 run/.test(report), 'and say how many runs');
+    assert(report.includes(MISTAKES['called-without-odds'].label),
+      `the recurring mistake must be named:\n${report}`);
+    assert(/3×/.test(report), 'and say how often it happened');
+  });
+
+  it('says nothing about lessons that have never been run', () => {
+    const p = fresh();
+    p.recordDrill('outs', true);
+    assert(!/PLAYED LESSONS/.test(learningReport(p)),
+      'an empty section is noise in a report somebody has to read');
   });
 });

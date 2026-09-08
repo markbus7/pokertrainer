@@ -162,7 +162,9 @@ export function renderWalkthrough(ctx, params) {
         el('div.row',
           // The reading is the short half. Every lesson that can be played
           // says so at the top, because the point of the lesson is the table.
-          lessonTable(meta.id)
+          // A module the curriculum has locked should not be playable from
+          // its own page: offering it contradicts the lock four lines above.
+          lessonTable(meta.id) && meta.unlockLevel <= profile.level
             ? el('button.btn.sm.primary', { onclick: () => go('play', { lesson: meta.id }) },
               t('▶ Play this lesson'))
             : null,

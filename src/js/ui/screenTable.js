@@ -65,7 +65,34 @@ export function renderTable(ctx, params = {}) {
   // A lesson gets a table cut down to it: fewer seats where the seats are
   // not the point, and a hand that ends once its question is answered.
   const lesson = params.lesson ? lessonTable(params.lesson) : null;
-  const lessonMeta = params.lesson ? moduleMeta(params.lesson) : null;
+  // Only claim to be a lesson if there is one. Asking for a module that has
+  // no table used to put its name and icon above an ordinary six-handed cash
+  // game — a header promising a lesson that was not there.
+  const lessonMeta = lesson && params.lesson ? moduleMeta(params.lesson) : null;
+
+  if (params.lesson && !lesson) {
+    const meta = moduleMeta(params.lesson);
+    return el('div.screen', el('div.panel',
+      el('h1', meta ? `${meta.icon} ${t(meta.name)}` : t('No table for that')),
+      el('p.muted', meta && params.lesson === 'icm'
+        ? t('ICM is a tournament idea and this is a cash table, so there is no honest way to '
+          + 'play it here. The lesson and its drill still teach it.')
+        : meta && params.lesson === 'bankroll'
+          ? t('Which table to sit at is the whole subject, so the Bankroll Challenge is this '
+            + 'lesson — climbing the stakes with a real roll is the exercise.')
+          : t('That is not a lesson this game can deal.')),
+      el('div.row',
+        meta
+          ? el('button.btn.primary', { onclick: () => go('walkthrough', { module: params.lesson }) },
+            t('Read the lesson'))
+          : null,
+        params.lesson === 'bankroll'
+          ? el('button.btn.ghost', { onclick: () => go('grind') }, t('Open the Bankroll Challenge'))
+          : null,
+        el('button.btn.ghost', { onclick: () => go('home') }, t('Back')),
+      ),
+    ));
+  }
   const seats = lesson ? lesson.seats : 6;
 
   const opponents = pickOpponents(seats - 1, rng);
@@ -175,6 +202,7 @@ export function renderTable(ctx, params = {}) {
     session.opener = null;
     session.learned = [];
     session.namedThisHand = false;
+    session.playedByReader = false;
     log(t('— Hand #{n} —', { n: table.handNumber }), true);
     draw();
     if (lesson && (lesson.concept || lesson.ask)) return searchForMySpot();
@@ -269,6 +297,7 @@ export function renderTable(ctx, params = {}) {
     session.opener = null;
     session.learned = [];
     session.namedThisHand = false;
+    session.playedByReader = false;
     log(t('— Hand #{n} —', { n: table.handNumber }), true);
   }
 
@@ -375,6 +404,7 @@ export function renderTable(ctx, params = {}) {
 
   function heroAct(action) {
     if (session.cancelled || table.handOver || !table.actor || !table.actor.isHero) return;
+    session.playedByReader = true;
     const snap = session.snapshot || takeSnapshot();
     const verdict = judgeSpot({ ...snap, action: action.type, amount: action.amount });
     session.verdict = verdict;
@@ -429,8 +459,17 @@ export function renderTable(ctx, params = {}) {
         ? t('You take the {pot} pot', { pot: fmt.chips(potTotal) })
         : t('{name} takes the {pot} pot', { name: winners[0], pot: fmt.chips(potTotal) }), true);
 
-    profile.data.handsPlayed++;
-    profile.save();
+    // Finding ten spots takes over a hundred hands, and the reader was handed
+    // about ten of them. Counting the rest would advance the rank, the hands
+    // tile and the achievements on hands somebody else played — which is the
+    // same fault as a percentage with no sample behind it, in another costume.
+    // (The flag for this existed as `actedThisHand` and was deleted last
+    // version as dead state; nothing read it because the thing that needed to
+    // had not been written yet.)
+    if (!lesson || session.playedByReader) {
+      profile.data.handsPlayed++;
+      profile.save();
+    }
 
     const heroShow = result.showdown.find((s) => s.id === HERO_ID);
     const events = {
@@ -588,6 +627,7 @@ export function renderTable(ctx, params = {}) {
       if (session.namedThisHand) return;
       session.namedThisHand = true;
       const right = choice === correct;
+      session.playedByReader = true;
       // Reading your hand is this lesson's spot, so it is what the run marks.
       if (session.run && !runComplete(session.run)) {
         recordSpot(session.run, { id: right ? 'read-right' : 'misread-hand', level: right ? 'good' : 'bad' });
