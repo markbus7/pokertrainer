@@ -252,8 +252,44 @@
 .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
 .action-buttons .btn { flex: 1; min-width: 110px; }
 
+.sizing { display: grid; gap: 10px; }
 .sizing-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .sizing-row .btn.sm { flex: none; }
+
+/* Each preset says what it will actually make. In a small pot several
+   fractions land on the same legal minimum, and seeing the number is what
+   tells you that is the rules, not a broken button. */
+.size-presets { gap: 6px; }
+.size-presets .size-btn {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 1px;
+  line-height: 1.15; padding: 6px 8px;
+  /* Equal shares of the row, so all five fit on one line on a phone. */
+  flex: 1 1 0; min-width: 0;
+}
+.size-presets .size-name { font-size: 0.82rem; }
+.size-presets .size-chips { font-family: var(--mono); font-size: 0.78rem; color: var(--text-dim); }
+.size-presets .size-btn.is-active {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 15%, transparent);
+}
+.size-presets .size-btn.is-active .size-chips { color: var(--gold); }
+
+.size-tune .step-btn {
+  font-family: var(--mono); font-size: 1.05rem; font-weight: 700;
+  min-width: 46px; padding: 6px 10px;
+}
+.size-tune .raise-input {
+  width: 92px; flex: none;
+  background: var(--bg-deep, #10161f);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--gold);
+  font-family: var(--mono); font-size: 1.15rem; font-weight: 700;
+  text-align: center;
+  padding: 7px 6px;
+}
+.size-tune .raise-input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.size-tune .raise-slider { flex: 1 1 160px; min-width: 120px; }
 
 input[type="range"] {
   flex: 1;
@@ -431,6 +467,18 @@ input[type="range"] {
 @media (pointer: coarse) {
   input[type="range"], .lab-slider { height: 44px; }
   .lab-slider { margin: 4px 0; }
+  /* Thumb-sized: a number worth aiming at, steppers worth pressing. */
+  .size-tune .raise-input { min-height: 46px; width: 120px; font-size: 1.3rem; }
+  .size-tune .step-btn { min-width: 60px; }
+}
+
+/* On a phone the slider — the coarsest control of the three — takes a line of
+   its own rather than fighting the number for the last 80 pixels. On a tablet
+   there is room for all four side by side. */
+@media (pointer: coarse) and (max-width: 720px) {
+  .size-tune { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; }
+  .size-tune .raise-input { width: auto; }
+  .size-tune .raise-slider { grid-column: 1 / -1; }
 }
 
 /* ============================================================

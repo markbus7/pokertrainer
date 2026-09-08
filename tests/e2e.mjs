@@ -124,6 +124,65 @@ await step('table deals and plays', async () => {
 });
 if (SHOT) await page.screenshot({ path: `${SHOT}/04-table.png` });
 
+await step('every raise control agrees on one amount', async () => {
+  // The bug this pins: the sizing buttons moved a slider while the button you
+  // press kept its old label, so the bar offered "Raise to 137" and raised to
+  // 4. A control that lies about what it will do is worse than no control.
+  const sizing = await page.$('.sizing');
+  if (!sizing) throw new Error('the action bar has no raise controls');
+
+  const state = () => page.evaluate(() => ({
+    field: Number(document.querySelector('.raise-input').value),
+    slider: Number(document.querySelector('.raise-slider').value),
+    button: Number((document.querySelector('.action-buttons .btn.primary').textContent.match(/\d+/) || [0])[0]),
+    active: [...document.querySelectorAll('.size-btn.is-active .size-name')].map((n) => n.textContent),
+    offers: [...document.querySelectorAll('.size-btn')].map((b) => ({
+      name: b.querySelector('.size-name').textContent,
+      chips: Number(b.querySelector('.size-chips').textContent),
+    })),
+  }));
+
+  const agree = (s, where) => {
+    if (s.field !== s.slider || s.field !== s.button) {
+      throw new Error(`${where}: field ${s.field}, slider ${s.slider}, button says ${s.button}`);
+    }
+  };
+
+  const opened = await state();
+  agree(opened, 'on open');
+  if (opened.offers.length !== 5) throw new Error(`expected 5 sizing buttons, got ${opened.offers.length}`);
+  console.log(`      offers: ${opened.offers.map((o) => `${o.name} ${o.chips}`).join(' | ')}`);
+
+  // Every preset moves all three readouts to the amount printed on it.
+  const seen = [];
+  for (const offer of opened.offers) {
+    await page.click(`.size-btn:has(.size-name:text-is("${offer.name}"))`);
+    const s = await state();
+    agree(s, `after ${offer.name}`);
+    if (s.button !== offer.chips) throw new Error(`${offer.name} shows ${offer.chips} but sets ${s.button}`);
+    if (!s.active.includes(offer.name)) throw new Error(`${offer.name} did not mark itself as chosen`);
+    seen.push(s.button);
+  }
+  // In a pot with room, the presets must be four different prices, not one.
+  const distinct = new Set(seen.slice(0, 4)).size;
+  console.log(`      presets set ${seen.join(', ')} (${distinct} distinct)`);
+  if (distinct < 2) throw new Error(`four pot fractions all set the same amount: ${seen.join(', ')}`);
+
+  // The step buttons move by one chip and carry every readout with them.
+  const before = (await state()).button;
+  await page.click('.size-tune .step-btn:first-child');
+  const stepped = await state();
+  agree(stepped, 'after −1');
+  if (stepped.button !== before - 1) throw new Error(`−1 moved ${before} to ${stepped.button}`);
+
+  // And the amount is typable, for when aiming a slider is the hard part.
+  await page.fill('.raise-input', '');
+  await page.type('.raise-input', String(before));
+  const typed = await state();
+  agree(typed, 'after typing');
+  if (typed.button !== before) throw new Error(`typed ${before}, bar says ${typed.button}`);
+});
+
 await step('hero action is graded', async () => {
   const buttons = await page.$$eval('.action-buttons button', (n) => n.map((b) => b.textContent));
   console.log(`      actions: ${buttons.join(' | ')}`);

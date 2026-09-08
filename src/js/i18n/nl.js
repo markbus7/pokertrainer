@@ -2906,6 +2906,9 @@ export const NL = {
   'Pot': 'Pot',
   '2× pot': '2× pot',
   'All-in': 'All-in',
+  'Raise size': 'Hoogte van je raise',
+  'One chip less': 'Eén chip minder',
+  'One chip more': 'Eén chip meer',
   '📋 Range charts': '📋 Range charts',
   'These are the ranges the drills grade you against, and the ranges the "Solid Regular" bot plays. Learn one position at a time — the button and the big blind matter most.':
     'Dit zijn de ranges waar de drills je op beoordelen, en de ranges die de "Solid Regular"-bot speelt. Leer één positie tegelijk — de button en de big blind tellen het zwaarst.',
