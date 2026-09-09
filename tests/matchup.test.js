@@ -6,8 +6,8 @@ import { parseCards, expandHandKey } from '../src/js/core/cards.js';
 import { makeRng } from '../src/js/core/rng.js';
 import { VS_RANGE, RANGE_WIDTH, RANGE_POSITIONS } from '../src/js/data/rangeEquity.js';
 import { HAND_STRENGTH } from '../src/js/data/handStrength.js';
-import { RFI, parseRange, rangePercent } from '../src/js/data/ranges.js';
-import { matchupEquityDrill, rangeEquityDrill } from '../src/js/trainers/preflop.js';
+import { RFI, parseRange, rangePercent, CHARTS, BOUNDARY_ROWS, rowBoundary } from '../src/js/data/ranges.js';
+import { matchupEquityDrill, rangeEquityDrill, chartBoundaryDrill } from '../src/js/trainers/preflop.js';
 import { percentDistractors } from '../src/js/trainers/helpers.js';
 
 const hands = (a, b) => [parseCards(a), parseCards(b)];
@@ -292,6 +292,63 @@ describe('preflop equity drills: how the answer is given', () => {
           assert(Math.abs(v - truth) >= 5, `${v}% is too close to the true ${truth}%`);
         }
       }
+    }
+  });
+});
+
+describe('chart boundaries: the form a chart is actually carried in', () => {
+  it('finds where each row of the grid stops', () => {
+    // Read straight off the published charts, so the drill and the Charts
+    // tab can never disagree about where a row ends.
+    equal(rowBoundary(CHARTS.rfi.UTG, 'K', true), 'K9s');
+    equal(rowBoundary(CHARTS.rfi.CO, 'K', true), 'K5s');
+    equal(rowBoundary(CHARTS.rfi.BTN, 'K', true), 'K2s');
+    equal(rowBoundary(CHARTS.rfi.UTG, 'A', false), 'AJo');
+    equal(rowBoundary(CHARTS.rfi.UTG, 'Q', false), null, 'a row nobody opens has no boundary');
+  });
+
+  it('refuses to name a boundary for a row with a hole in it', () => {
+    // "K9s and K5s but nothing between" has no single weakest hand worth
+    // teaching, and quoting one would be a lie about the chart.
+    const gappy = new Set(['K9s', 'K5s', 'K4s', 'K3s', 'K2s']);
+    equal(rowBoundary(gappy, 'K', true), null);
+    const solid = new Set(['K9s', 'K8s', 'K7s', 'K6s', 'K5s', 'K4s', 'K3s', 'K2s', 'KTs', 'KJs', 'KQs']);
+    equal(rowBoundary(solid, 'K', true), 'K2s');
+  });
+
+  it('asks for the boundary and offers the rungs around it, in order', () => {
+    const rng = makeRng(88);
+    let asked = 0;
+    for (let i = 0; i < 200; i++) {
+      const q = chartBoundaryDrill(rng, 2);
+      if (!q) continue;
+      asked++;
+      const correct = q.options.find((o) => o.key === q.answer).label;
+      const chart = CHARTS.rfi[q.scenario.position];
+      const row = BOUNDARY_ROWS.find((r) => r.high === correct[0] && r.suited === (correct[2] === 's'));
+      equal(correct, rowBoundary(chart, row.high, row.suited), `${q.scenario.position} ${row.id}`);
+
+      // Every option is a rung of the same row, strongest first: the
+      // question is "how far down", not "which of these unrelated hands".
+      const RANKS = '23456789TJQKA';
+      const rungs = q.options.map((o) => {
+        assert(o.label[0] === correct[0] && o.label[2] === correct[2],
+          `${o.label} is not on the same row as ${correct}`);
+        return RANKS.indexOf(o.label[1]);
+      });
+      for (let k = 1; k < rungs.length; k++) {
+        assert(rungs[k] < rungs[k - 1], `options are not in row order: ${q.options.map((o) => o.label).join(' ')}`);
+      }
+      equal(new Set(rungs).size, rungs.length, 'no repeated rung');
+    }
+    assert(asked > 150, `enough questions produced (${asked})`);
+  });
+
+  it('teaches the row across every seat, not just this seat\'s answer', () => {
+    const rng = makeRng(12);
+    const q = chartBoundaryDrill(rng, 2);
+    for (const seat of ['UTG', 'HJ', 'CO', 'BTN']) {
+      assert(q.explanation.includes(seat), `the explanation skips ${seat}: ${q.explanation}`);
     }
   });
 });

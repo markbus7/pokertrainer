@@ -3023,6 +3023,17 @@ export const NL = {
     'Je hoogste kaart delen met een tegenstander die een betere kicker heeft.',
   'A-J against A-K: you share the ace, and their second card beats yours. It is the shape that costs the most money, because it hits exactly when you feel good — you pair your ace, and pay off someone who paired theirs with a better kicker. The dominating hand wins about 71% of the time.':
     'A-J tegen A-K: je deelt de aas, en hun tweede kaart verslaat de jouwe. Het is de vorm die het meeste geld kost, want hij treft je precies wanneer je je goed voelt — je paart je aas en betaalt iemand uit die de zijne paarde met een betere kicker. De dominerende hand wint ongeveer 71% van de tijd.',
+  'Opening from {seat}: how far down the {row}s do you go? Pick the weakest one you still raise.':
+    'Openen vanuit {seat}: hoe ver zak je de {row}s af? Kies de zwakste die je nog raiset.',
+  '{boundary}. Across the seats this row runs {across} — the further down it you go, the fewer players are left to act behind you. The small blind is the exception, because it acts last now and first for the rest of the hand. Seven rows like this one are most of the chart.':
+    '{boundary}. Over de posities loopt deze rij {across} — hoe verder je hem afzakt, hoe minder spelers er achter je nog moeten handelen. De small blind is de uitzondering, want die is nu als laatste aan de beurt en de rest van de hand als eerste. Zeven rijen als deze zijn het grootste deel van de chart.',
+  'suited king': 'suited heer',
+  'suited queen': 'suited vrouw',
+  'suited jack': 'suited boer',
+  'suited ten': 'suited tien',
+  'offsuit ace': 'offsuit aas',
+  'offsuit king': 'offsuit heer',
+  'offsuit queen': 'offsuit vrouw',
   'Raise size': 'Hoogte van je raise',
   'One chip less': 'Eén chip minder',
   'One chip more': 'Eén chip meer',
