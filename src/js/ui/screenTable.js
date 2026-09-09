@@ -125,6 +125,10 @@ export function renderTable(ctx, params = {}) {
     handStarted: false,
     buyInsUsed: grind ? 1 : 0,
     logLines: [],
+    // Decisions graded across the whole session, not the current hand.
+    // The chips you won are the one number at a table you do not control;
+    // this is the one you do.
+    decisions: { right: 0, total: 0 },
     recorder: null,
     savedHand: null,
     // Who took the lead on each street, so a flop decision knows whether it
@@ -404,6 +408,8 @@ export function renderTable(ctx, params = {}) {
     review(profile, id, right);
     const meta = moduleMeta(id);
     session.learned.push({ id, name: meta ? meta.name : id, right });
+    session.decisions.total++;
+    if (right) session.decisions.right++;
     // Getting it right at a table is worth more than getting it right in a
     // drill, and getting it wrong still teaches — so it is never zero.
     profile.addXp(right ? 12 : 4);
@@ -1009,6 +1015,14 @@ export function renderTable(ctx, params = {}) {
       // after one hand is 0% or 100%, and bb/100 after one hand is four
       // thousand. Below the bar each says how far off it is instead.
       lesson ? null : metric('Hands', String(summary.hands)),
+      // Decision quality first, and the chips second. A session is far too
+      // short for the result to say anything: the whole point of the Bankroll
+      // lesson is that a winning player loses over ten thousand hands about a
+      // third of the time. How often you chose well is measurable now.
+      lesson || !session.decisions.total ? null : metric('Decisions right',
+        `${session.decisions.right}/${session.decisions.total} · ${
+          Math.round((session.decisions.right / session.decisions.total) * 100)}%`,
+        session.decisions.right / session.decisions.total >= 0.8 ? 'good' : ''),
       lesson ? null : metric('Result', fmt.bb(summary.profitBb), summary.profitBb >= 0 ? 'good' : 'bad'),
       lesson ? null : summary.hands >= SAMPLE.winRate
         ? metric('Win rate', t('{n}bb/100 — still rough at {hands} hands',
@@ -1023,6 +1037,13 @@ export function renderTable(ctx, params = {}) {
         : metric('Aggression', summary.af === null
           ? t('no calls yet')
           : shortfall(summary.hands, SAMPLE.playStyle)),
+
+      // The two numbers above measure different things, and a session is
+      // only ever long enough for one of them to mean anything. Saying so
+      // where they disagree is the point: losing with good decisions is the
+      // normal way a winning session looks from the inside, and winning with
+      // bad ones is the reading that actually costs money later.
+      lesson ? null : divergenceNote(session.decisions, summary),
 
       el('h3', { style: { marginTop: '18px' } }, '📜 Hand log'),
       el('div.log', session.logLines.slice().reverse().map((l) =>
@@ -1090,6 +1111,33 @@ function resultHeadline(result, table) {
     ? t('{names} wins with {hand}',
       { names, hand: describeScore(theirs.score, table.variant.shortDeck) })
     : t('{names} wins the pot', { names });
+}
+
+/**
+ * Where the chips and the choices disagree.
+ *
+ * Returns nothing until there are enough graded decisions to say anything,
+ * and nothing when the two agree — a note that fires every session is
+ * wallpaper.
+ */
+function divergenceNote(decisions, summary) {
+  if (decisions.total < 12) return null;
+  const rate = decisions.right / decisions.total;
+  const lost = summary.profitBb < -8;
+  const won = summary.profitBb > 8;
+
+  if (lost && rate >= 0.8) {
+    return el('div.notice', { style: { marginTop: '14px' } },
+      t('You lost chips and chose well — {pct} of your decisions were right. Over a session this short the '
+        + 'result is mostly the cards. This is what a winning session looks like from the inside about a third '
+        + 'of the time.', { pct: fmt.pct(rate, 0) }));
+  }
+  if (won && rate < 0.65) {
+    return el('div.notice.warn', { style: { marginTop: '14px' } },
+      t('You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive '
+        + 'kind of session, because nothing about it tells you to stop.', { pct: fmt.pct(rate, 0) }));
+  }
+  return null;
 }
 
 function metric(k, v, tone = '') {
