@@ -42,7 +42,7 @@ export const KEEP_ENGLISH = new Set([
   // The practice view's verify button says "Check my answer" for the same
   // reason — one English word was doing both jobs and losing one of them.
   'Check',
-  'Dominated', 'The nuts', 'bb/100',
+  'Dominated', 'Domination', 'Coinflip', 'The nuts', 'bb/100',
   // Hand categories: the names every room, chat box and hand history uses.
   // Both casings, because the lessons write them in a sentence and the
   // evaluator titles them — and a set only helps if it matches what the code

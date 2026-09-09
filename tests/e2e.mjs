@@ -124,6 +124,65 @@ await step('table deals and plays', async () => {
 });
 if (SHOT) await page.screenshot({ path: `${SHOT}/04-table.png` });
 
+await step('every raise control agrees on one amount', async () => {
+  // The bug this pins: the sizing buttons moved a slider while the button you
+  // press kept its old label, so the bar offered "Raise to 137" and raised to
+  // 4. A control that lies about what it will do is worse than no control.
+  const sizing = await page.$('.sizing');
+  if (!sizing) throw new Error('the action bar has no raise controls');
+
+  const state = () => page.evaluate(() => ({
+    field: Number(document.querySelector('.raise-input').value),
+    slider: Number(document.querySelector('.raise-slider').value),
+    button: Number((document.querySelector('.action-buttons .btn.primary').textContent.match(/\d+/) || [0])[0]),
+    active: [...document.querySelectorAll('.size-btn.is-active .size-name')].map((n) => n.textContent),
+    offers: [...document.querySelectorAll('.size-btn')].map((b) => ({
+      name: b.querySelector('.size-name').textContent,
+      chips: Number(b.querySelector('.size-chips').textContent),
+    })),
+  }));
+
+  const agree = (s, where) => {
+    if (s.field !== s.slider || s.field !== s.button) {
+      throw new Error(`${where}: field ${s.field}, slider ${s.slider}, button says ${s.button}`);
+    }
+  };
+
+  const opened = await state();
+  agree(opened, 'on open');
+  if (opened.offers.length !== 5) throw new Error(`expected 5 sizing buttons, got ${opened.offers.length}`);
+  console.log(`      offers: ${opened.offers.map((o) => `${o.name} ${o.chips}`).join(' | ')}`);
+
+  // Every preset moves all three readouts to the amount printed on it.
+  const seen = [];
+  for (const offer of opened.offers) {
+    await page.click(`.size-btn:has(.size-name:text-is("${offer.name}"))`);
+    const s = await state();
+    agree(s, `after ${offer.name}`);
+    if (s.button !== offer.chips) throw new Error(`${offer.name} shows ${offer.chips} but sets ${s.button}`);
+    if (!s.active.includes(offer.name)) throw new Error(`${offer.name} did not mark itself as chosen`);
+    seen.push(s.button);
+  }
+  // In a pot with room, the presets must be four different prices, not one.
+  const distinct = new Set(seen.slice(0, 4)).size;
+  console.log(`      presets set ${seen.join(', ')} (${distinct} distinct)`);
+  if (distinct < 2) throw new Error(`four pot fractions all set the same amount: ${seen.join(', ')}`);
+
+  // The step buttons move by one chip and carry every readout with them.
+  const before = (await state()).button;
+  await page.click('.size-tune .step-btn:first-child');
+  const stepped = await state();
+  agree(stepped, 'after −1');
+  if (stepped.button !== before - 1) throw new Error(`−1 moved ${before} to ${stepped.button}`);
+
+  // And the amount is typable, for when aiming a slider is the hard part.
+  await page.fill('.raise-input', '');
+  await page.type('.raise-input', String(before));
+  const typed = await state();
+  agree(typed, 'after typing');
+  if (typed.button !== before) throw new Error(`typed ${before}, bar says ${typed.button}`);
+});
+
 await step('hero action is graded', async () => {
   const buttons = await page.$$eval('.action-buttons button', (n) => n.map((b) => b.textContent));
   console.log(`      actions: ${buttons.join(' | ')}`);
@@ -460,6 +519,147 @@ await step('numeric drills make you produce the number, not pick it', async () =
   console.log(`      typed ${mdf}% and it graded correct`);
 });
 
+await step('Enter answers the question and shows the result, the way the button does', async () => {
+  // One keypress used to do two things: the input submitted the answer, and
+  // the same event bubbled to the screen handler, where Enter means "next
+  // question". Submitting flips the lock inside that call, so the guard no
+  // longer held by the time the event arrived and the reader was thrown onto
+  // the next question without ever seeing whether they were right.
+  const readState = () => page.evaluate(() => ({
+    question: document.querySelector('.question')?.textContent || null,
+    feedback: document.querySelector('.feedback')?.textContent.trim() || null,
+    rightAnswerShown: !!document.querySelector('.option.correct'),
+  }));
+
+  const answerWith = async (how) => {
+    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#drill?module=mdf`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(500);
+    const before = await readState();
+    await page.fill('.drill-entry-input', '33');
+    if (how === 'enter') await page.press('.drill-entry-input', 'Enter');
+    else await page.click('.drill-entry button', { timeout: 2000 });
+    await page.waitForTimeout(350);
+    return { before, after: await readState() };
+  };
+
+  const clicked = await answerWith('click');
+  const entered = await answerWith('enter');
+
+  for (const [how, run] of [['the button', clicked], ['Enter', entered]]) {
+    if (!run.after.feedback) throw new Error(`${how} produced no feedback at all`);
+    if (!run.after.rightAnswerShown) throw new Error(`${how} did not show the right answer`);
+    if (run.after.question !== run.before.question) {
+      throw new Error(`${how} skipped to the next question instead of showing the result`);
+    }
+  }
+
+  // And a second Enter is still how you move on once you have read it.
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(400);
+  const next = await readState();
+  if (!next.question || next.question === entered.after.question) {
+    throw new Error('a second Enter no longer advances to the next question');
+  }
+  console.log('      Enter and the button both grade in place; Enter again moves on');
+});
+
+await step('preflop teaches what a hand is worth, and grades the number', async () => {
+  // The gap this closes: every preflop question used to be multiple choice
+  // about what to DO. Not one of them asked what the hand was worth, so the
+  // percentages were only ever read in an explanation after a different
+  // question had been answered.
+  //
+  // The expected answer is worked out here from the app's own data rather
+  // than read off the screen, so a drill that grades against the wrong
+  // number fails instead of agreeing with itself.
+  const { VS_RANGE } = await import('../src/js/data/rangeEquity.js');
+  const { equityVs } = await import('../src/js/core/equity.js');
+  const { expandHandKey } = await import('../src/js/core/cards.js');
+  const { makeRng } = await import('../src/js/core/rng.js');
+  const seats = { 'Under the Gun': 'UTG', Hijack: 'HJ', Cutoff: 'CO', Button: 'BTN' };
+
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#drill?module=preflop`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+
+  // Both kinds have to be seen: which one comes up is random, and a step
+  // that stops at the first two would pass without ever grading the other.
+  const seen = { allIn: 0, range: 0 };
+  let asked = 0;
+  let sample = '';
+  for (let i = 0; i < 40 && (!seen.allIn || !seen.range); i++) {
+    const question = await page.$eval('.question', (n) => n.textContent).catch(() => '');
+    asked++;
+    let expected = null;
+    let kind = null;
+
+    const allIn = /All-in before the flop: (\S+) against (\S+)\./.exec(question);
+    const vsRange = /You hold (\S+)\..*?Now (.+?) raises/.exec(question);
+    if (allIn) {
+      const rng = makeRng(1);
+      const a = expandHandKey(allIn[1]);
+      const b = expandHandKey(allIn[2]).find((h) => !h.some((c) => a[0].includes(c)));
+      expected = Math.round(equityVs(a[0], [b], [], { trials: 40000, rng }) * 100);
+      kind = 'allIn';
+    } else if (vsRange && seats[vsRange[2]]) {
+      expected = Math.round(VS_RANGE[seats[vsRange[2]]][vsRange[1]] * 100);
+      kind = 'range';
+    }
+
+    if (expected != null) {
+      // Percentage questions are a choice off a scale, not an empty box:
+      // there is no way to derive the number until the shapes are known, and
+      // typing one you cannot derive is guessing.
+      if (await page.$('.drill-entry-input')) {
+        throw new Error('an equity question demanded a typed answer at this level');
+      }
+      // Each option renders its keyboard number in a .key span, so the
+      // label has to be read past it — "1" + "47%" parses as 147.
+      const labels = await page.$$eval('.option', (nodes) => nodes.map(
+        (n) => [...n.querySelectorAll('span')].filter((x) => !x.classList.contains('key'))
+          .map((x) => x.textContent).join(' ').trim(),
+      ));
+      const values = labels.map((l) => parseFloat((/(\d+)\s*%/.exec(l) || [])[1]));
+      if (values.some((v) => Number.isNaN(v))) throw new Error(`options are not percentages: ${labels.join(' | ')}`);
+      const sorted = values.every((v, k) => k === 0 || values[k - 1] <= v);
+      if (!sorted) throw new Error(`options are not in order: ${values.join(', ')}`);
+
+      const best = values.reduce((a, b) => (Math.abs(b - expected) < Math.abs(a - expected) ? b : a));
+      if (Math.abs(best - expected) > 5) {
+        throw new Error(`computed ${expected}% but no option is near it: ${values.join(', ')}`);
+      }
+      await page.click(`.option >> nth=${values.indexOf(best)}`, { timeout: 2000 });
+      await page.waitForTimeout(250);
+      const feedback = await page.$eval('.feedback', (n) => n.textContent).catch(() => '');
+      if (!(await page.$('.feedback.correct'))) {
+        throw new Error(`independently computed ${expected}% and the drill called it wrong: ${feedback.slice(0, 140)}`);
+      }
+      if (!/%/.test(feedback)) throw new Error(`no percentage in the explanation: ${feedback.slice(0, 120)}`);
+      sample = feedback;
+      seen[kind]++;
+    } else {
+      // Every other preflop question is multiple choice too. It still has to
+      // be answered, or the drill never moves on — and a click that waits for
+      // a button which is not there costs half a minute of the suite each time.
+      await page.click('.option', { timeout: 2000 }).catch(() => {});
+      await page.waitForTimeout(150);
+    }
+    // Next question, or the next block of ten when a session runs out.
+    await page.click('button.btn.primary', { timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(280);
+    if (!(await page.$('.question'))) {
+      await page.goto(`${BASE}/#drill?module=preflop`, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(400);
+    }
+  }
+
+  if (!seen.allIn) throw new Error(`asked ${asked} preflop questions and none asked what an all-in is worth`);
+  if (!seen.range) throw new Error(`asked ${asked} preflop questions and none asked what a hand is worth against a range`);
+  console.log(`      graded ${seen.allIn} all-in and ${seen.range} vs-range questions against independently computed numbers`);
+  console.log(`      e.g. ${sample.replace(/\s+/g, ' ').slice(0, 110)}…`);
+});
+
 await step('a graded question can be copied out as text', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'domcontentloaded' });
@@ -547,6 +747,37 @@ await step('jargon explains itself wherever it appears, in both languages', asyn
     const back = await page.$('.lang-chip:not(.active):has-text("EN")');
     if (back) { await back.click(); await page.waitForTimeout(300); }
   }
+});
+
+await step('a tile says what is still missing, not just what the target is', async () => {
+  // 9 out of 10 is 90%, and Solid asks for 75% — so a tile reading "90%"
+  // beside "Solid at 15 questions at 75%" looks like a bar already cleared.
+  // The half that is short is the count, and working that out meant
+  // subtracting one number on the tile from another.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    // Ten answers at 90% on Outs & Equity, plus just enough elsewhere to
+    // reach Minnow — Outs & Equity is locked until then.
+    raw.drills = { outs: { attempts: 10, correct: 9 }, 'hand-rankings': { attempts: 20, correct: 18 } };
+    raw.walkthroughs = ['hand-rankings'];
+    raw.xp = 600;
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  const tile = await page.evaluate(() => {
+    const found = [...document.querySelectorAll('.module-tile')]
+      .find((n) => /Outs/i.test(n.querySelector('.name')?.textContent || ''));
+    return found ? found.textContent.replace(/\s+/g, ' ') : null;
+  });
+  if (!tile) throw new Error('no tile for Outs & Equity');
+  if (!/9\/10/.test(tile)) throw new Error(`the tile does not show the record: ${tile}`);
+  if (!/5 more questions/i.test(tile)) {
+    throw new Error(`the tile never says how many more are needed: ${tile}`);
+  }
+  console.log(`      tile reads: ${tile.slice(0, 120)}`);
 });
 
 await step('the home screen names one module and the grid marks the same one', async () => {

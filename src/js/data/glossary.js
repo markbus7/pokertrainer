@@ -75,6 +75,16 @@ export const TERMS = {
     short: 'One specific two-card holding, of the 1,326 possible.',
     full: 'A single exact hand, like the ace of spades with the king of hearts. Any pair of ranks has 6 combos if paired, 4 if suited, and 12 if offsuit. Range percentages count combos, not grid squares, which is why an offsuit square is worth three times a suited one.',
   },
+  coinflip: {
+    term: 'Coinflip',
+    short: 'A pair against two higher cards — close to even money.',
+    full: 'The most common near-even all-in before the flop: a pair against two cards that both beat it, like 8-8 against A-K. The pair is ahead right now and wins about 53% of the time; the two overcards have six cards to catch and five board cards to catch them with. Suited or connected overcards close the gap further.',
+  },
+  domination: {
+    term: 'Domination',
+    short: 'Sharing your top card with an opponent who has a better kicker.',
+    full: 'A-J against A-K: you share the ace, and their second card beats yours. It is the shape that costs the most money, because it hits exactly when you feel good — you pair your ace, and pay off someone who paired theirs with a better kicker. The dominating hand wins about 71% of the time.',
+  },
   limp: {
     term: 'Limp',
     short: 'Just calling the big blind instead of raising.',

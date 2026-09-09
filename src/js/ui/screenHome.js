@@ -299,9 +299,16 @@ function moduleTile(meta, profile, go, recommendedId) {
     el('div.mastery', locked
       ? t('Unlocks at {rank}', { rank: t(RANKS[meta.unlockLevel - 1].name) })
       : scoreLine(profile, meta.id)),
+    // What is still missing, not what the target is. A tile that reads
+    // "90%" next to "Solid at 15 questions at 75%" looks like a hand already
+    // met: the count is the half that is short, and it was left for the
+    // reader to work out by subtracting one number on the tile from another.
     !locked && goal
       ? el('div.mastery', { style: { color: 'var(--text-faint)' } },
-          t('{tier} at {requirement}', { tier: t(goal.name), requirement: t(goal.requirement) }))
+          t('{tier}: {missing}', {
+            tier: t(goal.name),
+            missing: goal.missing.map((m) => t(m)).join(t(' and ')),
+          }))
       : null,
     !locked && stats.attempts
       ? el('div.bar', { style: { height: '5px' } },

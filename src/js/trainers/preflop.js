@@ -5,10 +5,13 @@
  */
 
 import { expandHandKey, ALL_HAND_KEYS } from '../core/cards.js';
+import { matchupOf, buildMatchup, DRILLABLE_SHAPES } from '../core/matchup.js';
+import { equityVs } from '../core/equity.js';
+import { VS_RANGE, RANGE_WIDTH, RANGE_POSITIONS } from '../data/rangeEquity.js';
 import { CHARTS, preflopAdvice, POSITIONS, POSITION_INFO, rangePercent } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
 import { randInt } from '../core/rng.js';
-import { buildChoices, pct } from './helpers.js';
+import { buildChoices, pct, percentDistractors } from './helpers.js';
 import { t } from '../i18n/index.js';
 
 const OPEN_POSITIONS = ['UTG', 'HJ', 'CO', 'BTN', 'SB'];
@@ -206,4 +209,145 @@ function pickBorderlineHand(rng, range = null) {
   }
   const mid = ALL_HAND_KEYS.filter((k) => STRENGTH_RANK[k] >= 20 && STRENGTH_RANK[k] <= 110);
   return mid[randInt(rng, mid.length)];
+}
+
+/**
+ * Put a number on an all-in, by naming the shape it belongs to.
+ *
+ * The reader types the percentage rather than picking one, because
+ * recognising "about half" among four options is not the same skill as
+ * arriving at it. The graded figure is the real equity of these two hands,
+ * run through the same engine the coach grades with; the explanation names
+ * the shape, so the next unfamiliar matchup is still answerable.
+ */
+export function matchupEquityDrill(rng, difficulty = 2) {
+  // Pick the shape first, then build hands that make it. Dealing at random
+  // would ask about two higher cards against two lower ones four times in
+  // five, and the rare shapes are the ones worth practising.
+  const wanted = DRILLABLE_SHAPES[randInt(rng, DRILLABLE_SHAPES.length)];
+  const built = buildMatchup(rng, wanted);
+  if (!built) return null;
+  const found = matchupOf(built[0], built[1]);
+  if (!found || found.shape.id !== wanted) return null;
+
+  // Always ask about the favourite: "what does the better hand win" has one
+  // answer the reader can sanity-check against the shape.
+  const hero = found.favourite === 0 ? built[0] : built[1];
+  const villain = found.favourite === 0 ? built[1] : built[0];
+  const equity = equityVs(hero, [villain], [], { trials: 8000, rng });
+  const truePct = Math.round(equity * 100);
+  const heroKey = keyOf(hero);
+  const villainKey = keyOf(villain);
+  const { options, answer } = buildChoices(
+    rng, `${truePct}%`, percentDistractors(rng, truePct, 3, 14, 8).map((p) => `${p}%`),
+    { sorted: true },
+  );
+
+  // A shape is a rule of thumb, not a promise. When this instance sits well
+  // off the shape's usual figure, saying so is what stops the rule of thumb
+  // from being remembered as a law.
+  const off = equity - found.shape.typical;
+  const edge = Math.abs(off) > 0.06
+    ? ` ${t('This one lands {gap} points {side} that: most of the shape falls between {low} and {high}, and the edges are where the suits and the gaps between cards do their work.', {
+      gap: Math.round(Math.abs(off) * 100),
+      side: off > 0 ? t('above') : t('below'),
+      low: pct(found.shape.spread[0], 0),
+      high: pct(found.shape.spread[1], 0),
+    })}`
+    : '';
+
+  return {
+    module: 'preflop',
+    difficulty,
+    scenario: { compare: [hero, villain] },
+    question: t('All-in before the flop: {hero} against {villain}. What percentage of the time does {hero} win?',
+      { hero: heroKey, villain: villainKey }),
+    options,
+    answer,
+    // Picking off a scale, not typing into an empty box. Every other typed
+    // drill hands you the numbers and names the formula — "use the rule of
+    // 4" — so typing there is arithmetic. Here there is nothing to compute
+    // until the shapes are known, and typing a number you cannot derive is
+    // guessing, which costs effort and teaches nothing. Recognising which
+    // rung of the ladder a matchup sits on is the actual skill; producing
+    // the number from memory is worth asking for only once that is fluent.
+    ...(difficulty >= 5 ? { entry: { unit: '%', value: truePct, tolerance: 5 } } : {}),
+    explanation: `${t('{hero} wins {actual}. This is {shape} — typically {typical}. {why}', {
+      hero: heroKey,
+      actual: pct(equity, 0),
+      shape: t(found.shape.label),
+      typical: pct(found.shape.typical, 0),
+      why: t(found.shape.why),
+    })}${edge}`,
+    xp: 10 + difficulty * 2,
+  };
+}
+
+/**
+ * The number that actually decides the hand: not what your cards beat, but
+ * what they beat against the hands still willing to play.
+ *
+ * This is the drill that explains why a chart exists at all. K-Q wins 62% of
+ * the time against a random hand and 45% against an early-position opening
+ * range — the hand did not change, the opposition did.
+ */
+export function rangeEquityDrill(rng, difficulty = 2) {
+  const position = RANGE_POSITIONS[randInt(rng, RANGE_POSITIONS.length)];
+  // Hands where the two numbers differ most are the ones worth asking about.
+  const hand = attemptHand(rng, difficulty, position);
+  if (!hand) return null;
+
+  const vsRandom = HAND_STRENGTH[hand];
+  const vsRange = VS_RANGE[position][hand];
+  const truePct = Math.round(vsRange * 100);
+  const { options, answer } = buildChoices(
+    rng, `${truePct}%`, percentDistractors(rng, truePct, 3, 14, 8).map((p) => `${p}%`),
+    { sorted: true },
+  );
+
+  return {
+    module: 'preflop',
+    difficulty,
+    scenario: { hole: expandHandKey(hand)[0], position, positionName: t(POSITION_INFO[position].name) },
+    question: t('You hold {hand}. Against a random hand it wins {random}. Now {seat} raises, so you are up '
+      + 'against the top {width}% of hands instead. What does {hand} win against that?',
+    { hand, random: pct(vsRandom, 0), seat: t(POSITION_INFO[position].name), width: RANGE_WIDTH[position] }),
+    options,
+    answer,
+    ...(difficulty >= 5 ? { entry: { unit: '%', value: truePct, tolerance: 5 } } : {}),
+    explanation: t('{hand} wins {range} against a {width}% range, down from {random} against a random hand — '
+      + 'a drop of {drop} points. Nothing about your cards changed; the hands you are up against did. '
+      + 'This is the whole reason a starting-hand chart exists.',
+    { hand, range: pct(vsRange, 0), width: RANGE_WIDTH[position], random: pct(vsRandom, 0),
+      drop: Math.round((vsRandom - vsRange) * 100) }),
+    xp: 12 + difficulty * 2,
+  };
+}
+
+/* ---------------- helpers ---------------- */
+
+/** The 169-key form of two cards, e.g. 'AKs'. */
+function keyOf(hand) {
+  const RANKS = '23456789TJQKA';
+  const [a, b] = hand.map((c) => ({ r: (c >> 2) + 2, s: c & 3 })).sort((x, y) => y.r - x.r);
+  const chars = RANKS[a.r - 2] + RANKS[b.r - 2];
+  if (a.r === b.r) return chars;
+  return chars + (a.s === b.s ? 's' : 'o');
+}
+
+/**
+ * A hand worth asking about: one whose value actually moves when the
+ * opposition narrows. Asking about 7-2 teaches nothing.
+ */
+function attemptHand(rng, difficulty, position) {
+  let best = null;
+  for (let i = 0; i < 60; i++) {
+    const hand = ALL_HAND_KEYS[randInt(rng, 169)];
+    const drop = HAND_STRENGTH[hand] - VS_RANGE[position][hand];
+    // Harder levels ask about the hands that look strong and are not.
+    const wanted = difficulty >= 4 ? drop > 0.12 : drop > 0.06;
+    if (wanted && HAND_STRENGTH[hand] > 0.5) return hand;
+    if (!best || drop > HAND_STRENGTH[best] - VS_RANGE[position][best]) best = hand;
+  }
+  return best;
 }

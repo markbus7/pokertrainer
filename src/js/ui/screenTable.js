@@ -17,6 +17,7 @@ import { botAction, getProfile, pickOpponents } from '../engine/bots.js';
 import { VARIANTS, VARIANT_KEYS } from '../engine/variants.js';
 import { equityVsField, outsToImprove } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, spr } from '../core/odds.js';
+import { sizingContext, potFraction, clampRaise, sizingOffers } from '../core/betSizing.js';
 import { evaluateHand, describeScore, shortCategoryName, categoryOf, CAT } from '../core/evaluator.js';
 import { judgeSpot } from '../core/coach.js';
 import { conceptOf, isUnlocked } from '../core/spotConcept.js';
@@ -120,6 +121,7 @@ export function renderTable(ctx, params = {}) {
     snapshot: null,
     verdict: null,
     raiseAmount: 0,
+    raiseKey: null,
     handStarted: false,
     buyInsUsed: grind ? 1 : 0,
     logLines: [],
@@ -768,49 +770,119 @@ export function renderTable(ctx, params = {}) {
     const legal = table.legalActions(hero);
     const raiseSpec = legal.find((a) => a.type === 'raise' || a.type === 'bet');
     const callSpec = legal.find((a) => a.type === 'call');
-    const pot = table.totalPot;
 
-    if (raiseSpec && (!session.raiseAmount || session.raiseAmount < raiseSpec.min || session.raiseAmount > raiseSpec.max)) {
-      session.raiseAmount = Math.min(raiseSpec.max, Math.max(raiseSpec.min, Math.round(pot * 0.66)));
+    // A new decision starts on half pot rather than on whatever the last one
+    // was left at: a number carried over from a smaller pot two streets ago
+    // is the other way a sizing control looks broken. Re-renders of the same
+    // decision keep what the reader chose.
+    if (raiseSpec) {
+      const decision = `${table.handNumber}/${table.street}/${table.currentBet}/${table.totalPot}/${raiseSpec.min}`;
+      const stale = session.raiseAmount < raiseSpec.min || session.raiseAmount > raiseSpec.max;
+      if (stale || session.raiseKey !== decision) {
+        session.raiseAmount = potFraction(sizingContext(table, hero, raiseSpec), 0.5);
+        session.raiseKey = decision;
+      }
     }
 
-    const amountLabel = el('span.raise-amount', fmt.chips(session.raiseAmount));
-    const slider = raiseSpec
-      ? el('input', {
-          type: 'range',
-          min: String(raiseSpec.min),
-          max: String(raiseSpec.max),
-          value: String(session.raiseAmount),
-          step: '1',
-          oninput: (e) => {
-            session.raiseAmount = Number(e.target.value);
-            amountLabel.textContent = fmt.chips(session.raiseAmount);
-          },
-        })
-      : null;
-
-    const setSize = (fraction) => {
+    // One raise amount, four ways to set it, and every readout follows it.
+    // Keeping the primary button's label in this list is the point: it is the
+    // one that says out loud what pressing it will do.
+    const followers = [];
+    const setAmount = (value, { keepTyping = false } = {}) => {
       if (!raiseSpec) return;
-      const target = fraction === 'allin'
-        ? raiseSpec.max
-        : Math.round(table.currentBet + pot * fraction);
-      session.raiseAmount = Math.min(raiseSpec.max, Math.max(raiseSpec.min, target));
-      if (slider) slider.value = String(session.raiseAmount);
-      amountLabel.textContent = fmt.chips(session.raiseAmount);
+      session.raiseAmount = clampRaise(raiseSpec, value);
+      for (const follow of followers) follow(session.raiseAmount, keepTyping);
     };
 
+    const raiseButton = raiseSpec
+      ? el('button.btn.primary', {
+          onclick: () => heroAct({ type: raiseSpec.type, amount: session.raiseAmount }),
+        })
+      : null;
+    if (raiseButton) {
+      followers.push((amount) => {
+        raiseButton.textContent = raiseSpec.type === 'bet'
+          ? t('Bet {amount}', { amount: fmt.chips(amount) })
+          : t('Raise to {amount}', { amount: fmt.chips(amount) });
+      });
+    }
+
+    let sizingRows = null;
+    if (raiseSpec) {
+      const ctx = sizingContext(table, hero, raiseSpec);
+
+      // Typable, because on a touch screen aiming a slider at one chip in two
+      // hundred is not a skill worth practising. Clamping waits for blur: a
+      // reader typing "12" should not have the "1" snapped up to the minimum
+      // raise under their thumb.
+      const field = el('input.raise-input', {
+        type: 'text',
+        inputmode: 'numeric',
+        'aria-label': 'Raise size',
+        value: String(session.raiseAmount),
+        oninput: (e) => {
+          const typed = e.target.value.replace(/[^0-9]/g, '');
+          if (e.target.value !== typed) e.target.value = typed;
+          if (typed === '') return;
+          setAmount(Number(typed), { keepTyping: true });
+        },
+        onchange: () => setAmount(session.raiseAmount),
+        onblur: () => setAmount(session.raiseAmount),
+        onfocus: (e) => e.target.select(),
+      });
+      followers.push((amount, keepTyping) => {
+        if (!keepTyping) field.value = String(amount);
+      });
+
+      const slider = el('input.raise-slider', {
+        type: 'range',
+        min: String(raiseSpec.min),
+        max: String(raiseSpec.max),
+        value: String(session.raiseAmount),
+        step: '1',
+        'aria-label': 'Raise size',
+        oninput: (e) => setAmount(Number(e.target.value)),
+      });
+      followers.push((amount) => { slider.value = String(amount); });
+
+      const step = (by, label) => el('button.btn.sm.ghost.step-btn', {
+        'aria-label': label,
+        onclick: () => setAmount(session.raiseAmount + by),
+      }, by > 0 ? '+1' : '−1');
+
+      const offers = sizingOffers(ctx);
+      const presets = offers.map((offer) => {
+        const button = el('button.btn.sm.ghost.size-btn', {
+          onclick: () => setAmount(offer.amount),
+        },
+          el('span.size-name', offer.label),
+          el('span.size-chips', fmt.chips(offer.amount)),
+        );
+        // The amount is on the button because in a small pot several
+        // fractions land on the same legal minimum, and a button that looks
+        // dead is worse than one that shows you why.
+        followers.push((amount) => {
+          button.classList.toggle('is-active', amount === offer.amount);
+        });
+        return button;
+      });
+
+      sizingRows = el('div.sizing',
+        el('div.sizing-row.size-presets', presets),
+        el('div.sizing-row.size-tune',
+          step(-1, 'One chip less'),
+          field,
+          step(1, 'One chip more'),
+          slider,
+        ),
+      );
+    }
+
+    // Paint every follower once so the bar opens consistent with itself.
+    if (raiseSpec) setAmount(session.raiseAmount);
+
     mount(actionHost, el('div.action-bar',
-      raiseSpec
-        ? el('div.sizing-row',
-            el('button.btn.sm.ghost', { onclick: () => setSize(0.33) }, '⅓ pot'),
-            el('button.btn.sm.ghost', { onclick: () => setSize(0.5) }, '½ pot'),
-            el('button.btn.sm.ghost', { onclick: () => setSize(0.75) }, '¾ pot'),
-            el('button.btn.sm.ghost', { onclick: () => setSize(1) }, 'Pot'),
-            el('button.btn.sm.ghost', { onclick: () => setSize('allin') }, 'All-in'),
-            slider,
-            amountLabel,
-          )
-        : null,
+      sizingRows,
       el('div.action-buttons',
         legal.some((a) => a.type === 'fold')
           ? el('button.btn.danger', { onclick: () => heroAct({ type: 'fold' }) }, 'Fold')
@@ -822,13 +894,7 @@ export function renderTable(ctx, params = {}) {
           ? el('button.btn.success', { onclick: () => heroAct({ type: 'call' }) },
               t('Call {amount}', { amount: fmt.chips(callSpec.amount) }))
           : null,
-        raiseSpec
-          ? el('button.btn.primary', {
-              onclick: () => heroAct({ type: raiseSpec.type, amount: session.raiseAmount }),
-            }, raiseSpec.type === 'bet'
-              ? t('Bet {amount}', { amount: fmt.chips(session.raiseAmount) })
-              : t('Raise to {amount}', { amount: fmt.chips(session.raiseAmount) }))
-          : null,
+        raiseButton,
       ),
     ));
     return null;

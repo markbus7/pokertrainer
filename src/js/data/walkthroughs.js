@@ -1006,6 +1006,91 @@ export const WALKTHROUGHS = {
           answer: 'a',
         },
       },
+      {
+        title: 'Five numbers instead of a hundred and sixty-nine',
+        body: [
+          'There are 169 starting hands, which means 14,196 ways two of them can meet. Nobody has memorised that table, and you do not need to. Almost every all-in before the flop is one of five **shapes**, and inside a shape the number barely moves.',
+          'Learn the shapes and you can price a matchup you have never seen. Someone shoves, you look down at a pair and they turn over two bigger cards: that is the [[coinflip]], and you already know it is close to even without knowing which cards they hold.',
+          'Notice what the shapes have in common. Being ahead by *one* card — a coinflip, or domination — is worth far less than being ahead by *both*. That is the whole reason a small pair is a nervous hand and a big pair is not.',
+        ],
+        visual: {
+          type: 'table',
+          headers: ['The shape', 'You win', 'Example'],
+          rows: [
+            ['A pair against two higher cards — the coinflip', '53%', '8-8 against A-K'],
+            ['Two higher cards against two lower ones', '65%', 'A-K against Q-J'],
+            ['The same top card, better kicker — domination', '71%', 'A-K against A-Q'],
+            ['The bigger pair against the smaller pair', '81%', 'Q-Q against 8-8'],
+            ['A pair against two lower cards', '84%', 'T-T against 7-6'],
+          ],
+          caption: 'Five numbers: **50, 65, 70, 80, 85**. Every figure here was measured with this app\'s own equity engine, and the drills grade you against the real number for the actual two hands — so expect a few points either way. Suited and connected cards always pull the underdog up.',
+        },
+        check: {
+          question: 'You hold 9-9. An opponent shoves and shows A-K. Roughly what do you win?',
+          options: [
+            {
+              key: 'a',
+              label: 'About half — a shade over',
+              why: 'Right. A pair against two higher cards is the coinflip: about 53%. You are ahead right now, but they have six cards that beat you, and five board cards to find one.',
+            },
+            {
+              key: 'b',
+              label: 'About 70% — a pair is a made hand',
+              why: 'That is the figure for a pair against one higher and one lower card. Two overcards give them roughly twice as many outs, which drags it back to a coinflip.',
+            },
+            {
+              key: 'c',
+              label: 'About 35% — A-K is the better hand',
+              why: 'A-K is the better hand to *hold* over a full range of opponents, but right now it has nothing: nine-high beats ace-high until an ace or a king lands. You are the small favourite.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Your hand has two values, and the useful one is not on the chart',
+        body: [
+          'Every starting hand has a number attached to it: what it wins against a *random* hand. K-Q wins 62%. That number is real, and it is almost never the one that matters — because nobody who puts money in against you is holding a random hand.',
+          'The moment someone raises from early position, you are no longer against random cards. You are against the roughly 18% of hands they were willing to raise, and every one of those is a hand that beats a lot of what you hold.',
+          'Look at what that does. The strong hands barely notice — aces lose two points. Everything in between collapses: K-Q drops seventeen points, from a comfortable favourite to an underdog. Your cards did not change. The opposition did.',
+          'This is what a starting-hand chart actually encodes. It is not an arbitrary list to memorise — it is the answer to "which hands still hold up once only the good hands are left in". Once you see that, the chart stops being 169 things to remember and becomes one idea with edges you can check.',
+        ],
+        visual: {
+          type: 'table',
+          headers: ['Your hand', 'vs a random hand', 'vs an early raiser', 'Cost'],
+          rows: [
+            ['A-A', '85%', '83%', '−2'],
+            ['Q-Q', '80%', '70%', '−10'],
+            ['9-9', '72%', '59%', '−13'],
+            ['A-Q offsuit', '64%', '54%', '−10'],
+            ['A-J offsuit', '64%', '49%', '−15'],
+            ['K-Q offsuit', '62%', '45%', '−17'],
+            ['A-5 suited', '60%', '44%', '−16'],
+          ],
+          caption: 'Against the top 18% of hands. A-J and K-Q look like the same class of hand as A-Q against random cards — one point apart. Against a real raising range they are five points apart and on opposite sides of even. **That gap is the entire preflop game.**',
+        },
+        check: {
+          question: 'Why does A-A lose only two points against a raising range while K-Q loses seventeen?',
+          options: [
+            {
+              key: 'a',
+              label: 'Aces beat the good hands too, and K-Q mostly does not',
+              why: 'Right. A narrow range is made of big pairs and big cards. Aces are still ahead of all of it. K-Q was only ever beating the junk — and the junk just folded.',
+            },
+            {
+              key: 'b',
+              label: 'K-Q is a weak hand',
+              why: 'K-Q is a fine hand — it is a clear open from most positions and beats 62% of random hands. The problem is the specific company it finds itself in after an early-position raise.',
+            },
+            {
+              key: 'c',
+              label: 'Because aces are suited more often',
+              why: 'Suits are not the reason. A-A can never be suited. What protects it is that it is ahead of every single hand in a tight raising range, so narrowing that range costs it almost nothing.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
     ],
     recap: [
       'How wide you open is set by two things: how many players act after you, and whether you will act last after the flop. The button wins both, which is why it opens widest.',
@@ -1013,6 +1098,8 @@ export const WALKTHROUGHS = {
       'Raise or fold. Limping surrenders initiative and tells opponents you are weak.',
       'Domination — sharing your top card with a better kicker — is where the money goes.',
       'Fold good-looking hands like A-J against tight early-position raises.',
+      'Five shapes cover nearly every preflop all-in: coinflip 53%, two overcards 65%, domination 71%, pair over pair 81%, pair over two low cards 84%.',
+      'Every hand has two values. What it beats against random cards is not what it beats against someone who raised — and only the second one decides anything.',
     ],
   },
 

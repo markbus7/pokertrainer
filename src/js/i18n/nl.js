@@ -2869,6 +2869,8 @@ export const NL = {
     'Alles wat je hebt geleerd is nog vers. {module} is {when}.',
   'Unlocks at {rank}': 'Ontgrendelt bij {rank}',
   '{tier} at {requirement}': '{tier} bij {requirement}',
+  '{tier}: {missing}': '{tier}: {missing}',
+  ' and ': ' en ',
   '**Solid** and **Mastered** measure how widely. A skill is Solid at 15 questions and 75%, and Mastered at 30 questions and 90% with its guided lesson finished. There are {total} skills in all.':
     '**Solid** en **Mastered** meten hoe breed. Een vaardigheid is Solid bij 15 vragen en 75%, en Mastered bij 30 vragen en 90% met de begeleide les afgerond. Er zijn in totaal {total} vaardigheden.',
 
@@ -2906,6 +2908,124 @@ export const NL = {
   'Pot': 'Pot',
   '2× pot': '2× pot',
   'All-in': 'All-in',
+  'a pair against two lower cards': 'een paar tegen twee lagere kaarten',
+  'the bigger pair against the smaller pair': 'het grotere paar tegen het kleinere paar',
+  'a pair against one higher and one lower card': 'een paar tegen één hogere en één lagere kaart',
+  'the same top card with a better kicker': 'dezelfde hoogste kaart met een betere kicker',
+  'two higher cards against two lower cards': 'twee hogere kaarten tegen twee lagere kaarten',
+  'a pair against two higher cards': 'een paar tegen twee hogere kaarten',
+  'the same pair on both sides': 'aan beide kanten hetzelfde paar',
+  'They have to catch a card to beat you, and their pair would still be smaller than yours.':
+    'Ze moeten een kaart vangen om je te verslaan, en hun paar zou dan nóg kleiner zijn dan het jouwe.',
+  'The small pair needs its own third card: about one time in five.':
+    'Het kleine paar heeft zijn eigen derde kaart nodig: ongeveer één keer op de vijf.',
+  'Only their higher card really threatens you, so they have half the outs of a coinflip.':
+    'Alleen hun hoogste kaart bedreigt je echt, dus ze hebben half zoveel outs als bij een coinflip.',
+  'When their card pairs, yours pairs too — and yours plays the better kicker. This is the shape that costs the most money, because it looks like a win right up until showdown.':
+    'Als hun kaart paart, paart die van jou ook — en die van jou speelt met de betere kicker. Dit is de vorm die het meeste geld kost, want het ziet er als winst uit tot aan de showdown.',
+  'Pair either card and you are ahead; they have to pair first to get there.':
+    'Paar je één van beide kaarten, dan sta je voor; zij moeten éérst paren om daar te komen.',
+  'The famous coinflip. You are ahead now, they have six cards to catch — it comes out close to even, and suited or connected overcards close it further.':
+    'De beroemde coinflip. Jij staat nu voor, zij hebben zes kaarten om te vangen — het komt bijna gelijk uit, en suited of aansluitende overcards maken het nog krapper.',
+  'Neither of you can pull ahead unless the board runs out four to a flush or a straight. Mostly a split pot.':
+    'Geen van beiden kan voorkomen tenzij het board vier naar een flush of een straight loopt. Meestal een split pot.',
+  'All-in before the flop: {hero} against {villain}. What percentage of the time does {hero} win?':
+    'All-in vóór de flop: {hero} tegen {villain}. Welk percentage van de tijd wint {hero}?',
+  '{hero} wins {actual}. This is {shape} — typically {typical}. {why}':
+    '{hero} wint {actual}. Dit is {shape} — typisch {typical}. {why}',
+  'This one lands {gap} points {side} that: most of the shape falls between {low} and {high}, and the edges are where the suits and the gaps between cards do their work.':
+    'Deze komt {gap} punten {side} uit: het grootste deel van deze vorm ligt tussen {low} en {high}, en aan de randen doen de suits en de gaten tussen de kaarten hun werk.',
+  'above': 'hoger',
+  'below': 'lager',
+  'You hold {hand}. Against a random hand it wins {random}. Now {seat} raises, so you are up against the top {width}% of hands instead. What does {hand} win against that?':
+    'Je hebt {hand}. Tegen een willekeurige hand wint die {random}. Nu raiset {seat}, dus je zit tegen de beste {width}% van de handen. Wat wint {hand} daartegen?',
+  '{hand} wins {range} against a {width}% range, down from {random} against a random hand — a drop of {drop} points. Nothing about your cards changed; the hands you are up against did. This is the whole reason a starting-hand chart exists.':
+    '{hand} wint {range} tegen een range van {width}%, tegenover {random} tegen een willekeurige hand — een daling van {drop} punten. Aan jouw kaarten veranderde niets; aan de handen waar je tegen zit wel. Dit is precies waarom een starthandenchart bestaat.',
+  'Five numbers instead of a hundred and sixty-nine':
+    'Vijf getallen in plaats van honderdnegenenzestig',
+  'There are 169 starting hands, which means 14,196 ways two of them can meet. Nobody has memorised that table, and you do not need to. Almost every all-in before the flop is one of five **shapes**, and inside a shape the number barely moves.':
+    'Er zijn 169 starthanden, dus 14.196 manieren waarop er twee tegenover elkaar kunnen staan. Niemand heeft die tabel uit zijn hoofd, en dat hoeft ook niet. Bijna elke all-in vóór de flop is één van vijf **vormen**, en binnen een vorm beweegt het getal nauwelijks.',
+  'Learn the shapes and you can price a matchup you have never seen. Someone shoves, you look down at a pair and they turn over two bigger cards: that is the [[coinflip]], and you already know it is close to even without knowing which cards they hold.':
+    'Ken je de vormen, dan kun je een situatie inschatten die je nog nooit gezien hebt. Iemand gaat all-in, jij kijkt naar een paar en zij draaien twee hogere kaarten om: dat is de [[coinflip]], en je weet al dat het bijna gelijk staat zonder te weten wélke kaarten ze hebben.',
+  'Notice what the shapes have in common. Being ahead by *one* card — a coinflip, or domination — is worth far less than being ahead by *both*. That is the whole reason a small pair is a nervous hand and a big pair is not.':
+    'Let op wat de vormen gemeen hebben. Vóórstaan met *één* kaart — een coinflip, of domination — is veel minder waard dan vóórstaan met *allebei*. Dat is precies waarom een klein paar een zenuwachtige hand is en een groot paar niet.',
+  'The shape': 'De vorm',
+  'You win': 'Jij wint',
+  'A pair against two higher cards — the coinflip':
+    'Een paar tegen twee hogere kaarten — de coinflip',
+  '8-8 against A-K': '8-8 tegen A-K',
+  'Two higher cards against two lower ones': 'Twee hogere kaarten tegen twee lagere',
+  'A-K against Q-J': 'A-K tegen Q-J',
+  'The same top card, better kicker — domination':
+    'Dezelfde hoogste kaart, betere kicker — domination',
+  'A-K against A-Q': 'A-K tegen A-Q',
+  'The bigger pair against the smaller pair': 'Het grotere paar tegen het kleinere paar',
+  'Q-Q against 8-8': 'Q-Q tegen 8-8',
+  'A pair against two lower cards': 'Een paar tegen twee lagere kaarten',
+  'T-T against 7-6': 'T-T tegen 7-6',
+  'Five numbers: **50, 65, 70, 80, 85**. Every figure here was measured with this app\'s own equity engine, and the drills grade you against the real number for the actual two hands — so expect a few points either way. Suited and connected cards always pull the underdog up.':
+    'Vijf getallen: **50, 65, 70, 80, 85**. Elk cijfer hier is gemeten met de equity-engine van deze app zelf, en de drills beoordelen je op het échte getal voor die twee specifieke handen — reken dus op een paar punten speling. Suited en aansluitende kaarten trekken de underdog altijd omhoog.',
+  'You hold 9-9. An opponent shoves and shows A-K. Roughly what do you win?':
+    'Je hebt 9-9. Een tegenstander gaat all-in en laat A-K zien. Wat win je ongeveer?',
+  'About half — a shade over': 'Ongeveer de helft — een tikje meer',
+  'Right. A pair against two higher cards is the coinflip: about 53%. You are ahead right now, but they have six cards that beat you, and five board cards to find one.':
+    'Klopt. Een paar tegen twee hogere kaarten is de coinflip: ongeveer 53%. Je staat nu voor, maar zij hebben zes kaarten die je verslaan, en vijf boardkaarten om er één te vinden.',
+  'About 70% — a pair is a made hand': 'Ongeveer 70% — een paar is een made hand',
+  'That is the figure for a pair against one higher and one lower card. Two overcards give them roughly twice as many outs, which drags it back to a coinflip.':
+    'Dat is het cijfer voor een paar tegen één hogere en één lagere kaart. Twee overcards geven ze ruwweg twee keer zoveel outs, en dat trekt het terug naar een coinflip.',
+  'About 35% — A-K is the better hand': 'Ongeveer 35% — A-K is de betere hand',
+  'A-K is the better hand to *hold* over a full range of opponents, but right now it has nothing: nine-high beats ace-high until an ace or a king lands. You are the small favourite.':
+    'A-K is de betere hand om te *hebben* tegen een heel scala aan tegenstanders, maar op dit moment heeft die niets: negen-hoog verslaat aas-hoog totdat er een aas of een heer valt. Jij bent de kleine favoriet.',
+  'Your hand has two values, and the useful one is not on the chart':
+    'Je hand heeft twee waarden, en de bruikbare staat niet op de chart',
+  'Every starting hand has a number attached to it: what it wins against a *random* hand. K-Q wins 62%. That number is real, and it is almost never the one that matters — because nobody who puts money in against you is holding a random hand.':
+    'Aan elke starthand hangt een getal: wat die wint tegen een *willekeurige* hand. K-Q wint 62%. Dat getal is echt, en het is bijna nooit het getal dat ertoe doet — want niemand die geld tegen je inzet, houdt een willekeurige hand vast.',
+  'The moment someone raises from early position, you are no longer against random cards. You are against the roughly 18% of hands they were willing to raise, and every one of those is a hand that beats a lot of what you hold.':
+    'Op het moment dat iemand vanuit vroege positie raiset, zit je niet meer tegen willekeurige kaarten. Je zit tegen de ruwweg 18% van de handen waarmee ze wilden raisen, en elk daarvan verslaat een groot deel van wat jij hebt.',
+  'Look at what that does. The strong hands barely notice — aces lose two points. Everything in between collapses: K-Q drops seventeen points, from a comfortable favourite to an underdog. Your cards did not change. The opposition did.':
+    'Kijk wat dat doet. De sterke handen merken er nauwelijks iets van — azen verliezen twee punten. Alles daartussenin stort in: K-Q zakt zeventien punten, van comfortabele favoriet naar underdog. Jouw kaarten veranderden niet. De tegenstand wel.',
+  'This is what a starting-hand chart actually encodes. It is not an arbitrary list to memorise — it is the answer to "which hands still hold up once only the good hands are left in". Once you see that, the chart stops being 169 things to remember and becomes one idea with edges you can check.':
+    'Dit is wat een starthandenchart eigenlijk vastlegt. Het is geen willekeurige lijst om uit je hoofd te leren — het is het antwoord op "welke handen houden nog stand als alleen de goede handen overblijven". Zodra je dat ziet, is de chart geen 169 dingen meer om te onthouden, maar één idee met randen die je kunt controleren.',
+  'Your hand': 'Jouw hand',
+  'vs a random hand': 'tegen een willekeurige hand',
+  'vs an early raiser': 'tegen een vroege raiser',
+  'Cost': 'Kosten',
+  'A-A': 'A-A',
+  'Q-Q': 'Q-Q',
+  '9-9': '9-9',
+  'A-Q offsuit': 'A-Q offsuit',
+  'A-J offsuit': 'A-J offsuit',
+  'K-Q offsuit': 'K-Q offsuit',
+  'A-5 suited': 'A-5 suited',
+  'Against the top 18% of hands. A-J and K-Q look like the same class of hand as A-Q against random cards — one point apart. Against a real raising range they are five points apart and on opposite sides of even. **That gap is the entire preflop game.**':
+    'Tegen de beste 18% van de handen. A-J en K-Q lijken tegen willekeurige kaarten dezelfde soort hand als A-Q — één punt verschil. Tegen een echte raise-range zitten ze vijf punten uit elkaar en aan weerszijden van gelijk. **Dat gat is het hele preflopspel.**',
+  'Why does A-A lose only two points against a raising range while K-Q loses seventeen?':
+    'Waarom verliest A-A maar twee punten tegen een raise-range terwijl K-Q er zeventien verliest?',
+  'Aces beat the good hands too, and K-Q mostly does not':
+    'Azen verslaan de goede handen óók, en K-Q grotendeels niet',
+  'Right. A narrow range is made of big pairs and big cards. Aces are still ahead of all of it. K-Q was only ever beating the junk — and the junk just folded.':
+    'Klopt. Een smalle range bestaat uit grote paren en grote kaarten. Azen staan daar nog steeds op voor. K-Q versloeg alleen ooit de rommel — en die rommel is net gefold.',
+  'K-Q is a weak hand': 'K-Q is een zwakke hand',
+  'K-Q is a fine hand — it is a clear open from most positions and beats 62% of random hands. The problem is the specific company it finds itself in after an early-position raise.':
+    'K-Q is een prima hand — een duidelijke open vanuit de meeste posities, en hij verslaat 62% van de willekeurige handen. Het probleem is het specifieke gezelschap waarin hij terechtkomt na een raise uit vroege positie.',
+  'Because aces are suited more often': 'Omdat azen vaker suited zijn',
+  'Suits are not the reason. A-A can never be suited. What protects it is that it is ahead of every single hand in a tight raising range, so narrowing that range costs it almost nothing.':
+    'De suits zijn niet de reden. A-A kan nooit suited zijn. Wat hem beschermt is dat hij vóórstaat op élke hand in een strakke raise-range, dus het versmallen van die range kost hem bijna niets.',
+  'Five shapes cover nearly every preflop all-in: coinflip 53%, two overcards 65%, domination 71%, pair over pair 81%, pair over two low cards 84%.':
+    'Vijf vormen dekken bijna elke preflop all-in: coinflip 53%, twee overcards 65%, domination 71%, paar over paar 81%, paar over twee lage kaarten 84%.',
+  'Every hand has two values. What it beats against random cards is not what it beats against someone who raised — and only the second one decides anything.':
+    'Elke hand heeft twee waarden. Wat hij verslaat tegen willekeurige kaarten is niet wat hij verslaat tegen iemand die raiste — en alleen die tweede beslist iets.',
+  'A pair against two higher cards — close to even money.':
+    'Een paar tegen twee hogere kaarten — bijna gelijk oversteken.',
+  'The most common near-even all-in before the flop: a pair against two cards that both beat it, like 8-8 against A-K. The pair is ahead right now and wins about 53% of the time; the two overcards have six cards to catch and five board cards to catch them with. Suited or connected overcards close the gap further.':
+    'De meest voorkomende bijna-gelijke all-in vóór de flop: een paar tegen twee kaarten die er allebei overheen gaan, zoals 8-8 tegen A-K. Het paar staat nu voor en wint ongeveer 53% van de tijd; de twee overcards hebben zes kaarten om te vangen en vijf boardkaarten om ze mee te vangen. Suited of aansluitende overcards maken het gat nog kleiner.',
+  'Sharing your top card with an opponent who has a better kicker.':
+    'Je hoogste kaart delen met een tegenstander die een betere kicker heeft.',
+  'A-J against A-K: you share the ace, and their second card beats yours. It is the shape that costs the most money, because it hits exactly when you feel good — you pair your ace, and pay off someone who paired theirs with a better kicker. The dominating hand wins about 71% of the time.':
+    'A-J tegen A-K: je deelt de aas, en hun tweede kaart verslaat de jouwe. Het is de vorm die het meeste geld kost, want hij treft je precies wanneer je je goed voelt — je paart je aas en betaalt iemand uit die de zijne paarde met een betere kicker. De dominerende hand wint ongeveer 71% van de tijd.',
+  'Raise size': 'Hoogte van je raise',
+  'One chip less': 'Eén chip minder',
+  'One chip more': 'Eén chip meer',
   '📋 Range charts': '📋 Range charts',
   'These are the ranges the drills grade you against, and the ranges the "Solid Regular" bot plays. Learn one position at a time — the button and the big blind matter most.':
     'Dit zijn de ranges waar de drills je op beoordelen, en de ranges die de "Solid Regular"-bot speelt. Leer één positie tegelijk — de button en de big blind tellen het zwaarst.',

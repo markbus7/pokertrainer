@@ -14,7 +14,11 @@ export function buildChoices(rng, correctLabel, distractorLabels, extra = {}) {
   }
   const options = unique.map((label, i) => ({ key: `o${i}`, label, ...(extra[label] || {}) }));
   const answer = options.find((o) => o.label === correctLabel).key;
-  shuffle(rng, options);
+  // Four percentages in random order have to be read one at a time. In
+  // ascending order they are a scale, and picking a place on a scale is the
+  // thing the question is actually asking for.
+  if (extra.sorted) options.sort((a, b) => parseFloat(a.label) - parseFloat(b.label));
+  else shuffle(rng, options);
   return { options, answer };
 }
 
@@ -34,19 +38,42 @@ export function numericDistractors(rng, value, { spread = 4, count = 3, min = 0,
  * Percentage distractors, kept inside 1..99 and at least `minGap` points from
  * the true answer — otherwise two options are both defensible and the drill
  * punishes a student who did the arithmetic right.
+ *
+ * How many land below the true value is decided first, and the rest walk
+ * outward from there. Picking each one's side independently cannot produce a
+ * one-sided spread — three values `minGap` apart do not fit in a band of
+ * `spread` — so the answer was never the highest or lowest option, and could
+ * be found by crossing off both ends without knowing any poker.
  */
 export function percentDistractors(rng, truePct, count = 3, spread = 12, minGap = 5) {
-  const out = new Set();
-  let guard = 0;
-  while (out.size < count && guard++ < 120) {
-    const delta = minGap + randInt(rng, spread);
-    const candidate = truePct + (rng() < 0.5 ? -delta : delta);
-    if (candidate >= 2 && candidate <= 97 && Math.abs(candidate - truePct) >= minGap
-        && ![...out].some((x) => Math.abs(x - candidate) < minGap)) {
-      out.add(candidate);
+  const chosen = [];
+  // Each side grows outward from its own furthest value, so every step of at
+  // least `minGap` also keeps that distance from everything already placed.
+  const edgeOf = (direction) => chosen.reduce(
+    (acc, v) => (direction > 0 ? Math.max(acc, v) : Math.min(acc, v)), truePct,
+  );
+
+  const walk = (direction, howMany) => {
+    let cursor = edgeOf(direction);
+    let placed = 0;
+    for (let i = 0; i < howMany; i++) {
+      const room = direction > 0 ? 97 - cursor : cursor - 2;
+      if (room < minGap) break;
+      // Near the ends of the scale, take shorter steps rather than
+      // overshooting and dropping the value: a side that quietly comes up
+      // short moves the answer's place in a sorted list.
+      cursor += direction * (minGap + randInt(rng, Math.max(1, Math.min(spread, room - minGap + 1))));
+      chosen.push(cursor);
+      placed++;
     }
-  }
-  return [...out];
+    return placed;
+  };
+
+  const below = randInt(rng, count + 1);
+  let got = walk(-1, below) + walk(1, count - below);
+  if (got < count) got += walk(-1, count - got);
+  if (got < count) walk(1, count - got);
+  return chosen.slice(0, count);
 }
 
 /** Retry a generator until it produces a usable spot. */
