@@ -546,26 +546,45 @@ await step('preflop teaches what a hand is worth, and grades the number', async 
   for (let i = 0; i < 40 && (!seen.allIn || !seen.range); i++) {
     const question = await page.$eval('.question', (n) => n.textContent).catch(() => '');
     asked++;
-    const entry = await page.$('.drill-entry-input');
     let expected = null;
     let kind = null;
 
     const allIn = /All-in before the flop: (\S+) against (\S+)\./.exec(question);
     const vsRange = /You hold (\S+)\..*?Now (.+?) raises/.exec(question);
-    if (entry && allIn) {
+    if (allIn) {
       const rng = makeRng(1);
       const a = expandHandKey(allIn[1]);
       const b = expandHandKey(allIn[2]).find((h) => !h.some((c) => a[0].includes(c)));
       expected = Math.round(equityVs(a[0], [b], [], { trials: 40000, rng }) * 100);
       kind = 'allIn';
-    } else if (entry && vsRange && seats[vsRange[2]]) {
+    } else if (vsRange && seats[vsRange[2]]) {
       expected = Math.round(VS_RANGE[seats[vsRange[2]]][vsRange[1]] * 100);
       kind = 'range';
     }
 
     if (expected != null) {
-      await entry.fill(String(expected));
-      await page.click('.drill-entry button', { timeout: 2000 });
+      // Percentage questions are a choice off a scale, not an empty box:
+      // there is no way to derive the number until the shapes are known, and
+      // typing one you cannot derive is guessing.
+      if (await page.$('.drill-entry-input')) {
+        throw new Error('an equity question demanded a typed answer at this level');
+      }
+      // Each option renders its keyboard number in a .key span, so the
+      // label has to be read past it — "1" + "47%" parses as 147.
+      const labels = await page.$$eval('.option', (nodes) => nodes.map(
+        (n) => [...n.querySelectorAll('span')].filter((x) => !x.classList.contains('key'))
+          .map((x) => x.textContent).join(' ').trim(),
+      ));
+      const values = labels.map((l) => parseFloat((/(\d+)\s*%/.exec(l) || [])[1]));
+      if (values.some((v) => Number.isNaN(v))) throw new Error(`options are not percentages: ${labels.join(' | ')}`);
+      const sorted = values.every((v, k) => k === 0 || values[k - 1] <= v);
+      if (!sorted) throw new Error(`options are not in order: ${values.join(', ')}`);
+
+      const best = values.reduce((a, b) => (Math.abs(b - expected) < Math.abs(a - expected) ? b : a));
+      if (Math.abs(best - expected) > 5) {
+        throw new Error(`computed ${expected}% but no option is near it: ${values.join(', ')}`);
+      }
+      await page.click(`.option >> nth=${values.indexOf(best)}`, { timeout: 2000 });
       await page.waitForTimeout(250);
       const feedback = await page.$eval('.feedback', (n) => n.textContent).catch(() => '');
       if (!(await page.$('.feedback.correct'))) {
@@ -575,9 +594,9 @@ await step('preflop teaches what a hand is worth, and grades the number', async 
       sample = feedback;
       seen[kind]++;
     } else {
-      // Every other preflop question is multiple choice. It still has to be
-      // answered, or the drill never moves on — and a click that waits for a
-      // button which is not there costs half a minute of the suite each time.
+      // Every other preflop question is multiple choice too. It still has to
+      // be answered, or the drill never moves on — and a click that waits for
+      // a button which is not there costs half a minute of the suite each time.
       await page.click('.option', { timeout: 2000 }).catch(() => {});
       await page.waitForTimeout(150);
     }

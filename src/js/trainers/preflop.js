@@ -239,7 +239,8 @@ export function matchupEquityDrill(rng, difficulty = 2) {
   const heroKey = keyOf(hero);
   const villainKey = keyOf(villain);
   const { options, answer } = buildChoices(
-    rng, `${truePct}%`, percentDistractors(rng, truePct, 3, 14, 7).map((p) => `${p}%`),
+    rng, `${truePct}%`, percentDistractors(rng, truePct, 3, 14, 8).map((p) => `${p}%`),
+    { sorted: true },
   );
 
   // A shape is a rule of thumb, not a promise. When this instance sits well
@@ -263,7 +264,14 @@ export function matchupEquityDrill(rng, difficulty = 2) {
       { hero: heroKey, villain: villainKey }),
     options,
     answer,
-    entry: { unit: '%', value: truePct, tolerance: 5 },
+    // Picking off a scale, not typing into an empty box. Every other typed
+    // drill hands you the numbers and names the formula — "use the rule of
+    // 4" — so typing there is arithmetic. Here there is nothing to compute
+    // until the shapes are known, and typing a number you cannot derive is
+    // guessing, which costs effort and teaches nothing. Recognising which
+    // rung of the ladder a matchup sits on is the actual skill; producing
+    // the number from memory is worth asking for only once that is fluent.
+    ...(difficulty >= 5 ? { entry: { unit: '%', value: truePct, tolerance: 5 } } : {}),
     explanation: `${t('{hero} wins {actual}. This is {shape} — typically {typical}. {why}', {
       hero: heroKey,
       actual: pct(equity, 0),
@@ -293,7 +301,8 @@ export function rangeEquityDrill(rng, difficulty = 2) {
   const vsRange = VS_RANGE[position][hand];
   const truePct = Math.round(vsRange * 100);
   const { options, answer } = buildChoices(
-    rng, `${truePct}%`, percentDistractors(rng, truePct, 3, 14, 6).map((p) => `${p}%`),
+    rng, `${truePct}%`, percentDistractors(rng, truePct, 3, 14, 8).map((p) => `${p}%`),
+    { sorted: true },
   );
 
   return {
@@ -305,7 +314,7 @@ export function rangeEquityDrill(rng, difficulty = 2) {
     { hand, random: pct(vsRandom, 0), seat: t(POSITION_INFO[position].name), width: RANGE_WIDTH[position] }),
     options,
     answer,
-    entry: { unit: '%', value: truePct, tolerance: 5 },
+    ...(difficulty >= 5 ? { entry: { unit: '%', value: truePct, tolerance: 5 } } : {}),
     explanation: t('{hand} wins {range} against a {width}% range, down from {random} against a random hand — '
       + 'a drop of {drop} points. Nothing about your cards changed; the hands you are up against did. '
       + 'This is the whole reason a starting-hand chart exists.',

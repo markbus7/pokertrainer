@@ -7,6 +7,8 @@ import { makeRng } from '../src/js/core/rng.js';
 import { VS_RANGE, RANGE_WIDTH, RANGE_POSITIONS } from '../src/js/data/rangeEquity.js';
 import { HAND_STRENGTH } from '../src/js/data/handStrength.js';
 import { RFI, parseRange, rangePercent } from '../src/js/data/ranges.js';
+import { matchupEquityDrill, rangeEquityDrill } from '../src/js/trainers/preflop.js';
+import { percentDistractors } from '../src/js/trainers/helpers.js';
 
 const hands = (a, b) => [parseCards(a), parseCards(b)];
 
@@ -208,6 +210,88 @@ describe('range equity: the number that actually decides', () => {
       const real = Math.round(rangePercent(parseRange(RFI[pos])) * 100);
       equal(RANGE_WIDTH[pos], real, `${pos} width`);
       equal(Object.keys(VS_RANGE[pos]).length, 169, `${pos} covers every starting hand`);
+    }
+  });
+});
+
+describe('preflop equity drills: how the answer is given', () => {
+  const ask = (difficulty, n = 120) => {
+    const rng = makeRng(515);
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      for (const gen of [matchupEquityDrill, rangeEquityDrill]) {
+        const q = gen(rng, difficulty);
+        if (q) out.push(q);
+      }
+    }
+    return out;
+  };
+
+  it('offers a choice rather than an empty box, until the shapes are fluent', () => {
+    // Every other typed drill names its method in the question — "use the
+    // rule of 4" — so typing there is arithmetic. These two hand over two
+    // cards, and typing a number you have no way to derive is guessing.
+    for (const q of ask(2)) {
+      assert(!q.entry, `difficulty 2 should be a choice, got a typed box: ${q.question.slice(0, 60)}`);
+      assert(q.options.length >= 3, `only ${q.options.length} options`);
+    }
+    for (const q of ask(5, 40)) {
+      assert(q.entry, 'difficulty 5 should ask for the number itself');
+      equal(q.entry.unit, '%');
+    }
+  });
+
+  it('never lets the answer be found by crossing off both ends', () => {
+    // The distractors used to be placed one side at a time, and three of them
+    // could not fit on one side — so the answer was always one of the middle
+    // two and could be found without knowing any poker.
+    const seats = [0, 0, 0, 0];
+    const questions = ask(2);
+    for (const q of questions) {
+      const values = q.options.map((o) => parseFloat(o.label));
+      const sorted = [...values].every((v, i) => i === 0 || values[i - 1] <= v);
+      assert(sorted, `options are not in order: ${values.join(', ')}`);
+      seats[values.indexOf(parseFloat(q.options.find((o) => o.key === q.answer).label))] += 1;
+    }
+    for (let i = 0; i < 4; i++) {
+      const share = seats[i] / questions.length;
+      assert(share > 0.08, `the answer lands in position ${i} only ${(share * 100).toFixed(0)}% of the time`);
+    }
+  });
+
+  it('keeps every option far enough apart to be a real choice', () => {
+    for (const q of ask(2)) {
+      const values = q.options.map((o) => parseFloat(o.label));
+      for (let i = 1; i < values.length; i++) {
+        assert(values[i] - values[i - 1] >= 8,
+          `${values[i - 1]}% and ${values[i]}% are too close to tell apart`);
+      }
+    }
+  });
+
+  it('spreads distractors on both sides, and on one side when asked', () => {
+    const rng = makeRng(4);
+    let allBelow = 0;
+    let allAbove = 0;
+    for (let i = 0; i < 400; i++) {
+      const got = percentDistractors(rng, 50, 3, 12, 5);
+      equal(got.length, 3, 'always three distractors away from the edges');
+      if (got.every((v) => v < 50)) allBelow++;
+      if (got.every((v) => v > 50)) allAbove++;
+    }
+    assert(allBelow > 20, `three distractors below the answer happened ${allBelow} times in 400`);
+    assert(allAbove > 20, `three distractors above the answer happened ${allAbove} times in 400`);
+  });
+
+  it('still keeps distractors clear of the true answer near the ends of the scale', () => {
+    const rng = makeRng(9);
+    for (const truth of [3, 8, 50, 92, 96]) {
+      for (let i = 0; i < 60; i++) {
+        for (const v of percentDistractors(rng, truth, 3, 12, 5)) {
+          assert(v >= 2 && v <= 97, `${v}% is off the scale`);
+          assert(Math.abs(v - truth) >= 5, `${v}% is too close to the true ${truth}%`);
+        }
+      }
     }
   });
 });
