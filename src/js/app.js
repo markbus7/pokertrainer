@@ -173,7 +173,7 @@ function announceUpdateIfBehind() {
     const banner = el('div.update-banner',
       el('div',
         el('strong', `Version ${result.latest} is available`),
-        el('div.faint', `You are running ${result.current}. Reload to update — if the version does not change, your browser is still holding a cached copy, which usually clears within about ten minutes.`),
+        el('div.faint', `You are running ${result.current}. Reload to update. If the version still does not change after a few reloads, the new build has not finished publishing yet — wait rather than clearing your browsing data, which erases your progress along with the cache.`),
       ),
       el('div.row',
         el('button.btn.sm.primary', { onclick: () => location.reload() }, 'Reload'),
