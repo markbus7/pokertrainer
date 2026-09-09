@@ -8,7 +8,7 @@ import { expandHandKey, ALL_HAND_KEYS } from '../core/cards.js';
 import { matchupOf, buildMatchup, DRILLABLE_SHAPES } from '../core/matchup.js';
 import { equityVs } from '../core/equity.js';
 import { VS_RANGE, RANGE_WIDTH, RANGE_POSITIONS } from '../data/rangeEquity.js';
-import { CHARTS, preflopAdvice, POSITIONS, POSITION_INFO, rangePercent, BOUNDARY_ROWS, rowBoundary } from '../data/ranges.js';
+import { CHARTS, preflopAdvice, POSITIONS, POSITION_INFO, rangePercent, BOUNDARY_ROWS, rowBoundary, pairBoundary } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
 import { randInt } from '../core/rng.js';
 import { buildChoices, pct, percentDistractors } from './helpers.js';
@@ -362,60 +362,105 @@ function attemptHand(rng, difficulty, position) {
  * squares — and it is the only question here you cannot answer by feel.
  */
 export function chartBoundaryDrill(rng, difficulty = 2) {
-  const usable = [];
+  const RANKS = '23456789TJQKA';
+  const spots = [];
+
+  // Raising first in: how far down each row you open.
   for (const position of OPEN_POSITIONS) {
     const chart = CHARTS.rfi[position];
     if (!chart) continue;
     for (const row of BOUNDARY_ROWS) {
       const boundary = rowBoundary(chart, row.high, row.suited);
-      if (boundary) usable.push({ position, row, boundary });
+      if (boundary) spots.push({ kind: 'open', position, row, boundary });
     }
   }
-  if (!usable.length) return null;
-  const pick = usable[randInt(rng, usable.length)];
-  const { position, row, boundary } = pick;
 
-  const RANKS = '23456789TJQKA';
-  const highIndex = RANKS.indexOf(row.high);
-  const lowIndex = RANKS.indexOf(boundary[1]);
-  const label = (i) => row.high + RANKS[i] + (row.suited ? 's' : 'o');
-
-  // Four neighbouring rungs of the same row, so the question is "how far
-  // down", never "which of these unrelated hands".
-  const window = [];
-  for (let offset = -1; window.length < 4 && offset <= 3; offset++) {
-    const i = lowIndex + offset;
-    if (i >= 0 && i < highIndex) window.push(i);
+  // Defending the big blind: the same rows, against each opener. This is the
+  // frame that comes up most — you are in the big blind every orbit.
+  for (const position of OPEN_POSITIONS) {
+    const chart = CHARTS.bbDefend[position];
+    if (!chart) continue;
+    for (const row of BOUNDARY_ROWS) {
+      const boundary = rowBoundary(chart, row.high, row.suited);
+      if (boundary) spots.push({ kind: 'defend', position, row, boundary });
+    }
   }
-  for (let i = lowIndex - 2; window.length < 4 && i >= 0; i--) window.unshift(i);
-  if (!window.includes(lowIndex)) return null;
-  window.sort((a, b) => b - a);
 
-  // Strongest rung first, so the four options read as the row itself.
-  const rungOf = (l) => RANKS.indexOf(l[1]);
-  const { options, answer } = buildChoices(rng, boundary, window.map(label),
+  // Three-betting for value: the pairs are the frame here, since the rest of
+  // the range is a short list rather than a row with an end.
+  for (const position of POSITIONS) {
+    const entry = CHARTS.threeBet[position];
+    if (!entry || !entry.value) continue;
+    const boundary = pairBoundary(entry.value);
+    if (boundary && boundary !== '22') spots.push({ kind: 'threebet', position, boundary });
+  }
+
+  if (!spots.length) return null;
+  const pick = spots[randInt(rng, spots.length)];
+  const seat = t(POSITION_INFO[pick.position].name);
+
+  // Four neighbouring rungs of the same row — the question is "how far
+  // down", never "which of these unrelated hands".
+  const rungWindow = (lowIndex, topIndex, label) => {
+    const window = [];
+    for (let offset = -1; window.length < 4 && offset <= 3; offset++) {
+      const i = lowIndex + offset;
+      if (i >= 0 && i < topIndex) window.push(i);
+    }
+    for (let i = lowIndex - 2; window.length < 4 && i >= 0; i--) window.unshift(i);
+    return window.includes(lowIndex) ? window.sort((a, b) => b - a).map(label) : null;
+  };
+
+  let labels;
+  let question;
+  let across;
+  if (pick.kind === 'threebet') {
+    const lowIndex = RANKS.indexOf(pick.boundary[0]);
+    labels = rungWindow(lowIndex, RANKS.length, (i) => RANKS[i] + RANKS[i]);
+    question = t('{seat} opens and it is on you. What is the weakest pair you 3-bet for value?', { seat });
+    across = POSITIONS
+      .map((p) => ({ p, b: CHARTS.threeBet[p] && CHARTS.threeBet[p].value ? pairBoundary(CHARTS.threeBet[p].value) : null }))
+      .filter((x) => x.b && x.b !== '22')
+      .map((x) => `${x.p} ${x.b}`)
+      .join(' · ');
+  } else {
+    const { row } = pick;
+    const topIndex = RANKS.indexOf(row.high);
+    const lowIndex = RANKS.indexOf(pick.boundary[1]);
+    labels = rungWindow(lowIndex, topIndex, (i) => row.high + RANKS[i] + (row.suited ? 's' : 'o'));
+    question = pick.kind === 'open'
+      ? t('Opening from {seat}: how far down the {row}s do you go? Pick the weakest one you still raise.',
+        { seat, row: t(row.label) })
+      : t('{seat} opens and you are in the big blind: how far down the {row}s do you defend? Pick the weakest '
+        + 'one you still call.', { seat, row: t(row.label) });
+    const source = pick.kind === 'open' ? CHARTS.rfi : CHARTS.bbDefend;
+    across = OPEN_POSITIONS
+      .map((p) => ({ p, b: source[p] ? rowBoundary(source[p], row.high, row.suited) : null }))
+      .filter((x) => x.b)
+      .map((x) => `${x.p} ${x.b}`)
+      .join(' · ');
+  }
+  if (!labels) return null;
+
+  const rungOf = (l) => (l.length === 2 ? RANKS.indexOf(l[0]) : RANKS.indexOf(l[1]));
+  const { options, answer } = buildChoices(rng, pick.boundary, labels,
     { sorted: (a, b) => rungOf(b) - rungOf(a) });
 
-  // The row across every seat, because the pattern is the thing worth
-  // keeping: the later you sit, the further down the row you go.
-  const across = OPEN_POSITIONS
-    .map((p) => ({ p, b: rowBoundary(CHARTS.rfi[p], row.high, row.suited) }))
-    .filter((x) => x.b)
-    .map((x) => `${x.p} ${x.b}`)
-    .join(' · ');
+  const tail = pick.kind === 'defend'
+    ? t('You are already half in from the blind and you close the action, so you defend wider than you would open.')
+    : pick.kind === 'threebet'
+      ? t('The wider they open, the further down you can 3-bet for value.')
+      : t('The further down you go, the fewer players are left to act behind you. The small blind is the '
+        + 'exception, because it acts last now and first for the rest of the hand.');
 
   return {
     module: 'preflop',
     difficulty,
-    scenario: { position, positionName: t(POSITION_INFO[position].name) },
-    question: t('Opening from {seat}: how far down the {row}s do you go? Pick the weakest one you still raise.',
-      { seat: t(POSITION_INFO[position].name), row: t(row.label) }),
+    scenario: { position: pick.position, positionName: seat },
+    question,
     options,
     answer,
-    explanation: t('{boundary}. Across the seats this row runs {across} — the further down it you go, the fewer '
-      + 'players are left to act behind you. The small blind is the exception, because it acts last now and '
-      + 'first for the rest of the hand. Seven rows like this one are most of the chart.',
-    { boundary, across }),
+    explanation: `${t('{boundary}. Across the seats this runs {across}. ', { boundary: pick.boundary, across })}${tail}`,
     xp: 10 + difficulty * 2,
   };
 }

@@ -6,7 +6,7 @@ import { parseCards, expandHandKey } from '../src/js/core/cards.js';
 import { makeRng } from '../src/js/core/rng.js';
 import { VS_RANGE, RANGE_WIDTH, RANGE_POSITIONS } from '../src/js/data/rangeEquity.js';
 import { HAND_STRENGTH } from '../src/js/data/handStrength.js';
-import { RFI, parseRange, rangePercent, CHARTS, BOUNDARY_ROWS, rowBoundary } from '../src/js/data/ranges.js';
+import { RFI, parseRange, rangePercent, CHARTS, BOUNDARY_ROWS, rowBoundary, pairBoundary } from '../src/js/data/ranges.js';
 import { matchupEquityDrill, rangeEquityDrill, chartBoundaryDrill } from '../src/js/trainers/preflop.js';
 import { percentDistractors } from '../src/js/trainers/helpers.js';
 
@@ -314,24 +314,47 @@ describe('chart boundaries: the form a chart is actually carried in', () => {
     equal(rowBoundary(gappy, 'K', true), null);
     const solid = new Set(['K9s', 'K8s', 'K7s', 'K6s', 'K5s', 'K4s', 'K3s', 'K2s', 'KTs', 'KJs', 'KQs']);
     equal(rowBoundary(solid, 'K', true), 'K2s');
+
+    // The same rule for the pairs, which is the frame a 3-bet range is
+    // carried in: "QQ+" only means something if nothing above it is missing.
+    equal(pairBoundary(new Set(['AA', 'KK', 'QQ'])), 'QQ');
+    equal(pairBoundary(new Set(['AA', 'KK', 'JJ'])), null, 'QQ is missing, so JJ+ is a lie');
+    equal(pairBoundary(new Set(['AKs', 'AQs'])), null, 'no pairs at all');
+    equal(pairBoundary(CHARTS.threeBet.UTG.value), 'QQ');
+    equal(pairBoundary(CHARTS.rfi.UTG), '22', 'opening ranges start at the bottom');
   });
 
   it('asks for the boundary and offers the rungs around it, in order', () => {
+    const RANKS = '23456789TJQKA';
     const rng = makeRng(88);
-    let asked = 0;
-    for (let i = 0; i < 200; i++) {
+    const kinds = { open: 0, defend: 0, threebet: 0 };
+
+    for (let i = 0; i < 400; i++) {
       const q = chartBoundaryDrill(rng, 2);
       if (!q) continue;
-      asked++;
       const correct = q.options.find((o) => o.key === q.answer).label;
-      const chart = CHARTS.rfi[q.scenario.position];
-      const row = BOUNDARY_ROWS.find((r) => r.high === correct[0] && r.suited === (correct[2] === 's'));
-      equal(correct, rowBoundary(chart, row.high, row.suited), `${q.scenario.position} ${row.id}`);
+      const pos = q.scenario.position;
 
-      // Every option is a rung of the same row, strongest first: the
-      // question is "how far down", not "which of these unrelated hands".
-      const RANKS = '23456789TJQKA';
+      // Whichever spot it is, the answer has to be the real boundary of the
+      // chart that spot is played from.
+      if (/3-bet for value/.test(q.question)) {
+        equal(correct, pairBoundary(CHARTS.threeBet[pos].value), `3-bet value pair vs ${pos}`);
+        kinds.threebet++;
+      } else {
+        const chart = /big blind/.test(q.question) ? CHARTS.bbDefend[pos] : CHARTS.rfi[pos];
+        const row = BOUNDARY_ROWS.find((r) => r.high === correct[0] && r.suited === (correct[2] === 's'));
+        assert(row, `${correct} is not on a row the drill teaches`);
+        equal(correct, rowBoundary(chart, row.high, row.suited), `${pos} ${row.id}`);
+        kinds[/big blind/.test(q.question) ? 'defend' : 'open']++;
+      }
+
+      // Every option is a rung of the same row, strongest first.
       const rungs = q.options.map((o) => {
+        assert(o.label.length === correct.length, `${o.label} is not the same shape as ${correct}`);
+        if (correct.length === 2) {
+          assert(o.label[0] === o.label[1], `${o.label} is not a pair`);
+          return RANKS.indexOf(o.label[0]);
+        }
         assert(o.label[0] === correct[0] && o.label[2] === correct[2],
           `${o.label} is not on the same row as ${correct}`);
         return RANKS.indexOf(o.label[1]);
@@ -341,14 +364,42 @@ describe('chart boundaries: the form a chart is actually carried in', () => {
       }
       equal(new Set(rungs).size, rungs.length, 'no repeated rung');
     }
-    assert(asked > 150, `enough questions produced (${asked})`);
+
+    // Raise, call and re-raise — the three frames, not just the first.
+    for (const [kind, n] of Object.entries(kinds)) {
+      assert(n > 15, `only ${n} ${kind} questions in 400 draws`);
+    }
   });
 
-  it('teaches the row across every seat, not just this seat\'s answer', () => {
+  it('teaches the boundary across every seat that has one', () => {
+    // Not every seat plays every row — nobody opens an offsuit queen under
+    // the gun — so the explanation lists the seats that do, and each answer
+    // teaches the pattern rather than its own cell.
     const rng = makeRng(12);
-    const q = chartBoundaryDrill(rng, 2);
-    for (const seat of ['UTG', 'HJ', 'CO', 'BTN']) {
-      assert(q.explanation.includes(seat), `the explanation skips ${seat}: ${q.explanation}`);
+    let checked = 0;
+    for (let i = 0; i < 120; i++) {
+      const q = chartBoundaryDrill(rng, 2);
+      if (!q) continue;
+      const correct = q.options.find((o) => o.key === q.answer).label;
+
+      let expected;
+      if (/3-bet for value/.test(q.question)) {
+        expected = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB']
+          .filter((p) => CHARTS.threeBet[p] && CHARTS.threeBet[p].value
+            && pairBoundary(CHARTS.threeBet[p].value) && pairBoundary(CHARTS.threeBet[p].value) !== '22');
+      } else {
+        const source = /big blind/.test(q.question) ? CHARTS.bbDefend : CHARTS.rfi;
+        const row = BOUNDARY_ROWS.find((r) => r.high === correct[0] && r.suited === (correct[2] === 's'));
+        expected = ['UTG', 'HJ', 'CO', 'BTN', 'SB']
+          .filter((p) => source[p] && rowBoundary(source[p], row.high, row.suited));
+      }
+
+      assert(expected.length >= 2, 'a boundary worth teaching appears in more than one seat');
+      for (const seat of expected) {
+        assert(q.explanation.includes(seat), `the explanation skips ${seat}: ${q.explanation}`);
+      }
+      checked++;
     }
+    assert(checked > 80, `enough explanations checked (${checked})`);
   });
 });
