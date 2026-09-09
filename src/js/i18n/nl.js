@@ -3034,6 +3034,18 @@ export const NL = {
   'offsuit ace': 'offsuit aas',
   'offsuit king': 'offsuit heer',
   'offsuit queen': 'offsuit vrouw',
+  '{seat} opens and you are in the big blind: how far down the {row}s do you defend? Pick the weakest one you still call.':
+    '{seat} opent en jij zit in de big blind: hoe ver zak je de {row}s af om te verdedigen? Kies de zwakste die je nog callt.',
+  '{seat} opens and it is on you. What is the weakest pair you 3-bet for value?':
+    '{seat} opent en het is aan jou. Wat is het zwakste paar waarmee je voor waarde 3-bet?',
+  '{boundary}. Across the seats this runs {across}. ':
+    '{boundary}. Over de posities loopt dit {across}. ',
+  'You are already half in from the blind and you close the action, so you defend wider than you would open.':
+    'Je zit al half in vanuit de blind en je sluit de ronde af, dus je verdedigt ruimer dan je zou openen.',
+  'The wider they open, the further down you can 3-bet for value.':
+    'Hoe ruimer zij openen, hoe verder je kunt zakken met een 3-bet voor waarde.',
+  'The further down you go, the fewer players are left to act behind you. The small blind is the exception, because it acts last now and first for the rest of the hand.':
+    'Hoe verder je afzakt, hoe minder spelers er achter je nog moeten handelen. De small blind is de uitzondering, want die is nu als laatste aan de beurt en de rest van de hand als eerste.',
   'Raise size': 'Hoogte van je raise',
   'One chip less': 'Eén chip minder',
   'One chip more': 'Eén chip meer',

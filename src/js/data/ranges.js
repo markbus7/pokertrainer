@@ -271,6 +271,26 @@ export function rowBoundary(range, high, suited) {
   return key(lowest);
 }
 
+/**
+ * The smallest pair a range still contains, or null if the pairs in it have
+ * a gap. Opening ranges all start at 22, so this only says anything about the
+ * ranges that do not — a 3-bet range's "QQ+" is one of the frames worth
+ * carrying.
+ */
+export function pairBoundary(range) {
+  let lowest = null;
+  for (let i = 0; i < RANK_CHARS_ASC.length; i++) {
+    const key = RANK_CHARS_ASC[i] + RANK_CHARS_ASC[i];
+    if (range.has(key)) { lowest = i; break; }
+  }
+  if (lowest === null) return null;
+  for (let i = lowest; i < RANK_CHARS_ASC.length; i++) {
+    const key = RANK_CHARS_ASC[i] + RANK_CHARS_ASC[i];
+    if (!range.has(key)) return null;
+  }
+  return RANK_CHARS_ASC[lowest] + RANK_CHARS_ASC[lowest];
+}
+
 export { HAND_STRENGTH } from './handStrength.js';
 
 /** Every hand key sorted strongest first. */
