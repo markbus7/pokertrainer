@@ -367,6 +367,12 @@ export function renderDrill(ctx, params) {
 
   root.addEventListener('keydown', (e) => {
     const n = Number(e.key);
+    // Keys meant for the answer box are not shortcuts. app.js already drops
+    // these before calling any screen, but this listener sits on the screen's
+    // own root, above the input, so bubbling reaches it regardless: Enter
+    // submitted the answer and then arrived here, where Enter means "next
+    // question", and one press both answered and skipped past the result.
+    if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
     // Number keys pick an option, but only when there are options on screen —
     // otherwise typing "2" into the answer box would submit option 2.
     if (state.question && state.question.entry && !state.locked) return;

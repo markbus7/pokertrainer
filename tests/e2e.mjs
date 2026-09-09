@@ -519,6 +519,51 @@ await step('numeric drills make you produce the number, not pick it', async () =
   console.log(`      typed ${mdf}% and it graded correct`);
 });
 
+await step('Enter answers the question and shows the result, the way the button does', async () => {
+  // One keypress used to do two things: the input submitted the answer, and
+  // the same event bubbled to the screen handler, where Enter means "next
+  // question". Submitting flips the lock inside that call, so the guard no
+  // longer held by the time the event arrived and the reader was thrown onto
+  // the next question without ever seeing whether they were right.
+  const readState = () => page.evaluate(() => ({
+    question: document.querySelector('.question')?.textContent || null,
+    feedback: document.querySelector('.feedback')?.textContent.trim() || null,
+    rightAnswerShown: !!document.querySelector('.option.correct'),
+  }));
+
+  const answerWith = async (how) => {
+    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#drill?module=mdf`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(500);
+    const before = await readState();
+    await page.fill('.drill-entry-input', '33');
+    if (how === 'enter') await page.press('.drill-entry-input', 'Enter');
+    else await page.click('.drill-entry button', { timeout: 2000 });
+    await page.waitForTimeout(350);
+    return { before, after: await readState() };
+  };
+
+  const clicked = await answerWith('click');
+  const entered = await answerWith('enter');
+
+  for (const [how, run] of [['the button', clicked], ['Enter', entered]]) {
+    if (!run.after.feedback) throw new Error(`${how} produced no feedback at all`);
+    if (!run.after.rightAnswerShown) throw new Error(`${how} did not show the right answer`);
+    if (run.after.question !== run.before.question) {
+      throw new Error(`${how} skipped to the next question instead of showing the result`);
+    }
+  }
+
+  // And a second Enter is still how you move on once you have read it.
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(400);
+  const next = await readState();
+  if (!next.question || next.question === entered.after.question) {
+    throw new Error('a second Enter no longer advances to the next question');
+  }
+  console.log('      Enter and the button both grade in place; Enter again moves on');
+});
+
 await step('preflop teaches what a hand is worth, and grades the number', async () => {
   // The gap this closes: every preflop question used to be multiple choice
   // about what to DO. Not one of them asked what the hand was worth, so the
