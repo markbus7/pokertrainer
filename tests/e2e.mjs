@@ -281,6 +281,39 @@ await step('playing a hand teaches a named skill and counts toward it', async ()
   if (after.xp <= before.xp) throw new Error('playing a decision earned nothing');
 });
 
+await step('a session reports the decisions you made, not only the chips you won', async () => {
+  // The session panel led with Result and Win rate — both outcome, and a
+  // session is far too short for either to mean anything. Every decision at
+  // the table is already graded; nothing added them up.
+  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.felt', { timeout: 8000 });
+  const deal = await page.$('button.btn.primary.lg');
+  if (deal) await deal.click();
+
+  // Play a handful of hands, always taking the cheapest legal action, so
+  // the session accumulates graded decisions without needing to win.
+  let acted = 0;
+  for (let i = 0; i < 60 && acted < 6; i++) {
+    await page.waitForTimeout(320);
+    const check = await page.$('.action-buttons .btn:not(.danger):not(.success):not(.primary)');
+    const fold = await page.$('.action-buttons .btn.danger');
+    if (check) { await check.click(); acted++; continue; }
+    if (fold) { await fold.click(); acted++; continue; }
+    const next = await page.$('button:has-text("Deal next hand")');
+    if (next) await next.click();
+  }
+
+  await page.waitForTimeout(500);
+  const panel = await page.evaluate(() => document.body.textContent.replace(/\s+/g, ' '));
+  if (!/Decisions right/i.test(panel)) {
+    throw new Error('the session never reports how many decisions were right');
+  }
+  const shown = /Decisions right\s*(\d+)\/(\d+)/.exec(panel);
+  if (!shown) throw new Error('the decision count is not a count');
+  if (Number(shown[2]) < 1) throw new Error('no decisions were counted despite playing');
+  console.log(`      session reports ${shown[1]}/${shown[2]} decisions right after ${acted} actions`);
+});
+
 await step('a misplayed hand is recorded and replays', async () => {
   // Played inside the page against the real engine, through the same recorder
   // the table screen uses. Driving the UI to a bad decision would depend on

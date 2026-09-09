@@ -3046,6 +3046,11 @@ export const NL = {
     'Hoe ruimer zij openen, hoe verder je kunt zakken met een 3-bet voor waarde.',
   'The further down you go, the fewer players are left to act behind you. The small blind is the exception, because it acts last now and first for the rest of the hand.':
     'Hoe verder je afzakt, hoe minder spelers er achter je nog moeten handelen. De small blind is de uitzondering, want die is nu als laatste aan de beurt en de rest van de hand als eerste.',
+  'Decisions right': 'Beslissingen goed',
+  'You lost chips and chose well — {pct} of your decisions were right. Over a session this short the result is mostly the cards. This is what a winning session looks like from the inside about a third of the time.':
+    'Je verloor chips en koos goed — {pct} van je beslissingen was juist. Over zo\'n korte sessie is het resultaat vooral de kaarten. Zo voelt een winnende sessie van binnen, ongeveer een derde van de tijd.',
+  'You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive kind of session, because nothing about it tells you to stop.':
+    'Je won chips met {pct} van je beslissingen juist. Betaald krijgen voor de verkeerde keuze is het dure soort sessie, want niets erin zegt je dat je moet stoppen.',
   'Raise size': 'Hoogte van je raise',
   'One chip less': 'Eén chip minder',
   'One chip more': 'Eén chip meer',
