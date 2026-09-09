@@ -2869,6 +2869,8 @@ export const NL = {
     'Alles wat je hebt geleerd is nog vers. {module} is {when}.',
   'Unlocks at {rank}': 'Ontgrendelt bij {rank}',
   '{tier} at {requirement}': '{tier} bij {requirement}',
+  '{tier}: {missing}': '{tier}: {missing}',
+  ' and ': ' en ',
   '**Solid** and **Mastered** measure how widely. A skill is Solid at 15 questions and 75%, and Mastered at 30 questions and 90% with its guided lesson finished. There are {total} skills in all.':
     '**Solid** en **Mastered** meten hoe breed. Een vaardigheid is Solid bij 15 vragen en 75%, en Mastered bij 30 vragen en 90% met de begeleide les afgerond. Er zijn in totaal {total} vaardigheden.',
 

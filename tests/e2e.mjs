@@ -749,6 +749,37 @@ await step('jargon explains itself wherever it appears, in both languages', asyn
   }
 });
 
+await step('a tile says what is still missing, not just what the target is', async () => {
+  // 9 out of 10 is 90%, and Solid asks for 75% — so a tile reading "90%"
+  // beside "Solid at 15 questions at 75%" looks like a bar already cleared.
+  // The half that is short is the count, and working that out meant
+  // subtracting one number on the tile from another.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    // Ten answers at 90% on Outs & Equity, plus just enough elsewhere to
+    // reach Minnow — Outs & Equity is locked until then.
+    raw.drills = { outs: { attempts: 10, correct: 9 }, 'hand-rankings': { attempts: 20, correct: 18 } };
+    raw.walkthroughs = ['hand-rankings'];
+    raw.xp = 600;
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  const tile = await page.evaluate(() => {
+    const found = [...document.querySelectorAll('.module-tile')]
+      .find((n) => /Outs/i.test(n.querySelector('.name')?.textContent || ''));
+    return found ? found.textContent.replace(/\s+/g, ' ') : null;
+  });
+  if (!tile) throw new Error('no tile for Outs & Equity');
+  if (!/9\/10/.test(tile)) throw new Error(`the tile does not show the record: ${tile}`);
+  if (!/5 more questions/i.test(tile)) {
+    throw new Error(`the tile never says how many more are needed: ${tile}`);
+  }
+  console.log(`      tile reads: ${tile.slice(0, 120)}`);
+});
+
 await step('the home screen names one module and the grid marks the same one', async () => {
   // Reported: the banner named a module, the grid showed two tiles both
   // reading "Learning", and nothing said which one was meant or why.
