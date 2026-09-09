@@ -11,7 +11,7 @@ import {
 } from './fundamentals.js';
 import {
   openingDrill, facingRaiseDrill, positionDrill, blindDefenceDrill, handStrengthDrill,
-  matchupEquityDrill, rangeEquityDrill,
+  matchupEquityDrill, rangeEquityDrill, chartBoundaryDrill,
 } from './preflop.js';
 import {
   cbetDrill, mdfDrill, bluffMathDrill, balanceDrill, bluffCatchDrill, sprDrill,
@@ -27,7 +27,8 @@ const GENERATORS = {
   // though it is a pot-odds application: Pot Odds unlocks a level earlier.
   'pot-odds': [potOddsDrill, equityGivenDrill],
   outs: [outsDrill, ruleOfFourDrill, callOrFoldDrill],
-  preflop: [openingDrill, facingRaiseDrill, handStrengthDrill, matchupEquityDrill, rangeEquityDrill],
+  preflop: [openingDrill, facingRaiseDrill, handStrengthDrill, matchupEquityDrill, rangeEquityDrill,
+    chartBoundaryDrill],
   position: [positionDrill, blindDefenceDrill],
   cbet: [cbetDrill],
   mdf: [mdfDrill],

@@ -8,7 +8,7 @@ import { expandHandKey, ALL_HAND_KEYS } from '../core/cards.js';
 import { matchupOf, buildMatchup, DRILLABLE_SHAPES } from '../core/matchup.js';
 import { equityVs } from '../core/equity.js';
 import { VS_RANGE, RANGE_WIDTH, RANGE_POSITIONS } from '../data/rangeEquity.js';
-import { CHARTS, preflopAdvice, POSITIONS, POSITION_INFO, rangePercent } from '../data/ranges.js';
+import { CHARTS, preflopAdvice, POSITIONS, POSITION_INFO, rangePercent, BOUNDARY_ROWS, rowBoundary } from '../data/ranges.js';
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
 import { randInt } from '../core/rng.js';
 import { buildChoices, pct, percentDistractors } from './helpers.js';
@@ -350,4 +350,72 @@ function attemptHand(rng, difficulty, position) {
     if (!best || drop > HAND_STRENGTH[best] - VS_RANGE[position][best]) best = hand;
   }
   return best;
+}
+
+/**
+ * Where a row of the chart stops.
+ *
+ * Every other preflop question shows a hand and asks what to do with it,
+ * which is the chart applied. This asks for the chart itself: how far down
+ * the suited kings you go from each seat. That is the form the boundary is
+ * actually carried in — seven rows and a rule about position beats 169
+ * squares — and it is the only question here you cannot answer by feel.
+ */
+export function chartBoundaryDrill(rng, difficulty = 2) {
+  const usable = [];
+  for (const position of OPEN_POSITIONS) {
+    const chart = CHARTS.rfi[position];
+    if (!chart) continue;
+    for (const row of BOUNDARY_ROWS) {
+      const boundary = rowBoundary(chart, row.high, row.suited);
+      if (boundary) usable.push({ position, row, boundary });
+    }
+  }
+  if (!usable.length) return null;
+  const pick = usable[randInt(rng, usable.length)];
+  const { position, row, boundary } = pick;
+
+  const RANKS = '23456789TJQKA';
+  const highIndex = RANKS.indexOf(row.high);
+  const lowIndex = RANKS.indexOf(boundary[1]);
+  const label = (i) => row.high + RANKS[i] + (row.suited ? 's' : 'o');
+
+  // Four neighbouring rungs of the same row, so the question is "how far
+  // down", never "which of these unrelated hands".
+  const window = [];
+  for (let offset = -1; window.length < 4 && offset <= 3; offset++) {
+    const i = lowIndex + offset;
+    if (i >= 0 && i < highIndex) window.push(i);
+  }
+  for (let i = lowIndex - 2; window.length < 4 && i >= 0; i--) window.unshift(i);
+  if (!window.includes(lowIndex)) return null;
+  window.sort((a, b) => b - a);
+
+  // Strongest rung first, so the four options read as the row itself.
+  const rungOf = (l) => RANKS.indexOf(l[1]);
+  const { options, answer } = buildChoices(rng, boundary, window.map(label),
+    { sorted: (a, b) => rungOf(b) - rungOf(a) });
+
+  // The row across every seat, because the pattern is the thing worth
+  // keeping: the later you sit, the further down the row you go.
+  const across = OPEN_POSITIONS
+    .map((p) => ({ p, b: rowBoundary(CHARTS.rfi[p], row.high, row.suited) }))
+    .filter((x) => x.b)
+    .map((x) => `${x.p} ${x.b}`)
+    .join(' · ');
+
+  return {
+    module: 'preflop',
+    difficulty,
+    scenario: { position, positionName: t(POSITION_INFO[position].name) },
+    question: t('Opening from {seat}: how far down the {row}s do you go? Pick the weakest one you still raise.',
+      { seat: t(POSITION_INFO[position].name), row: t(row.label) }),
+    options,
+    answer,
+    explanation: t('{boundary}. Across the seats this row runs {across} — the further down it you go, the fewer '
+      + 'players are left to act behind you. The small blind is the exception, because it acts last now and '
+      + 'first for the rest of the hand. Seven rows like this one are most of the chart.',
+    { boundary, across }),
+    xp: 10 + difficulty * 2,
+  };
 }

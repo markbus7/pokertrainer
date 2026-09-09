@@ -16,8 +16,10 @@ export function buildChoices(rng, correctLabel, distractorLabels, extra = {}) {
   const answer = options.find((o) => o.label === correctLabel).key;
   // Four percentages in random order have to be read one at a time. In
   // ascending order they are a scale, and picking a place on a scale is the
-  // thing the question is actually asking for.
-  if (extra.sorted) options.sort((a, b) => parseFloat(a.label) - parseFloat(b.label));
+  // thing the question is actually asking for. `sorted` may be a comparator
+  // when the labels are not numbers.
+  if (typeof extra.sorted === 'function') options.sort((a, b) => extra.sorted(a.label, b.label));
+  else if (extra.sorted) options.sort((a, b) => parseFloat(a.label) - parseFloat(b.label));
   else shuffle(rng, options);
   return { options, answer };
 }
