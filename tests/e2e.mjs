@@ -519,6 +519,83 @@ await step('numeric drills make you produce the number, not pick it', async () =
   console.log(`      typed ${mdf}% and it graded correct`);
 });
 
+await step('preflop teaches what a hand is worth, and grades the number', async () => {
+  // The gap this closes: every preflop question used to be multiple choice
+  // about what to DO. Not one of them asked what the hand was worth, so the
+  // percentages were only ever read in an explanation after a different
+  // question had been answered.
+  //
+  // The expected answer is worked out here from the app's own data rather
+  // than read off the screen, so a drill that grades against the wrong
+  // number fails instead of agreeing with itself.
+  const { VS_RANGE } = await import('../src/js/data/rangeEquity.js');
+  const { equityVs } = await import('../src/js/core/equity.js');
+  const { expandHandKey } = await import('../src/js/core/cards.js');
+  const { makeRng } = await import('../src/js/core/rng.js');
+  const seats = { 'Under the Gun': 'UTG', Hijack: 'HJ', Cutoff: 'CO', Button: 'BTN' };
+
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#drill?module=preflop`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+
+  // Both kinds have to be seen: which one comes up is random, and a step
+  // that stops at the first two would pass without ever grading the other.
+  const seen = { allIn: 0, range: 0 };
+  let asked = 0;
+  let sample = '';
+  for (let i = 0; i < 40 && (!seen.allIn || !seen.range); i++) {
+    const question = await page.$eval('.question', (n) => n.textContent).catch(() => '');
+    asked++;
+    const entry = await page.$('.drill-entry-input');
+    let expected = null;
+    let kind = null;
+
+    const allIn = /All-in before the flop: (\S+) against (\S+)\./.exec(question);
+    const vsRange = /You hold (\S+)\..*?Now (.+?) raises/.exec(question);
+    if (entry && allIn) {
+      const rng = makeRng(1);
+      const a = expandHandKey(allIn[1]);
+      const b = expandHandKey(allIn[2]).find((h) => !h.some((c) => a[0].includes(c)));
+      expected = Math.round(equityVs(a[0], [b], [], { trials: 40000, rng }) * 100);
+      kind = 'allIn';
+    } else if (entry && vsRange && seats[vsRange[2]]) {
+      expected = Math.round(VS_RANGE[seats[vsRange[2]]][vsRange[1]] * 100);
+      kind = 'range';
+    }
+
+    if (expected != null) {
+      await entry.fill(String(expected));
+      await page.click('.drill-entry button', { timeout: 2000 });
+      await page.waitForTimeout(250);
+      const feedback = await page.$eval('.feedback', (n) => n.textContent).catch(() => '');
+      if (!(await page.$('.feedback.correct'))) {
+        throw new Error(`independently computed ${expected}% and the drill called it wrong: ${feedback.slice(0, 140)}`);
+      }
+      if (!/%/.test(feedback)) throw new Error(`no percentage in the explanation: ${feedback.slice(0, 120)}`);
+      sample = feedback;
+      seen[kind]++;
+    } else {
+      // Every other preflop question is multiple choice. It still has to be
+      // answered, or the drill never moves on — and a click that waits for a
+      // button which is not there costs half a minute of the suite each time.
+      await page.click('.option', { timeout: 2000 }).catch(() => {});
+      await page.waitForTimeout(150);
+    }
+    // Next question, or the next block of ten when a session runs out.
+    await page.click('button.btn.primary', { timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(280);
+    if (!(await page.$('.question'))) {
+      await page.goto(`${BASE}/#drill?module=preflop`, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(400);
+    }
+  }
+
+  if (!seen.allIn) throw new Error(`asked ${asked} preflop questions and none asked what an all-in is worth`);
+  if (!seen.range) throw new Error(`asked ${asked} preflop questions and none asked what a hand is worth against a range`);
+  console.log(`      graded ${seen.allIn} all-in and ${seen.range} vs-range questions against independently computed numbers`);
+  console.log(`      e.g. ${sample.replace(/\s+/g, ' ').slice(0, 110)}…`);
+});
+
 await step('a graded question can be copied out as text', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'domcontentloaded' });
