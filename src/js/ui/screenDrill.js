@@ -9,6 +9,7 @@ import { generateQuestion, generateGauntlet, difficultyForLevel } from '../train
 import { checkAchievements } from '../state/achievements.js';
 import { masteryTier, nextTierGoal, promotion, tierByKey, EVIDENCE_BAR } from '../state/mastery.js';
 import { review } from '../state/spacing.js';
+import { CHARTS, BOUNDARY_ROWS, rowBoundary } from '../data/ranges.js';
 
 /** The lesson page for a module, with the drill entry point. */
 export function renderLearn(ctx, params) {
@@ -94,6 +95,7 @@ export function renderDrill(ctx, params) {
     correct: 0,
     answered: 0,
     streak: 0,
+    peeked: false,
     xpEarned: 0,
     question: null,
     locked: false,
@@ -114,6 +116,7 @@ export function renderDrill(ctx, params) {
     state.question = gauntlet ? queue[state.index] : generateQuestion(meta.id, rng, difficulty);
     state.locked = false;
     state.typed = null;
+    state.peeked = false;
     state.index++;
     draw();
     return null;
@@ -269,7 +272,10 @@ export function renderDrill(ctx, params) {
       state.streak = 0;
     }
 
-    profile.recordDrill(q.module, wasCorrect);
+    // An answer read off the chart is not an answer you knew. It still
+    // teaches — looking a boundary up is how it gets encoded in the first
+    // place — but crediting it would let mastery be earned by lookup.
+    profile.recordDrill(q.module, wasCorrect && !state.peeked);
     review(profile, q.module, wasCorrect);
     checkAchievements(profile).forEach((a) => toast({ icon: a.icon, title: a.name, desc: a.description }));
     draw(key);
@@ -323,6 +329,7 @@ export function renderDrill(ctx, params) {
     // offers you a shortlist. The options still appear afterwards, marked, so
     // you always see the right number next to the one you gave.
     const entryBox = q.entry && chosen === null ? typedAnswer(q) : null;
+    const sheet = cheatSheet(q);
 
     mount(body,
       scenarioView(q.scenario, ctx.profile.settings),
@@ -360,6 +367,17 @@ export function renderDrill(ctx, params) {
         correct: (q.options.find((o) => o.key === q.answer) || {}).label,
         explanation: q.explanation,
       })),
+      // Somewhere to look. Offered before you answer, because afterwards the
+      // right answer is already on screen and a chart adds nothing.
+      chosen === null && sheet
+        ? (state.peeked
+          ? sheet
+          : el('button.btn.sm.ghost.block', {
+            style: { marginTop: '14px' },
+            onclick: () => { state.peeked = true; draw(); },
+          }, t('Show me the chart')))
+        : null,
+
       chosen !== null && !bounded ? el('button.btn.ghost', { onclick: finish }, 'End session') : null,
       !gauntlet && chosen === null ? el('button.btn.ghost', { onclick: () => go('learn', { module: meta.id }) }, 'Review the lesson') : null,
     );
@@ -391,6 +409,58 @@ export function renderDrill(ctx, params) {
   }
   nextQuestion();
   return root;
+}
+
+/** The modules whose questions a preflop chart is the reference for. */
+const CHART_MODULES = new Set(['preflop', 'position']);
+
+/**
+ * The chart, in the compressed form, for the question on screen.
+ *
+ * Preflop questions used to be asked with nowhere to look anything up: the
+ * Charts tab is a different screen, and leaving mid-session abandons it. A
+ * boundary you have never seen is not a boundary you can retrieve, and being
+ * asked twenty times without it is not practice — it is guessing with a
+ * score attached.
+ *
+ * Returns null when the question is not one a chart answers.
+ */
+function cheatSheet(question) {
+  // Only the two modules these charts actually answer. Defence frequency is
+  // a formula from the numbers in its own question; offering a preflop grid
+  // beside it is noise pretending to be help.
+  if (!CHART_MODULES.has(question.module)) return null;
+  const scenario = question.scenario || {};
+  const defending = Boolean(scenario.raiser);
+  const source = defending ? CHARTS.bbDefend : CHARTS.rfi;
+  const seats = ['UTG', 'HJ', 'CO', 'BTN', 'SB'].filter((p) => source[p]);
+  if (!seats.length) return null;
+
+  const rows = BOUNDARY_ROWS
+    .map((row) => ({
+      row,
+      cells: seats.map((seat) => rowBoundary(source[seat], row.high, row.suited)),
+    }))
+    .filter((entry) => entry.cells.some(Boolean));
+  if (!rows.length) return null;
+
+  const highlight = defending ? scenario.raiser : scenario.position;
+  return el('div.cheat-sheet',
+    el('div.faint', defending
+      ? t('Defending the big blind — how far down each row you still call.')
+      : t('Opening — how far down each row you still raise.')),
+    el('div.cheat-scroll', el('table.cheat-table',
+      el('thead', el('tr',
+        el('th', defending ? t('vs a raise from') : t('Row')),
+        seats.map((seat) => el(`th${seat === highlight ? '.here' : ''}`, seat)),
+      )),
+      el('tbody', rows.map(({ row, cells }) => el('tr',
+        el('th', t(row.label)),
+        cells.map((cell, i) => el(`td${seats[i] === highlight ? '.here' : ''}`, cell || '—')),
+      ))),
+    )),
+    el('div.faint', t('Pairs and suited aces are always in. This one does not count toward your score.')),
+  );
 }
 
 function verdictText(pct, gauntlet) {

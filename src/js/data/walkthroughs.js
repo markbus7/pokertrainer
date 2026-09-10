@@ -1205,7 +1205,20 @@ export const WALKTHROUGHS = {
           'You have already posted one big blind. If someone raises to 2.5, calling costs you only **1.5 more** to play for a pot that already holds around 4. That price is far better than anyone else at the table is getting.',
           'So you defend the big blind much wider than any other seat — hands you would never dream of playing from early position become correct calls here.',
           'But there is a hard limit, and it is position again: you will be **out of position for the rest of the hand, every street**. That is why the range still stops somewhere, and why you defend far wider against a button raise (a wide, weak range) than against an under-the-gun raise (a narrow, strong one).',
+          'Here is where it actually stops. Each row slides further down the further the raise came from, and the whole range roughly doubles between an early raise and a late one — that is the same idea as the opening chart, read from the other side of the table.',
         ],
+        visual: {
+          type: 'table',
+          headers: ['You hold', 'vs UTG', 'vs HJ', 'vs CO', 'vs BTN'],
+          rows: [
+            ['Offsuit aces, down to', 'A9o', 'A7o', 'A4o', 'A2o'],
+            ['Offsuit kings, down to', 'KTo', 'K9o', 'K8o', 'K5o'],
+            ['Suited kings, down to', 'K7s', 'K5s', 'K3s', 'K2s'],
+            ['Suited jacks, down to', 'J8s', 'J7s', 'J6s', 'J4s'],
+            ['Share of all hands', '26%', '32%', '43%', '60%'],
+          ],
+          caption: 'Pairs and suited aces are always in. You do not have to hold this table in your head to use it — the shape is the lesson: **one row, sliding down as the raise comes from later.** The bottom line is the one to remember, because it says the same thing in one number.',
+        },
         check: {
           question: 'Why do you defend your big blind wider against a button raise than against an under-the-gun raise?',
           options: [
@@ -1234,6 +1247,7 @@ export const WALKTHROUGHS = {
       'In position you can take free cards, control the pot, and bluff far more accurately.',
       'The button is the best seat; the blinds lose money for everyone.',
       'Defend the big blind wide because of the discount — wider still against late-position raises.',
+      'Roughly how wide: 26% of hands against an early raise, 43% against the cutoff, 60% against the button.',
     ],
   },
 
