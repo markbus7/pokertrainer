@@ -9,9 +9,23 @@ import { generateQuestion, generateGauntlet, difficultyForLevel } from '../train
 import { checkAchievements } from '../state/achievements.js';
 import { masteryTier, nextTierGoal, promotion, tierByKey, EVIDENCE_BAR } from '../state/mastery.js';
 import { review } from '../state/spacing.js';
+import { WALKTHROUGHS } from '../data/walkthroughs.js';
 import { CHARTS, BOUNDARY_ROWS, rowBoundary } from '../data/ranges.js';
 
 /** The lesson page for a module, with the drill entry point. */
+/** What the guided lesson actually is, in one line, so the name is not a riddle. */
+function walkthroughShape(moduleId) {
+  const walkthrough = WALKTHROUGHS[moduleId];
+  if (!walkthrough || !walkthrough.steps) return null;
+  const steps = walkthrough.steps.length;
+  const checks = walkthrough.steps.filter((step) => step.check).length;
+  return el('div.faint', { style: { marginTop: '8px' } },
+    checks
+      ? t('{steps} short steps, {checks} of them ending in a question. One pass through is what counts as finished.',
+        { steps, checks })
+      : t('{steps} short steps. One pass through is what counts as finished.', { steps }));
+}
+
 /** True when every other requirement for the next tier is already met. */
 function lessonIsTheBlocker(profile, moduleId) {
   const goal = nextTierGoal(profile, moduleId);
@@ -36,10 +50,16 @@ export function renderLearn(ctx, params) {
           ),
         ),
         el('div.row',
+          // The requirement calls this "the guided lesson", so the button
+          // that is it says the same words. It used to say "Teach me this"
+          // while the page above it already showed a summary and key points
+          // — so a reader who had read the page, and was then told to finish
+          // a guided lesson, had no way to tell which of those was meant.
           el('button.btn.primary.lg', { onclick: () => go('walkthrough', { module: meta.id }) },
-            profile.hasCompletedWalkthrough(meta.id) ? 'Read the lesson again' : 'Teach me this'),
+            profile.hasCompletedWalkthrough(meta.id) ? 'Do the guided lesson again' : 'Start the guided lesson'),
           el('button.btn.lg.ghost', { onclick: () => go('drill', { module: meta.id }) }, 'Skip to drills'),
         ),
+        walkthroughShape(meta.id),
         // When the lesson is the only thing left, say so beside the button
         // that does it. Otherwise the two buttons look equally optional and
         // the reader drills a module that is already past both numbers.
@@ -75,7 +95,8 @@ export function renderLearn(ctx, params) {
       el('ul.lesson-points', meta.lesson.points.map((point) => el('li', el('span', point)))),
     ),
     el('div.row',
-      el('button.btn.primary', { onclick: () => go('walkthrough', { module: meta.id }) }, 'Walk me through it, step by step'),
+      el('button.btn.primary', { onclick: () => go('walkthrough', { module: meta.id }) },
+        profile.hasCompletedWalkthrough(meta.id) ? 'Do the guided lesson again' : 'Start the guided lesson'),
       el('button.btn.ghost', { onclick: () => go('drill', { module: meta.id }) },
         t('Drill {module}', { module: t(meta.name) })),
       el('button.btn.ghost', { onclick: () => go('home') }, 'Back'),
