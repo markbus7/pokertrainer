@@ -16,7 +16,12 @@
 
   --text: #e8eef5;
   --text-dim: #93a4b8;
-  --text-faint: #64748b;
+  /* The fourth text tone carries stat labels, the module tiles' score line
+     and every .faint explanation — information, not decoration. At #64748b
+     it sat at 3.33:1 on a card, under the 4.5:1 readable floor, which is a
+     poor bargain on a tablet held in daylight. This clears it everywhere and
+     stays a clear step below --text-dim, so the hierarchy is unchanged. */
+  --text-faint: #7b8da5;
 
   --gold: #e3b23c;
   --gold-dim: #a8801f;

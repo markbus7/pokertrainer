@@ -14,6 +14,7 @@ const modules = [
   './coachEquity.test.js',
   './betSizing.test.js',
   './matchup.test.js',
+  './contrast.test.js',
   './bots.test.js',
   './progression.test.js',
   './sync.test.js',
