@@ -3079,6 +3079,12 @@ export const NL = {
   'finish the guided lesson': 'rond de begeleide les af',
   'One pass through the guided lesson is the only thing left before {tier}. More drilling cannot move it: the answers are already there.':
     'Eén keer door de begeleide les heen is het enige wat nog tussen jou en {tier} staat. Meer drillen verandert er niets aan: de antwoorden staan er al.',
+  'Start the guided lesson': 'Start de begeleide les',
+  'Do the guided lesson again': 'Doe de begeleide les opnieuw',
+  '{steps} short steps, {checks} of them ending in a question. One pass through is what counts as finished.':
+    '{steps} korte stappen, waarvan {checks} eindigen met een vraag. Eén keer doorlopen telt als afgerond.',
+  '{steps} short steps. One pass through is what counts as finished.':
+    '{steps} korte stappen. Eén keer doorlopen telt als afgerond.',
   'Raise size': 'Hoogte van je raise',
   'One chip less': 'Eén chip minder',
   'One chip more': 'Eén chip meer',

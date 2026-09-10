@@ -874,6 +874,19 @@ await step('when only the lesson is left, it says so where the button is', async
     throw new Error(`the lesson page does not flag the last requirement: ${note}`);
   }
 
+  // The requirement names a thing; a button has to carry that name, or the
+  // reader cannot tell which of them it means. The page already shows a
+  // summary and key points, which read like a lesson in their own right.
+  const labels = await page.$$eval('.screen button', (ns) => ns.map((n) => n.textContent.trim()));
+  if (!labels.some((label) => /guided lesson/i.test(label))) {
+    throw new Error(`no button is named after the requirement: ${labels.join(' | ')}`);
+  }
+  // And it says what it is, since the name alone is a riddle.
+  const shape = await page.$$eval('.faint', (ns) => ns.map((n) => n.textContent).find((tx) => /step/i.test(tx)) || null);
+  if (!shape || !/\d/.test(shape)) {
+    throw new Error(`the page never says what the guided lesson consists of: ${shape}`);
+  }
+
   // Once the lesson is done it must stop nagging.
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1'));
