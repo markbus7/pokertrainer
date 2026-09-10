@@ -261,20 +261,18 @@ export function nextUp(profile) {
   if (!unlocked.length) return null;
   const statsOf = (m) => profile.drillStats(m.id);
 
-  // Something never tried beats anything else: you cannot be weak at a skill
-  // you have not attempted, and finding out is one drill away.
-  const untouched = unlocked.find((m) => statsOf(m).attempts === 0);
-  if (untouched) return { module: untouched, reason: 'untouched', stats: statsOf(untouched) };
-
   // Never recommend a module that is already finished, unless they all are.
   const open = unlocked.filter((m) => masteryTier(profile, m.id) !== 'mastered');
   const pool = open.length ? open : unlocked;
   const score = (m) => confidenceAdjusted(statsOf(m).correct, statsOf(m).attempts);
 
-  // A real hole beats an unknown. Among modules you have answered enough of
-  // to judge, anything below the Solid bar is a genuine weakness and outranks
-  // a module you have merely not done much of — one wrong answer out of one
-  // is not evidence of anything, however bad the percentage looks.
+  // A real hole beats an unknown, and this has to be tested before anything
+  // else. An untouched module used to win outright, which sent a reader
+  // sitting at 54% on Position to a module they had never opened — and the
+  // one they were failing was the one the recommendation existed to find.
+  // Among modules answered enough times to judge, anything below the Solid
+  // bar is a genuine weakness; one wrong answer out of one is not evidence
+  // of anything, however bad the percentage looks.
   const judged = pool.filter((m) => statsOf(m).attempts >= EVIDENCE_BAR);
   const weak = judged.filter((m) => score(m) < SOLID_BAR).sort((a, b) => score(a) - score(b))[0];
   if (weak) {
@@ -288,8 +286,12 @@ export function nextUp(profile) {
     return { module: weak, reason, stats };
   }
 
-  // Nothing is demonstrably weak. Whatever you have done least of is where
-  // the next answer tells the game the most.
+  // Nothing is demonstrably weak, so the next answer is worth most where the
+  // game knows least — and it knows nothing at all about a module never
+  // opened. You cannot be weak at a skill you have not attempted.
+  const untouched = pool.find((m) => statsOf(m).attempts === 0);
+  if (untouched) return { module: untouched, reason: 'untouched', stats: statsOf(untouched) };
+
   const thin = pool
     .filter((m) => statsOf(m).attempts < EVIDENCE_BAR)
     .sort((a, b) => statsOf(a).attempts - statsOf(b).attempts)[0];

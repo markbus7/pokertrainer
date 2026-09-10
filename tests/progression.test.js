@@ -316,6 +316,54 @@ describe('progression: drill tracking', () => {
       'three right in a row is not the same as twenty-six');
   });
 
+  it('sends you at the hole you are in, not at a module you have never opened', () => {
+    // The reader's own screen: Position at 54%, Outs at 58%, Preflop at 61%
+    // — three modules under the Solid bar — and the game pointed at Bankroll,
+    // which had never been opened. "Never tried" was tested before "actually
+    // failing" and returned first, so the recommendation could not see the
+    // thing it exists to find.
+    const p = fresh();
+    const played = { 'hand-rankings': [26, 26], 'pot-odds': [30, 39], outs: [32, 55], preflop: [20, 33], position: [7, 13] };
+    for (const [id, [right, total]] of Object.entries(played)) {
+      for (let i = 0; i < right; i++) p.recordDrill(id, true);
+      for (let i = 0; i < total - right; i++) p.recordDrill(id, false);
+    }
+    p.data.xp = 3000;
+    p.data.walkthroughs = ['hand-rankings', 'pot-odds'];
+    p.data.handsPlayed = 60;
+    equal(p.level, 3, 'the fixture reaches the rank that unlocks Bankroll');
+    equal(p.drillStats('bankroll').attempts, 0, 'and Bankroll is untouched');
+
+    const plan = nextUp(p);
+    equal(plan.module.id, 'position', 'the weakest judged module, at 54%');
+    equal(plan.reason, 'weakest');
+  });
+
+  it('falls back to a module never opened once nothing is demonstrably weak', () => {
+    // The other half of the same rule: an untouched module is still the most
+    // informative next answer when there is no hole to fill.
+    const p = fresh();
+    for (let i = 0; i < 20; i++) p.recordDrill('hand-rankings', true);
+    for (let i = 0; i < 20; i++) p.recordDrill('pot-odds', i < 18);
+    p.data.xp = 600;
+    p.data.walkthroughs = ['hand-rankings'];
+    p.data.handsPlayed = 10;
+    assert(p.level >= 2, 'a third module is unlocked and untouched');
+
+    const plan = nextUp(p);
+    equal(plan.reason, 'untouched');
+    equal(p.drillStats(plan.module.id).attempts, 0);
+
+    // Drop one of the finished modules below the bar and the hole wins again.
+    // Its lesson is marked read first, so the answer is "drill this" rather
+    // than "go and read it" — a different branch, tested elsewhere.
+    p.markWalkthroughComplete('pot-odds');
+    for (let i = 0; i < 20; i++) p.recordDrill('pot-odds', false);
+    const after = nextUp(p);
+    equal(after.module.id, 'pot-odds');
+    equal(after.reason, 'weakest', 'a real hole outranks an unknown');
+  });
+
   it('says why, and the reason always matches what it picked', () => {
     const p = promoteTo(fresh(), 5);
     equal(nextUp(p).reason, 'untouched', 'nothing tried yet');
