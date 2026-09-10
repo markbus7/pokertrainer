@@ -693,6 +693,63 @@ await step('preflop teaches what a hand is worth, and grades the number', async 
   console.log(`      e.g. ${sample.replace(/\s+/g, ' ').slice(0, 110)}…`);
 });
 
+await step('a preflop drill has somewhere to look, and a looked-up answer is not credited', async () => {
+  // Position asks where the big-blind defending range stops, twenty times a
+  // session, and the lesson explained only why it is wide. The Charts tab is
+  // a different screen and leaving mid-session abandons it, so there was
+  // nowhere to look: being asked without ever being told is guessing with a
+  // score attached.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    raw.drills = {};
+    for (const [id, n] of [['hand-rankings', 26], ['pot-odds', 39]]) raw.drills[id] = { attempts: n, correct: n - 3 };
+    raw.walkthroughs = ['hand-rankings', 'pot-odds'];
+    raw.xp = 3000;
+    raw.handsPlayed = 60;
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.goto(`${BASE}/#drill?module=position`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+
+  const look = await page.$('button:has-text("Show me the chart")');
+  if (!look) throw new Error('a preflop question offers nowhere to look the chart up');
+  await look.click();
+  await page.waitForTimeout(250);
+
+  const sheet = await page.evaluate(() => {
+    const table = document.querySelector('.cheat-table');
+    if (!table) return null;
+    return {
+      rows: table.querySelectorAll('tbody tr').length,
+      seats: [...table.querySelectorAll('thead th')].map((n) => n.textContent),
+      body: table.textContent.replace(/\s+/g, ' '),
+    };
+  });
+  if (!sheet) throw new Error('the chart button showed no chart');
+  if (sheet.rows < 4) throw new Error(`only ${sheet.rows} rows of chart`);
+  for (const seat of ['UTG', 'CO', 'BTN']) {
+    if (!sheet.seats.includes(seat)) throw new Error(`the sheet is missing ${seat}: ${sheet.seats.join(' ')}`);
+  }
+
+  // Answering after looking still teaches, but it is not evidence of recall,
+  // so it must not be banked as a correct answer.
+  const before = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).drills.position || { attempts: 0, correct: 0 });
+  await page.click('.option.correct, .option', { timeout: 2000 }).catch(() => {});
+  await page.waitForTimeout(400);
+  const after = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).drills.position || { attempts: 0, correct: 0 });
+
+  if (after.attempts !== before.attempts + 1) {
+    throw new Error(`the attempt was not recorded: ${before.attempts} → ${after.attempts}`);
+  }
+  if (after.correct !== before.correct) {
+    throw new Error('an answer read off the chart was banked as one you knew');
+  }
+  console.log(`      chart offered (${sheet.rows} rows), and the peeked answer scored ${after.correct - before.correct}`);
+});
+
 await step('a graded question can be copied out as text', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'domcontentloaded' });

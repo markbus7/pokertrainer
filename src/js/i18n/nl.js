@@ -3051,6 +3051,31 @@ export const NL = {
     'Je verloor chips en koos goed — {pct} van je beslissingen was juist. Over zo\'n korte sessie is het resultaat vooral de kaarten. Zo voelt een winnende sessie van binnen, ongeveer een derde van de tijd.',
   'You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive kind of session, because nothing about it tells you to stop.':
     'Je won chips met {pct} van je beslissingen juist. Betaald krijgen voor de verkeerde keuze is het dure soort sessie, want niets erin zegt je dat je moet stoppen.',
+  'Show me the chart': 'Laat me de chart zien',
+  'Opening — how far down each row you still raise.':
+    'Openen — hoe ver je elke rij afzakt en nog raiset.',
+  'Defending the big blind — how far down each row you still call.':
+    'Big blind verdedigen — hoe ver je elke rij afzakt en nog callt.',
+  'Pairs and suited aces are always in. This one does not count toward your score.':
+    'Paren en suited azen zitten er altijd in. Deze telt niet mee voor je score.',
+  'vs a raise from': 'tegen een raise van',
+  'Row': 'Rij',
+  'Here is where it actually stops. Each row slides further down the further the raise came from, and the whole range roughly doubles between an early raise and a late one — that is the same idea as the opening chart, read from the other side of the table.':
+    'Hier stopt hij daadwerkelijk. Elke rij zakt verder af naarmate de raise van later komt, en de hele range verdubbelt ruwweg tussen een vroege en een late raise — dat is hetzelfde idee als de openingschart, gelezen vanaf de andere kant van de tafel.',
+  'You hold': 'Jij hebt',
+  'vs UTG': 'tegen UTG',
+  'vs HJ': 'tegen HJ',
+  'vs CO': 'tegen CO',
+  'vs BTN': 'tegen BTN',
+  'Offsuit aces, down to': 'Offsuit azen, tot en met',
+  'Offsuit kings, down to': 'Offsuit heren, tot en met',
+  'Suited kings, down to': 'Suited heren, tot en met',
+  'Suited jacks, down to': 'Suited boeren, tot en met',
+  'Share of all hands': 'Aandeel van alle handen',
+  'Pairs and suited aces are always in. You do not have to hold this table in your head to use it — the shape is the lesson: **one row, sliding down as the raise comes from later.** The bottom line is the one to remember, because it says the same thing in one number.':
+    'Paren en suited azen zitten er altijd in. Je hoeft deze tabel niet uit je hoofd te kennen om hem te gebruiken — de vórm is de les: **één rij, die verder afzakt naarmate de raise van later komt.** De onderste regel is degene om te onthouden, want die zegt hetzelfde in één getal.',
+  'Roughly how wide: 26% of hands against an early raise, 43% against the cutoff, 60% against the button.':
+    'Ruwweg hoe breed: 26% van de handen tegen een vroege raise, 43% tegen de cutoff, 60% tegen de button.',
   'Raise size': 'Hoogte van je raise',
   'One chip less': 'Eén chip minder',
   'One chip more': 'Eén chip meer',
