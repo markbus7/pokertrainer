@@ -3076,6 +3076,9 @@ export const NL = {
     'Paren en suited azen zitten er altijd in. Je hoeft deze tabel niet uit je hoofd te kennen om hem te gebruiken — de vórm is de les: **één rij, die verder afzakt naarmate de raise van later komt.** De onderste regel is degene om te onthouden, want die zegt hetzelfde in één getal.',
   'Roughly how wide: 26% of hands against an early raise, 43% against the cutoff, 60% against the button.':
     'Ruwweg hoe breed: 26% van de handen tegen een vroege raise, 43% tegen de cutoff, 60% tegen de button.',
+  'finish the guided lesson': 'rond de begeleide les af',
+  'One pass through the guided lesson is the only thing left before {tier}. More drilling cannot move it: the answers are already there.':
+    'Eén keer door de begeleide les heen is het enige wat nog tussen jou en {tier} staat. Meer drillen verandert er niets aan: de antwoorden staan er al.',
   'Raise size': 'Hoogte van je raise',
   'One chip less': 'Eén chip minder',
   'One chip more': 'Eén chip meer',

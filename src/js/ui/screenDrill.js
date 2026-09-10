@@ -12,6 +12,12 @@ import { review } from '../state/spacing.js';
 import { CHARTS, BOUNDARY_ROWS, rowBoundary } from '../data/ranges.js';
 
 /** The lesson page for a module, with the drill entry point. */
+/** True when every other requirement for the next tier is already met. */
+function lessonIsTheBlocker(profile, moduleId) {
+  const goal = nextTierGoal(profile, moduleId);
+  return Boolean(goal && goal.missing.length === 1 && /lesson/i.test(goal.missing[0]));
+}
+
 export function renderLearn(ctx, params) {
   const meta = moduleMeta(params.module);
   if (!meta) return el('div.empty', 'Unknown module.');
@@ -34,6 +40,15 @@ export function renderLearn(ctx, params) {
             profile.hasCompletedWalkthrough(meta.id) ? 'Read the lesson again' : 'Teach me this'),
           el('button.btn.lg.ghost', { onclick: () => go('drill', { module: meta.id }) }, 'Skip to drills'),
         ),
+        // When the lesson is the only thing left, say so beside the button
+        // that does it. Otherwise the two buttons look equally optional and
+        // the reader drills a module that is already past both numbers.
+        lessonIsTheBlocker(profile, meta.id)
+          ? el('div.notice', { style: { marginTop: '12px' } },
+            t('One pass through the guided lesson is the only thing left before {tier}. '
+              + 'More drilling cannot move it: the answers are already there.',
+            { tier: t(tierByKey('mastered').name) }))
+          : null,
       ),
       stats.attempts
         ? el('div.row', { style: { marginTop: '14px' } },

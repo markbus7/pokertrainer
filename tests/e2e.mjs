@@ -839,6 +839,56 @@ await step('jargon explains itself wherever it appears, in both languages', asyn
   }
 });
 
+await step('when only the lesson is left, it says so where the button is', async () => {
+  // A module at 50/52 and 96% is past both of Mastered's numbers, so the only
+  // thing left is one pass through the guided lesson. The tile named it as a
+  // noun — "Mastered: the guided lesson" — which reads as a category rather
+  // than a thing to do, and the lesson page offered "Teach me this" and
+  // "Skip to drills" as equal options. So the reader kept drilling a module
+  // that no amount of drilling could move.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    raw.drills = { 'hand-rankings': { attempts: 52, correct: 50 } };
+    raw.walkthroughs = [];
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  const tile = await page.evaluate(() => {
+    const found = [...document.querySelectorAll('.module-tile')]
+      .find((n) => /Hand Rankings/i.test(n.querySelector('.name')?.textContent || ''));
+    return found ? found.textContent.replace(/\s+/g, ' ') : null;
+  });
+  if (!tile) throw new Error('no tile for Hand Rankings');
+  if (!/finish the guided lesson/i.test(tile)) {
+    throw new Error(`the tile does not say what to do: ${tile}`);
+  }
+
+  // And the page you land on says it beside the button that does it.
+  await page.goto(`${BASE}/#learn?module=hand-rankings`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  const note = await page.$eval('.notice', (n) => n.textContent.replace(/\s+/g, ' ')).catch(() => null);
+  if (!note || !/only thing left/i.test(note)) {
+    throw new Error(`the lesson page does not flag the last requirement: ${note}`);
+  }
+
+  // Once the lesson is done it must stop nagging.
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1'));
+    raw.walkthroughs = ['hand-rankings'];
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  const after = await page.$eval('.notice', (n) => n.textContent).catch(() => null);
+  if (after && /only thing left/i.test(after)) {
+    throw new Error('the note is still there after the lesson was finished');
+  }
+  console.log('      tile and lesson page both name the last requirement, and it clears');
+});
+
 await step('a tile says what is still missing, not just what the target is', async () => {
   // 9 out of 10 is 90%, and Solid asks for 75% — so a tile reading "90%"
   // beside "Solid at 15 questions at 75%" looks like a bar already cleared.

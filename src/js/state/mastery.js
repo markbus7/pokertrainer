@@ -119,7 +119,10 @@ export function nextTierGoal(profile, moduleId) {
       { need: Math.round(req.accuracy * 100), have: Math.round(accuracy * 100) }));
   }
   if (req.lesson && !profile.hasCompletedWalkthrough(moduleId)) {
-    missing.push(t('the guided lesson'));
+    // An instruction, not a noun. Named as a thing rather than a thing to do,
+    // this read as a category a reader could not act on — so they kept
+    // drilling a module already past both numbers, which could never move it.
+    missing.push(t('finish the guided lesson'));
   }
 
   return {
