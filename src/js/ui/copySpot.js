@@ -39,8 +39,17 @@ export function spotToText(spot) {
   if (Array.isArray(sc.compare)) {
     sc.compare.forEach((hand, i) => lines.push(`Hand ${i === 0 ? 'A' : 'B'}: ${cardsToString(hand)}`));
   }
-  if (sc.pot != null) lines.push(`Pot: ${sc.pot}`);
-  if (sc.toCall != null) lines.push(`To call: ${sc.toCall}`);
+  // "Pot: 50 / To call: 25" reads as a pot of 50 that costs 25 to enter, so
+  // the price looks like 25 of 75. In these spots the 50 is what was there
+  // before the bet, and by the time it is your turn the pot holds both.
+  if (sc.pot != null && sc.toCall != null) {
+    lines.push(`Pot before their bet: ${sc.pot}`);
+    lines.push(`To call: ${sc.toCall}`);
+    lines.push(`Pot now: ${sc.pot + sc.toCall}`);
+  } else {
+    if (sc.pot != null) lines.push(`Pot: ${sc.pot}`);
+    if (sc.toCall != null) lines.push(`To call: ${sc.toCall}`);
+  }
   if (sc.betSize != null) lines.push(`My bet: ${sc.betSize}`);
   if (sc.effectiveStack != null) lines.push(`Effective stack: ${sc.effectiveStack}`);
 

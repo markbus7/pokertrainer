@@ -3085,6 +3085,8 @@ export const NL = {
     '{steps} korte stappen, waarvan {checks} eindigen met een vraag. Eén keer doorlopen telt als afgerond.',
   '{steps} short steps. One pass through is what counts as finished.':
     '{steps} korte stappen. Eén keer doorlopen telt als afgerond.',
+  'There is {pot} in the middle, they add {bet}, and your call adds {bet} more: a final pot of {final}, of which {bet} is yours.':
+    'Er ligt {pot} in het midden, zij leggen er {bet} bij, en jouw call legt er nog {bet} bij: een uiteindelijke pot van {final}, waarvan {bet} van jou is.',
   'Raise size': 'Hoogte van je raise',
   'One chip less': 'Eén chip minder',
   'One chip more': 'Eén chip meer',
