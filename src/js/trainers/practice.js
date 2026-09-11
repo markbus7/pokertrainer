@@ -16,7 +16,9 @@ import { makeDeck, removeCards, cardsToString, rankOf, RANK_NAMES } from '../cor
 import { evaluate, describeScore, categoryOf, kickersOf, CAT } from '../core/evaluator.js';
 import { evaluateHand } from '../core/evaluator.js';
 import { countOuts, describeOuts, handEquity, exactOutsEquity, handPhrase } from '../core/equity.js';
-import { requiredEquity, callEV, minimumDefenceFrequency, breakEvenBluffFrequency, spr, icmEquity } from '../core/odds.js';
+import {
+  requiredEquity, callEV, minimumDefenceFrequency, breakEvenBluffFrequency, spr, icmEquity, PRICE_LADDER,
+} from '../core/odds.js';
 import { handKey } from '../core/cards.js';
 import { preflopAdvice, POSITIONS, POSITION_INFO, CHARTS, rangePercent } from '../data/ranges.js';
 import { readShape, explainShape, shapePhrase, SHAPES, shapeByKey } from '../core/handShape.js';
@@ -25,6 +27,7 @@ import {
 } from '../core/seatMap.js';
 import { STAKES, bankrollAdvice } from '../state/stats.js';
 import { shuffle, randInt, makeRng } from '../core/rng.js';
+import { tableMethod } from './helpers.js';
 import { t } from '../i18n/index.js';
 
 const HOLDEM = { omaha: false, shortDeck: false };
@@ -309,7 +312,7 @@ export function decidePractice(rng = makeRng()) {
             + 'loses about {chips} chips every time.', {
             have: (equity * 100).toFixed(0), bet, final: pot + bet + bet,
             need: (need * 100).toFixed(0), chips: Math.abs(ev).toFixed(0),
-          })}`,
+          })} ${tableMethod(pot, bet)}`,
       };
     },
   };
@@ -605,17 +608,10 @@ export function shapeDecisionPractice(rng = makeRng()) {
  * nothing ever asked for them directly — so they stayed as arithmetic to be
  * redone every time rather than five facts to recall.
  */
-const LADDER = [
-  { fraction: 1 / 4, name: 'a quarter of the pot' },
-  { fraction: 1 / 3, name: 'a third of the pot' },
-  { fraction: 1 / 2, name: 'half the pot' },
-  { fraction: 3 / 4, name: 'three quarters of the pot' },
-  { fraction: 1, name: 'the whole pot' },
-];
 
 export function priceLadderPractice(rng = makeRng()) {
   const pot = [40, 60, 80, 120][randInt(rng, 4)];
-  const rung = LADDER[randInt(rng, LADDER.length)];
+  const rung = PRICE_LADDER[randInt(rng, PRICE_LADDER.length)];
   const bet = Math.round(pot * rung.fraction);
   const need = requiredEquity(bet, pot + bet) * 100;
   const deck = shuffle(rng, makeDeck());

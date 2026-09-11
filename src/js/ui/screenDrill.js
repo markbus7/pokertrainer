@@ -11,6 +11,7 @@ import { masteryTier, nextTierGoal, promotion, tierByKey, EVIDENCE_BAR } from '.
 import { review } from '../state/spacing.js';
 import { WALKTHROUGHS } from '../data/walkthroughs.js';
 import { CHARTS, BOUNDARY_ROWS, rowBoundary } from '../data/ranges.js';
+import { PRICE_LADDER, requiredEquity } from '../core/odds.js';
 
 /** The lesson page for a module, with the drill entry point. */
 /** What the guided lesson actually is, in one line, so the name is not a riddle. */
@@ -407,11 +408,11 @@ export function renderDrill(ctx, params) {
       // right answer is already on screen and a chart adds nothing.
       chosen === null && sheet
         ? (state.peeked
-          ? sheet
+          ? sheet.node
           : el('button.btn.sm.ghost.block', {
             style: { marginTop: '14px' },
             onclick: () => { state.peeked = true; draw(); },
-          }, t('Show me the chart')))
+          }, t(sheet.label)))
         : null,
 
       chosen !== null && !bounded ? el('button.btn.ghost', { onclick: finish }, 'End session') : null,
@@ -449,6 +450,9 @@ export function renderDrill(ctx, params) {
 
 /** The modules whose questions a preflop chart is the reference for. */
 const CHART_MODULES = new Set(['preflop', 'position']);
+// Modules whose questions are a price. What they need is not a chart but
+// the routine for getting to the number without long division.
+const PRICE_MODULES = new Set(['pot-odds', 'outs']);
 
 /**
  * The chart, in the compressed form, for the question on screen.
@@ -462,6 +466,7 @@ const CHART_MODULES = new Set(['preflop', 'position']);
  * Returns null when the question is not one a chart answers.
  */
 function cheatSheet(question) {
+  if (PRICE_MODULES.has(question.module)) return priceSheet();
   // Only the two modules these charts actually answer. Defence frequency is
   // a formula from the numbers in its own question; offering a preflop grid
   // beside it is noise pretending to be help.
@@ -481,7 +486,7 @@ function cheatSheet(question) {
   if (!rows.length) return null;
 
   const highlight = defending ? scenario.raiser : scenario.position;
-  return el('div.cheat-sheet',
+  const node = el('div.cheat-sheet',
     el('div.faint', defending
       ? t('Defending the big blind — how far down each row you still call.')
       : t('Opening — how far down each row you still raise.')),
@@ -497,6 +502,39 @@ function cheatSheet(question) {
     )),
     el('div.faint', t('Pairs and suited aces are always in. This one does not count toward your score.')),
   );
+  return { node, label: 'Show me the chart' };
+}
+
+/**
+ * The shortcut, where you need it: before you answer.
+ *
+ * It was written down once, in step 5 of one lesson, and never appeared
+ * again — so the method the app teaches was not the method anyone reaching
+ * for help would find. The percentages are derived, never typed, so this
+ * card cannot come to disagree with the engine that marks the answer.
+ */
+function priceSheet() {
+  const node = el('div.cheat-sheet',
+    el('div.faint', t('At a table you count, you do not divide.')),
+    el('ol.cheat-steps',
+      el('li', t('How many times does their bet fit into the pot?')),
+      el('li', t('Add two — one for their bet, one for your call.')),
+      el('li', t('That is the final pot counted in calls, and you are putting in one of them.')),
+    ),
+    el('div.cheat-scroll', el('table.cheat-table',
+      el('thead', el('tr', el('th', t('They bet')), el('th', t('In calls')), el('th', t('You need')))),
+      el('tbody', PRICE_LADDER.map(({ fraction, short }) => {
+        const calls = 1 / fraction + 2;
+        return el('tr',
+          el('th', short),
+          el('td', `${Number.isInteger(calls) ? calls : calls.toFixed(1)}`),
+          el('td', `${Math.round(requiredEquity(fraction, 1 + fraction) * 100)}%`),
+        );
+      })),
+    )),
+    el('div.faint', t('Worth knowing cold. This one does not count toward your score.')),
+  );
+  return { node, label: 'Show me the method' };
 }
 
 function verdictText(pct, gauntlet) {

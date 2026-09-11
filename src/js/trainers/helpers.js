@@ -2,6 +2,7 @@
 
 import { shuffle, randInt, pick } from '../core/rng.js';
 import { cardsToString } from '../core/cards.js';
+import { t } from '../i18n/index.js';
 // Board reading moved to core so the table's coach grades a continuation bet
 // against the same texture the drills do.
 export { describeTexture } from '../core/board.js';
@@ -93,3 +94,34 @@ export const cardText = cardsToString;
 export { pick, randInt, shuffle };
 
 /** Random board texture description, for coaching language. */
+
+/**
+ * The same price, the way you would actually reach it at a table.
+ *
+ * Every worked example in this app used to divide — and dividing by 55 is
+ * not something anyone does mid-hand. The lesson teaches counting the final
+ * pot in calls and the price ladder; the explanations modelled neither, so
+ * the method being taught was never the method being demonstrated.
+ */
+export function tableMethod(pot, bet) {
+  const times = pot / bet;
+  const calls = times + 2;
+  const neat = (value) => (Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, ''));
+  const approx = Math.round((1 / calls) * 100);
+
+  // Name the rung when the bet is close to a standard size, because that is
+  // the other shortcut this app drills and they are the same fact twice.
+  const fraction = bet / pot;
+  const rung = fraction <= 0.3 ? null
+    : fraction <= 0.42 ? t('a third-pot bet')
+      : fraction <= 0.62 ? t('a half-pot bet')
+        : fraction <= 0.85 ? t('a three-quarter-pot bet')
+          : fraction <= 1.15 ? t('a pot-sized bet') : null;
+
+  const counted = t('At a table you would not divide: {bet} goes into {pot} {times} times, plus one for their '
+    + 'bet and one for yours makes {calls}, and you are putting in one of them — about {approx}%.',
+  { bet, pot, times: neat(times), calls: neat(calls), approx });
+
+  return rung ? `${counted} ${t('That is {rung}.', { rung })}` : counted;
+}
+
