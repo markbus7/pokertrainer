@@ -10,7 +10,9 @@ import {
 } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, callEV } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
-import { buildChoices, numericDistractors, percentDistractors, attempt, pct } from './helpers.js';
+import {
+  buildChoices, numericDistractors, percentDistractors, attempt, pct, tableMethod,
+} from './helpers.js';
 import { readShape, shapePhrase } from '../core/handShape.js';
 import { t } from '../i18n/index.js';
 
@@ -224,10 +226,11 @@ export function potOddsDrill(rng, difficulty = 2) {
     options,
     answer,
     entry: { unit: '%', value: truePct, tolerance: 2 },
-    explanation: t('You call {bet} to win {potFacing}, so you need {bet} ÷ {final} = {need}. That is {ratio} to 1. '
+    explanation: `${t('You call {bet} to win {potFacing}, so you need {bet} ÷ {final} = {need}. That is {ratio} to 1. '
       + 'Notice your cards never entered that sum: the price is a property of the bet, not of your hand. What '
       + 'your cards decide is whether you can pay it.',
-    { bet, potFacing, final: potFacing + bet, need: pct(need, 1), ratio: potOddsRatio(bet, potFacing).toFixed(1) }),
+    { bet, potFacing, final: potFacing + bet, need: pct(need, 1), ratio: potOddsRatio(bet, potFacing).toFixed(1) })
+    } ${tableMethod(pot, bet)}`,
     xp: 10 + difficulty * 2,
   };
 }
@@ -270,13 +273,14 @@ export function equityGivenDrill(rng, difficulty = 2) {
       + '{pot} in the pot and they bet {bet}. Call or fold?', { equity: pct(equity), pot, bet }),
     options,
     answer,
-    explanation: shouldCall
+    explanation: `${shouldCall
       ? t('You call {bet} to win {final}, so you need {bet} ÷ {final} = {need}. You have {equity}, which is more '
         + 'than the price asks. Calling wins about {chips} chips every time.',
         { bet, final, need: pct(need, 1), equity: pct(equity), chips: ev.toFixed(1) })
       : t('You call {bet} to win {final}, so you need {bet} ÷ {final} = {need}. You have {equity}, which is less '
         + 'than the price asks. Calling loses about {chips} chips every time.',
-        { bet, final, need: pct(need, 1), equity: pct(equity), chips: Math.abs(ev).toFixed(1) }),
+        { bet, final, need: pct(need, 1), equity: pct(equity), chips: Math.abs(ev).toFixed(1) })
+    } ${tableMethod(pot, bet)}`,
     xp: 12 + difficulty * 2,
   };
 }
@@ -345,7 +349,7 @@ export function callOrFoldDrill(rng, difficulty = 3) {
     explanation: `${describeOuts(hero, villain, board).sentence} `
       + t('With two cards to come, {count} outs is roughly {rough}% by the rule of 4; the exact figure is {exact}.',
         { count, rough: count * 4, exact: pct(equity, 1) })
-      + `${reconcile} ${sum} ${price}`,
+      + `${reconcile} ${sum} ${price} ${tableMethod(pot, bet)}`,
     xp: 14 + difficulty * 3,
   };
 }

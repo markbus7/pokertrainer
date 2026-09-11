@@ -3052,6 +3052,18 @@ export const NL = {
   'You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive kind of session, because nothing about it tells you to stop.':
     'Je won chips met {pct} van je beslissingen juist. Betaald krijgen voor de verkeerde keuze is het dure soort sessie, want niets erin zegt je dat je moet stoppen.',
   'Show me the chart': 'Laat me de chart zien',
+  'Show me the method': 'Laat me de methode zien',
+  'At a table you count, you do not divide.': 'Aan tafel tel je, je deelt niet.',
+  'How many times does their bet fit into the pot?': 'Hoe vaak past hun bet in de pot?',
+  'Add two — one for their bet, one for your call.':
+    'Tel er twee bij op — één voor hun bet, één voor jouw call.',
+  'That is the final pot counted in calls, and you are putting in one of them.':
+    'Dat is de eindpot geteld in calls, en jij legt er één van in.',
+  'They bet': 'Zij betten',
+  'In calls': 'In calls',
+  'You need': 'Jij hebt nodig',
+  'Worth knowing cold. This one does not count toward your score.':
+    'Waard om uit je hoofd te kennen. Deze telt niet mee voor je score.',
   'Opening — how far down each row you still raise.':
     'Openen — hoe ver je elke rij afzakt en nog raiset.',
   'Defending the big blind — how far down each row you still call.':
@@ -3087,6 +3099,13 @@ export const NL = {
     '{steps} korte stappen. Eén keer doorlopen telt als afgerond.',
   'There is {pot} in the middle, they add {bet}, and your call adds {bet} more: a final pot of {final}, of which {bet} is yours.':
     'Er ligt {pot} in het midden, zij leggen er {bet} bij, en jouw call legt er nog {bet} bij: een uiteindelijke pot van {final}, waarvan {bet} van jou is.',
+  'At a table you would not divide: {bet} goes into {pot} {times} times, plus one for their bet and one for yours makes {calls}, and you are putting in one of them — about {approx}%.':
+    'Aan tafel zou je niet delen: {bet} past {times} keer in {pot}, plus één voor hun bet en één voor die van jou maakt {calls}, en jij legt er één van in — ongeveer {approx}%.',
+  'That is {rung}.': 'Dat is {rung}.',
+  'a third-pot bet': 'een derde-pot bet',
+  'a half-pot bet': 'een halve-pot bet',
+  'a three-quarter-pot bet': 'een driekwart-pot bet',
+  'a pot-sized bet': 'een pot-sized bet',
   'Raise size': 'Hoogte van je raise',
   'One chip less': 'Eén chip minder',
   'One chip more': 'Eén chip meer',

@@ -750,6 +750,52 @@ await step('a preflop drill has somewhere to look, and a looked-up answer is not
   console.log(`      chart offered (${sheet.rows} rows), and the peeked answer scored ${after.correct - before.correct}`);
 });
 
+await step('a pot-odds question offers the shortcut, not a chart', async () => {
+  // The fast method lived in one lesson step and nowhere else: the worked
+  // examples all divided, and the only thing to reach for mid-question was a
+  // preflop grid that prices nothing. Reaching for help here has to produce
+  // the routine you would actually run at a table.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#drill?module=pot-odds`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+
+  if (await page.$('button:has-text("Show me the chart")')) {
+    throw new Error('a pot-odds question offers a preflop chart');
+  }
+  const look = await page.$('button:has-text("Show me the method")');
+  if (!look) throw new Error('a pot-odds question offers nowhere to look the method up');
+  await look.click();
+  await page.waitForTimeout(250);
+
+  const card = await page.evaluate(() => {
+    const sheet = document.querySelector('.cheat-sheet');
+    if (!sheet) return null;
+    return {
+      steps: sheet.querySelectorAll('.cheat-steps li').length,
+      rows: [...sheet.querySelectorAll('.cheat-table tbody tr')]
+        .map((tr) => [...tr.children].map((c) => c.textContent.trim())),
+      text: sheet.textContent.replace(/\s+/g, ' '),
+    };
+  });
+  if (!card) throw new Error('the method button showed no method');
+  if (card.steps !== 3) throw new Error(`the counting routine is ${card.steps} steps, not 3`);
+  if (!/divide/i.test(card.text)) throw new Error('the card never says what it is instead of');
+
+  // The five rungs, with the numbers the lesson tells you to memorise.
+  const expected = [['¼ pot', '6', '17%'], ['⅓ pot', '5', '20%'], ['½ pot', '4', '25%'],
+    ['¾ pot', '3.3', '30%'], ['pot', '3', '33%']];
+  if (card.rows.length !== expected.length) {
+    throw new Error(`the ladder has ${card.rows.length} rungs, not ${expected.length}`);
+  }
+  expected.forEach(([size, calls, need], i) => {
+    const got = card.rows[i];
+    if (got[0] !== size || got[1] !== calls || got[2] !== need) {
+      throw new Error(`rung ${i + 1} reads ${got.join(' / ')}, expected ${size} / ${calls} / ${need}`);
+    }
+  });
+  console.log(`      ${card.steps} steps and ${card.rows.length} rungs, ${card.rows.map((r) => r.join('=')).join(' ')}`);
+});
+
 await step('a graded question can be copied out as text', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'domcontentloaded' });

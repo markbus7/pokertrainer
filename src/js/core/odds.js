@@ -11,6 +11,22 @@ export function requiredEquity(callAmount, pot) {
 }
 
 /** Pot odds expressed the way they are spoken at the table: "3.5 to 1". */
+/**
+ * The five bet sizes that actually get used, and the names to say them by.
+ *
+ * Lived privately inside one practice drill, so the cheat sheet, the drill
+ * and the lesson each had their own copy of the same five facts. Percentages
+ * are never stored — callers derive them with requiredEquity, so the taught
+ * number and the graded number cannot drift apart.
+ */
+export const PRICE_LADDER = [
+  { fraction: 1 / 4, name: 'a quarter of the pot', short: '¼ pot' },
+  { fraction: 1 / 3, name: 'a third of the pot', short: '⅓ pot' },
+  { fraction: 1 / 2, name: 'half the pot', short: '½ pot' },
+  { fraction: 3 / 4, name: 'three quarters of the pot', short: '¾ pot' },
+  { fraction: 1, name: 'the whole pot', short: 'pot' },
+];
+
 export function potOddsRatio(callAmount, pot) {
   if (callAmount <= 0) return Infinity;
   return pot / callAmount;
