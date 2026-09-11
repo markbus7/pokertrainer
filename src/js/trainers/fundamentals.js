@@ -321,6 +321,11 @@ export function callOrFoldDrill(rng, difficulty = 3) {
       ? ` ${t('It comes out a little above that because some runner-runner cards win for you too.')}`
       : ` ${t('It comes out a little below that because a few of those cards can still be beaten by the river.')}`;
 
+  // Show the final pot being built rather than asserting it. Quoting
+  // "25 ÷ 100" beside a board that says the pot is 50 leaves the 100 coming
+  // from nowhere, and the obvious reading of 50 and 25 is 25 ÷ 75.
+  const sum = t('There is {pot} in the middle, they add {bet}, and your call adds {bet} more: a final pot of '
+    + '{final}, of which {bet} is yours.', { pot, bet, final: pot + bet + bet });
   const price = shouldCall
     ? t('The price demands {bet} ÷ {final} = {need}, so you have more than enough. Calling wins about {chips} '
       + 'chips every time you make it.',
@@ -340,7 +345,7 @@ export function callOrFoldDrill(rng, difficulty = 3) {
     explanation: `${describeOuts(hero, villain, board).sentence} `
       + t('With two cards to come, {count} outs is roughly {rough}% by the rule of 4; the exact figure is {exact}.',
         { count, rough: count * 4, exact: pct(equity, 1) })
-      + `${reconcile} ${price}`,
+      + `${reconcile} ${sum} ${price}`,
     xp: 14 + difficulty * 3,
   };
 }

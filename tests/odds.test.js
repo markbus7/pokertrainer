@@ -4,6 +4,8 @@ import {
   bluffToValueRatio, bluffShareOfRange, spr, impliedOddsNeeded, icmEquity, riskOfRuin,
   bankrollForRisk, bbPer100,
 } from '../src/js/core/odds.js';
+import { makeRng } from '../src/js/core/rng.js';
+import { callOrFoldDrill } from '../src/js/trainers/fundamentals.js';
 
 describe('odds: pot odds', () => {
   it('prices a half-pot call at 25%', () => {
@@ -104,5 +106,47 @@ describe('odds: bankroll', () => {
 
   it('computes win rate in bb/100', () => {
     close(bbPer100(250, 5000), 5, 1e-9);
+  });
+});
+
+describe('pot odds: the price is shown being built, not asserted', () => {
+  it('spells out the final pot in every call-or-fold explanation', () => {
+    // "25 ÷ 100" beside a board reading "pot 50, bet 25" leaves the 100
+    // coming from nowhere, and the obvious reading of those two numbers is
+    // 25 of 75. Every explanation now shows the sum that makes the 100.
+    const rng = makeRng(4242);
+    let checked = 0;
+    for (let i = 0; i < 200 && checked < 40; i++) {
+      const q = callOrFoldDrill(rng, 2);
+      if (!q) continue;
+      const { pot, toCall } = q.scenario;
+      const final = pot + toCall + toCall;
+
+      // The figure the price divides by has to appear as a sum, not only as
+      // a result, and the pot on the felt has to be in it.
+      assert(q.explanation.includes(`${toCall} ÷ ${final}`),
+        `the price is not quoted against the final pot: ${q.explanation}`);
+      assert(q.explanation.includes(String(final)) && q.explanation.includes(String(pot)),
+        `the explanation never connects ${pot} on the felt to ${final} in the price`);
+
+      // And the price itself must be the real one.
+      close(requiredEquity(toCall, pot + toCall), toCall / final, 0.0001,
+        'the required equity is the call over the final pot');
+      checked++;
+    }
+    assert(checked > 30, `enough explanations checked (${checked})`);
+  });
+
+  it('prices a bet the reader can verify by hand', () => {
+    // The worked example from the lesson, and the one that caused the
+    // question: 50 in the pot, a bet of 25, so 100 in the end and 25 of it
+    // is yours.
+    equal(Math.round(requiredEquity(25, 50 + 25) * 1000) / 10, 25);
+    equal(Math.round(requiredEquity(50, 100 + 50) * 1000) / 10, 25);
+    equal(Math.round(requiredEquity(55, 55 + 55) * 1000) / 10, 33.3);
+    // And the reading that looks right but is not: the pot on the felt is
+    // what was there before the bet, so it is not the denominator.
+    assert(Math.abs(requiredEquity(25, 50) - 0.333) < 0.001,
+      'treating the pre-bet pot as the whole pot gives the 33% that feels right');
   });
 });
