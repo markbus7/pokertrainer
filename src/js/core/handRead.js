@@ -123,7 +123,10 @@ export const equitiesFor = (board, candidates) => (board.length >= 5
  */
 export function actionChances(profile, equity, situation) {
   const { toCall = 0, needed = 0, street = 'flop', heroIsAggressor = false } = situation;
-  const p = getProfile(profile.key || profile);
+  // getProfile hands an object straight back, so an adapted profile keeps its
+  // adjustments here. Looking the key up again would read the archetype while
+  // the bot plays an adjusted version of it — a read of somebody else.
+  const p = getProfile(profile);
 
   if (toCall > 0) {
     const valueRaise = equity > CUTS.valueRaise(p) ? CUTS.valueRaiseChance(p) : 0;

@@ -945,6 +945,71 @@ await step('the table asks for a read before it hands back the buttons', async (
   console.log(`      asked, answered, recorded (${attempts} attempt) — "${said.replace(/\s+/g, ' ').slice(0, 76)}…"`);
 });
 
+await step('opponents notice how you play, and say so', async () => {
+  // The wiring no unit test can reach: the reader's folds reach the session
+  // memory, the memory reaches the table, the table reaches botAction and the
+  // coach. Slow — it takes a dozen spots facing a bet before anyone is
+  // entitled to a conclusion — but silence here is a table that quietly got
+  // harder, which is the opposite of the lesson.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    raw.xp = 30000;
+    raw.handsPlayed = 5000;
+    raw.walkthroughs = ['hand-rankings', 'pot-odds', 'outs', 'preflop', 'position',
+      'cbet', 'mdf', 'bluffing', 'spr', 'exploit'];
+    raw.drills = {};
+    for (const id of raw.walkthroughs) {
+      raw.drills[id] = { attempts: 40, correct: 39, best: 'mastered', recent: '1'.repeat(30) };
+    }
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(900);
+
+  // Fold to everything. The most exploitable way to play, and the one an
+  // observant opponent should punish.
+  const deadline = Date.now() + 150000;
+  let notice = null;
+  while (Date.now() < deadline && !notice) {
+    const band = await page.$('.read-bands .btn');
+    if (band) { await band.click().catch(() => {}); await page.waitForTimeout(150); continue; }
+    const fold = await page.$('.action-buttons .btn.danger');
+    const other = (await page.$('.action-buttons .btn')) || (await page.$('.action-bar .btn.primary'));
+    await (fold || other)?.click().catch(() => {});
+    await page.waitForTimeout(220);
+    notice = await page.evaluate(() => {
+      const n = [...document.querySelectorAll('.notice')]
+        .find((el) => /noticed how you play|gezien hoe jij speelt/i.test(el.textContent));
+      return n ? n.textContent.replace(/\s+/g, ' ') : null;
+    });
+  }
+  if (!notice) throw new Error('folded to everything as a Pro and nobody ever noticed');
+  if (!/folded to \d+%/.test(notice)) throw new Error(`the notice does not say what it saw: ${notice}`);
+  if (!/bluffing you more often/i.test(notice)) throw new Error(`it does not say what changed: ${notice}`);
+  if (/Stan/.test(notice)) throw new Error(`the calling station is not supposed to notice: ${notice}`);
+  console.log(`      ${notice.slice(0, 116)}…`);
+
+  // These steps share one profile, and this one needs a Pro's hand count to
+  // exist at all. Put it back, or a later test about crediting ten hands
+  // counts five thousand and fails about something it is not testing.
+  //
+  // Leave the table first and reload: the screen holds a live profile object
+  // that writes itself back on the next save, straight over the reset.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    raw.handsPlayed = 0;
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(300);
+  const left = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).handsPlayed);
+  if (left !== 0) throw new Error(`the fixture did not clean up after itself: ${left} hands left`);
+});
+
 await step('a graded question can be copied out as text', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'domcontentloaded' });

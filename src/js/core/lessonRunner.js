@@ -13,7 +13,7 @@
  * table says out loud that this part is being played for you.
  */
 
-import { botAction } from '../engine/bots.js';
+import { botAction, profileAt } from '../engine/bots.js';
 import { makeRng, shuffle } from './rng.js';
 import { makeDeck } from './cards.js';
 import { STREETS } from '../engine/table.js';
@@ -82,7 +82,10 @@ export function tableReadRange(table, hero, live, toCall) {
   if (table.variant && (table.variant.omaha || table.variant.shortDeck)) return null;
   const villain = table.contestants.find((p) => !p.isHero && p.profile);
   if (!villain) return null;
-  return readRange(villain.profile, table.board, 'bet', {
+  // The profile they are actually playing, adjustments included. Reading the
+  // archetype while the seat plays an adapted version of it would be a read
+  // of somebody who is not at the table.
+  return readRange(profileAt(table, villain), table.board, 'bet', {
     toCall: 0,
     street: table.street,
     heroIsAggressor: table.lastAggressor ? table.lastAggressor.isHero : false,
