@@ -55,8 +55,11 @@
   /* Bodoni for anything that announces itself — the engraved register of a
      chip plaque and a table sign. Archivo does the interface work; it has a
      grotesque's spine rather than a system font's neutrality. */
-  --font-display: 'Bodoni Moda', Georgia, 'Times New Roman', serif;
-  --font: 'Archivo', system-ui, -apple-system, sans-serif;
+  /* One family. A display serif was tried for headings and it was wrong:
+     high-contrast didone strokes go spindly on short words like "Nit" and
+     read as a fashion masthead rather than a card room. */
+  --font-display: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --mono: 'IBM Plex Mono', 'SF Mono', Menlo, Consolas, monospace;
 
   --t-xs: 0.75rem;
@@ -1471,9 +1474,8 @@ body { font-size: var(--t-base); }
 }
 
 .brand {
-  font-family: var(--font-display);
   font-weight: 700;
-  font-size: var(--t-md);
+  font-size: var(--t-base);
   letter-spacing: 0.01em;
 }
 .brand .pip { color: var(--gold); }
@@ -1482,12 +1484,11 @@ body { font-size: var(--t-base); }
 
 h1, h2 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: var(--tracking-tight);
-  font-feature-settings: 'lnum' 1;
 }
-h1 { font-size: var(--t-2xl); }
-h2 { font-size: var(--t-xl); }
+h1 { font-size: var(--t-lg); }
+h2 { font-size: var(--t-md); }
 /* A section label, which is what an h3 is inside a panel's title bar. The
    tracked capitals are the labelling register — applied to every h3 they
    also shouted a run's score back as "10 OF 10 — THAT IS A PASS", which is a
@@ -1554,7 +1555,7 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
 }
 .stat .value {
   font-family: var(--font-display);
-  font-size: var(--t-2xl);
+  font-size: var(--t-xl);
   font-weight: 700;
   color: var(--gold);
   line-height: 1.1;
