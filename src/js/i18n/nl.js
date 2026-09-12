@@ -3052,6 +3052,8 @@ export const NL = {
   'You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive kind of session, because nothing about it tells you to stop.':
     'Je won chips met {pct} van je beslissingen juist. Betaald krijgen voor de verkeerde keuze is het dure soort sessie, want niets erin zegt je dat je moet stoppen.',
   'Show me the chart': 'Laat me de chart zien',
+  'Counted on your best. {n} of these skills are below that on recent answers — each lesson page shows which, and what would bring it back.':
+    'Geteld op je beste stand. {n} van deze vaardigheden zitten daaronder op je recente antwoorden — elke lessenpagina laat zien welke, en wat het terugbrengt.',
   'A new answer pushes the oldest out, so it takes a run of {run}, not {gap}.':
     'Een nieuw antwoord duwt het oudste eruit, dus het kost een reeks van {run}, niet {gap}.',
   'Your way to Mastered': 'Jouw weg naar Mastered',

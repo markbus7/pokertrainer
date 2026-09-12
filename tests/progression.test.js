@@ -7,7 +7,7 @@ import {
   MODULE_META, unlockedModules, recommendedModule, nextUp, confidenceAdjusted,
 } from '../src/js/data/curriculum.js';
 import { makeRng } from '../src/js/core/rng.js';
-import { scoreLine, EVIDENCE_BAR } from '../src/js/state/mastery.js';
+import { scoreLine, EVIDENCE_BAR, bestTier, tierRank, masteryTier } from '../src/js/state/mastery.js';
 
 /** Earn a rank properly: the lessons, the drilling, the hands, then the XP. */
 const promoteTo = (p, level) => {
@@ -85,6 +85,32 @@ describe('progression: ranks', () => {
     const p = promoteTo(fresh(), 4);
     equal(p.level, 4);
     assert(meetsRank(p, RANKS[3]), 'level 4 requirements are satisfied');
+  });
+
+  it('does not take back a rank, or a module, over a bad run of answers', () => {
+    // Tiers read a window of recent answers, and ranks count tiers — so a
+    // live count made the avatar flicker: at 85% accuracy, 15 rank drops over
+    // 1200 answers. A module's unlock is gated on rank, so those drops took
+    // back the Bankroll tab from someone who had already earned it. Rank
+    // counts the best reading of the record; the tile keeps the live one.
+    const p = promoteTo(fresh(), 3);
+    const before = p.level;
+    const unlockedBefore = MODULE_META.filter((m) => m.unlockLevel <= before).length;
+
+    // A genuinely bad session on everything that was carrying the rank.
+    for (const m of MODULE_META) {
+      if (p.drillStats(m.id).attempts) for (let i = 0; i < 20; i++) p.recordDrill(m.id, false);
+    }
+    equal(p.level, before, 'a bad run is form, not a lost career');
+    equal(MODULE_META.filter((m) => m.unlockLevel <= p.level).length, unlockedBefore,
+      'nothing that was unlocked may lock again');
+
+    // And the live reading still reports the trouble, or nothing would send
+    // the reader back at it.
+    const worked = MODULE_META.find((m) => p.drillStats(m.id).attempts > 20);
+    equal(masteryTier(p, worked.id), 'learning', 'the tile has to show current form');
+    assert(tierRank(bestTier(p, worked.id)) > tierRank('learning'),
+      'and the rank keeps counting what was actually earned');
   });
 
   it('gives up a rank when the skills behind it are gone', () => {

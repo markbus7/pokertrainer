@@ -291,6 +291,24 @@ export function tierPlan(profile, moduleId) {
 }
 
 /**
+ * The best tier a module has ever reached.
+ *
+ * A second reading of the same evidence, for the one consumer that needs a
+ * different question answered. A tile asks "how sharp am I now" and must be
+ * live. A rank asks "how far have I come", and reading it live made the
+ * avatar flicker: simulated at 85% accuracy the rank fell 15 times over 1200
+ * answers, and because a module's unlock is gated on rank, a bad quarter of
+ * an hour took back the Bankroll tab. Ranks are still lost if the evidence
+ * behind them goes — this is a high-water mark over a record, not over a
+ * badge.
+ */
+export function bestTier(profile, moduleId) {
+  const live = masteryTier(profile, moduleId);
+  const best = profile.drillStats(moduleId).best || 'untouched';
+  return tierRank(live) >= tierRank(best) ? live : best;
+}
+
+/**
  * Compare tiers around an action so a promotion can be announced at the
  * moment it happens, rather than discovered later on a tile.
  */
