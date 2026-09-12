@@ -14,7 +14,7 @@ export function scenarioView(scenario, settings = {}) {
   const villainIsProfile = scenario.villain && !Array.isArray(scenario.villain);
   if (villainIsProfile) {
     parts.push(el('div.row', { style: { gap: '10px' } },
-      el('span', { style: { fontSize: '1.6rem' } }, scenario.villain.emoji),
+      el('span.style-tag.lg', scenario.villain.tag),
       el('div',
         el('div', { style: { fontWeight: '650' } }, `${scenario.villain.name} — ${scenario.villain.style}`),
         el('div.faint', scenario.villain.tell),
@@ -78,8 +78,8 @@ export function scenarioView(scenario, settings = {}) {
   if (numbers.length) {
     parts.push(el('div.row', { style: { gap: '18px', marginTop: '4px' } },
       numbers.map(([k, v]) => el('div',
-        el('div.faint', { style: { fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em' } }, k),
-        el('div.mono', { style: { fontSize: '1.1rem', fontWeight: '700' } }, v),
+        el('div.faint', { style: { fontSize: 'var(--t-xs)', textTransform: 'uppercase', letterSpacing: '0.06em' } }, k),
+        el('div.mono', { style: { fontSize: 'var(--t-md)', fontWeight: '700' } }, v),
       )),
     ));
   }
@@ -106,7 +106,7 @@ export function scenarioView(scenario, settings = {}) {
 
 function labelled(label, node) {
   return el('div',
-    el('div.faint', { style: { fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' } }, label),
+    el('div.faint', { style: { fontSize: 'var(--t-xs)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' } }, label),
     node,
   );
 }

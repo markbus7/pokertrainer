@@ -151,7 +151,7 @@ export function exploitDrill(rng, difficulty = 5) {
   return {
     module: 'exploit',
     difficulty,
-    scenario: { ...dealt, villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) } },
+    scenario: { ...dealt, villain: { name: villain.name, style: t(villain.style), tag: villain.tag, tell: t(villain.tell) } },
     question: t(spot.question),
     options,
     answer,

@@ -54,7 +54,7 @@ export function renderFelt(state) {
           : el('div.seat-cards'),
       el('div.seat-plate',
         el('div.seat-name',
-          !p.isHero && p.emoji ? el('span', p.emoji) : null,
+          !p.isHero && p.tag ? el('span.style-tag', p.tag) : null,
           p.name,
         ),
         el('div.seat-stack', p.sittingOut ? 'sitting out' : fmt.chips(p.stack)),

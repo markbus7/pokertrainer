@@ -59,7 +59,7 @@ function renderSlipped(profile, go) {
             el('span.module-glyph', icon(meta.icon, { size: 18 })),
             el('div',
               el('div', { style: { fontWeight: '600' } }, meta.name),
-              el('div.faint', { style: { fontSize: '0.78rem' } },
+              el('div.faint', { style: { fontSize: 'var(--t-xs)' } },
                 t('{was} → {now} on recent answers', {
                   was: t(tierByKey(was).name), now: t(tierByKey(now).name),
                 })),
@@ -81,15 +81,15 @@ function renderCurrent(profile, rank, next) {
   return el('div.panel',
     el('div.spread',
       el('div.row',
-        el('div', { style: { fontSize: '3.2rem', lineHeight: '1' } }, rank.emoji),
+        el('div', { style: { fontSize: 'var(--t-3xl)', lineHeight: '1' } }, rank.emoji),
         el('div',
-          el('div', { style: { fontSize: '1.5rem', fontWeight: '700' } }, rank.name),
+          el('div', { style: { fontSize: 'var(--t-lg)', fontWeight: '700' } }, rank.name),
           el('div.faint', t('Level {level} of {total}', { level: rank.level, total: RANKS.length })),
           el('div.faint', { style: { marginTop: '4px', maxWidth: '46ch' } }, rank.blurb),
         ),
       ),
       el('div', { style: { textAlign: 'right' } },
-        el('div.mono', { style: { fontSize: '1.4rem', fontWeight: '700', color: 'var(--gold)' } },
+        el('div.mono', { style: { fontSize: 'var(--t-lg)', fontWeight: '700', color: 'var(--gold)' } },
           fmt.chips(profile.xp)),
         el('div.faint', 'total XP'),
       ),
@@ -101,7 +101,7 @@ function renderCurrent(profile, rank, next) {
             el('span.faint.mono', `${Math.round(profile.progress * 100)}%`),
           ),
           el('div.bar', el('span', { style: { width: `${Math.round(profile.progress * 100)}%` } })),
-          el('div.faint', { style: { marginTop: '6px', fontSize: '0.8rem' } },
+          el('div.faint', { style: { marginTop: '6px', fontSize: 'var(--t-sm)' } },
             'The bar tracks whichever requirement is furthest behind, so it only fills when all of them do.'),
         )
       : null,
@@ -153,7 +153,7 @@ export function requirementRow(r, { showSurplus = false } = {}) {
       })),
     // Why the count is short can matter as much as the count: a window that
     // is not full yet is missing questions, not right answers.
-    r.note ? el('div.faint', { style: { marginTop: '5px', fontSize: '0.76rem' } }, r.note) : null,
+    r.note ? el('div.faint', { style: { marginTop: '5px', fontSize: 'var(--t-xs)' } }, r.note) : null,
   );
 }
 
@@ -176,7 +176,7 @@ function renderLadder(profile, current, next) {
       el('h2', 'The ladder'),
       el('span.faint', t('{n} of {total} reached', { n: current.level, total: RANKS.length })),
     ),
-    el('div.faint', { style: { marginBottom: '10px', fontSize: '0.82rem' } },
+    el('div.faint', { style: { marginBottom: '10px', fontSize: 'var(--t-sm)' } },
       'Tap any rank you have reached to see what it took.'),
     el('div.stack-sm', RANKS.map((rank) => ladderRow(profile, rank, current, next))),
   );
@@ -199,39 +199,39 @@ function ladderRow(profile, rank, current, next) {
   const rows = openable ? requirementRows(profile, rank) : [];
 
   const detail = el('div', { hidden: !isNext, style: { marginTop: '8px' } },
-    el('div.faint', { style: { fontSize: '0.82rem', marginBottom: '6px' } }, rank.blurb),
+    el('div.faint', { style: { fontSize: 'var(--t-sm)', marginBottom: '6px' } }, rank.blurb),
     rank.level === 1
-      ? el('div.faint', { style: { fontSize: '0.82rem' } }, 'Where everybody starts. Nothing to earn.')
+      ? el('div.faint', { style: { fontSize: 'var(--t-sm)' } }, 'Where everybody starts. Nothing to earn.')
       : el('div', rows.map((r) => requirementRow(r, { showSurplus: achieved }))),
     achieved && rank.level === current.level && slippedModules(profile).length
-      ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem', color: 'var(--gold)' } },
+      ? el('div.faint', { style: { marginTop: '8px', fontSize: 'var(--t-xs)', color: 'var(--gold)' } },
         t('Counted on your best. {n} of these are lower on recent answers — named under "Gone cold" above.',
           { n: slippedModules(profile).length }))
       : null,
     reachedAt
-      ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem' } },
+      ? el('div.faint', { style: { marginTop: '8px', fontSize: 'var(--t-xs)' } },
           t('First reached {date}.', { date: reachedAt.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }))
       : achieved && rank.level > 1
-        ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem' } },
+        ? el('div.faint', { style: { marginTop: '8px', fontSize: 'var(--t-xs)' } },
             'Reached before the game started keeping dates.')
         : null,
     lapsed
-      ? el('div.faint', { style: { marginTop: '6px', fontSize: '0.78rem', color: 'var(--gold)' } },
+      ? el('div.faint', { style: { marginTop: '6px', fontSize: 'var(--t-xs)', color: 'var(--gold)' } },
           'You held this rank once. The rows above show what has slipped since.')
       : null,
   );
 
   const head = el('div.spread', { style: { alignItems: 'center' } },
     el('div.row',
-      el('span', { style: { fontSize: '1.4rem' } }, openable ? rank.emoji : '🔒'),
+      el('span', { style: { fontSize: 'var(--t-lg)' } }, openable ? rank.emoji : '🔒'),
       el('div',
         el('div', { style: { fontWeight: '600' } }, rank.name),
-        el('div.faint', { style: { fontSize: '0.78rem' } }, t('Level {level}', { level: rank.level })),
+        el('div.faint', { style: { fontSize: 'var(--t-xs)' } }, t('Level {level}', { level: rank.level })),
       ),
     ),
     el('div.row', { style: { gap: '8px' } },
       el('span.badge', badge),
-      openable ? el('span.faint.chevron', { style: { fontSize: '0.8rem' } }, detail.hidden ? '▾' : '▴') : null,
+      openable ? el('span.faint.chevron', { style: { fontSize: 'var(--t-sm)' } }, detail.hidden ? '▾' : '▴') : null,
     ),
   );
 
@@ -262,7 +262,7 @@ function ladderRow(profile, rank, current, next) {
     head,
     openable
       ? detail
-      : el('div.faint', { style: { marginTop: '6px', fontSize: '0.82rem' } },
+      : el('div.faint', { style: { marginTop: '6px', fontSize: 'var(--t-sm)' } },
           t('What this asks for is revealed once you reach {rank}.', { rank: t(RANKS[rank.level - 2].name) })),
   );
   return row;

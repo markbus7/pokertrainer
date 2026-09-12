@@ -95,7 +95,7 @@ function render() {
     screen = el('div.panel',
       el('h2', 'Something went wrong'),
       el('p.muted', 'That screen failed to load. The error is in the console.'),
-      el('pre.mono', { style: { whiteSpace: 'pre-wrap', color: 'var(--red)', fontSize: '0.8rem' } }, String(err && err.message)),
+      el('pre.mono', { style: { whiteSpace: 'pre-wrap', color: 'var(--red)', fontSize: 'var(--t-sm)' } }, String(err && err.message)),
       el('button.btn', { onclick: () => go('home') }, 'Back to dashboard'),
     );
   }

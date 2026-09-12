@@ -678,7 +678,7 @@ export function renderTable(ctx, params = {}) {
         lastAction: p.lastAction,
         hole: p.hole,
         isHero: p.isHero,
-        emoji: !p.isHero && p.profile ? getProfile(p.profile).emoji : null,
+        tag: !p.isHero && p.profile ? getProfile(p.profile).tag : null,
         wonPot: table.handOver && p.wonThisHand > 0,
       })),
       heroSeat: hero.seat,

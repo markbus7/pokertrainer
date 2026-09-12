@@ -5,6 +5,11 @@
  * That is the point: you beat online poker by noticing that the nit never
  * bluffs and the station never folds, then attacking exactly that.
  *
+ * The seat marks are the abbreviations the game already uses — NIT, TAG, LAG,
+ * STA, MAN, REG. A rock for the nit and a railway station for the calling
+ * station were a pun on the English name and told a reader nothing; the
+ * abbreviation tells them what they are sitting across from.
+ *
  * `adapts` is how readily each of them notices you back, once the reader has
  * climbed far enough for anyone to be watching. It is not a difficulty knob:
  * the station's 0.05 is the same leak as everything else about him. He is not
@@ -25,7 +30,7 @@ export const PROFILES = {
     key: 'rock',
     name: 'Rocky',
     style: 'The Nit',
-    emoji: '🪨',
+    tag: 'NIT',
     openPct: 0.12,
     defendPct: 0.10,
     threeBetPct: 0.03,
@@ -43,7 +48,7 @@ export const PROFILES = {
     key: 'tag',
     name: 'Tessa',
     style: 'Tight-Aggressive',
-    emoji: '🎯',
+    tag: 'TAG',
     openPct: 0.22,
     defendPct: 0.24,
     threeBetPct: 0.07,
@@ -61,7 +66,7 @@ export const PROFILES = {
     key: 'lag',
     name: 'Leo',
     style: 'Loose-Aggressive',
-    emoji: '🔥',
+    tag: 'LAG',
     openPct: 0.38,
     defendPct: 0.42,
     threeBetPct: 0.13,
@@ -79,7 +84,7 @@ export const PROFILES = {
     key: 'station',
     name: 'Stan',
     style: 'Calling Station',
-    emoji: '🚉',
+    tag: 'STA',
     openPct: 0.30,
     defendPct: 0.62,
     threeBetPct: 0.02,
@@ -97,7 +102,7 @@ export const PROFILES = {
     key: 'maniac',
     name: 'Max',
     style: 'The Maniac',
-    emoji: '💥',
+    tag: 'MAN',
     openPct: 0.58,
     defendPct: 0.55,
     threeBetPct: 0.22,
@@ -115,7 +120,7 @@ export const PROFILES = {
     key: 'pro',
     name: 'Nova',
     style: 'Solid Regular',
-    emoji: '🧊',
+    tag: 'REG',
     openPct: 0.24,
     defendPct: 0.34,
     threeBetPct: 0.09,

@@ -59,14 +59,19 @@
   backdrop-filter: blur(3px);
   white-space: nowrap;
 }
-.pot-chip .label { font-size: 0.72rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.06em; }
+.pot-chip .label { font-size: var(--t-xs); color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.06em; }
 
 .street-tag {
-  font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+  font-size: var(--t-xs); letter-spacing: 0.14em; text-transform: uppercase;
   color: rgba(255, 255, 255, 0.45); font-weight: 700;
 }
 
-/* ---------------- seats ---------------- */
+/* Card faces keep their own sizes on purpose. A rank is drawn to a card that
+   is 54px wide, not to the interface's type scale: a step up would overflow
+   it and a step down would rattle around inside it. The text that is
+   interface — seat names, stacks, the street tag, the sizing presets — is on
+   the scale like everything else.
+   ---------------- seats ---------------- */
 
 .seat {
   position: absolute;
@@ -98,13 +103,13 @@
 .seat.winner .seat-plate { border-color: var(--green); box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.22); }
 
 .seat-name {
-  font-size: 0.82rem; font-weight: 650;
+  font-size: var(--t-sm); font-weight: 650;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   display: flex; align-items: center; justify-content: center; gap: 5px;
 }
-.seat-stack { font-size: 0.88rem; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
+.seat-stack { font-size: var(--t-base); font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
 .seat-pos {
-  font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: var(--t-xs); letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--text-faint); font-weight: 700;
 }
 
@@ -113,7 +118,7 @@
 .seat-action {
   position: absolute;
   top: -12px;
-  font-size: 0.68rem;
+  font-size: var(--t-xs);
   font-weight: 700;
   padding: 2px 9px;
   border-radius: 99px;
@@ -129,7 +134,7 @@
 .seat-bet {
   position: absolute;
   display: flex; align-items: center; gap: 5px;
-  font-size: 0.78rem; font-weight: 700;
+  font-size: var(--t-xs); font-weight: 700;
   font-variant-numeric: tabular-nums;
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(227, 178, 60, 0.45);
@@ -266,8 +271,8 @@
   /* Equal shares of the row, so all five fit on one line on a phone. */
   flex: 1 1 0; min-width: 0;
 }
-.size-presets .size-name { font-size: 0.82rem; }
-.size-presets .size-chips { font-family: var(--mono); font-size: 0.78rem; color: var(--text-dim); }
+.size-presets .size-name { font-size: var(--t-sm); }
+.size-presets .size-chips { font-family: var(--mono); font-size: var(--t-xs); color: var(--text-dim); }
 .size-presets .size-btn.is-active {
   border-color: var(--gold);
   background: color-mix(in srgb, var(--gold) 15%, transparent);
@@ -275,7 +280,7 @@
 .size-presets .size-btn.is-active .size-chips { color: var(--gold); }
 
 .size-tune .step-btn {
-  font-family: var(--mono); font-size: 1.05rem; font-weight: 700;
+  font-family: var(--mono); font-size: var(--t-md); font-weight: 700;
   min-width: 46px; padding: 6px 10px;
 }
 .size-tune .raise-input {
@@ -284,7 +289,7 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--gold);
-  font-family: var(--mono); font-size: 1.15rem; font-weight: 700;
+  font-family: var(--mono); font-size: var(--t-md); font-weight: 700;
   text-align: center;
   padding: 7px 6px;
 }

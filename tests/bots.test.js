@@ -66,8 +66,16 @@ describe('bots: profiles are distinct', () => {
       const p = PROFILES[key];
       assert(p.tell && p.tell.length > 15, `${key} needs a tell`);
       assert(p.counter && p.counter.length > 20, `${key} needs a counter-strategy`);
-      assert(p.name && p.style && p.emoji, `${key} needs an identity`);
+      assert(p.name && p.style && p.tag, `${key} needs an identity`);
+      // The mark is the abbreviation the game already uses, so it has to be
+      // one — three or four tracked capitals, not a picture and not a word.
+      assert(/^[A-Z]{3,4}$/.test(p.tag), `${key}'s seat mark should be a style code, got "${p.tag}"`);
     }
+  });
+
+  it('gives no two seats the same mark', () => {
+    const marks = PROFILE_KEYS.map((k) => PROFILES[k].tag);
+    equal(new Set(marks).size, marks.length, `two seats share a mark: ${marks.join(' ')}`);
   });
 
   it('falls back to a sane profile for an unknown key', () => {

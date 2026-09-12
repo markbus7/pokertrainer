@@ -197,7 +197,7 @@ function renderLearningReport(ctx) {
       'A summary of what you have studied and where it is going badly — which lesson you read and '
       + 'then still got wrong, which skill keeps slipping. Copy it into the chat when something did '
       + 'not make sense, and the explanation can be fixed rather than guessed at.'),
-    el('div.faint', { style: { marginBottom: '10px', fontSize: '0.82rem' } },
+    el('div.faint', { style: { marginBottom: '10px', fontSize: 'var(--t-sm)' } },
       'It contains no name, no token and nothing that identifies you — only what you studied and how it went. '
       + 'The report itself is written in English whatever language the app is in, because it is meant to be handed over rather than read.'),
     box,
@@ -237,7 +237,7 @@ function renderVersionPanel() {
     el('div.spread',
       el('div',
         el('div.row',
-          el('span.mono', { style: { fontSize: '1.35rem', fontWeight: '700', color: 'var(--gold)' } }, `v${VERSION}`),
+          el('span.mono', { style: { fontSize: 'var(--t-lg)', fontWeight: '700', color: 'var(--gold)' } }, `v${VERSION}`),
           el('span.faint', t('built {date}', { date: BUILT })),
         ),
         el('div.faint', { style: { marginTop: '4px' } },
@@ -407,7 +407,7 @@ function renderAutoSync(ctx) {
 
     mount(container,
       el('p.muted', "One-time setup: create a free GitHub token, paste it below, and this device will sync automatically from then on — no code to copy, ever."),
-      el('ol', { style: { color: 'var(--text-dim)', fontSize: '0.85rem', paddingLeft: '20px', margin: '0 0 12px' } },
+      el('ol', { style: { color: 'var(--text-dim)', fontSize: 'var(--t-sm)', paddingLeft: '20px', margin: '0 0 12px' } },
         el('li', el('a', { href: cloudSync.TOKEN_SETUP_URL, target: '_blank', rel: 'noopener' }, 'Create a token ↗'),
           ' — the description and the "gist" scope are already filled in for you.'),
         el('li', 'Under ', el('strong', 'Expiration'), ', pick ', el('strong', 'No expiration'), ' (recommended) — GitHub does not let a link pre-select this part, so it defaults to 30 days if you leave it. An expired token just pauses sync until you reconnect; it does not lose anything.'),
@@ -548,7 +548,7 @@ function renderManualSync(ctx) {
     el('p.muted', 'No GitHub account, or just want a one-off transfer? Generate a code here and paste it in on the other device — like a save file. This always overwrites, so it needs you to do it each time.'),
     el('div.grid.cols-2',
       el('div',
-        el('h3', { style: { fontSize: '0.9rem', marginBottom: '8px' } }, 'This device → elsewhere'),
+        el('h3', { style: { fontSize: 'var(--t-base)', marginBottom: '8px' } }, 'This device → elsewhere'),
         el('div.row', { style: { marginBottom: '8px' } },
           el('button.btn.sm', { onclick: generate }, 'Generate code'),
           el('button.btn.sm.primary', { onclick: copyCode }, 'Copy'),
@@ -557,7 +557,7 @@ function renderManualSync(ctx) {
         codeBox,
       ),
       el('div',
-        el('h3', { style: { fontSize: '0.9rem', marginBottom: '8px' } }, 'Elsewhere → this device'),
+        el('h3', { style: { fontSize: 'var(--t-base)', marginBottom: '8px' } }, 'Elsewhere → this device'),
         pasteBox,
         el('div.row', { style: { marginTop: '8px' } },
           el('button.btn.sm.primary', { onclick: doImport }, 'Import'),
@@ -671,8 +671,8 @@ export function renderCharts(ctx, params = {}) {
       ),
 
       el('div', { style: { marginTop: '14px' } },
-        el('div.faint', { style: { textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.06em', marginBottom: '4px' } }, 'Notation'),
-        el('div.mono', { style: { fontSize: '0.82rem', color: 'var(--text-dim)' } }, notation),
+        el('div.faint', { style: { textTransform: 'uppercase', fontSize: 'var(--t-xs)', letterSpacing: '0.06em', marginBottom: '4px' } }, 'Notation'),
+        el('div.mono', { style: { fontSize: 'var(--t-sm)', color: 'var(--text-dim)' } }, notation),
       ),
     ),
 

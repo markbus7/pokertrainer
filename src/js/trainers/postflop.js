@@ -258,7 +258,7 @@ export function bluffCatchDrill(rng, difficulty = 4) {
   return {
     module: 'exploit',
     difficulty,
-    scenario: { ...dealt, pot, toCall: bet, villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) } },
+    scenario: { ...dealt, pot, toCall: bet, villain: { name: villain.name, style: t(villain.style), tag: villain.tag, tell: t(villain.tell) } },
     question: t('River. You have {hand} — it beats a bluff and nothing else. {name} ({style}) bets {bet} into '
       + '{pot}. Call or fold?',
     { hand: describeScore(evaluate([...dealt.hole, ...dealt.board])), name: villain.name, style: t(villain.style), bet, pot }),
@@ -320,7 +320,7 @@ export function rangeReadDrill(rng, difficulty = 4) {
       ...dealt,
       pot,
       toCall: bet,
-      villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) },
+      villain: { name: villain.name, style: t(villain.style), tag: villain.tag, tell: t(villain.tell) },
     },
     question: t('{street}. You check and {name} ({style}) bets {bet} into {pot}. Of every hand they would '
       + 'bet here, roughly what share is air — a hand that only wins if you fold?',
