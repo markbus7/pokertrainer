@@ -4,6 +4,12 @@
  * Each profile is a recognisable player type with a real, exploitable leak.
  * That is the point: you beat online poker by noticing that the nit never
  * bluffs and the station never folds, then attacking exactly that.
+ *
+ * `adapts` is how readily each of them notices you back, once the reader has
+ * climbed far enough for anyone to be watching. It is not a difficulty knob:
+ * the station's 0.05 is the same leak as everything else about him. He is not
+ * going to work out that you fold too much, and a reader who learns that some
+ * opponents never adjust has learned something true.
  */
 
 import { handKey } from '../core/cards.js';
@@ -12,6 +18,7 @@ import { requiredEquity } from '../core/odds.js';
 import { HAND_STRENGTH, STRENGTH_RANK } from '../data/handStrength.js';
 import { CHARTS } from '../data/ranges.js';
 import { makeRng } from '../core/rng.js';
+import { adaptProfile } from './adapt.js';
 
 export const PROFILES = {
   rock: {
@@ -30,6 +37,7 @@ export const PROFILES = {
     blurb: 'Folds and folds, then wakes up with the nuts.',
     tell: 'If Rocky raises, Rocky has it. He has never bluffed in his life.',
     counter: 'Steal his blinds relentlessly, and fold the moment he raises you.',
+    adapts: 0.15,
   },
   tag: {
     key: 'tag',
@@ -47,6 +55,7 @@ export const PROFILES = {
     blurb: 'Plays few hands, but plays them hard. The standard winning reg.',
     tell: 'She only continues with real equity, and she barrels when the board favours her range.',
     counter: 'Give her credit on scary boards, but attack when she checks twice — she gives up.',
+    adapts: 0.8,
   },
   lag: {
     key: 'lag',
@@ -64,6 +73,7 @@ export const PROFILES = {
     blurb: 'Applies pressure in every pot and makes you guess.',
     tell: 'He bets far too often for his range to be strong.',
     counter: 'Widen your calling range and let him bluff into you. Trap with strong hands.',
+    adapts: 0.5,
   },
   station: {
     key: 'station',
@@ -81,6 +91,7 @@ export const PROFILES = {
     blurb: 'Came to see cards, not to fold them.',
     tell: 'He calls with any piece of the board, and almost never raises.',
     counter: 'Never bluff him. Value bet thin, three streets, and size up — he will pay.',
+    adapts: 0.05,
   },
   maniac: {
     key: 'maniac',
@@ -98,6 +109,7 @@ export const PROFILES = {
     blurb: 'Raises everything. Occasionally has aces.',
     tell: 'Enormous bets with nothing at all, over and over.',
     counter: 'Tighten up, stop bluffing, and wait to snap him off with a real hand.',
+    adapts: 0.2,
   },
   pro: {
     key: 'pro',
@@ -116,13 +128,28 @@ export const PROFILES = {
     blurb: 'Plays the charts you are learning, and plays them well.',
     tell: 'Balanced. There is no obvious leak to attack.',
     counter: 'Play your own solid game. Grind small edges and avoid marginal spots out of position.',
+    adapts: 1,
   },
 };
 
 export const PROFILE_KEYS = Object.keys(PROFILES);
 
 export function getProfile(key) {
+  if (key && typeof key === 'object') return key;   // already a profile, adapted or not
   return PROFILES[key] || PROFILES.tag;
+}
+
+/**
+ * The profile a seat is actually playing, this hand.
+ *
+ * One place, because the hand-reading engine has to ask the same question:
+ * a read built from the archetype while the bot plays an adjusted version of
+ * it would be a read of somebody who is not at the table.
+ */
+export function profileAt(table, player) {
+  const base = getProfile(player.profile);
+  if (!table || !table.readerMemory) return base;
+  return adaptProfile(base, table.readerMemory, table.readerLevel || 1);
 }
 
 /* ------------------------------------------------------------------ *
@@ -168,7 +195,7 @@ function raiseTo(legal, type, desiredTotal) {
  */
 export function botAction(table, player, rngIn) {
   const rng = rngIn || table.rng || makeRng();
-  const profile = getProfile(player.profile);
+  const profile = profileAt(table, player);
   const legal = table.legalActions(player);
   if (!legal.length) return { type: 'check' };
 

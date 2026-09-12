@@ -3052,6 +3052,13 @@ export const NL = {
   'You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive kind of session, because nothing about it tells you to stop.':
     'Je won chips met {pct} van je beslissingen juist. Betaald krijgen voor de verkeerde keuze is het dure soort sessie, want niets erin zegt je dat je moet stoppen.',
   'Show me the chart': 'Laat me de chart zien',
+  'They have noticed how you play': 'Ze hebben gezien hoe jij speelt',
+  'You have folded to {pct} of the bets you faced. {names} {verb} accordingly — bluffing you {direction}.':
+    'Je hebt {pct} van de bets waar je tegenover stond gefold. {names} {verb} zich daarop aan — en bluft je {direction}.',
+  'have adjusted': 'passen',
+  'has adjusted': 'past',
+  'more often': 'vaker',
+  'less often': 'minder vaak',
   '{street}. You check and {name} ({style}) bets {bet} into {pot}. Of every hand they would bet here, roughly what share is air — a hand that only wins if you fold?':
     '{street}. Jij checkt en {name} ({style}) bet {bet} in een pot van {pot}. Van alle handen waarmee hij hier zou betten, welk deel is ongeveer lucht — een hand die alleen wint als jij foldt?',
   'Flop': 'Flop',

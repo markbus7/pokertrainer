@@ -27,6 +27,7 @@ import {
   snapshotOf, autopilotAction, playUntilMySpot, captureRange, tableReadRange,
 } from '../core/lessonRunner.js';
 import { READ_BANDS, nearestBand, marginFor } from '../core/handRead.js';
+import { emptyMemory, watch, adaptationNote } from '../engine/adapt.js';
 import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
@@ -115,6 +116,12 @@ export function renderTable(ctx, params = {}) {
     ],
   });
 
+  // Who is watching, and how awake they are. Both live on the table because
+  // that is what botAction and the hand-reading engine are handed, and one of
+  // them reading a different answer than the other is the bug this whole
+  // feature would otherwise be made of.
+  table.readerLevel = profile.level;
+
   const stats = new SessionStats();
   stats.bigBlind = bigBlind;
 
@@ -143,6 +150,11 @@ export function renderTable(ctx, params = {}) {
     // The read the reader has been asked for on this decision, if the spot
     // qualifies. Cleared the moment the hand moves on.
     read: null,
+    // What this table has seen of the reader's own game, for the opponents
+    // who are paying attention. One memory rather than one each: six players
+    // watching the same six decisions would reach the same conclusion, and
+    // six copies of it is six chances to drift.
+    readerMemory: emptyMemory(),
     // At most one per street. Two streets are two different bets with two
     // different ranges, and a flop read should not crowd out the river one.
     // Within a street it must not ask twice: the range this models is the
@@ -157,6 +169,8 @@ export function renderTable(ctx, params = {}) {
     // says how it went.
     run: lesson ? startRun(params.lesson) : null,
   };
+  // The same object, not a copy: the opponents read what the reader does.
+  table.readerMemory = session.readerMemory;
   if (grind) profile.setBankroll(profile.data.bankroll - buyInCost);
 
   const hero = table.player(HERO_ID);
@@ -479,6 +493,10 @@ export function renderTable(ctx, params = {}) {
     session.read = null;
     session.playedByReader = true;
     const snap = session.snapshot || takeSnapshot();
+    // Facing a bet and folding is the one pattern an observant opponent can
+    // price. Read off the snapshot, which says what was in front of the
+    // reader at the moment they chose.
+    watch(session.readerMemory, { facingBet: snap.toCall > 0, action: action.type });
     const verdict = judgeSpot({ ...snap, action: action.type, amount: action.amount });
     session.verdict = verdict;
     recordLearning(verdict);
@@ -1006,8 +1024,29 @@ export function renderTable(ctx, params = {}) {
       : null;
     const spotMeta = spot ? moduleMeta(spot.id) : null;
 
+    // Somebody at this table has changed how they play, because of how you
+    // play. Saying so is the whole point: an opponent who adjusts silently is
+    // not a lesson, it is a table that got harder for no visible reason.
+    const adjusted = table.contestants
+      .filter((p) => !p.isHero && p.profile)
+      .map((p) => adaptationNote(getProfile(p.profile), session.readerMemory, table.readerLevel))
+      .filter(Boolean);
+
     mount(coachHost,
       el('h3', '🧭 Coach'),
+      adjusted.length
+        ? el('div.notice', { style: { marginBottom: '10px' } },
+          el('div', { style: { fontWeight: '600' } }, t('They have noticed how you play')),
+          el('div.faint', { style: { marginTop: '4px' } },
+            t('You have folded to {pct} of the bets you faced. {names} {verb} accordingly — '
+              + 'bluffing you {direction}.', {
+              pct: fmt.pct(adjusted[0].foldRate),
+              names: adjusted.map((a) => a.name).join(', '),
+              verb: adjusted.length > 1 ? t('have adjusted') : t('has adjusted'),
+              direction: adjusted[0].harder ? t('more often') : t('less often'),
+            })),
+        )
+        : null,
       spot
         ? el('div.spot-tag',
             el('span.spot-icon', spotMeta ? spotMeta.icon : '🎯'),
