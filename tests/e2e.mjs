@@ -842,6 +842,53 @@ await step('a lesson page draws the whole climb, with a number on every rung', a
   console.log(`      ${ladder.count} rungs, one marked, e.g. ${ladder.text[1].slice(0, 96)}…`);
 });
 
+await step('the levels screen names the skills that have gone cold', async () => {
+  // The rank row said "2 of these have slipped" and pointed at twelve lesson
+  // pages. The app knew which two.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    // Mastered on the record, cold on recent answers: the last 30 are poor,
+    // and `best` carries what was earned before that.
+    raw.drills = {
+      'hand-rankings': { attempts: 60, correct: 44, best: 'mastered', recent: '0'.repeat(20) + '1'.repeat(10) },
+      'pot-odds': { attempts: 60, correct: 52, best: 'mastered', recent: '1'.repeat(30) },
+    };
+    raw.walkthroughs = ['hand-rankings', 'pot-odds'];
+    // Deliberately no xp or handsPlayed: the panel does not depend on rank,
+    // and these steps share one profile — an inflated hand count here is a
+    // failure three steps later, in a test about something else.
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#levels`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  const panel = await page.evaluate(() => {
+    const head = [...document.querySelectorAll('.panel')]
+      .find((n) => /gone cold|weggezakt/i.test(n.querySelector('h3')?.textContent || ''));
+    return head ? head.textContent.replace(/\s+/g, ' ') : null;
+  });
+  if (!panel) throw new Error('no panel names the skills that have gone cold');
+  if (!/Hand Rankings/.test(panel)) throw new Error(`the cold skill is not named: ${panel}`);
+  if (/Pot Odds/.test(panel)) throw new Error(`a skill still in form was listed as cold: ${panel}`);
+  if (!/\d+ right answers? back/i.test(panel)) throw new Error(`no way back is offered: ${panel}`);
+
+  // The row is a <button>, and its class carried no styling — so it rendered
+  // as a white browser default on a dark page. Check it is painted, not just
+  // present.
+  const tone = await page.evaluate(() => {
+    const row = [...document.querySelectorAll('.panel')]
+      .find((n) => /gone cold|weggezakt/i.test(n.querySelector('h3')?.textContent || ''))
+      .querySelector('.ladder-row');
+    const bg = getComputedStyle(row).backgroundColor;
+    const [r, g, b, a = '1'] = (bg.match(/[\d.]+/g) || ['255', '255', '255']);
+    return { bg, light: Number(a) > 0.1 && (0.299 * +r + 0.587 * +g + 0.114 * +b) > 140 };
+  });
+  if (tone.light) throw new Error(`the cold row is painted light on a dark page: ${tone.bg}`);
+  console.log(`      ${panel.slice(0, 110)}…`);
+});
+
 await step('a graded question can be copied out as text', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'domcontentloaded' });

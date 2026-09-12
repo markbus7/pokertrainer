@@ -8,6 +8,7 @@ import {
 } from '../src/js/data/curriculum.js';
 import { makeRng } from '../src/js/core/rng.js';
 import { scoreLine, EVIDENCE_BAR, bestTier, tierRank, masteryTier } from '../src/js/state/mastery.js';
+import { slippedModules } from '../src/js/state/profile.js';
 
 /** Earn a rank properly: the lessons, the drilling, the hands, then the XP. */
 const promoteTo = (p, level) => {
@@ -85,6 +86,47 @@ describe('progression: ranks', () => {
     const p = promoteTo(fresh(), 4);
     equal(p.level, 4);
     assert(meetsRank(p, RANKS[3]), 'level 4 requirements are satisfied');
+  });
+
+  it('sends you at a skill that has gone cold, not a module nobody has opened', () => {
+    // Tiers read recent answers; the recommendation was still scoring lifetime
+    // totals. Two modules that fell from Mastered to Learning still averaged
+    // 81% across their whole history, so "your weakest skill" walked straight
+    // past them and offered something untouched — the tile saying Learning and
+    // the banner saying you are fine, about the same module.
+    const p = fresh();
+    const ids = MODULE_META.slice(0, 5).map((m) => m.id);
+    for (const id of ids) {
+      p.markWalkthroughComplete(id);
+      for (let i = 0; i < 30; i++) p.recordDrill(id, true);
+    }
+    p.addXp(3000);
+    p.data.handsPlayed = 200;
+    for (const id of ids.slice(0, 2)) for (let i = 0; i < 12; i++) p.recordDrill(id, i % 3 === 0);
+
+    const cold = slippedModules(p).map((m) => m.id);
+    equal(cold.length, 2, 'the fixture should have two skills gone cold');
+    const next = nextUp(p);
+    assert(cold.includes(next.module.id),
+      `should send you at a cold skill, went to ${next.module.name} (${next.reason})`);
+  });
+
+  it('names which skills have gone cold, not just how many', () => {
+    // The rank row said "2 of these have slipped" and then sent the reader to
+    // check twelve lesson pages to find out which two.
+    const p = fresh();
+    const ids = MODULE_META.slice(0, 3).map((m) => m.id);
+    for (const id of ids) {
+      p.markWalkthroughComplete(id);
+      for (let i = 0; i < 30; i++) p.recordDrill(id, true);
+    }
+    equal(slippedModules(p).length, 0, 'nothing has slipped while the form holds');
+
+    for (let i = 0; i < 12; i++) p.recordDrill(ids[0], false);
+    const cold = slippedModules(p);
+    equal(cold.length, 1);
+    equal(cold[0].id, ids[0], 'the one that went cold is the one named');
+    assert(cold[0].name, 'and it is named, so a screen can print it');
   });
 
   it('does not take back a rank, or a module, over a bad run of answers', () => {

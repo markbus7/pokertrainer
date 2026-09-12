@@ -12,6 +12,9 @@ import { el, fmt, richText } from './dom.js';
 import { t } from '../i18n/index.js';
 import { RANKS, requirementRows, legacyRankForProfile, slippedModules } from '../state/profile.js';
 import { MODULE_META } from '../data/curriculum.js';
+import {
+  masteryTier, bestTier, tierByKey, perfectRunNeeded, REQUIREMENTS,
+} from '../state/mastery.js';
 
 export function renderLevels(ctx) {
   const { profile, go } = ctx;
@@ -20,10 +23,52 @@ export function renderLevels(ctx) {
 
   return el('div.screen',
     renderCurrent(profile, current, next),
+    renderSlipped(profile, go),
     renderDropNotice(profile, current),
     next ? renderNext(profile, next, go) : renderMaxed(),
     renderLadder(profile, current, next),
     renderHowItWorks(),
+  );
+}
+
+/**
+ * Which skills have gone cold, by name.
+ *
+ * A rank counts the best reading of each skill so a bad week cannot take one
+ * back, and the rank's own row said how many had since slipped — a count, and
+ * then an instruction to go and check twelve lesson pages to find out which.
+ * The app knew the answer and made the reader hunt for it.
+ */
+function renderSlipped(profile, go) {
+  const slipped = slippedModules(profile);
+  if (!slipped.length) return null;
+
+  return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
+    el('div.panel-title', el('h3', { style: { margin: 0 } }, t('🧊 Gone cold'))),
+    el('div.faint', { style: { marginBottom: '10px' } },
+      t('Your rank counts these at their best, so it is safe. Recent answers have them lower — '
+        + 'which is what the tiles and "do this next" are reading.')),
+    el('div.stack-sm', slipped.map((meta) => {
+      const was = bestTier(profile, meta.id);
+      const now = masteryTier(profile, meta.id);
+      const run = perfectRunNeeded(profile, meta.id, REQUIREMENTS[was]);
+      return el('button.ladder-row', { onclick: () => go('learn', { module: meta.id }) },
+        el('div.spread', { style: { alignItems: 'center' } },
+          el('div.row',
+            el('span', { style: { fontSize: '1.2rem' } }, meta.icon),
+            el('div',
+              el('div', { style: { fontWeight: '600' } }, meta.name),
+              el('div.faint', { style: { fontSize: '0.78rem' } },
+                t('{was} → {now} on recent answers', {
+                  was: t(tierByKey(was).name), now: t(tierByKey(now).name),
+                })),
+            ),
+          ),
+          el('span.badge.gold', run === 1
+            ? t('1 right answer back')
+            : t('{n} right answers back', { n: run })),
+        ));
+    })),
   );
 }
 
@@ -159,8 +204,8 @@ function ladderRow(profile, rank, current, next) {
       : el('div', rows.map((r) => requirementRow(r, { showSurplus: achieved }))),
     achieved && rank.level === current.level && slippedModules(profile).length
       ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem', color: 'var(--gold)' } },
-        t('Counted on your best. {n} of these skills are below that on recent answers — each lesson page '
-          + 'shows which, and what would bring it back.', { n: slippedModules(profile).length }))
+        t('Counted on your best. {n} of these are lower on recent answers — named under "Gone cold" above.',
+          { n: slippedModules(profile).length }))
       : null,
     reachedAt
       ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem' } },
