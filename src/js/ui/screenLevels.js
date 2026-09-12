@@ -10,7 +10,7 @@
 
 import { el, fmt, richText } from './dom.js';
 import { t } from '../i18n/index.js';
-import { RANKS, requirementRows, legacyRankForProfile } from '../state/profile.js';
+import { RANKS, requirementRows, legacyRankForProfile, slippedModules } from '../state/profile.js';
 import { MODULE_META } from '../data/curriculum.js';
 
 export function renderLevels(ctx) {
@@ -157,6 +157,11 @@ function ladderRow(profile, rank, current, next) {
     rank.level === 1
       ? el('div.faint', { style: { fontSize: '0.82rem' } }, 'Where everybody starts. Nothing to earn.')
       : el('div', rows.map((r) => requirementRow(r, { showSurplus: achieved }))),
+    achieved && rank.level === current.level && slippedModules(profile).length
+      ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem', color: 'var(--gold)' } },
+        t('Counted on your best. {n} of these skills are below that on recent answers — each lesson page '
+          + 'shows which, and what would bring it back.', { n: slippedModules(profile).length }))
+      : null,
     reachedAt
       ? el('div.faint', { style: { marginTop: '8px', fontSize: '0.78rem' } },
           t('First reached {date}.', { date: reachedAt.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }))

@@ -14,7 +14,9 @@
  * nobody tells you which skill the spot is testing.
  */
 
-import { masteryTier, EVIDENCE_BAR, MASTERY_WINDOW, legacyTier, seedWindow } from './mastery.js';
+import {
+  masteryTier, bestTier, tierRank, EVIDENCE_BAR, MASTERY_WINDOW, legacyTier, seedWindow,
+} from './mastery.js';
 import { MODULE_META } from '../data/curriculum.js';
 
 const STORAGE_KEY = 'poker-trainer.profile.v1';
@@ -87,7 +89,7 @@ export function rankForXp(xp) {
  * the only useful thing to show somebody who has not got there yet.
  */
 export function requirementRows(profile, rank) {
-  const tiers = MODULE_META.map((m) => masteryTier(profile, m.id));
+  const tiers = MODULE_META.map((m) => bestTier(profile, m.id));
   const solid = tiers.filter((t) => t === 'solid' || t === 'mastered').length;
   const mastered = tiers.filter((t) => t === 'mastered').length;
   const lessons = MODULE_META.filter((m) => profile.hasCompletedWalkthrough(m.id)).length;
@@ -105,6 +107,17 @@ export function requirementRows(profile, rank) {
 }
 
 export const meetsRank = (profile, rank) => requirementRows(profile, rank).every((r) => r.met);
+
+/**
+ * Modules whose current form sits below the tier the rank is counting.
+ *
+ * Ranks count the best reading so a bad week cannot take one back, which
+ * leaves a row able to read "2 of 2 Solid" while neither is solid today. That
+ * is a claim about now made out of the past, so the screen says how many.
+ */
+export function slippedModules(profile) {
+  return MODULE_META.filter((m) => tierRank(masteryTier(profile, m.id)) < tierRank(bestTier(profile, m.id)));
+}
 
 /**
  * The rank you currently meet the requirements for — recomputed every time,
@@ -195,6 +208,7 @@ export class Profile {
     for (const [id, stats] of Object.entries(this.data.drills || {})) {
       if (stats.recent != null) continue;
       stats.earned = legacyTier(stats, (this.data.walkthroughs || []).includes(id));
+      stats.best = stats.earned;
       stats.recent = seedWindow(stats.attempts || 0, stats.correct || 0);
     }
   }
@@ -293,6 +307,9 @@ export class Profile {
     // characters, newest last.
     stats.recent = ((stats.recent || '') + (wasCorrect ? '1' : '0')).slice(-MASTERY_WINDOW);
     this.data.drills[module] = stats;
+    // The high-water reading, kept beside the live one because it cannot be
+    // recovered from a window that has already forgotten.
+    stats.best = bestTier(this, module);
     this.noteRankReached();
     this.save();
     return stats;
@@ -346,6 +363,10 @@ export class Profile {
     if (!this.data.walkthroughs) this.data.walkthroughs = [];
     if (this.data.walkthroughs.includes(id)) return false;
     this.data.walkthroughs.push(id);
+    // The lesson is the last thing Mastered waits on, so finishing it can
+    // raise the high-water tier with no drill answer involved.
+    const stats = this.data.drills[id];
+    if (stats) stats.best = bestTier(this, id);
     this.noteRankReached();
     this.save();
     return true;
