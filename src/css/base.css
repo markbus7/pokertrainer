@@ -1223,3 +1223,10 @@ input, textarea, select { font-size: max(16px, 1rem); }
   font: inherit;
   cursor: pointer;
 }
+
+/* The read asked before the decision it belongs to. */
+.read-ask { padding: 4px 2px 8px; }
+.read-head { font-weight: 600; margin-bottom: 2px; }
+.read-bands { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.read-bands .btn { flex: 1 1 auto; min-width: 68px; }
+.read-said { font-size: 0.84rem; color: var(--text-dim); margin-bottom: 8px; }

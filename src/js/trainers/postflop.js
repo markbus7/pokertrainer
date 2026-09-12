@@ -13,7 +13,7 @@ import {
 } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 import { PROFILES } from '../engine/bots.js';
-import { readRange, equityAgainst } from '../core/handRead.js';
+import { readRange, equityAgainst, READ_BANDS, nearestBand } from '../core/handRead.js';
 import { buildChoices, percentDistractors, attempt, describeTexture, pct } from './helpers.js';
 import { t } from '../i18n/index.js';
 
@@ -274,12 +274,6 @@ export function bluffCatchDrill(rng, difficulty = 4) {
  * decision rule — so the answer is not an opinion about player types, it is
  * what those hands would actually do.
  */
-// Measured, not guessed: across 240 profile-by-board combinations the share
-// of air in a river betting range runs from 1.7% to 26.5%, median 14.2%. An
-// earlier ladder of 5/15/25/35 never once had 35% as its answer, which is a
-// dead option and a pattern worth learning for the wrong reason.
-const READ_BANDS = [3, 10, 18, 26];
-
 export function rangeReadDrill(rng, difficulty = 4) {
   const spot = attempt(() => {
     const keys = ['rock', 'tag', 'lag', 'station', 'maniac', 'pro'];
@@ -290,12 +284,10 @@ export function rangeReadDrill(rng, difficulty = 4) {
       { toCall: 0, street: 'river', heroIsAggressor: false, dead: dealt.hole });
     if (!range) return null;
 
-    // Only ask when one band is clearly the nearest. A truth sitting between
-    // two of them has two defensible answers and one of them scored wrong.
     const air = range.share.air * 100;
-    const sorted = READ_BANDS.slice().sort((a, b) => Math.abs(a - air) - Math.abs(b - air));
-    if (Math.abs(sorted[1] - air) - Math.abs(sorted[0] - air) < 2) return null;
-    return { villain, dealt, range, air, band: sorted[0] };
+    const band = nearestBand(air);
+    if (band === null) return null;      // two defensible answers: ask another
+    return { villain, dealt, range, air, band };
   }, 120);
   if (!spot) return null;
 

@@ -23,7 +23,10 @@ import { judgeSpot } from '../core/coach.js';
 import { conceptOf, isUnlocked } from '../core/spotConcept.js';
 import { moduleMeta, MODULE_META } from '../data/curriculum.js';
 import { lessonTable } from '../data/lessonTables.js';
-import { snapshotOf, autopilotAction, playUntilMySpot, captureRange } from '../core/lessonRunner.js';
+import {
+  snapshotOf, autopilotAction, playUntilMySpot, captureRange, exactRiverRange,
+} from '../core/lessonRunner.js';
+import { READ_BANDS, nearestBand } from '../core/handRead.js';
 import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
@@ -137,6 +140,13 @@ export function renderTable(ctx, params = {}) {
     aggressor: {},
     opener: null,
     learned: [],
+    // The read the reader has been asked for on this decision, if the spot
+    // qualifies. Cleared the moment the hand moves on.
+    read: null,
+    // At most one per hand. The range this models is the hand they bet with,
+    // and after a raise and a call it is a different, much narrower set —
+    // asking the same question again would be modelling the wrong action.
+    readAsked: false,
     // Set when the reader asks the coach to do the sum for them. Reset every
     // decision, so asking once does not silence the coach for the whole hand.
     peeked: false,
@@ -202,6 +212,7 @@ export function renderTable(ctx, params = {}) {
     session.handStarted = true;
     session.verdict = null;
     session.snapshot = null;
+    session.readAsked = false;
     session.peeked = false;
     session.savedHand = null;
     session.aggressor = {};
@@ -275,6 +286,7 @@ export function renderTable(ctx, params = {}) {
       if (found) {
         session.snapshot = snapshot;
         session.peeked = false;
+        session.read = readPrompt();
         draw();
         return null;
       }
@@ -299,6 +311,7 @@ export function renderTable(ctx, params = {}) {
     session.handStarted = true;
     session.verdict = null;
     session.snapshot = null;
+    session.readAsked = false;
     session.savedHand = null;
     session.aggressor = {};
     session.opener = null;
@@ -345,6 +358,7 @@ export function renderTable(ctx, params = {}) {
 
     if (actor.isHero) {
       session.snapshot = takeSnapshot();
+      session.read = readPrompt();
 
       // In a lesson, the hero is played for them through every decision the
       // lesson has not taught yet, and handed back the moment its own spot
@@ -415,8 +429,49 @@ export function renderTable(ctx, params = {}) {
     profile.addXp(right ? 12 : 4);
   }
 
+
+  /**
+   * Ask for the read before the decision, on the spots where it is the
+   * decision.
+   *
+   * The table already built the opponent's range and priced the hero against
+   * it — silently, behind the reader, who was then graded on a call they had
+   * no way of reasoning about. The range is the answer to a question nobody
+   * was ever asked. So ask it: on a river, heads up, facing a bet from a
+   * player with a style, what does that bet represent?
+   */
+  function readPrompt() {
+    if (session.readAsked) return null;
+    const live = table.contestants.filter((p) => !p.isHero).length;
+    const toCall = Math.max(0, table.currentBet - hero.committed);
+    const range = exactRiverRange(table, hero, live, toCall);
+    if (!range) return null;
+    const air = range.share.air * 100;
+    const band = nearestBand(air);
+    if (band === null) return null;      // two defensible answers: do not ask
+    const villain = table.contestants.find((p) => !p.isHero && p.profile);
+    return { range, air, band, villain, name: range.profile.name, style: range.profile.style };
+  }
+
+  function answerRead(picked) {
+    const prompt = session.read;
+    if (!prompt || prompt.picked != null) return;
+    prompt.picked = picked;
+    session.readAsked = true;
+    const right = picked === prompt.band;
+    // A read is evidence about reading players, and it is better evidence
+    // than a drill answer: nobody offered it as a question with a module
+    // name attached.
+    profile.recordDrill('exploit', right);
+    review(profile, 'exploit', right);
+    session.learned.push({ id: 'exploit', name: moduleMeta('exploit').name, right });
+    profile.addXp(right ? 10 : 3);
+    draw();
+  }
+
   function heroAct(action) {
     if (session.cancelled || table.handOver || !table.actor || !table.actor.isHero) return;
+    session.read = null;
     session.playedByReader = true;
     const snap = session.snapshot || takeSnapshot();
     const verdict = judgeSpot({ ...snap, action: action.type, amount: action.amount });
@@ -887,7 +942,29 @@ export function renderTable(ctx, params = {}) {
     // Paint every follower once so the bar opens consistent with itself.
     if (raiseSpec) setAmount(session.raiseAmount);
 
+    // Until the read is given, the buttons are not the question. Answering
+    // takes one tap and only happens on spots where the whole decision is
+    // what their bet means — a river, heads up, facing a bet.
+    const read = session.read;
+    if (read && read.picked == null) {
+      mount(actionHost, el('div.action-bar',
+        el('div.read-ask',
+          el('div.read-head', t('Before you act: {name} ({style}) has bet.', { name: read.name, style: t(read.style) })),
+          el('div.faint', t('Of every hand they would bet here, roughly what share is air?')),
+          el('div.read-bands', READ_BANDS.map((band) => el('button.btn.sm', {
+            onclick: () => answerRead(band),
+          }, `${band}%`))),
+        ),
+      ));
+      return null;
+    }
+
     mount(actionHost, el('div.action-bar',
+      read ? el('div.read-said',
+        read.picked === read.band
+          ? t('✓ Read: {air} of their bets here are air. Now play it.', { air: `${Math.round(read.air)}%` })
+          : t('✗ You said {said}; it is {air} air. Now play it.',
+            { said: `${read.picked}%`, air: `${Math.round(read.air)}%` })) : null,
       sizingRows,
       el('div.action-buttons',
         legal.some((a) => a.type === 'fold')

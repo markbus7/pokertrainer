@@ -1,5 +1,8 @@
 import { describe, it, assert, equal } from './harness.js';
-import { readRange, equityAgainst, riverEquities, candidateHands, actionChances } from '../src/js/core/handRead.js';
+import {
+  readRange, equityAgainst, riverEquities, candidateHands, actionChances, READ_BANDS, nearestBand,
+} from '../src/js/core/handRead.js';
+import { exactRiverRange } from '../src/js/core/lessonRunner.js';
 import { PROFILES, CUTS } from '../src/js/engine/bots.js';
 import { bluffCatchDrill, rangeReadDrill } from '../src/js/trainers/postflop.js';
 import { makeDeck } from '../src/js/core/cards.js';
@@ -197,5 +200,47 @@ describe('hand reading: the question is answerable and worth answering', () => {
       assert(Math.abs(bands[1] - air) - Math.abs(bands[0] - air) >= 1.5,
         `air of ${air}% is too close to call between ${bands[0]}% and ${bands[1]}%`);
     }
+  });
+});
+
+describe('hand reading: asking for it at the table', () => {
+  it('refuses to ask when two answers are defensible', () => {
+    // Halfway between two rungs there is no wrong answer, and marking one of
+    // them wrong teaches the reader to distrust the scoring instead of to
+    // read the hand.
+    equal(nearestBand(3.1), 3);
+    equal(nearestBand(17.5), 18);
+    equal(nearestBand(6.5), null, 'exactly between 3 and 10');
+    equal(nearestBand(14), null, 'exactly between 10 and 18');
+    equal(nearestBand(22), null, 'exactly between 18 and 26');
+    for (let air = 0; air <= 40; air += 0.25) {
+      const band = nearestBand(air);
+      if (band === null) continue;
+      const others = READ_BANDS.filter((b) => b !== band);
+      for (const other of others) {
+        assert(Math.abs(band - air) < Math.abs(other - air),
+          `${air}% was assigned ${band}% but ${other}% is at least as close`);
+      }
+    }
+  });
+
+  it('only asks where the answer can be exact', () => {
+    // The read is worth asking for because the grader knows the truth. On a
+    // street with cards to come it does not, so it must not ask.
+    const board = boardFor(42);
+    const hero = candidateHands(board)[0];
+    const table = (street, live, toCall) => ({
+      board: street === 'river' ? board : board.slice(0, 4),
+      street,
+      variant: {},
+      lastAggressor: null,
+      contestants: [{ isHero: true, hole: hero }]
+        .concat(Array.from({ length: live }, () => ({ isHero: false, profile: 'tag' }))),
+    });
+    const heroPlayer = { hole: hero };
+    assert(exactRiverRange(table('river', 1, 50), heroPlayer, 1, 50), 'the river spot is askable');
+    equal(exactRiverRange(table('turn', 1, 50), heroPlayer, 1, 50), null, 'not with a card to come');
+    equal(exactRiverRange(table('river', 2, 50), heroPlayer, 2, 50), null, 'not against two opponents');
+    equal(exactRiverRange(table('river', 1, 0), heroPlayer, 1, 0), null, 'not when nobody has bet');
   });
 });
