@@ -1692,3 +1692,130 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
 @media (max-width: 1180px) {
   .tab span { display: inline; }
 }
+
+/* ==================================================================== *
+ * The career: a room you are standing in, not a dashboard
+ * ==================================================================== */
+
+.room { padding: 0; overflow: hidden; }
+.room-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-5);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  background:
+    radial-gradient(ellipse 120% 140% at 12% -20%, rgba(29, 107, 70, 0.4), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+}
+.room-where {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+.room h1 { margin: 2px 0 4px; }
+.room-colour { color: var(--text-dim); max-width: 52ch; }
+
+.room-money { text-align: right; flex: 0 0 auto; }
+.pocket {
+  font-family: var(--mono);
+  font-size: var(--t-xl);
+  font-weight: 600;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.pocket-label { font-size: var(--t-xs); color: var(--text-faint); }
+
+/* The facts of the room, struck along a strip like markings on a rail. */
+.room-strip {
+  display: flex;
+  gap: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: #0a110d;
+}
+.chip-fact {
+  flex: 1;
+  padding: var(--s-3) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.chip-fact + .chip-fact { border-left: 1px solid var(--border); }
+.chip-fact .k {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+.chip-fact .v { font-family: var(--mono); color: var(--text); font-variant-numeric: tabular-nums; }
+
+.resident {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  padding: var(--s-4) var(--s-5);
+}
+.resident-text { min-width: 0; }
+.resident-name { font-weight: 600; display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+
+.sit-row, .broke { padding: 0 var(--s-5) var(--s-5); display: flex; gap: var(--s-3); align-items: center; flex-wrap: wrap; }
+.notice.broke { margin: 0 var(--s-5) var(--s-5); padding: var(--s-4); display: block; }
+
+/* The next door, and how far off it is. */
+.door-name { font-weight: 600; font-size: var(--t-md); }
+.door-need .mono { color: var(--gold); font-variant-numeric: tabular-nums; }
+
+/* The building, as a list of doors along a corridor. */
+.rooms { display: flex; flex-direction: column; }
+.room-row {
+  display: grid;
+  grid-template-columns: 58px 1fr auto auto auto;
+  gap: var(--s-3);
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  padding: var(--s-3) var(--s-2);
+  cursor: pointer;
+}
+.room-row:last-child { border-bottom: 0; }
+.room-row:hover:not(:disabled) { background: rgba(255, 255, 255, 0.02); }
+.room-row.here { box-shadow: inset 3px 0 0 var(--gold); }
+.room-row.shut { opacity: 0.45; cursor: not-allowed; }
+.room-stake { font-family: var(--mono); color: var(--gold); font-size: var(--t-sm); }
+.room-name { font-weight: 600; min-width: 0; }
+.room-gate { font-size: var(--t-xs); color: var(--text-faint); white-space: nowrap; }
+.room-beaten { color: var(--green); }
+
+.ledger { padding: 0 var(--s-2); }
+
+/* Study is one line at the bottom now, not the whole screen. */
+.study-line {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  font: inherit;
+  color: var(--text-dim);
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--s-3) var(--s-4);
+  cursor: pointer;
+  transition: color 160ms, border-color 160ms;
+}
+.study-line:hover { color: var(--gold); border-color: var(--gold-dim); }
+.study-line span { flex: 1; text-align: left; }
+
+@media (max-width: 620px) {
+  .room-head { flex-direction: column; gap: var(--s-3); }
+  .room-money { text-align: left; }
+  .room-row { grid-template-columns: 52px 1fr auto; }
+  .room-row .style-tag { display: none; }
+}

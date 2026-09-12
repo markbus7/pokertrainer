@@ -15,6 +15,7 @@ const shortfall = (have, need) => t('— {n} more hands', { n: need - have });
 import { renderFelt } from './feltView.js';
 import { createTable, STREETS } from '../engine/table.js';
 import { botAction, getProfile, pickOpponents } from '../engine/bots.js';
+import { venueFor } from '../data/venues.js';
 import { VARIANTS, VARIANT_KEYS } from '../engine/variants.js';
 import { equityVsField, outsToImprove } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, spr } from '../core/odds.js';
@@ -102,6 +103,13 @@ export function renderTable(ctx, params = {}) {
   const seats = lesson ? lesson.seats : 6;
 
   const opponents = pickOpponents(seats - 1, rng);
+  // In a room, the regular is at the table. A venue whose resident never
+  // turns up is a stake with a story attached, which is what this is meant
+  // to stop being.
+  if (grind) {
+    const room = venueFor(profile.career.venue);
+    if (!opponents.includes(room.resident)) opponents[0] = room.resident;
+  }
   const table = createTable({
     variant: variantKey,
     smallBlind: bigBlind / 2,
@@ -592,14 +600,28 @@ export function renderTable(ctx, params = {}) {
       });
       const advice = bankrollAdvice(profile.data.bankroll, stake.key);
       toast({
-        icon: stats.profitBb >= 0 ? '📈' : '📉',
+        icon: stats.profitBb >= 0 ? 'chip' : 'warn',
         title: t('Cashed out {money}', { money: fmt.money(cashOut) }),
         desc: `${stats.hands} hands, ${fmt.bb(stats.profitBb)}. ${advice.message}`,
       });
+
+      // You take a room by leaving it with a buy-in of their money. A stake
+      // you merely sat at is a number; a room you beat is somewhere you have
+      // been.
+      const room = venueFor(profile.career.venue);
+      if (cashOut - stake.buyIn >= stake.buyIn && profile.noteResidentBeaten(room.key)) {
+        const regular = getProfile(room.resident);
+        toast({
+          icon: 'check',
+          title: t('You took {room}', { room: t(room.name) }),
+          desc: t('Left with a buy-in of their money, {name} included.', { name: regular.name }),
+          duration: 7000,
+        });
+      }
     } else if (stats.hands) {
       profile.recordSession({ hands: stats.hands, profitBb: stats.profitBb, stake: 'practice', endedAt: Date.now() });
     }
-    go(grind ? 'grind' : 'home');
+    go('home');
   }
 
   /** Mounts the rebuy panel only. Never calls draw(): drawActions routes here. */

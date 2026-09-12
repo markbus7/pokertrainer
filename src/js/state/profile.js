@@ -161,6 +161,11 @@ const emptyProfile = () => ({
   rankHistory: {},   // level -> first time it was reached
   practice: {},      // 'module:kind' -> { attempts, correct, tags }
   bankroll: 200,
+  // Where you are in the building, and what it has cost you to get there.
+  // The climb is money: `venue` is the room you last sat in, `best` the
+  // furthest door that has opened, and `beaten` the rooms whose regular you
+  // have taken a stack off.
+  career: { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: [] },
   stakeKey: 'nl2',
   handsPlayed: 0,
   lifetimeProfitBb: 0,
@@ -354,6 +359,49 @@ export class Profile {
     // null means "not enough answers to say", and every screen that shows a
     // score honours it. The bar lives in mastery.js so there is one of it.
     return s.attempts >= EVIDENCE_BAR ? s.correct / s.attempts : null;
+  }
+
+  /* ---- the career ------------------------------------------------- */
+
+  get career() {
+    if (!this.data.career) this.data.career = { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: [] };
+    if (!this.data.career.beaten) this.data.career.beaten = [];
+    return this.data.career;
+  }
+
+  /** Sit down in a room. Records the furthest door that has opened. */
+  enterVenue(key, index, bestIndex) {
+    const c = this.career;
+    c.venue = key;
+    if (index >= bestIndex) c.best = key;
+    this.save();
+    return c;
+  }
+
+  /**
+   * Broke. The house puts you back in for a token amount.
+   *
+   * Not charity and not hidden: it is counted, and the career screen says how
+   * many times it has happened. A bankroll that quietly refills teaches that
+   * going broke costs nothing, which is the opposite of the lesson.
+   */
+  stakedByTheHouse(amount) {
+    const c = this.career;
+    c.busted++;
+    c.staked += amount;
+    this.data.bankroll = amount;
+    c.venue = 'nl2';
+    this.save();
+    return c;
+  }
+
+  /** You took the room regular's stack. */
+  noteResidentBeaten(key) {
+    const c = this.career;
+    if (c.beaten.includes(key)) return false;
+    c.beaten.push(key);
+    this.save();
+    return true;
   }
 
   /** Guided lessons are tracked apart from drills so they cannot skew accuracy. */

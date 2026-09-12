@@ -3052,6 +3052,68 @@ export const NL = {
   'You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive kind of session, because nothing about it tells you to stop.':
     'Je won chips met {pct} van je beslissingen juist. Betaald krijgen voor de verkeerde keuze is het dure soort sessie, want niets erin zegt je dat je moet stoppen.',
   'Show me the chart': 'Laat me de chart zien',
+  'Gone broke once. The house has staked you {money}.':
+    'Eén keer kapot gegaan. De zaak heeft je {money} voorgeschoten.',
+  'The Kitchen Table': 'De Keukentafel',
+  'Somebody\'s back room': 'Iemands achterkamer',
+  'A friendly game with terrible players and a bowl of crisps.':
+    'Een gezellig spelletje met slechte spelers en een schaal chips.',
+  'The Anchor': 'Het Anker',
+  'A pub back room': 'Achterzaal van een café',
+  'Nobody folds here. That is the whole strategy and it still works.':
+    'Niemand foldt hier. Dat is de hele strategie en het werkt nog ook.',
+  'The Boat Club': 'De Roeivereniging',
+  'Riverside, members only': 'Aan het water, alleen voor leden',
+  'The first room with someone who has read a book.':
+    'De eerste zaal met iemand die een boek heeft gelezen.',
+  'The Card Room': 'De Kaartzaal',
+  'Above a betting shop': 'Boven een wedkantoor',
+  'Regulars with notes on you. Position stops being a word.':
+    'Vaste klanten met aantekeningen over jou. Positie is hier geen woord meer.',
+  'The Continental': 'De Continental',
+  'Hotel basement': 'Hotelkelder',
+  'Loud, fast, and expensive if you play back without a hand.':
+    'Luid, snel en duur als je terugspeelt zonder hand.',
+  'The Ivory Room': 'De Ivoren Zaal',
+  'Members\' club, city side': 'Besloten club, kant van de stad',
+  'Quiet. Everybody here studies as hard as you do.':
+    'Stil. Iedereen hier studeert net zo hard als jij.',
+  'The Vault': 'De Kluis',
+  'No sign on the door': 'Geen bordje op de deur',
+  'Somebody at this table is gambling with money that is not theirs.':
+    'Iemand aan deze tafel gokt met geld dat niet van hem is.',
+  'The Long Room': 'De Lange Zaal',
+  'Invitation only': 'Alleen op uitnodiging',
+  'The last door. Nobody here is going to give you anything.':
+    'De laatste deur. Niemand hier geeft je iets cadeau.',
+  'Career': 'Carrière',
+  'in your pocket': 'op zak',
+  'Next door': 'Hiernaast',
+  '{money} to go': 'nog {money}',
+  'The building': 'Het pand',
+  'you are here': 'hier ben je',
+  'Sit down — {money}': 'Ga zitten — {money}',
+  'Study first': 'Eerst studeren',
+  'Walk into {room}': 'Loop {room} binnen',
+  'Not enough for a seat': 'Niet genoeg voor een stoel',
+  'A seat at {room} costs {money}.': 'Een stoel bij {room} kost {money}.',
+  '{name} is here most nights.': '{name} zit hier bijna elke avond.',
+  '✓ taken down': '✓ gepakt',
+  'You cannot afford a seat here.': 'Je kunt hier geen stoel betalen.',
+  'A seat at {room} is {money} and you have {have}.':
+    'Een stoel bij {room} kost {money} en jij hebt {have}.',
+  'Take {money} from the house': 'Neem {money} van de zaak',
+  'Go and study instead': 'Ga dan maar studeren',
+  'The house stakes you': 'De zaak schiet je voor',
+  '{money} and a seat at the cheapest game. It is counted.':
+    '{money} en een stoel aan de goedkoopste tafel. Het wordt geteld.',
+  'Gone broke {n} times. The house has staked you {money} in total.':
+    '{n} keer kapot gegaan. De zaak heeft je in totaal {money} voorgeschoten.',
+  'Between sessions: {module}': 'Tussen sessies door: {module}',
+  'You took {room}': 'Je hebt {room} gepakt',
+  'Left with a buy-in of their money, {name} included.':
+    'Weggelopen met een buy-in van hun geld, {name} incluis.',
+  'Training': 'Training',
   'Replay what you misplayed.': 'Speel terug wat je verkeerd speelde.',
   'Type the equity, size the bet.': 'Typ de equity, bepaal de bet.',
   '{stake} · {money}': '{stake} · {money}',
