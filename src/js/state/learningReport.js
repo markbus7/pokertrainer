@@ -20,7 +20,7 @@
 
 import { MODULE_META } from '../data/curriculum.js';
 import { weakSpots, runHistory } from './lessonRuns.js';
-import { masteryTier, REQUIREMENTS } from './mastery.js';
+import { masteryTier, REQUIREMENTS, needCorrect } from './mastery.js';
 import { calibrationReport, getCard, strength } from './spacing.js';
 import { RANKS, requirementRows } from './profile.js';
 
@@ -184,8 +184,8 @@ export function learningReport(profile) {
     const lesson = profile.hasCompletedWalkthrough(meta.id) ? 'lesson done' : 'lesson not done';
     lines.push(`  ${meta.name}: ${stats.correct}/${stats.attempts} (${pct(accuracy)}) · ${tier} · ${lesson}`);
   }
-  lines.push(`  (Solid needs ${REQUIREMENTS.solid.attempts} at ${pct(REQUIREMENTS.solid.accuracy)}; `
-    + `Mastered ${REQUIREMENTS.mastered.attempts} at ${pct(REQUIREMENTS.mastered.accuracy)} plus the lesson.)`);
+  lines.push(`  (Solid needs ${needCorrect(REQUIREMENTS.solid)} of your last ${REQUIREMENTS.solid.window}; `
+    + `Mastered ${needCorrect(REQUIREMENTS.mastered)} of your last ${REQUIREMENTS.mastered.window} plus the lesson.)`);
 
   /* ---- confidence against reality ---- */
   const calib = calibrationReport(profile);

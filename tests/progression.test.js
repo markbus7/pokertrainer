@@ -325,8 +325,17 @@ describe('progression: drill tracking', () => {
     const p = fresh();
     const played = { 'hand-rankings': [26, 26], 'pot-odds': [30, 39], outs: [32, 55], preflop: [20, 33], position: [7, 13] };
     for (const [id, [right, total]] of Object.entries(played)) {
-      for (let i = 0; i < right; i++) p.recordDrill(id, true);
-      for (let i = 0; i < total - right; i++) p.recordDrill(id, false);
+      // Spread the misses through the run rather than stacking them at the
+      // end. Tiers read the last answers now, so a fixture that answers
+      // everything right and then everything wrong describes a collapse, not
+      // a reader sitting at 77%.
+      let done = 0;
+      for (let i = 0; i < total; i++) {
+        const correct = Math.round(((i + 1) * right) / total) > done;
+        if (correct) done++;
+        p.recordDrill(id, correct);
+      }
+      equal(p.drillStats(id).correct, right, `${id} fixture keeps its ratio`);
     }
     p.data.xp = 3000;
     p.data.walkthroughs = ['hand-rankings', 'pot-odds'];

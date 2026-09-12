@@ -84,7 +84,7 @@ function renderNext(profile, next, go) {
   );
 }
 
-function requirementRow(r, { showSurplus = false } = {}) {
+export function requirementRow(r, { showSurplus = false } = {}) {
   const pct = r.need <= 0 ? 1 : Math.min(1, r.have / r.need);
   const fmtNum = (n) => (n >= 1000 ? fmt.chips(n) : String(n));
   // On a rank already earned, the honest figure is what you actually have —
@@ -105,6 +105,9 @@ function requirementRow(r, { showSurplus = false } = {}) {
           background: r.met ? 'var(--green)' : undefined,
         },
       })),
+    // Why the count is short can matter as much as the count: a window that
+    // is not full yet is missing questions, not right answers.
+    r.note ? el('div.faint', { style: { marginTop: '5px', fontSize: '0.76rem' } }, r.note) : null,
   );
 }
 

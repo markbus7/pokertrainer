@@ -7,7 +7,10 @@ import { copyButton } from './copySpot.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
 import { generateQuestion, generateGauntlet, difficultyForLevel } from '../trainers/index.js';
 import { checkAchievements } from '../state/achievements.js';
-import { masteryTier, nextTierGoal, promotion, tierByKey, EVIDENCE_BAR } from '../state/mastery.js';
+import {
+  masteryTier, nextTierGoal, promotion, tierByKey, EVIDENCE_BAR, tierPlan, REQUIREMENTS,
+} from '../state/mastery.js';
+import { requirementRow } from './screenLevels.js';
 import { review } from '../state/spacing.js';
 import { WALKTHROUGHS } from '../data/walkthroughs.js';
 import { CHARTS, BOUNDARY_ROWS, rowBoundary } from '../data/ranges.js';
@@ -31,6 +34,79 @@ function walkthroughShape(moduleId) {
 function lessonIsTheBlocker(profile, moduleId) {
   const goal = nextTierGoal(profile, moduleId);
   return Boolean(goal && goal.missing.length === 1 && /lesson/i.test(goal.missing[0]));
+}
+
+
+/**
+ * The whole climb for one module: where you are, what each rung asks, and
+ * what would get you to the next one.
+ *
+ * The reader's words: "I do not know how much of what I have to do to get to
+ * Solid or Mastered." They were right that it was not stated anywhere. A tile
+ * named the next bar in six words and the module page named none of it, so
+ * the shape of the thing — three rungs, and which one you are standing on —
+ * only existed in the source.
+ */
+function masteryLadder(profile, moduleId, go) {
+  const plan = tierPlan(profile, moduleId);
+  const here = masteryTier(profile, moduleId);
+
+  return el('div.panel',
+    el('div.panel-title', el('h2', t('Your way to Mastered'))),
+    el('div.faint', { style: { marginBottom: '14px' } },
+      t('Only your most recent answers count, so a rough start does not follow you around. '
+        + 'Every rung is reachable from wherever you are standing.')),
+
+    plan.map((rung) => {
+      const state = rung.state;
+      const tone = state === 'done' ? 'green' : state === 'here' ? 'gold' : '';
+      return el(`div.rung${state === 'here' ? '.rung-here' : ''}`,
+        el('div.spread', { style: { alignItems: 'center' } },
+          el('div.row',
+            el('span', { style: { fontSize: '1.3rem', opacity: state === 'ahead' ? '0.5' : '1' } }, rung.icon),
+            el('div',
+              el('div', { style: { fontWeight: '600' } }, t(rung.name)),
+              el('div.faint', { style: { fontSize: '0.78rem' } }, t(rung.blurb)),
+            ),
+          ),
+          el(`span.badge${tone ? `.${tone}` : ''}`,
+            state === 'done' ? t('✓ Passed') : state === 'here' ? t('You are here') : t('Ahead')),
+        ),
+
+        rung.rows.length
+          ? el('div', { style: { marginTop: '10px' } }, rung.rows.map((row) => requirementRow(row)))
+          : el('div.faint', { style: { marginTop: '8px', fontSize: '0.82rem' } },
+            t('Nothing to earn — this is where you stand from your first answer.')),
+
+        // The number the reader asked for, and the one a window makes
+        // possible to state at all.
+        rung.rows.length && !rung.rows.every((row) => row.met)
+          ? el('div', { style: { marginTop: '10px' } },
+            rung.rows.some((row) => row.met === false && row.need > 1)
+              ? el('div.notice.sm',
+                rung.run === 0
+                  ? t('The answers are already there — only the lesson is left.')
+                  : rung.run === 1
+                    ? t('One more right answer gets you to {tier}.', { tier: t(rung.name) })
+                    : t('{n} right answers in a row would get you to {tier}.',
+                      { n: rung.run, tier: t(rung.name) }))
+              : null,
+            rung.rows.some((row) => !row.met && row.need === 1)
+              ? el('button.btn.sm.block', {
+                style: { marginTop: '8px' },
+                onclick: () => go('walkthrough', { module: moduleId }),
+              }, t('Start the guided lesson'))
+              : null)
+          : null,
+      );
+    }),
+
+    here === 'mastered'
+      ? el('div.notice', { style: { marginTop: '12px' } },
+        t('Mastered, on your last {n} answers. It reads your current form, so it is kept by playing, not by '
+          + 'having played.', { n: REQUIREMENTS.mastered.window }))
+      : null,
+  );
 }
 
 export function renderLearn(ctx, params) {
@@ -86,6 +162,7 @@ export function renderLearn(ctx, params) {
           )
         : null,
     ),
+    masteryLadder(profile, meta.id, go),
     el('div.panel',
       el('div.spread',
         el('h3', { style: { margin: 0 } }, 'Why this matters'),

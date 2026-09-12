@@ -796,6 +796,52 @@ await step('a pot-odds question offers the shortcut, not a chart', async () => {
   console.log(`      ${card.steps} steps and ${card.rows.length} rungs, ${card.rows.map((r) => r.join('=')).join(' ')}`);
 });
 
+await step('a lesson page draws the whole climb, with a number on every rung', async () => {
+  // The reader's words: "I do not know how much of what I have to do to get
+  // to Solid or Mastered." The tile named the next bar in six words and the
+  // lesson page named none of it, so the shape — three rungs, which one you
+  // are on, what each asks — existed only in the source.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    raw.drills = { outs: { attempts: 22, correct: 16 } };   // 73%, a real mid-climb record
+    raw.walkthroughs = [];
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#learn?module=outs`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  const ladder = await page.evaluate(() => {
+    const rungs = [...document.querySelectorAll('.rung')];
+    if (!rungs.length) return null;
+    return {
+      count: rungs.length,
+      here: rungs.filter((n) => n.classList.contains('rung-here')).length,
+      text: rungs.map((n) => n.textContent.replace(/\s+/g, ' ')),
+    };
+  });
+  if (!ladder) throw new Error('the lesson page shows no ladder at all');
+  if (ladder.count !== 3) throw new Error(`${ladder.count} rungs, expected Learning/Solid/Mastered`);
+  if (ladder.here !== 1) throw new Error(`${ladder.here} rungs marked as where you stand, expected exactly 1`);
+
+  const all = ladder.text.join(' ');
+  for (const [what, re] of [
+    ['the Solid bar', /12 of your last 15/],
+    ['the Mastered bar', /27 of your last 30/],
+    ['the lesson requirement', /Finish the guided lesson/i],
+    ['a run you can act on', /\d+ right answers in a row/],
+    ['where you stand on a rung', /\d+ \/ 12/],
+  ]) {
+    if (!re.test(all)) throw new Error(`the ladder never states ${what}: ${all.slice(0, 200)}`);
+  }
+
+  // A migrated save has totals but no record of how the answers went. It must
+  // not read as an empty window beside a tile quoting a percentage.
+  if (/0 \/ 12/.test(all)) throw new Error(`a 22-answer record shows as nothing: ${all.slice(0, 200)}`);
+  console.log(`      ${ladder.count} rungs, one marked, e.g. ${ladder.text[1].slice(0, 96)}…`);
+});
+
 await step('a graded question can be copied out as text', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'domcontentloaded' });
@@ -973,7 +1019,12 @@ await step('a tile says what is still missing, not just what the target is', asy
   });
   if (!tile) throw new Error('no tile for Outs & Equity');
   if (!/9\/10/.test(tile)) throw new Error(`the tile does not show the record: ${tile}`);
-  if (!/5 more questions/i.test(tile)) {
+  // 9 of the last 10 right, and Solid wants 12 of its 15-answer window — so
+  // the run is five, not three: the window has to be full before it can be
+  // judged, and two of those five are questions nobody has asked yet. The
+  // tile has to carry that figure, not the target with the subtraction left
+  // to the reader.
+  if (!/5 right answers in a row/i.test(tile)) {
     throw new Error(`the tile never says how many more are needed: ${tile}`);
   }
   console.log(`      tile reads: ${tile.slice(0, 120)}`);

@@ -1200,3 +1200,9 @@ input, textarea, select { font-size: max(16px, 1rem); }
 .cheat-table td { color: var(--text); }
 /* The column the question is actually about. */
 .cheat-table .here { color: var(--gold); background: rgba(227, 178, 60, 0.08); }
+
+/* One rung of a module's mastery ladder. */
+.rung { padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; }
+.rung:last-child { margin-bottom: 0; }
+.rung-here { border-color: var(--gold-dim); background: rgba(227, 178, 60, 0.05); }
+.notice.sm { font-size: 0.84rem; padding: 8px 10px; }

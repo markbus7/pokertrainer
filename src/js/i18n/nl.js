@@ -3052,6 +3052,29 @@ export const NL = {
   'You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive kind of session, because nothing about it tells you to stop.':
     'Je won chips met {pct} van je beslissingen juist. Betaald krijgen voor de verkeerde keuze is het dure soort sessie, want niets erin zegt je dat je moet stoppen.',
   'Show me the chart': 'Laat me de chart zien',
+  'A new answer pushes the oldest out, so it takes a run of {run}, not {gap}.':
+    'Een nieuw antwoord duwt het oudste eruit, dus het kost een reeks van {run}, niet {gap}.',
+  'Your way to Mastered': 'Jouw weg naar Mastered',
+  'Only your most recent answers count, so a rough start does not follow you around. Every rung is reachable from wherever you are standing.':
+    'Alleen je meest recente antwoorden tellen, dus een moeizame start blijft je niet achtervolgen. Elke trede is haalbaar vanaf waar je nu staat.',
+  '✓ Passed': '✓ Gehaald',
+  'You are here': 'Hier sta je',
+  'Ahead': 'Nog te gaan',
+  'Nothing to earn — this is where you stand from your first answer.':
+    'Niets te verdienen — hier sta je vanaf je eerste antwoord.',
+  'The answers are already there — only the lesson is left.':
+    'De antwoorden staan er al — alleen de les is nog over.',
+  'One more right answer gets you to {tier}.': 'Nog één goed antwoord en je bent {tier}.',
+  '{n} right answers in a row would get you to {tier}.':
+    '{n} goede antwoorden op rij brengen je naar {tier}.',
+  'Mastered, on your last {n} answers. It reads your current form, so it is kept by playing, not by having played.':
+    'Mastered, op je laatste {n} antwoorden. Het leest je huidige vorm, dus je houdt het door te spelen, niet door gespeeld te hebben.',
+  '{need} of your last {window} answers right': '{need} van je laatste {window} antwoorden goed',
+  '{n} answered so far — the window fills as you go':
+    '{n} tot nu toe beantwoord — het venster vult zich onderweg',
+  'Finish the guided lesson': 'Rond de begeleide les af',
+  '1 more right answer': 'nog 1 goed antwoord',
+  '{n} right answers in a row': '{n} goede antwoorden op rij',
   'Show me the method': 'Laat me de methode zien',
   'At a table you count, you do not divide.': 'Aan tafel tel je, je deelt niet.',
   'How many times does their bet fit into the pot?': 'Hoe vaak past hun bet in de pot?',
