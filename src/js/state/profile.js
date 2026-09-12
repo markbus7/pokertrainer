@@ -14,7 +14,7 @@
  * nobody tells you which skill the spot is testing.
  */
 
-import { masteryTier, EVIDENCE_BAR } from './mastery.js';
+import { masteryTier, EVIDENCE_BAR, MASTERY_WINDOW, legacyTier, seedWindow } from './mastery.js';
 import { MODULE_META } from '../data/curriculum.js';
 
 const STORAGE_KEY = 'poker-trainer.profile.v1';
@@ -182,7 +182,21 @@ export class Profile {
     this.data = { ...emptyProfile(), ...data };
     this.data.settings = { ...emptyProfile().settings, ...(data.settings || {}) };
     this.listeners = new Set();
+    this.carryForwardTiers();
+  }
 
+  /**
+   * A save written before tiers were judged on recent form has totals but no
+   * log of how the answers went, so its window reads as empty. Read the old
+   * rule once and bank what it had already awarded: nobody is demoted for
+   * upgrading, and the window takes over as soon as it is full.
+   */
+  carryForwardTiers() {
+    for (const [id, stats] of Object.entries(this.data.drills || {})) {
+      if (stats.recent != null) continue;
+      stats.earned = legacyTier(stats, (this.data.walkthroughs || []).includes(id));
+      stats.recent = seedWindow(stats.attempts || 0, stats.correct || 0);
+    }
   }
 
   static load(storage = createStorage()) {
@@ -274,6 +288,10 @@ export class Profile {
     } else {
       stats.streak = 0;
     }
+    // The window the tiers are judged on. Stored as a string of 1s and 0s
+    // because it is written on every answer and lives in localStorage: 30
+    // characters, newest last.
+    stats.recent = ((stats.recent || '') + (wasCorrect ? '1' : '0')).slice(-MASTERY_WINDOW);
     this.data.drills[module] = stats;
     this.noteRankReached();
     this.save();
