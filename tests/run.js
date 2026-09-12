@@ -2,6 +2,7 @@ import { runAll } from './harness.js';
 
 const modules = [
   './evaluator.test.js',
+  './handRead.test.js',
   './equity.test.js',
   './odds.test.js',
   './ranges.test.js',
