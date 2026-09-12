@@ -13,6 +13,7 @@ import {
 } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 import { PROFILES } from '../engine/bots.js';
+import { readRange, equityAgainst } from '../core/handRead.js';
 import { buildChoices, percentDistractors, attempt, describeTexture, pct } from './helpers.js';
 import { t } from '../i18n/index.js';
 
@@ -224,19 +225,30 @@ export function bluffCatchDrill(rng, difficulty = 4) {
   const fraction = [0.5, 0.75, 1][randInt(rng, 3)];
   const bet = Math.round(pot * fraction / 5) * 5;
   const need = requiredEquity(bet, pot + bet);
-  // Holding a pure bluff catcher, your equity IS their bluff frequency.
-  const bluffFreq = villain.bluff;
-  if (Math.abs(bluffFreq - need) < 0.05) return null;
 
-  const shouldCall = bluffFreq > need;
+  // `villain.bluff` was used here as "how often they bluff", and it is not
+  // that: it is a knob inside the bot's decision, rolled only for hands under
+  // an equity ceiling and competing with every value bet. The share of an
+  // actual betting range that is air comes out lower — 31% against a stated
+  // 55% for the maniac — and grading on the knob marked the wrong answer in
+  // 113 of 345 generated spots. Build the range and price the call against it.
+  const line = { toCall: 0, street: 'river', heroIsAggressor: false, dead: dealt.hole };
+  const range = readRange(villain.key, dealt.board, 'bet', line);
+  if (!range) return null;
+  const equity = equityAgainst(range, dealt.hole, dealt.board);
+  const bluffFreq = range.share.air;
+  if (Math.abs(equity - need) < 0.05) return null;
+
+  const shouldCall = equity > need;
   const { options, answer } = buildChoices(rng, shouldCall ? t('Call') : t('Fold'), [t('Call'), t('Fold')]);
-  const opener = t('You need to be right {need} of the time. {name} bluffs about {freq} of the time — {tell}',
-    { need: pct(need, 1), name: villain.name, freq: pct(bluffFreq), tell: t(villain.tell).toLowerCase() });
+  const opener = t('You need to be right {need} of the time. Of every hand {name} would bet here, {freq} is air '
+    + '— so your hand wins {equity} of the time. {tell}',
+  { need: pct(need, 1), name: villain.name, freq: pct(bluffFreq), equity: pct(equity), tell: t(villain.tell) });
   const verdict = shouldCall
-    ? t('Since {freq} beats the {need} you need, this is a profitable call.',
-      { freq: pct(bluffFreq), need: pct(need) })
-    : t('Since {freq} falls short of the {need} you need, folding is correct.',
-      { freq: pct(bluffFreq), need: pct(need) });
+    ? t('Since {equity} beats the {need} you need, this is a profitable call.',
+      { equity: pct(equity), need: pct(need) })
+    : t('Since {equity} falls short of the {need} you need, folding is correct.',
+      { equity: pct(equity), need: pct(need) });
 
   return {
     module: 'exploit',
@@ -249,6 +261,78 @@ export function bluffCatchDrill(rng, difficulty = 4) {
     answer,
     explanation: `${opener} ${verdict} ${t(villain.counter)}`,
     xp: 18 + difficulty * 4,
+  };
+}
+
+
+/**
+ * The skill under everything else: what does that line represent?
+ *
+ * Every postflop verdict in this app was computed against the villain's real
+ * cards, which is the one thing a table never shows you. This asks for the
+ * read instead, and grades it against the range built from the bot's own
+ * decision rule — so the answer is not an opinion about player types, it is
+ * what those hands would actually do.
+ */
+// Measured, not guessed: across 240 profile-by-board combinations the share
+// of air in a river betting range runs from 1.7% to 26.5%, median 14.2%. An
+// earlier ladder of 5/15/25/35 never once had 35% as its answer, which is a
+// dead option and a pattern worth learning for the wrong reason.
+const READ_BANDS = [3, 10, 18, 26];
+
+export function rangeReadDrill(rng, difficulty = 4) {
+  const spot = attempt(() => {
+    const keys = ['rock', 'tag', 'lag', 'station', 'maniac', 'pro'];
+    const villain = PROFILES[keys[randInt(rng, keys.length)]];
+    const dealt = dealtSpot(rng, 5, bluffCatcher);
+    if (!dealt) return null;
+    const range = readRange(villain.key, dealt.board, 'bet',
+      { toCall: 0, street: 'river', heroIsAggressor: false, dead: dealt.hole });
+    if (!range) return null;
+
+    // Only ask when one band is clearly the nearest. A truth sitting between
+    // two of them has two defensible answers and one of them scored wrong.
+    const air = range.share.air * 100;
+    const sorted = READ_BANDS.slice().sort((a, b) => Math.abs(a - air) - Math.abs(b - air));
+    if (Math.abs(sorted[1] - air) - Math.abs(sorted[0] - air) < 2) return null;
+    return { villain, dealt, range, air, band: sorted[0] };
+  }, 120);
+  if (!spot) return null;
+
+  const { villain, dealt, range, air, band } = spot;
+  const pot = (4 + randInt(rng, 8)) * 10;
+  const bet = Math.round(pot * [0.5, 0.75, 1][randInt(rng, 3)] / 5) * 5;
+  const need = requiredEquity(bet, pot + bet);
+  const equity = equityAgainst(range, dealt.hole, dealt.board);
+
+  const { options, answer } = buildChoices(
+    rng, `${band}%`, READ_BANDS.filter((b) => b !== band).map((b) => `${b}%`),
+    // A ladder of shares is a scale, and picking a place on a scale is what
+    // the question asks; shuffled, they have to be read one at a time.
+    { sorted: true },
+  );
+
+  return {
+    module: 'exploit',
+    difficulty,
+    scenario: {
+      ...dealt,
+      pot,
+      toCall: bet,
+      villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) },
+    },
+    question: t('River. You check and {name} ({style}) bets {bet} into {pot}. Of every hand they would bet '
+      + 'here, roughly what share is air — a hand that only wins if you fold?',
+    { name: villain.name, style: t(villain.style), bet, pot }),
+    options,
+    answer,
+    explanation: `${t('Run every hand they could hold through the way they play, and {air} of their betting '
+      + 'range is air, {strong} wants a call, and the rest are bluff-catchers like yours. {tell}',
+    { air: pct(range.share.air), strong: pct(range.share.strong), tell: t(villain.tell) })} `
+      + t('That is what the read is worth: your hand beats {equity} of that range, and the price asks for '
+        + '{need}, so this is a {verdict}.',
+      { equity: pct(equity), need: pct(need, 1), verdict: equity > need ? t('call') : t('fold') }),
+    xp: 20 + difficulty * 4,
   };
 }
 

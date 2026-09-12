@@ -14,7 +14,7 @@ import {
   matchupEquityDrill, rangeEquityDrill, chartBoundaryDrill,
 } from './preflop.js';
 import {
-  cbetDrill, mdfDrill, bluffMathDrill, balanceDrill, bluffCatchDrill, sprDrill,
+  cbetDrill, mdfDrill, bluffMathDrill, balanceDrill, bluffCatchDrill, rangeReadDrill, sprDrill,
 } from './postflop.js';
 import {
   exploitDrill, icmDrill, bankrollDrill, varianceDrill, rakeDrill,
@@ -34,7 +34,7 @@ const GENERATORS = {
   mdf: [mdfDrill],
   bluffing: [bluffMathDrill, balanceDrill],
   spr: [sprDrill],
-  exploit: [bluffCatchDrill, exploitDrill],
+  exploit: [bluffCatchDrill, exploitDrill, rangeReadDrill],
   icm: [icmDrill],
   bankroll: [bankrollDrill, varianceDrill, rakeDrill, gameSelectionDrill, winRateDrill],
 };

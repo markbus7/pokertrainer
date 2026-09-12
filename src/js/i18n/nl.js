@@ -3052,6 +3052,20 @@ export const NL = {
   'You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive kind of session, because nothing about it tells you to stop.':
     'Je won chips met {pct} van je beslissingen juist. Betaald krijgen voor de verkeerde keuze is het dure soort sessie, want niets erin zegt je dat je moet stoppen.',
   'Show me the chart': 'Laat me de chart zien',
+  'Solid Regular': 'Solide Regular',
+  'Balanced. There is no obvious leak to attack.': 'Gebalanceerd. Er is geen duidelijk lek om aan te vallen.',
+  'River. You check and {name} ({style}) bets {bet} into {pot}. Of every hand they would bet here, roughly what share is air — a hand that only wins if you fold?':
+    'River. Jij checkt en {name} ({style}) bet {bet} in een pot van {pot}. Van alle handen waarmee hij hier zou betten, welk deel is ongeveer lucht — een hand die alleen wint als jij foldt?',
+  'Run every hand they could hold through the way they play, and {air} of their betting range is air, {strong} wants a call, and the rest are bluff-catchers like yours. {tell}':
+    'Laat elke hand die hij kan hebben door zijn eigen speelwijze lopen en {air} van zijn betting range is lucht, {strong} wil gecalld worden, en de rest zijn bluffvangers zoals die van jou. {tell}',
+  'That is what the read is worth: your hand beats {equity} of that range, and the price asks for {need}, so this is a {verdict}.':
+    'Dat is wat de read waard is: jouw hand verslaat {equity} van die range en de prijs vraagt {need}, dus dit is een {verdict}.',
+  'You need to be right {need} of the time. Of every hand {name} would bet here, {freq} is air — so your hand wins {equity} of the time. {tell}':
+    'Je moet {need} van de tijd gelijk hebben. Van alle handen waarmee {name} hier zou betten is {freq} lucht — dus jouw hand wint {equity} van de tijd. {tell}',
+  'Since {equity} beats the {need} you need, this is a profitable call.':
+    'Omdat {equity} hoger is dan de {need} die je nodig hebt, is dit een winstgevende call.',
+  'Since {equity} falls short of the {need} you need, folding is correct.':
+    'Omdat {equity} onder de {need} blijft die je nodig hebt, is folden juist.',
   '🧊 Gone cold': '🧊 Weggezakt',
   'Your rank counts these at their best, so it is safe. Recent answers have them lower — which is what the tiles and "do this next" are reading.':
     'Je rang telt deze op hun beste stand, dus die is veilig. Je recente antwoorden staan lager — en dat is wat de tegels en "doe dit hierna" lezen.',

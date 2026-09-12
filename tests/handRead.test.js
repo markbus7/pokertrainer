@@ -1,0 +1,201 @@
+import { describe, it, assert, equal } from './harness.js';
+import { readRange, equityAgainst, riverEquities, candidateHands, actionChances } from '../src/js/core/handRead.js';
+import { PROFILES, CUTS } from '../src/js/engine/bots.js';
+import { bluffCatchDrill, rangeReadDrill } from '../src/js/trainers/postflop.js';
+import { makeDeck } from '../src/js/core/cards.js';
+import { makeRng, shuffle } from '../src/js/core/rng.js';
+import { requiredEquity } from '../src/js/core/odds.js';
+
+const boardFor = (seed) => shuffle(makeRng(seed), makeDeck()).slice(0, 5);
+const betting = { toCall: 0, street: 'river', heroIsAggressor: false };
+
+describe('hand reading: the range comes from how they actually play', () => {
+  it('gives the same answer twice', () => {
+    // The first attempt sampled equities, and it would not hold still: 8
+    // points of spread at 800 samples per hand, because the buckets have hard
+    // edges and hands near one flipped between runs. A drill cannot mark you
+    // wrong with a number that wanders.
+    const board = boardFor(42);
+    const a = readRange('tag', board, 'bet', betting);
+    const b = readRange('tag', board, 'bet', betting);
+    equal(a.share.air, b.share.air);
+    equal(a.share.strong, b.share.strong);
+  });
+
+  it('separates the players by how much air they bet', () => {
+    // If the nit and the maniac read the same, there is nothing to notice and
+    // the drill teaches nothing. Averaged over boards on purpose: how much
+    // air a range holds depends on the texture, and a claim pinned to one
+    // deal is a claim about that deal.
+    const seeds = [42, 7, 3, 11, 5, 19];
+    const air = (key) => seeds
+      .reduce((sum, seed) => sum + readRange(key, boardFor(seed), 'bet', betting).share.air, 0) / seeds.length;
+    const nit = air('rock');
+    const maniac = air('maniac');
+    assert(nit < 0.08, `the nit should almost never be betting air, got ${nit.toFixed(3)}`);
+    assert(maniac > 0.2, `the maniac should be full of it, got ${maniac.toFixed(3)}`);
+    assert(maniac - nit > 0.15, `the two have to be tellably different, gap ${(maniac - nit).toFixed(3)}`);
+
+    // And it has to hold on every board, not only on average.
+    for (const seed of seeds) {
+      const b = boardFor(seed);
+      const one = (k) => readRange(k, b, 'bet', betting).share.air;
+      assert(one('maniac') > one('rock'), `board ${seed}: the maniac bets more air than the nit`);
+    }
+  });
+
+  it('matches every profile\'s stated tell', () => {
+    // The tells are prose the reader is shown. If the bots do not behave that
+    // way, the app is teaching a read that loses money at its own table.
+    const board = boardFor(7);
+    const air = Object.fromEntries(Object.keys(PROFILES)
+      .map((k) => [k, readRange(k, board, 'bet', betting).share.air]));
+    assert(air.rock < air.tag, 'the nit bluffs less than the TAG');
+    assert(air.tag < air.lag, 'the TAG bluffs less than the LAG');
+    assert(air.lag < air.maniac, 'the LAG bluffs less than the maniac');
+    assert(air.station < air.tag, 'the station is passive: it bets value, not air');
+  });
+
+  it('reads a check as the giving-up range, not the betting one', () => {
+    const board = boardFor(3);
+    const bet = readRange('tag', board, 'bet', betting);
+    const check = readRange('tag', board, 'check', betting);
+    assert(check.share.air > bet.share.air,
+      'the hands that gave up have to be weaker than the hands that fired');
+    assert(bet.share.strong > check.share.strong, 'and the strong hands are in the betting range');
+  });
+
+  it('runs the bots\' own rule rather than a copy of it', () => {
+    // The whole point: change what the bot does and the read has to move with
+    // it. A reader graded against a second, parallel model of the opponents
+    // is graded against a player who is not at the table.
+    const p = PROFILES.tag;
+    const above = CUTS.valueBet(p) + 0.05;
+    const below = CUTS.valueBet(p) - 0.25;
+    assert(actionChances(p, above, betting).bet >= CUTS.valueBetChance(p),
+      'a hand past the value cut has to bet at least as often as the rule says');
+    assert(actionChances(p, below, betting).bet <= CUTS.bluffChance(p, betting) + 1e-9,
+      'a hand below every value cut can only be arriving as a bluff');
+  });
+
+  it('prices a hand against the range exactly, both ways round', () => {
+    const board = boardFor(11);
+    const range = readRange('lag', board, 'bet', betting);
+    const combos = candidateHands(board);
+    const eq = riverEquities(board, combos);
+    const best = combos[eq.indexOf(Math.max(...eq))];
+    const worst = combos[eq.indexOf(Math.min(...eq))];
+    assert(equityAgainst(range, best, board) > 0.9, 'the nuts beat almost all of any range');
+    assert(equityAgainst(range, worst, board) < 0.15, 'and the worst hand beats almost none of it');
+  });
+
+  it('never lets a weight escape the range it belongs to', () => {
+    const board = boardFor(5);
+    for (const key of Object.keys(PROFILES)) {
+      const r = readRange(key, board, 'bet', betting);
+      const sum = r.share.strong + r.share.medium + r.share.air;
+      assert(Math.abs(sum - 1) < 1e-9, `${key}'s shares sum to ${sum}`);
+      for (const h of r.hands) assert(h.weight > 0 && h.weight <= 1, `weight out of range: ${h.weight}`);
+    }
+  });
+});
+
+describe('hand reading: the bluff-catch drill is priced against the real range', () => {
+  it('no longer grades on a tuning knob', () => {
+    // `villain.bluff` is an input to the bot's decision — rolled only for
+    // hands under an equity ceiling, and competing with every value bet — not
+    // the share of a betting range that is air. Grading the call on it marked
+    // the wrong answer in 113 of 345 generated spots.
+    const board = boardFor(42);
+    for (const key of ['tag', 'lag', 'maniac', 'pro']) {
+      const real = readRange(key, board, 'bet', betting).share.air;
+      assert(real < PROFILES[key].bluff,
+        `${key}: the knob says ${PROFILES[key].bluff} and the range is ${real.toFixed(3)} —`
+        + ' value bets dilute the bluffs, so the knob always overstates it');
+    }
+  });
+
+  it('grades call or fold by what the hand is actually worth', () => {
+    // The hole this fills: reverting the drill to grade on villain.bluff left
+    // every other test green. Whichever way each spot goes, the verdict has
+    // to be the one the exact equity against the exact range gives.
+    const rng = makeRng(4242);
+    let checked = 0;
+    for (let i = 0; i < 250 && checked < 40; i++) {
+      const q = bluffCatchDrill(rng, 4);
+      if (!q) continue;
+      const sc = q.scenario;
+      const key = Object.keys(PROFILES).find((k) => PROFILES[k].name === sc.villain.name);
+      const range = readRange(key, sc.board, 'bet', { ...betting, dead: sc.hole });
+      if (!range) continue;
+      const equity = equityAgainst(range, sc.hole, sc.board);
+      const need = requiredEquity(sc.toCall, sc.pot + sc.toCall);
+      const graded = q.options.find((o) => o.key === q.answer).label;
+      equal(graded, equity > need ? 'Call' : 'Fold',
+        `${sc.villain.name}: hand is worth ${(equity * 100).toFixed(1)}%, price asks `
+        + `${(need * 100).toFixed(1)}%, drill said ${graded}`);
+      checked++;
+    }
+    assert(checked > 25, `enough spots checked (${checked})`);
+  });
+
+  it('agrees with the price it quotes', () => {
+    const board = boardFor(13);
+    const range = readRange('maniac', board, 'bet', betting);
+    const combos = candidateHands(board);
+    const eq = riverEquities(board, combos);
+    const mid = combos[eq.findIndex((e) => e > 0.45 && e < 0.6)];
+    const equity = equityAgainst(range, mid, board);
+    const need = requiredEquity(50, 150);
+    // Not a claim about which way it goes — a claim that the two numbers
+    // being compared are the two numbers the explanation prints.
+    assert(equity >= 0 && equity <= 1, 'equity is a share');
+    assert(need > 0 && need < 1, 'and so is the price');
+  });
+});
+
+describe('hand reading: the question is answerable and worth answering', () => {
+  it('never offers an answer that cannot be right', () => {
+    // The first ladder ran 5/15/25/35 and 35% was never once the answer over
+    // 300 questions — the bots do not bet that much air on a river. A dead
+    // option is a pattern to learn for the wrong reason.
+    const rng = makeRng(77);
+    const picked = new Map();
+    let asked = 0;
+    for (let i = 0; i < 240; i++) {
+      const q = rangeReadDrill(rng, 4);
+      if (!q) continue;
+      asked++;
+      const band = q.options.find((o) => o.key === q.answer).label;
+      picked.set(band, (picked.get(band) || 0) + 1);
+
+      // And the offered answers are a scale, not four numbers in a bag.
+      const ladder = q.options.map((o) => parseFloat(o.label));
+      for (let k = 1; k < ladder.length; k++) {
+        assert(ladder[k] > ladder[k - 1], `the options are out of order: ${ladder.join(', ')}`);
+      }
+    }
+    assert(asked > 150, `enough questions generated (${asked})`);
+    equal(picked.size, 4, `every band has to be reachable, only saw: ${[...picked.keys()].join(', ')}`);
+    for (const [band, n] of picked) {
+      assert(n / asked > 0.04, `${band} is the answer only ${(n / asked * 100).toFixed(1)}% of the time`);
+    }
+  });
+
+  it('only asks when one band is clearly the nearest', () => {
+    // A truth sitting halfway between two bands has two defensible answers,
+    // and one of them would be marked wrong.
+    const rng = makeRng(31);
+    for (let i = 0; i < 120; i++) {
+      const q = rangeReadDrill(rng, 4);
+      if (!q) continue;
+      const air = parseFloat(/(\d+(?:\.\d+)?)% of their betting range/.exec(q.explanation)[1]);
+      const bands = q.options.map((o) => parseFloat(o.label))
+        .sort((a, b) => Math.abs(a - air) - Math.abs(b - air));
+      const answer = parseFloat(q.options.find((o) => o.key === q.answer).label);
+      equal(answer, bands[0], `air is ${air}% and the answer is ${answer}%`);
+      assert(Math.abs(bands[1] - air) - Math.abs(bands[0] - air) >= 1.5,
+        `air of ${air}% is too close to call between ${bands[0]}% and ${bands[1]}%`);
+    }
+  });
+});

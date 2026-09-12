@@ -247,18 +247,17 @@ function postflopDecision({ table, player, profile, legal, rng, toCall, pot, can
 
   // --- Facing a bet -------------------------------------------------
   if (toCall > 0) {
-    const raiseCut = 0.78 - profile.aggression * 0.1;
-    if (equity > raiseCut && raiseSpec && rng() < 0.35 + profile.aggression * 0.5) {
+    const raiseCut = CUTS.valueRaise(profile);
+    if (equity > raiseCut && raiseSpec && rng() < CUTS.valueRaiseChance(profile)) {
       return { ...raiseTo(legal, raiseSpec.type, table.currentBet + chooseSizing(profile, rng, pot, table.bigBlind)), note: 'value raise' };
     }
     // Bluff-raise, but only from profiles that actually do it.
-    if (equity < 0.3 && raiseSpec && rng() < profile.bluff * 0.25 && table.street !== 'river') {
+    if (equity < CUTS.bluffRaiseCeiling && raiseSpec && rng() < CUTS.bluffRaiseChance(profile)
+      && table.street !== 'river') {
       return { ...raiseTo(legal, raiseSpec.type, table.currentBet + chooseSizing(profile, rng, pot, table.bigBlind)), note: 'bluff raise' };
     }
 
-    const threshold = needed * profile.respect;
-    const stationSlack = profile.callDown * 0.16;
-    if (equity + stationSlack > threshold && pickLegal(legal, 'call')) {
+    if (equity > CUTS.callThreshold(profile, needed) && pickLegal(legal, 'call')) {
       return { type: 'call', note: 'call' };
     }
     if (canCheck) return { type: 'check' };
@@ -267,21 +266,47 @@ function postflopDecision({ table, player, profile, legal, rng, toCall, pot, can
 
   // --- Checked to -----------------------------------------------------
   if (raiseSpec) {
-    const valueCut = 0.62 - profile.aggression * 0.08;
-    if (equity > valueCut && rng() < 0.55 + profile.aggression * 0.4) {
+    const valueCut = CUTS.valueBet(profile);
+    if (equity > valueCut && rng() < CUTS.valueBetChance(profile)) {
       return { ...raiseTo(legal, raiseSpec.type, chooseSizing(profile, rng, pot, table.bigBlind)), note: 'value bet' };
     }
-    const bluffChance = profile.bluff * (heroIsAggressor ? 1.15 : 0.8) * (table.street === 'river' ? 0.7 : 1);
-    if (equity < 0.42 && rng() < bluffChance) {
+    const bluffChance = CUTS.bluffChance(profile, { heroIsAggressor, street: table.street });
+    if (equity < CUTS.bluffCeiling && rng() < bluffChance) {
       return { ...raiseTo(legal, raiseSpec.type, chooseSizing(profile, rng, pot, table.bigBlind)), note: 'bluff' };
     }
     // Thin value from stations who bet only when they connect.
-    if (equity > 0.55 && rng() < profile.aggression * 0.5) {
+    if (equity > CUTS.thinValue && rng() < CUTS.thinValueChance(profile)) {
       return { ...raiseTo(legal, raiseSpec.type, chooseSizing(profile, rng, pot, table.bigBlind)), note: 'thin value' };
     }
   }
   return canCheck ? { type: 'check' } : { type: 'fold' };
 }
+
+
+/**
+ * The postflop rule, stated once.
+ *
+ * These numbers used to live inline in postflopDecision, which was fine while
+ * the bot was the only thing that needed them. Reading a range means asking
+ * "which hands would have played it this way", and the only honest answer
+ * runs the same rule the bot ran — so it lives here, and both callers read it
+ * rather than one of them keeping a copy that quietly drifts.
+ */
+export const CUTS = {
+  valueRaise: (p) => 0.78 - p.aggression * 0.1,
+  valueRaiseChance: (p) => 0.35 + p.aggression * 0.5,
+  bluffRaiseCeiling: 0.3,
+  bluffRaiseChance: (p) => p.bluff * 0.25,
+  /** Calling looks at the price, stretched by how much respect the bet gets. */
+  callThreshold: (p, needed) => needed * p.respect - p.callDown * 0.16,
+  valueBet: (p) => 0.62 - p.aggression * 0.08,
+  valueBetChance: (p) => 0.55 + p.aggression * 0.4,
+  bluffCeiling: 0.42,
+  bluffChance: (p, { heroIsAggressor, street }) =>
+    p.bluff * (heroIsAggressor ? 1.15 : 0.8) * (street === 'river' ? 0.7 : 1),
+  thinValue: 0.55,
+  thinValueChance: (p) => p.aggression * 0.5,
+};
 
 /** Deal a fresh table of opponents with distinct styles. */
 export function pickOpponents(count, rng = makeRng()) {
