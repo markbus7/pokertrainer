@@ -212,6 +212,11 @@ await step('hand plays to completion', async () => {
       const topUp = await page.$('.action-bar .btn.primary');
       if (topUp) { await topUp.click().catch(() => {}); await page.waitForTimeout(250); continue; }
     }
+    // River spots against one opponent ask for a read before they hand back
+    // the buttons. Answering is part of playing now, so the loop answers.
+    const band = await page.$('.read-bands .btn');
+    if (band) { await band.click().catch(() => {}); await page.waitForTimeout(200); continue; }
+
     const btn = (await page.$('.action-buttons .btn.success'))
       || (await page.$('.action-buttons .btn:not(.danger):not(.primary)'))
       || (await page.$('.action-buttons .btn.danger'));
@@ -887,6 +892,57 @@ await step('the levels screen names the skills that have gone cold', async () =>
   });
   if (tone.light) throw new Error(`the cold row is painted light on a dark page: ${tone.bg}`);
   console.log(`      ${panel.slice(0, 110)}…`);
+});
+
+await step('the table asks for a read before it hands back the buttons', async () => {
+  // The table already built the opponent's range and priced the hero against
+  // it, silently. The range is the answer to a question nobody was ever
+  // asked, so the reader was graded on a call they had no way to reason
+  // about. The MDF lesson is heads up to the river facing a bet — where the
+  // read is the decision.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    raw.drills = raw.drills || {};
+    delete raw.drills.exploit;      // so the attempt this records is visible
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.goto(`${BASE}/#play?lesson=mdf`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(900);
+
+  // Play hands until a river read is asked for. Bounded, and a miss is a
+  // failure: on this table it has to come up.
+  let asked = null;
+  const deadline = Date.now() + 70000;
+  while (Date.now() < deadline && !asked) {
+    if (await page.$('.read-bands .btn')) {
+      asked = await page.textContent('.read-ask');
+      break;
+    }
+    const next = await page.$('.action-bar .btn.primary');
+    const act = (await page.$('.action-buttons .btn.success'))
+      || (await page.$('.action-buttons .btn:not(.danger):not(.primary)'))
+      || (await page.$('.action-buttons .btn.danger'));
+    await (next || act)?.click().catch(() => {});
+    await page.waitForTimeout(260);
+  }
+  if (!asked) throw new Error('played to the river heads-up and was never asked for a read');
+  if (!/what share is air/i.test(asked)) throw new Error(`the question is not the read: ${asked}`);
+  if (await page.$('.action-buttons .btn')) {
+    throw new Error('the action buttons are still there — the read is skippable');
+  }
+
+  await page.click('.read-bands .btn');
+  await page.waitForTimeout(350);
+  const said = await page.textContent('.read-said').catch(() => null);
+  if (!said || !/air/i.test(said)) throw new Error(`no verdict on the read: ${said}`);
+  if (!await page.$('.action-buttons .btn')) throw new Error('the buttons did not come back');
+
+  // And it counts as evidence about reading players, like any other decision.
+  const attempts = await page.evaluate(() =>
+    (JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).drills.exploit || {}).attempts || 0);
+  if (attempts < 1) throw new Error('the read was not recorded against Reading Players');
+  console.log(`      asked, answered, recorded (${attempts} attempt) — "${said.replace(/\s+/g, ' ').slice(0, 76)}…"`);
 });
 
 await step('a graded question can be copied out as text', async () => {

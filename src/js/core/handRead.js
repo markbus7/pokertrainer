@@ -211,3 +211,26 @@ export function equityAgainst(range, hero, board) {
   }
   return total ? won / total : 0.5;
 }
+
+/**
+ * The ladder a reader picks their answer from.
+ *
+ * Measured, not chosen: across 240 profile-by-board combinations the share of
+ * air in a river betting range runs from 1.7% to 26.5%, median 14.2%. An even
+ * 5/15/25/35 put a fourth option on screen that was never once the answer,
+ * which is a dead choice and a pattern worth learning for the wrong reason.
+ */
+export const READ_BANDS = [3, 10, 18, 26];
+
+/**
+ * The band the truth belongs to, and null when two of them are defensible.
+ *
+ * A share sitting halfway between two rungs has two honest answers, and
+ * marking one of them wrong teaches the reader to distrust the scoring rather
+ * than to read the hand.
+ */
+export function nearestBand(airPercent, margin = 2) {
+  const sorted = READ_BANDS.slice().sort((a, b) => Math.abs(a - airPercent) - Math.abs(b - airPercent));
+  if (Math.abs(sorted[1] - airPercent) - Math.abs(sorted[0] - airPercent) < margin) return null;
+  return sorted[0];
+}

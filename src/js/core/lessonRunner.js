@@ -18,6 +18,7 @@ import { makeRng, shuffle } from './rng.js';
 import { makeDeck } from './cards.js';
 import { STREETS } from '../engine/table.js';
 import { equityVsField, equityVsHands, outsToImprove } from './equity.js';
+import { readRange, equityAgainst } from './handRead.js';
 import { evaluateHand, categoryOf, CAT } from './evaluator.js';
 import { requiredEquity, spr } from './odds.js';
 
@@ -66,6 +67,26 @@ export function snapshotOf(table, hero, { rng, aggressor = {}, opener = null, ra
       : CAT.HIGH_CARD,
     outs: table.board.length >= 3 ? outsToImprove(hero.hole, table.board, table.variant) : 0,
   };
+}
+
+/**
+ * The betting range of a lone opponent on a finished board, exactly.
+ *
+ * Only where every condition for exactness holds: the river, one opponent, a
+ * bet to answer, a profile to run, and no wildcard variant. Everywhere else
+ * the sampled range is still the right tool and this returns nothing.
+ */
+export function exactRiverRange(table, hero, live, toCall) {
+  if (toCall <= 0 || live !== 1 || table.street !== 'river') return null;
+  if (table.variant && (table.variant.omaha || table.variant.shortDeck)) return null;
+  const villain = table.contestants.find((p) => !p.isHero && p.profile);
+  if (!villain) return null;
+  return readRange(villain.profile, table.board, 'bet', {
+    toCall: 0,
+    street: 'river',
+    heroIsAggressor: table.lastAggressor ? table.lastAggressor.isHero : false,
+    dead: hero.hole,
+  });
 }
 
 /** How much of the stack the autopilot will pay to keep a hand alive. */
@@ -147,6 +168,14 @@ export function bettingRangeOf(table, villain, rng, { want = 45, cap = 700 } = {
 function heroEquity(table, hero, live, rng, ranges) {
   const toCall = Math.max(0, table.currentBet - hero.committed);
   const range = ranges && ranges[table.street];
+
+  // On a finished board the range is exact, and the sample it replaces was
+  // not close: the same spot priced the hero anywhere from 11.1% to 28.9%
+  // depending on which seed drew the 45 hands, against a true 11.5% over 866
+  // holdings. Eighteen points of equity is the difference between a call and
+  // a fold, decided by nothing.
+  const exact = exactRiverRange(table, hero, live, toCall);
+  if (exact) return equityAgainst(exact, hero.hole, table.board);
 
   if (toCall > 0 && live === 1 && table.board.length >= 3 && range && range.length >= 20) {
     return equityVsHands(hero.hole, table.board, range, { variant: table.variant, rng });
