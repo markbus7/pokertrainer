@@ -9,6 +9,7 @@
  */
 
 import { el, fmt, richText } from './dom.js';
+import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { RANKS, requirementRows, legacyRankForProfile, slippedModules } from '../state/profile.js';
 import { MODULE_META } from '../data/curriculum.js';
@@ -44,7 +45,7 @@ function renderSlipped(profile, go) {
   if (!slipped.length) return null;
 
   return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
-    el('div.panel-title', el('h3', { style: { margin: 0 } }, t('🧊 Gone cold'))),
+    el('div.panel-title', el('h3', { style: { margin: 0 } }, icon('cold', { size: 18 }), t('Gone cold'))),
     el('div.faint', { style: { marginBottom: '10px' } },
       t('Your rank counts these at their best, so it is safe. Recent answers have them lower — '
         + 'which is what the tiles and "do this next" are reading.')),
@@ -55,7 +56,7 @@ function renderSlipped(profile, go) {
       return el('button.ladder-row', { onclick: () => go('learn', { module: meta.id }) },
         el('div.spread', { style: { alignItems: 'center' } },
           el('div.row',
-            el('span', { style: { fontSize: '1.2rem' } }, meta.icon),
+            el('span.module-glyph', icon(meta.icon, { size: 18 })),
             el('div',
               el('div', { style: { fontWeight: '600' } }, meta.name),
               el('div.faint', { style: { fontSize: '0.78rem' } },
@@ -158,7 +159,7 @@ export function requirementRow(r, { showSurplus = false } = {}) {
 
 function renderMaxed() {
   return el('div.panel',
-    el('div.panel-title', el('h2', '🧠 Top of the ladder')),
+    el('div.panel-title', el('h2', icon('ladder', { size: 20 }), t('Top of the ladder'))),
     el('div.faint',
       'Every skill mastered and every lesson finished. There is no rank above this one — '
       + 'what is left is volume, and the Lab and the Gauntlet never run out of spots.'),
@@ -278,7 +279,7 @@ function renderDropNotice(profile, current) {
   // whose playing has outrun their drilling, not only just after ranks
   // gained requirements.
   return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
-    el('div.panel-title', el('h3', { style: { margin: 0 } }, '📉 Your XP is ahead of your skills')),
+    el('div.panel-title', el('h3', { style: { margin: 0 } }, icon('warn', { size: 18 }), t('Your XP is ahead of your skills'))),
     el('div.faint',
       t('On XP alone you would be Level {legacy}, {legacyName}. Ranks also ask for lessons finished '
         + 'and skills drilled, and on those you are Level {level}, {name}.',

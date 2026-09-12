@@ -5,6 +5,7 @@
  */
 
 import { el, fmt, toast, sparkline } from './dom.js';
+import { icon } from './icons.js';
 import { STAKES, stakeFor, bankrollAdvice } from '../state/stats.js';
 import { checkAchievements } from '../state/achievements.js';
 import { t } from '../i18n/index.js';
@@ -42,7 +43,7 @@ export function renderGrind(ctx) {
     el('div.panel',
       el('div.spread',
         el('div',
-          el('h1', { style: { margin: 0 } }, '💰 Bankroll Challenge'),
+          el('h1', { style: { margin: 0 } }, icon('bankroll', { size: 22 }), t('Bankroll Challenge')),
           el('div.muted', 'Start at NL2 with $200. Beat each level, build a proper roll, and move up. Bust and you move back down — exactly like the real thing.'),
         ),
         el('div', { style: { textAlign: 'right' } },

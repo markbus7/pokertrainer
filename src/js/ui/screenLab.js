@@ -15,6 +15,7 @@
  */
 
 import { el, mount, richText, toast, fmt } from './dom.js';
+import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { cardRow } from './cardView.js';
 import { seatFelt } from './spotFelt.js';
@@ -310,7 +311,7 @@ export function renderLabIntro(ctx) {
   const { go } = ctx;
   return el('div.screen',
     el('div.panel',
-      el('h1', '🎛️ The Lab'),
+      el('h1', icon('lab', { size: 22 }), t('The Lab')),
       el('p.muted', 'Spots at a table, solved rather than chosen from a list. There are no options to pick between — you work the number out and enter it.'),
       el('ul.lesson-points',
         el('li', el('span', richText('**Name the price** — face a bet and type the equity you need. Producing the number is what makes it stick; recognising it from a list does not.'))),

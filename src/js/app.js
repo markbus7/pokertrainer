@@ -4,6 +4,7 @@
  */
 
 import { el, mount, $, toast, fmt } from './ui/dom.js';
+import { icon } from './ui/icons.js';
 import { Profile } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
 import { VERSION, checkForUpdate } from './version.js';
@@ -37,15 +38,15 @@ const ROUTES = {
 };
 
 const TABS = [
-  { route: 'home', label: 'Train' },
-  { route: 'play', label: 'Play' },
-  { route: 'lab', label: 'Lab' },
-  { route: 'gauntlet', label: 'Gauntlet' },
-  { route: 'grind', label: 'Bankroll' },
-  { route: 'review', label: 'Review' },
-  { route: 'charts', label: 'Charts' },
-  { route: 'glossary', label: 'Glossary' },
-  { route: 'stats', label: 'Progress' },
+  { route: 'home', label: 'Train', icon: 'train' },
+  { route: 'play', label: 'Play', icon: 'play' },
+  { route: 'lab', label: 'Lab', icon: 'lab' },
+  { route: 'gauntlet', label: 'Gauntlet', icon: 'gauntlet' },
+  { route: 'grind', label: 'Bankroll', icon: 'bankroll' },
+  { route: 'review', label: 'Review', icon: 'review' },
+  { route: 'charts', label: 'Charts', icon: 'charts' },
+  { route: 'glossary', label: 'Glossary', icon: 'glossary' },
+  { route: 'stats', label: 'Progress', icon: 'progress' },
 ];
 
 const profile = Profile.load();
@@ -136,7 +137,9 @@ function drawTopbar(activeTab) {
       }, `v${VERSION}`)),
     el('nav.tabs', TABS.map((tab) => el(`button.tab${tab.route === activeTab ? '.active' : ''}`, {
       onclick: () => go(tab.route),
-    }, t(tab.label)))),
+      title: t(tab.label),
+      'aria-label': t(tab.label),
+    }, icon(tab.icon, { size: 17 }), el('span', t(tab.label))))),
     languageToggle(),
     el('button.rank-chip', {
       onclick: () => go('levels'),

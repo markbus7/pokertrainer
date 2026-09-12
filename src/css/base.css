@@ -36,8 +36,43 @@
   --radius-lg: 18px;
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --mono: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  --font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'IBM Plex Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* A type scale, because there was not one. Forty-eight distinct font sizes
+     in the stylesheet and twenty-two more written inline in the screens is
+     not a system, it is forty-eight separate decisions, and a reader feels
+     that as an interface that never quite lines up. Seven steps, a major
+     third apart, and everything on screen sits on one of them. */
+  --t-xs: 0.75rem;
+  --t-sm: 0.8125rem;
+  --t-base: 0.9375rem;
+  --t-md: 1.0625rem;
+  --t-lg: 1.3125rem;
+  --t-xl: 1.75rem;
+  --t-2xl: 2.25rem;
+
+  /* Spacing on a four-pixel grid, for the same reason. */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  /* Letterspacing: tight on the large sizes where the default looks loose,
+     open on the small capital labels where it does the legibility work. */
+  --tracking-tight: -0.02em;
+  --tracking-label: 0.08em;
+}
+
+/* Numbers are the content of this app, not decoration around it. Every
+   figure it prints sits in tabular, lining figures so a column of equities
+   or pot sizes reads as a column rather than as ragged text. */
+.mono, .badge, .metric-value, td, th, input[type='number'] {
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 * { box-sizing: border-box; }
@@ -1230,3 +1265,156 @@ input, textarea, select { font-size: max(16px, 1rem); }
 .read-bands { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .read-bands .btn { flex: 1 1 auto; min-width: 68px; }
 .read-said { font-size: 0.84rem; color: var(--text-dim); margin-bottom: 8px; }
+
+/* ------------------------------------------------------------------ *
+ * Iconography
+ * ------------------------------------------------------------------ */
+
+.icon {
+  flex: 0 0 auto;
+  display: block;
+  /* Stroke icons sit optically low beside text; nudging them up is the
+     difference between a row that looks aligned and one that looks nearly
+     aligned, which reads as carelessness even when nobody can say why. */
+  transform: translateY(-0.5px);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.tab .icon { opacity: 0.55; transition: opacity 120ms ease; }
+.tab:hover .icon,
+.tab.active .icon { opacity: 1; }
+
+/* A title with an icon in front of it, used by every panel heading. */
+.panel-title h2,
+.panel-title h3 { display: inline-flex; align-items: center; gap: var(--s-2); }
+
+/* A module's mark: the drawing in a quiet frame, so it reads as an emblem
+   rather than as a picture dropped into a paragraph. */
+.module-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  color: var(--gold);
+  flex: 0 0 auto;
+}
+.module-glyph.lg { width: 46px; height: 46px; border-radius: var(--radius); }
+.badge .module-glyph { width: auto; height: auto; border: 0; background: none; }
+.locked .module-glyph { color: var(--text-faint); }
+
+/* The tab strip has icons now, so it needs room and a scroll of its own
+   rather than clipping the last tab off the end. */
+.tabs {
+  display: flex;
+  gap: var(--s-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab { white-space: nowrap; }
+
+/* ------------------------------------------------------------------ *
+ * Typography
+ * ------------------------------------------------------------------ */
+
+/* Headings carry their icon inline, so they are flex rows rather than text.
+   The icon takes the accent and the words stay plain: two colours in a
+   heading is one more than it needs. */
+h1, h2, h3 { display: flex; align-items: center; gap: var(--s-2); }
+h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
+
+h1 { font-size: var(--t-xl); letter-spacing: var(--tracking-tight); font-weight: 600; }
+h2 { font-size: var(--t-lg); letter-spacing: var(--tracking-tight); font-weight: 600; }
+h3 { font-size: var(--t-md); font-weight: 600; }
+
+/* Small capitals do the labelling work — stat captions, table headers, the
+   chips that name a state. Tracked open, because capitals set tight are the
+   single most common way an interface looks unconsidered. */
+.stat-label,
+.cheat-table thead th,
+.badge.next-badge {
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+
+body { font-size: var(--t-base); }
+.faint, .muted { font-size: var(--t-sm); }
+
+/* The rank emblems stay pictures on purpose: a fish, a rock, a shark and a
+   crown are characters on a ladder, not controls, and line-drawing them
+   would make the climb read as a settings page. Struck into a disc so they
+   sit as a minted badge rather than as clip art on a panel. */
+.rank-emblem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  font-size: 1.9rem;
+  line-height: 1;
+  background: radial-gradient(circle at 32% 28%, #26313f, #131a22 72%);
+  border: 1px solid var(--border-bright);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), var(--shadow-sm);
+  flex: 0 0 auto;
+}
+
+/* Nine tabs with icons do not fit a tablet in landscape. Rather than clip
+   the last one off the end or shrink everything until it is unreadable, only
+   the tab you are on says its name. */
+@media (max-width: 1180px) {
+  .tab span { display: none; }
+  .tab.active span { display: inline; }
+  .tab { padding-left: var(--s-3); padding-right: var(--s-3); }
+}
+
+/* ------------------------------------------------------------------ *
+ * Surfaces
+ * ------------------------------------------------------------------ */
+
+/* A panel was a flat fill with a flat border, which is why a column of them
+   read as a list of boxes rather than as a surface with things on it. One
+   hairline of light along the top edge is enough to give it a direction. */
+.panel {
+  background: linear-gradient(var(--bg-card), var(--bg-card)) padding-box;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  padding: var(--s-5);
+}
+.panel-title { margin-bottom: var(--s-4); }
+
+/* Buttons had one weight for everything. The gold one is the thing to press;
+   the rest should recede rather than compete with it. */
+.btn {
+  padding: 10px 16px;
+  font-size: var(--t-base);
+  letter-spacing: 0.005em;
+  transition: transform 80ms, background 140ms, border-color 140ms, opacity 140ms, box-shadow 140ms;
+}
+.btn.primary {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 6px 18px -8px rgba(227, 178, 60, 0.8);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.btn.sm { font-size: var(--t-sm); padding: 7px 12px; }
+
+/* Badges are labels, not buttons: quieter, and set in the same tracked caps
+   as the rest of the labelling. */
+.badge {
+  font-size: var(--t-xs);
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+

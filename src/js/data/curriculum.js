@@ -10,7 +10,7 @@ export const MODULE_META = [
   {
     id: 'hand-rankings',
     name: 'Hand Rankings',
-    icon: '🃏',
+    icon: 'm-hand-rankings',
     unlockLevel: 1,
     tagline: 'What beats what, instantly.',
     lesson: {
@@ -27,7 +27,7 @@ export const MODULE_META = [
   {
     id: 'pot-odds',
     name: 'Pot Odds',
-    icon: '🧮',
+    icon: 'm-pot-odds',
     unlockLevel: 1,
     tagline: 'The price the pot is offering you.',
     lesson: {
@@ -44,7 +44,7 @@ export const MODULE_META = [
   {
     id: 'outs',
     name: 'Outs & Equity',
-    icon: '🎯',
+    icon: 'm-outs',
     unlockLevel: 2,
     tagline: 'Counting the cards that save you.',
     lesson: {
@@ -61,7 +61,7 @@ export const MODULE_META = [
   {
     id: 'preflop',
     name: 'Preflop Ranges',
-    icon: '📋',
+    icon: 'm-preflop',
     unlockLevel: 2,
     tagline: 'The only street you can memorise.',
     lesson: {
@@ -78,7 +78,7 @@ export const MODULE_META = [
   {
     id: 'position',
     name: 'Position',
-    icon: '🪑',
+    icon: 'm-position',
     unlockLevel: 3,
     tagline: 'Acting last is worth more than good cards.',
     lesson: {
@@ -95,7 +95,7 @@ export const MODULE_META = [
   {
     id: 'cbet',
     name: 'Continuation Betting',
-    icon: '🔫',
+    icon: 'm-cbet',
     unlockLevel: 4,
     tagline: 'Keeping the lead after the flop.',
     lesson: {
@@ -112,7 +112,7 @@ export const MODULE_META = [
   {
     id: 'mdf',
     name: 'Defence Frequency',
-    icon: '🛡️',
+    icon: 'm-mdf',
     unlockLevel: 5,
     tagline: 'Folding too much is its own leak.',
     lesson: {
@@ -129,7 +129,7 @@ export const MODULE_META = [
   {
     id: 'bluffing',
     name: 'Bluffing & Balance',
-    icon: '🎭',
+    icon: 'm-bluffing',
     unlockLevel: 5,
     tagline: 'Making your bluffs pay for themselves.',
     lesson: {
@@ -146,7 +146,7 @@ export const MODULE_META = [
   {
     id: 'spr',
     name: 'Stack Depth',
-    icon: '📏',
+    icon: 'm-spr',
     unlockLevel: 6,
     tagline: 'Plan the hand before you enter it.',
     lesson: {
@@ -163,7 +163,7 @@ export const MODULE_META = [
   {
     id: 'exploit',
     name: 'Reading Players',
-    icon: '🔍',
+    icon: 'm-exploit',
     unlockLevel: 5,
     tagline: 'Where the real money is.',
     lesson: {
@@ -180,7 +180,7 @@ export const MODULE_META = [
   {
     id: 'icm',
     name: 'Tournament ICM',
-    icon: '🏆',
+    icon: 'm-icm',
     unlockLevel: 7,
     tagline: 'Chips are not money.',
     lesson: {
@@ -197,7 +197,7 @@ export const MODULE_META = [
   {
     id: 'bankroll',
     name: 'Bankroll & The Business',
-    icon: '💰',
+    icon: 'm-bankroll',
     unlockLevel: 3,
     tagline: 'How winning players stay solvent.',
     lesson: {
