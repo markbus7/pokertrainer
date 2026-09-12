@@ -70,20 +70,21 @@ export function snapshotOf(table, hero, { rng, aggressor = {}, opener = null, ra
 }
 
 /**
- * The betting range of a lone opponent on a finished board, exactly.
+ * The betting range of a lone opponent, on any postflop street.
  *
- * Only where every condition for exactness holds: the river, one opponent, a
- * bet to answer, a profile to run, and no wildcard variant. Everywhere else
- * the sampled range is still the right tool and this returns nothing.
+ * Exact on the river, sampled before it — 40 independent run-outs per hand,
+ * which lands within about a point of a far more expensive reference and
+ * takes 70ms. Only where a read is a fair thing to ask: one opponent, a bet
+ * to answer, a profile to run, and no wildcard variant.
  */
-export function exactRiverRange(table, hero, live, toCall) {
-  if (toCall <= 0 || live !== 1 || table.street !== 'river') return null;
+export function tableReadRange(table, hero, live, toCall) {
+  if (toCall <= 0 || live !== 1 || table.board.length < 3) return null;
   if (table.variant && (table.variant.omaha || table.variant.shortDeck)) return null;
   const villain = table.contestants.find((p) => !p.isHero && p.profile);
   if (!villain) return null;
   return readRange(villain.profile, table.board, 'bet', {
     toCall: 0,
-    street: 'river',
+    street: table.street,
     heroIsAggressor: table.lastAggressor ? table.lastAggressor.isHero : false,
     dead: hero.hole,
   });
@@ -169,13 +170,12 @@ function heroEquity(table, hero, live, rng, ranges) {
   const toCall = Math.max(0, table.currentBet - hero.committed);
   const range = ranges && ranges[table.street];
 
-  // On a finished board the range is exact, and the sample it replaces was
-  // not close: the same spot priced the hero anywhere from 11.1% to 28.9%
-  // depending on which seed drew the 45 hands, against a true 11.5% over 866
-  // holdings. Eighteen points of equity is the difference between a call and
-  // a fold, decided by nothing.
-  const exact = exactRiverRange(table, hero, live, toCall);
-  if (exact) return equityAgainst(exact, hero.hole, table.board);
+  // The range built from every holding, rather than the 45 that a sample
+  // happened to keep. That sample was not close: the same river spot priced
+  // the hero anywhere from 11.1% to 28.9% depending on its seed, against a
+  // true 11.5% over 866 holdings — eighteen points, decided by nothing.
+  const read = tableReadRange(table, hero, live, toCall);
+  if (read) return equityAgainst(read, hero.hole, table.board);
 
   if (toCall > 0 && live === 1 && table.board.length >= 3 && range && range.length >= 20) {
     return equityVsHands(hero.hole, table.board, range, { variant: table.variant, rng });

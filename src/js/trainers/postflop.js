@@ -13,7 +13,12 @@ import {
 } from '../core/odds.js';
 import { shuffle, randInt } from '../core/rng.js';
 import { PROFILES } from '../engine/bots.js';
-import { readRange, equityAgainst, READ_BANDS, nearestBand } from '../core/handRead.js';
+import {
+  readRange, equityAgainst, READ_BANDS, nearestBand, marginFor,
+} from '../core/handRead.js';
+
+/** Street names as a reader says them, so a question can open with one. */
+const STREET_NAMES = { flop: 'Flop', turn: 'Turn', river: 'River' };
 import { buildChoices, percentDistractors, attempt, describeTexture, pct } from './helpers.js';
 import { t } from '../i18n/index.js';
 
@@ -278,20 +283,24 @@ export function rangeReadDrill(rng, difficulty = 4) {
   const spot = attempt(() => {
     const keys = ['rock', 'tag', 'lag', 'station', 'maniac', 'pro'];
     const villain = PROFILES[keys[randInt(rng, keys.length)]];
-    const dealt = dealtSpot(rng, 5, bluffCatcher);
+    // Every postflop street, not only the river. The turn and the flop are
+    // where the pots are still being built, and the read there is worth more
+    // than the one made after the last card is already out.
+    const [size, street] = [[3, 'flop'], [4, 'turn'], [5, 'river']][randInt(rng, 3)];
+    const dealt = dealtSpot(rng, size, size === 5 ? bluffCatcher : null);
     if (!dealt) return null;
     const range = readRange(villain.key, dealt.board, 'bet',
-      { toCall: 0, street: 'river', heroIsAggressor: false, dead: dealt.hole });
+      { toCall: 0, street, heroIsAggressor: false, dead: dealt.hole });
     if (!range) return null;
 
     const air = range.share.air * 100;
-    const band = nearestBand(air);
+    const band = nearestBand(air, marginFor(dealt.board));
     if (band === null) return null;      // two defensible answers: ask another
-    return { villain, dealt, range, air, band };
+    return { villain, dealt, range, air, band, street };
   }, 120);
   if (!spot) return null;
 
-  const { villain, dealt, range, air, band } = spot;
+  const { villain, dealt, range, band, street } = spot;
   const pot = (4 + randInt(rng, 8)) * 10;
   const bet = Math.round(pot * [0.5, 0.75, 1][randInt(rng, 3)] / 5) * 5;
   const need = requiredEquity(bet, pot + bet);
@@ -313,9 +322,9 @@ export function rangeReadDrill(rng, difficulty = 4) {
       toCall: bet,
       villain: { name: villain.name, style: t(villain.style), emoji: villain.emoji, tell: t(villain.tell) },
     },
-    question: t('River. You check and {name} ({style}) bets {bet} into {pot}. Of every hand they would bet '
-      + 'here, roughly what share is air — a hand that only wins if you fold?',
-    { name: villain.name, style: t(villain.style), bet, pot }),
+    question: t('{street}. You check and {name} ({style}) bets {bet} into {pot}. Of every hand they would '
+      + 'bet here, roughly what share is air — a hand that only wins if you fold?',
+    { street: t(STREET_NAMES[street]), name: villain.name, style: t(villain.style), bet, pot }),
     options,
     answer,
     explanation: `${t('Run every hand they could hold through the way they play, and {air} of their betting '

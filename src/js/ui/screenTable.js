@@ -24,9 +24,9 @@ import { conceptOf, isUnlocked } from '../core/spotConcept.js';
 import { moduleMeta, MODULE_META } from '../data/curriculum.js';
 import { lessonTable } from '../data/lessonTables.js';
 import {
-  snapshotOf, autopilotAction, playUntilMySpot, captureRange, exactRiverRange,
+  snapshotOf, autopilotAction, playUntilMySpot, captureRange, tableReadRange,
 } from '../core/lessonRunner.js';
-import { READ_BANDS, nearestBand } from '../core/handRead.js';
+import { READ_BANDS, nearestBand, marginFor } from '../core/handRead.js';
 import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
@@ -143,10 +143,12 @@ export function renderTable(ctx, params = {}) {
     // The read the reader has been asked for on this decision, if the spot
     // qualifies. Cleared the moment the hand moves on.
     read: null,
-    // At most one per hand. The range this models is the hand they bet with,
-    // and after a raise and a call it is a different, much narrower set —
-    // asking the same question again would be modelling the wrong action.
-    readAsked: false,
+    // At most one per street. Two streets are two different bets with two
+    // different ranges, and a flop read should not crowd out the river one.
+    // Within a street it must not ask twice: the range this models is the
+    // hand they bet with, and after a raise and a call it is a different,
+    // much narrower set, so asking again would model the wrong action.
+    readAsked: {},
     // Set when the reader asks the coach to do the sum for them. Reset every
     // decision, so asking once does not silence the coach for the whole hand.
     peeked: false,
@@ -212,7 +214,7 @@ export function renderTable(ctx, params = {}) {
     session.handStarted = true;
     session.verdict = null;
     session.snapshot = null;
-    session.readAsked = false;
+    session.readAsked = {};
     session.peeked = false;
     session.savedHand = null;
     session.aggressor = {};
@@ -311,7 +313,7 @@ export function renderTable(ctx, params = {}) {
     session.handStarted = true;
     session.verdict = null;
     session.snapshot = null;
-    session.readAsked = false;
+    session.readAsked = {};
     session.savedHand = null;
     session.aggressor = {};
     session.opener = null;
@@ -441,23 +443,26 @@ export function renderTable(ctx, params = {}) {
    * player with a style, what does that bet represent?
    */
   function readPrompt() {
-    if (session.readAsked) return null;
+    if (session.readAsked[table.street]) return null;
     const live = table.contestants.filter((p) => !p.isHero).length;
     const toCall = Math.max(0, table.currentBet - hero.committed);
-    const range = exactRiverRange(table, hero, live, toCall);
+    const range = tableReadRange(table, hero, live, toCall);
     if (!range) return null;
     const air = range.share.air * 100;
-    const band = nearestBand(air);
+    const band = nearestBand(air, marginFor(table.board));
     if (band === null) return null;      // two defensible answers: do not ask
     const villain = table.contestants.find((p) => !p.isHero && p.profile);
-    return { range, air, band, villain, name: range.profile.name, style: range.profile.style };
+    return {
+      range, air, band, villain, street: table.street,
+      name: range.profile.name, style: range.profile.style,
+    };
   }
 
   function answerRead(picked) {
     const prompt = session.read;
     if (!prompt || prompt.picked != null) return;
     prompt.picked = picked;
-    session.readAsked = true;
+    session.readAsked[table.street] = true;
     const right = picked === prompt.band;
     // A read is evidence about reading players, and it is better evidence
     // than a drill answer: nobody offered it as a question with a module
