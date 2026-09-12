@@ -1,4 +1,4 @@
-import { masteryTier, EVIDENCE_BAR } from '../state/mastery.js';
+import { masteryTier, EVIDENCE_BAR, windowScore, MASTERY_WINDOW } from '../state/mastery.js';
 
 /**
  * The curriculum: what to learn, in what order, and why it matters.
@@ -260,11 +260,18 @@ export function nextUp(profile) {
   const unlocked = unlockedModules(profile.level);
   if (!unlocked.length) return null;
   const statsOf = (m) => profile.drillStats(m.id);
+  // Read the same recent answers the tiers do. Scoring lifetime totals left
+  // the recommendation blind to a collapse: two modules that fell from
+  // Mastered to Learning still averaged 81% across their whole history, so
+  // "your weakest skill" walked past them and offered a module nobody had
+  // opened. A tile saying Learning while the banner says you are fine is the
+  // app disagreeing with itself about the only question it exists to answer.
+  const formOf = (m) => windowScore(profile, m.id, MASTERY_WINDOW);
 
   // Never recommend a module that is already finished, unless they all are.
   const open = unlocked.filter((m) => masteryTier(profile, m.id) !== 'mastered');
   const pool = open.length ? open : unlocked;
-  const score = (m) => confidenceAdjusted(statsOf(m).correct, statsOf(m).attempts);
+  const score = (m) => confidenceAdjusted(formOf(m).correct, formOf(m).answered);
 
   // A real hole beats an unknown, and this has to be tested before anything
   // else. An untouched module used to win outright, which sent a reader
@@ -273,14 +280,15 @@ export function nextUp(profile) {
   // Among modules answered enough times to judge, anything below the Solid
   // bar is a genuine weakness; one wrong answer out of one is not evidence
   // of anything, however bad the percentage looks.
-  const judged = pool.filter((m) => statsOf(m).attempts >= EVIDENCE_BAR);
+  const judged = pool.filter((m) => formOf(m).answered >= EVIDENCE_BAR);
   const weak = judged.filter((m) => score(m) < SOLID_BAR).sort((a, b) => score(a) - score(b))[0];
   if (weak) {
     const stats = statsOf(weak);
     // The lesson comes before more drilling. Getting under half of them right
     // is not a practice problem, and doing another ten is the slow way to
     // find out what the page would have told you in two minutes.
-    const reason = stats.correct / stats.attempts < 0.5 && !profile.hasCompletedWalkthrough(weak.id)
+    const form = formOf(weak);
+    const reason = form.correct / form.answered < 0.5 && !profile.hasCompletedWalkthrough(weak.id)
       ? 'lesson'
       : 'weakest';
     return { module: weak, reason, stats };
