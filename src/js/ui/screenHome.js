@@ -44,7 +44,7 @@ export function renderHome(ctx) {
   // correctly refused to show anything.
   const accuracy = totals.attempts >= EVIDENCE_BAR ? totals.correct / totals.attempts : null;
 
-  return el('div.screen',
+  return el('div.screen.home-floor',
     /* ---- rank header ---- */
     el('div.panel',
       el('div.spread',
@@ -108,33 +108,45 @@ export function renderHome(ctx) {
     duePanel(profile, go),
     mistakesPanel(go),
 
-    /* ---- quick actions ---- */
-    el('div.grid.cols-3',
-      quickCard('lab', 'The Lab', 'Solve spots at a table — type the equity, size the bet. No multiple choice.', 'Open the Lab', () => go('lab')),
-      quickCard('review', 'Hand review', 'The hands you misplayed, replayed one action at a time so you can see where they turned.', 'Look back', () => go('review')),
-      quickCard('bankroll', 'Bankroll Challenge', t('Climb from NL2 to NL500. You are at {stake} with {money}.', { stake: stake.name, money: fmt.money(profile.data.bankroll) }), 'Grind', () => go('grind')),
-    ),
-
-    /* ---- stats strip ---- */
-    el('div.grid.cols-4',
-      statTile('Hands played', fmt.chips(profile.data.handsPlayed)),
-      statTile('Drill accuracy',
-        accuracy === null ? '—' : fmt.pct(accuracy),
-        accuracy === null
-          ? t('{n} more before this is a score', { n: EVIDENCE_BAR - totals.attempts })
-          : t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
-      statTile('Achievements', `${profile.data.achievements.length} / ${ACHIEVEMENTS.length}`),
-      statTile('Lifetime', fmt.bb(profile.data.lifetimeProfitBb), 'across all sessions'),
-    ),
-
-    /* ---- modules ---- */
-    el('div.panel',
-      el('div.panel-title',
-        el('h2', 'Training modules'),
-        el('span.faint', t('{n} of {total} unlocked', { n: MODULE_META.filter((m) => m.unlockLevel <= profile.level).length, total: MODULE_META.length })),
+    /* ---- the floor: a narrow rail beside the work ---- */
+    el('div.floor',
+      el('aside.rail',
+        // Struck plaques, stacked like a column of chips rather than laid out
+        // as four equal boxes in a row.
+        el('div.plaques',
+          statTile('Hands played', fmt.chips(profile.data.handsPlayed)),
+          statTile('Drill accuracy',
+            accuracy === null ? '—' : fmt.pct(accuracy),
+            accuracy === null
+              ? t('{n} more before this is a score', { n: EVIDENCE_BAR - totals.attempts })
+              : t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
+          statTile('Achievements', `${profile.data.achievements.length} / ${ACHIEVEMENTS.length}`),
+          statTile('Lifetime', fmt.bb(profile.data.lifetimeProfitBb), 'across all sessions'),
+        ),
+        // The other rooms, as a list of doors rather than three cards in a
+        // row. They are ways out of here, not the thing you came for.
+        el('nav.doors',
+          doorway('lab', 'The Lab', 'Type the equity, size the bet.', () => go('lab')),
+          doorway('review', 'Hand review', 'Replay what you misplayed.', () => go('review')),
+          doorway('bankroll', 'Bankroll Challenge',
+            t('{stake} · {money}', { stake: stake.name, money: fmt.money(profile.data.bankroll) }),
+            () => go('grind')),
+        ),
       ),
-      el('div.grid.cols-3',
-        MODULE_META.map((meta) => moduleTile(meta, profile, go, recommended.id)),
+      /* ---- the work itself ---- */
+      el('div.work',
+        el('div.panel',
+          el('div.panel-title',
+            el('h2', t('Training modules')),
+            el('span.faint', t('{n} of {total} unlocked', {
+              n: MODULE_META.filter((m) => m.unlockLevel <= profile.level).length,
+              total: MODULE_META.length,
+            })),
+          ),
+          el('div.module-grid',
+            MODULE_META.map((meta) => moduleTile(meta, profile, go, recommended.id)),
+          ),
+        ),
       ),
     ),
   );
@@ -252,12 +264,22 @@ function whyThisOne(plan) {
     + 'barely tried cannot jump the queue.');
 }
 
-function quickCard(mark, title, body, cta, onclick) {
-  return el('div.panel', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
-    el('span.module-glyph.lg', icon(mark, { size: 22 })),
-    el('h3', { style: { margin: 0 } }, title),
-    el('div.faint', { style: { flex: '1' } }, body),
-    el('button.btn.block', { onclick }, cta),
+/**
+ * A door out of this room.
+ *
+ * The three equal cards in a row that this replaces were the shape every
+ * generated dashboard arrives in, and they gave the Lab the same weight as
+ * the thing the reader actually came to do. A door is a line you walk
+ * through, not a card competing for the middle of the screen.
+ */
+function doorway(mark, title, body, onclick) {
+  return el('button.door', { onclick },
+    el('span.module-glyph', icon(mark, { size: 18 })),
+    el('span.door-text',
+      el('span.door-title', t(title)),
+      el('span.door-sub', body),
+    ),
+    icon('arrowRight', { size: 16, className: 'door-arrow' }),
   );
 }
 

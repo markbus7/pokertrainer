@@ -3,48 +3,62 @@
    ============================================================ */
 
 :root {
-  --felt-1: #1b5e42;
-  --felt-2: #0d3b28;
-  --felt-rail: #4a2c17;
+  /* ------------------------------------------------------------------
+   * A private card room, lit low.
+   *
+   * The palette this replaces was slate and navy — the dark theme every
+   * generated interface arrives in — with a yellow gold on top. Nothing in
+   * it belonged to poker. The ground here is felt seen in poor light, the
+   * edges are the wood of the rail, the accent is brass rather than yellow,
+   * and the text is bone rather than blue-white. One accent, used for the
+   * thing that matters on a screen and nothing else.
+   * ------------------------------------------------------------------ */
 
-  --bg: #0b0f14;
-  --bg-raised: #141b23;
-  --bg-card: #1a232e;
-  --bg-hover: #212d3a;
-  --border: #2a3644;
-  --border-bright: #3a4a5c;
+  /* Ground: black with a green cast, the way felt reads in low light. */
+  --bg: #080d0a;
+  --bg-raised: #0f1712;
+  --bg-card: #141f18;
+  --bg-hover: #1b2a20;
 
-  --text: #e8eef5;
-  --text-dim: #93a4b8;
-  /* The fourth text tone carries stat labels, the module tiles' score line
-     and every .faint explanation — information, not decoration. At #64748b
-     it sat at 3.33:1 on a card, under the 4.5:1 readable floor, which is a
-     poor bargain on a tablet held in daylight. This clears it everywhere and
-     stays a clear step below --text-dim, so the hierarchy is unchanged. */
-  --text-faint: #7b8da5;
+  /* Edges: the rail, and a brass hairline for the things that matter. */
+  --border: #24352a;
+  --border-bright: #354a3b;
+  --brass-line: #6b5423;
 
-  --gold: #e3b23c;
-  --gold-dim: #a8801f;
-  --green: #3ecf8e;
-  --red: #f2555a;
-  --blue: #4d9fff;
-  --purple: #a78bfa;
-  --orange: #f59e0b;
+  /* Ink: bone and warm greys. Blue-white on a warm ground reads as a screen;
+     bone reads as a printed card. */
+  --text: #f4efe3;
+  --text-dim: #b9b09c;
+  --text-faint: #8f8878;
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 18px;
-  --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  /* One accent. Brass, not yellow: metal has a green-brown in it. */
+  --gold: #d9b44a;
+  --gold-dim: #8a6f23;
 
-  --font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --green: #58c68b;
+  --red: #f2717a;
+  --blue: #6aa9e8;
+  --purple: #b39ae8;
+  --orange: #e8a33d;
+
+  /* The table itself, richer than the ground it sits on. */
+  --felt-1: #1d6b46;
+  --felt-2: #0c3a25;
+  --felt-rail: #2b1d12;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 16px;
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.45);
+
+  /* Bodoni for anything that announces itself — the engraved register of a
+     chip plaque and a table sign. Archivo does the interface work; it has a
+     grotesque's spine rather than a system font's neutrality. */
+  --font-display: 'Bodoni Moda', Georgia, 'Times New Roman', serif;
+  --font: 'Archivo', system-ui, -apple-system, sans-serif;
   --mono: 'IBM Plex Mono', 'SF Mono', Menlo, Consolas, monospace;
 
-  /* A type scale, because there was not one. Forty-eight distinct font sizes
-     in the stylesheet and twenty-two more written inline in the screens is
-     not a system, it is forty-eight separate decisions, and a reader feels
-     that as an interface that never quite lines up. Seven steps, a major
-     third apart, and everything on screen sits on one of them. */
   --t-xs: 0.75rem;
   --t-sm: 0.8125rem;
   --t-base: 0.9375rem;
@@ -54,7 +68,6 @@
   --t-2xl: 2.25rem;
   --t-3xl: 3rem;
 
-  /* Spacing on a four-pixel grid, for the same reason. */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
@@ -63,10 +76,8 @@
   --s-6: 32px;
   --s-7: 48px;
 
-  /* Letterspacing: tight on the large sizes where the default looks loose,
-     open on the small capital labels where it does the legibility work. */
-  --tracking-tight: -0.02em;
-  --tracking-label: 0.08em;
+  --tracking-tight: -0.01em;
+  --tracking-label: 0.14em;
 }
 
 /* Numbers are the content of this app, not decoration around it. Every
@@ -1437,3 +1448,246 @@ body { font-size: var(--t-base); }
   line-height: 1.4;
 }
 .style-tag.lg { font-size: var(--t-sm); padding: 3px 8px; }
+
+/* ==================================================================== *
+ * The room
+ *
+ * The last pass put everything on one scale, one stroke weight and one
+ * colour, and the reader's verdict was that it had become harder to tell
+ * what was what. That is what uniformity does: hierarchy is made of
+ * difference, and the sweep had removed the differences along with the
+ * mess. So things that do different jobs look different here — a heading
+ * is engraved, a plaque is not a card, a number is brass, and the rail is
+ * not the table.
+ * ==================================================================== */
+
+/* ---- the rail: chrome, not content ---------------------------------- */
+
+#topbar {
+  background:
+    linear-gradient(180deg, #120e09 0%, #0b0907 100%);
+  border-bottom: 1px solid #000;
+  box-shadow: 0 1px 0 var(--brass-line), 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--t-md);
+  letter-spacing: 0.01em;
+}
+.brand .pip { color: var(--gold); }
+
+/* ---- headings: engraved, and ruled off ------------------------------ */
+
+h1, h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  font-feature-settings: 'lnum' 1;
+}
+h1 { font-size: var(--t-2xl); }
+h2 { font-size: var(--t-xl); }
+/* A section label, which is what an h3 is inside a panel's title bar. The
+   tracked capitals are the labelling register — applied to every h3 they
+   also shouted a run's score back as "10 OF 10 — THAT IS A PASS", which is a
+   sentence with numbers in it, not a label. Hierarchy applied without looking
+   is the same mistake as no hierarchy at all. */
+h3 {
+  font-family: var(--font);
+  font-size: var(--t-md);
+  font-weight: 700;
+  color: var(--text);
+}
+.panel-title h3,
+h3.label {
+  font-size: var(--t-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+}
+h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
+
+/* A brass hairline under a panel's title, the way a plaque is scored. */
+.panel-title {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--s-3);
+  position: relative;
+}
+.panel-title::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -1px;
+  width: 44px; height: 1px;
+  background: var(--gold);
+}
+
+/* ---- two kinds of surface ------------------------------------------- */
+
+/* A card: content you read and act on. Lifted, warm, faintly lit from the
+   top left the way a card catches the light of a table lamp. */
+.panel {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 42%),
+    var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: var(--s-5);
+}
+
+/* A plaque: a number and its name, struck rather than printed. Deliberately
+   not a card — this is the difference the last pass flattened away. */
+.stat {
+  background: #0b120e;
+  border: 1px solid #1d2a21;
+  border-top: 1px solid var(--brass-line);
+  border-radius: 3px;
+  padding: var(--s-4) var(--s-4) var(--s-3);
+  box-shadow: inset 0 1px 0 rgba(217, 180, 74, 0.12);
+}
+.stat .label {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+.stat .value {
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+/* ---- figures are brass ---------------------------------------------- */
+
+.mono { font-variant-numeric: tabular-nums lining-nums; }
+.metric-value, .seat-stack { color: var(--gold); }
+
+/* ---- module marks: struck into a well, not floated on the panel ----- */
+
+.module-glyph {
+  background: #0a110d;
+  border: 1px solid #1f2d24;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(217, 180, 74, 0.08);
+  color: var(--gold);
+}
+.module-tile.locked .module-glyph { color: #4c5a50; box-shadow: none; }
+
+/* ---- buttons: brass for the one thing to press ---------------------- */
+
+.btn {
+  font-family: var(--font);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.01em;
+}
+.btn.primary {
+  background: linear-gradient(180deg, #e6c55f, #b98f1e);
+  border-color: #7a5f14;
+  color: #1a1305;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 20px -10px rgba(217, 180, 74, 0.9);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.btn.primary:hover:not(:disabled) { background: linear-gradient(180deg, #f2d675, #c99c25); }
+
+/* ---- motion: dealt, not faded --------------------------------------- */
+
+@keyframes deal-in {
+  from { opacity: 0; transform: translateY(14px) rotate(-0.6deg); }
+  to { opacity: 1; transform: none; }
+}
+.screen > * {
+  animation: deal-in 300ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.screen > *:nth-child(2) { animation-delay: 45ms; }
+.screen > *:nth-child(3) { animation-delay: 90ms; }
+.screen > *:nth-child(4) { animation-delay: 135ms; }
+.screen > *:nth-child(n+5) { animation-delay: 170ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen > * { animation: none; }
+}
+
+/* ---- the floor: unequal columns, because the work is not the chrome ---- */
+
+.floor {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+.rail { display: flex; flex-direction: column; gap: var(--s-4); }
+
+/* Plaques stack like a column of chips rather than sitting four-across. */
+.plaques { display: flex; flex-direction: column; gap: 3px; }
+.plaques .stat { border-radius: 0; }
+.plaques .stat:first-child { border-radius: 3px 3px 0 0; }
+.plaques .stat:last-child { border-radius: 0 0 3px 3px; }
+.plaques .stat + .stat { border-top-color: #1d2a21; }
+
+/* Doors out of the room: a line you walk through, not a card in a row. */
+.doors { display: flex; flex-direction: column; }
+.door {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  padding: var(--s-3) var(--s-1);
+  cursor: pointer;
+  transition: padding-left 160ms cubic-bezier(0.2, 0.9, 0.3, 1), color 160ms;
+}
+.door:last-child { border-bottom: 0; }
+.door:hover { padding-left: var(--s-3); color: var(--gold); }
+.door:hover .door-arrow { transform: translateX(3px); }
+.door-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.door-title { font-weight: 600; font-size: var(--t-base); }
+.door-sub { font-size: var(--t-xs); color: var(--text-faint); }
+.door-arrow { color: var(--text-faint); transition: transform 160ms; }
+
+/* The module grid is the point of the screen, so it gets the room. */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: var(--s-3);
+}
+
+/* One column once the rail would squeeze the work. */
+@media (max-width: 900px) {
+  .floor { grid-template-columns: 1fr; }
+  .rail { order: 2; }
+}
+
+/* The rail's controls do not wrap onto a second line: a topbar that grows a
+   row when a word gets longer is a topbar that jumps as you switch language.
+   The tab strip scrolls inside its own box instead — min-width:0 is what lets
+   a flex child shrink below its content, and without it the strip pushes the
+   whole page wider rather than scrolling. */
+/* Two rows on purpose. Squeezing the brand, nine tabs, a language switch and
+   a rank chip onto one line meant the bar silently grew a second row at some
+   widths and not others — 64px at one size, 86px at the next. A rail that
+   changes height as you resize reads as an accident, so this is two rows
+   everywhere: who you are on top, where you can go beneath it. */
+#topbar { flex-wrap: wrap; row-gap: var(--s-2); }
+#topbar > .brand { margin-right: auto; }
+.tabs {
+  order: 10;
+  flex: 1 0 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  border-top: 1px solid rgba(217, 180, 74, 0.14);
+  padding-top: var(--s-2);
+}
+/* With a row of its own there is room for the words again. */
+@media (max-width: 1180px) {
+  .tab span { display: inline; }
+}
