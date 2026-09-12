@@ -5,6 +5,7 @@ const modules = [
   './handRead.test.js',
   './adapt.test.js',
   './icons.test.js',
+  './career.test.js',
   './equity.test.js',
   './odds.test.js',
   './ranges.test.js',

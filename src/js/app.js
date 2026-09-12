@@ -5,6 +5,7 @@
 
 import { el, mount, $, toast, fmt } from './ui/dom.js';
 import { icon } from './ui/icons.js';
+import { renderCareer } from './ui/screenCareer.js';
 import { Profile } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
 import { VERSION, checkForUpdate } from './version.js';
@@ -21,15 +22,16 @@ import { renderStats, renderCharts, renderGlossary } from './ui/screenStats.js';
 import { renderLevels } from './ui/screenLevels.js';
 
 const ROUTES = {
-  home: { render: renderHome, tab: 'home', title: 'Dashboard' },
-  learn: { render: renderLearn, tab: 'home', title: 'Lesson' },
-  walkthrough: { render: renderWalkthrough, tab: 'home', title: 'Guided lesson' },
-  drill: { render: renderDrill, tab: 'home', title: 'Drill' },
+  home: { render: renderCareer, tab: 'home', title: 'Career' },
+  train: { render: renderHome, tab: 'train', title: 'Training' },
+  learn: { render: renderLearn, tab: 'train', title: 'Lesson' },
+  walkthrough: { render: renderWalkthrough, tab: 'train', title: 'Guided lesson' },
+  drill: { render: renderDrill, tab: 'train', title: 'Drill' },
   gauntlet: { render: renderGauntletIntro, tab: 'gauntlet', title: 'Gauntlet' },
   lab: { render: renderLabIntro, tab: 'lab', title: 'The Lab' },
   'lab-run': { render: renderLab, tab: 'lab', title: 'The Lab' },
   play: { render: renderTable, tab: 'play', title: 'Table' },
-  grind: { render: renderGrind, tab: 'grind', title: 'Bankroll' },
+  grind: { render: renderGrind, tab: 'home', title: 'Bankroll' },
   review: { render: renderReview, tab: 'review', title: 'Hand review' },
   charts: { render: renderCharts, tab: 'charts', title: 'Charts' },
   glossary: { render: renderGlossary, tab: 'glossary', title: 'Glossary' },
@@ -38,11 +40,11 @@ const ROUTES = {
 };
 
 const TABS = [
-  { route: 'home', label: 'Train', icon: 'train' },
+  { route: 'home', label: 'Career', icon: 'ladder' },
+  { route: 'train', label: 'Train', icon: 'train' },
   { route: 'play', label: 'Play', icon: 'play' },
   { route: 'lab', label: 'Lab', icon: 'lab' },
   { route: 'gauntlet', label: 'Gauntlet', icon: 'gauntlet' },
-  { route: 'grind', label: 'Bankroll', icon: 'bankroll' },
   { route: 'review', label: 'Review', icon: 'review' },
   { route: 'charts', label: 'Charts', icon: 'charts' },
   { route: 'glossary', label: 'Glossary', icon: 'glossary' },

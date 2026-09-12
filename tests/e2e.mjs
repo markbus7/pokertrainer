@@ -51,6 +51,9 @@ const step = async (name, fn) => {
 await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
 
 await step('dashboard renders', async () => {
+  // The app opens on the career now, so the training dashboard is somewhere
+  // you go rather than where you land.
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.module-tile', { timeout: 5000 });
   const rank = await page.textContent('.rank-chip .name');
   const tiles = await page.$$eval('.module-tile', (n) => n.length);
@@ -253,7 +256,7 @@ await step('playing a hand teaches a named skill and counts toward it', async ()
   // Via the dashboard: a goto to the hash we are already on is a fragment
   // navigation, so the previous step's half-played hand would still be there
   // and there would be no Deal button to click.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.felt', { timeout: 5000 });
   await page.click('button.btn.primary.lg');
@@ -423,7 +426,7 @@ await step('gauntlet, bankroll and progress screens render', async () => {
 if (SHOT) await page.screenshot({ path: `${SHOT}/08-grind.png` });
 
 await step('progress persists across a reload', async () => {
-  await page.goto(`${BASE}/#home`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'networkidle' });
   const xp = await page.textContent('.rank-chip .xp');
   await page.reload({ waitUntil: 'networkidle' });
   const xpAfter = await page.textContent('.rank-chip .xp');
@@ -519,7 +522,7 @@ await step('lessons deal real cards and grade what you do with them', async () =
 await step('numeric drills make you produce the number, not pick it', async () => {
   // MDF is the clean case: every question has a number for an answer, so the
   // entry box must always be there and the options must not.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=mdf`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(600);
 
@@ -570,7 +573,7 @@ await step('Enter answers the question and shows the result, the way the button 
   }));
 
   const answerWith = async (how) => {
-    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
     await page.goto(`${BASE}/#drill?module=mdf`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(500);
     const before = await readState();
@@ -617,7 +620,7 @@ await step('preflop teaches what a hand is worth, and grades the number', async 
   const { makeRng } = await import('../src/js/core/rng.js');
   const seats = { 'Under the Gun': 'UTG', Hijack: 'HJ', Cutoff: 'CO', Button: 'BTN' };
 
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=preflop`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(600);
 
@@ -704,7 +707,7 @@ await step('a preflop drill has somewhere to look, and a looked-up answer is not
   // a different screen and leaving mid-session abandons it, so there was
   // nowhere to look: being asked without ever being told is guessing with a
   // score attached.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
     raw.drills = {};
@@ -760,7 +763,7 @@ await step('a pot-odds question offers the shortcut, not a chart', async () => {
   // examples all divided, and the only thing to reach for mid-question was a
   // preflop grid that prices nothing. Reaching for help here has to produce
   // the routine you would actually run at a table.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=pot-odds`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(700);
 
@@ -806,7 +809,7 @@ await step('a lesson page draws the whole climb, with a number on every rung', a
   // to Solid or Mastered." The tile named the next bar in six words and the
   // lesson page named none of it, so the shape — three rungs, which one you
   // are on, what each asks — existed only in the source.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
     raw.drills = { outs: { attempts: 22, correct: 16 } };   // 73%, a real mid-climb record
@@ -850,7 +853,7 @@ await step('a lesson page draws the whole climb, with a number on every rung', a
 await step('the levels screen names the skills that have gone cold', async () => {
   // The rank row said "2 of these have slipped" and pointed at twelve lesson
   // pages. The app knew which two.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
     // Mastered on the record, cold on recent answers: the last 30 are poor,
@@ -900,7 +903,7 @@ await step('the table asks for a read before it hands back the buttons', async (
   // asked, so the reader was graded on a call they had no way to reason
   // about. The MDF lesson is heads up to the river facing a bet — where the
   // read is the decision.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
     raw.drills = raw.drills || {};
@@ -951,7 +954,7 @@ await step('opponents notice how you play, and say so', async () => {
   // coach. Slow — it takes a dozen spots facing a bet before anyone is
   // entitled to a conclusion — but silence here is a table that quietly got
   // harder, which is the opposite of the lesson.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
     raw.xp = 30000;
@@ -997,7 +1000,7 @@ await step('opponents notice how you play, and say so', async () => {
   //
   // Leave the table first and reload: the screen holds a live profile object
   // that writes itself back on the next save, straight over the reset.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
     raw.handsPlayed = 0;
@@ -1010,8 +1013,57 @@ await step('opponents notice how you play, and say so', async () => {
   if (left !== 0) throw new Error(`the fixture did not clean up after itself: ${left} hands left`);
 });
 
-await step('a graded question can be copied out as text', async () => {
+await step('the front door is a room you are standing in', async () => {
+  // The reader's verdict on the whole app: "it is still the same game." It
+  // was not a game — a grid of modules with a progress bar has nowhere to be
+  // and nobody to beat. The front door is the building now, and the climb is
+  // money, which is the one poker actually makes you make.
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    raw.bankroll = 412;
+    raw.stakeKey = 'nl10';
+    raw.career = { venue: 'nl10', best: 'nl10', busted: 1, staked: 20, beaten: ['nl2'] };
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+
+  const room = await page.evaluate(() => {
+    const panel = document.querySelector('.room');
+    if (!panel) return null;
+    return {
+      text: panel.textContent.replace(/\s+/g, ' '),
+      rooms: document.querySelectorAll('.room-row').length,
+      shut: document.querySelectorAll('.room-row.shut').length,
+      here: document.querySelectorAll('.room-row.here').length,
+      taken: document.querySelectorAll('.room-beaten').length,
+    };
+  });
+  if (!room) throw new Error('the front door is not a room');
+  if (!/Boat Club/.test(room.text)) throw new Error(`not standing anywhere: ${room.text.slice(0, 110)}`);
+  if (!/NL10/.test(room.text)) throw new Error('the room does not say what stake it really is');
+  if (!/Rocky/.test(room.text)) throw new Error('nobody is sitting in it');
+  if (!/\$412/.test(room.text)) throw new Error('the money is not on screen');
+
+  if (room.rooms !== 8) throw new Error(`${room.rooms} rooms in the building, expected 8`);
+  if (room.here !== 1) throw new Error(`${room.here} rooms marked as where you are`);
+  if (room.shut < 1) throw new Error('every door is open, so the climb costs nothing');
+  if (room.taken !== 1) throw new Error(`${room.taken} rooms marked as taken, expected 1`);
+
+  // The door ahead names its price rather than merely being locked.
+  const door = await page.textContent('.door-panel').catch(() => '');
+  if (!/Card Room/.test(door) || !/338/.test(door)) {
+    throw new Error(`the next door does not say what it costs: ${door.replace(/\s+/g, ' ')}`);
+  }
+
+  // And the training did not disappear; it stopped being the front door.
+  if (!await page.$('.study-line')) throw new Error('there is no way back to the lessons');
+});
+
+await step('a graded question can be copied out as text', async () => {
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(600);
 
@@ -1050,7 +1102,7 @@ await step('jargon explains itself wherever it appears, in both languages', asyn
     // way to ask what it meant, which is exactly where they most need to.
     const seen = { en: 0, nl: 0 };
     for (const lang of ['en', 'nl']) {
-      await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(300);
       // The language lives in the profile settings, so it is switched the way a
       // reader switches it — through the chip in the header.
@@ -1059,7 +1111,7 @@ await step('jargon explains itself wherever it appears, in both languages', asyn
       if (chip) { await chip.click(); await page.waitForTimeout(400); }
 
       for (const mod of ['outs', 'pot-odds', 'spr']) {
-        await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+        await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
         await page.goto(`${BASE}/#drill?module=${mod}`, { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(500);
         const entry = await page.$('.drill-entry-input');
@@ -1092,7 +1144,7 @@ await step('jargon explains itself wherever it appears, in both languages', asyn
     if (!def) throw new Error('tapping a term did not open a definition');
     if ((await def.textContent()).length < 40) throw new Error('the definition is empty');
   } finally {
-    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(300);
     const back = await page.$('.lang-chip:not(.active):has-text("EN")');
     if (back) { await back.click(); await page.waitForTimeout(300); }
@@ -1106,7 +1158,7 @@ await step('when only the lesson is left, it says so where the button is', async
   // than a thing to do, and the lesson page offered "Teach me this" and
   // "Skip to drills" as equal options. So the reader kept drilling a module
   // that no amount of drilling could move.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
     raw.drills = { 'hand-rankings': { attempts: 52, correct: 50 } };
@@ -1167,7 +1219,7 @@ await step('a tile says what is still missing, not just what the target is', asy
   // beside "Solid at 15 questions at 75%" looks like a bar already cleared.
   // The half that is short is the count, and working that out meant
   // subtracting one number on the tile from another.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
     // Ten answers at 90% on Outs & Equity, plus just enough elsewhere to
@@ -1201,7 +1253,7 @@ await step('a tile says what is still missing, not just what the target is', asy
 await step('the home screen names one module and the grid marks the same one', async () => {
   // Reported: the banner named a module, the grid showed two tiles both
   // reading "Learning", and nothing said which one was meant or why.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
 
   const marked = await page.$$eval('.module-tile.next-up .name', (n) => n.map((x) => x.textContent.trim()));
@@ -1226,7 +1278,7 @@ await step('no screen prints a percentage it has no sample for', async () => {
   // rate: the headline accuracy tile had no evidence bar at all while the
   // module tiles under it had one, and the calibration rows showed "100% of
   // 1" directly above a verdict that waits for fifteen answers.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
     raw.drills = { 'hand-rankings': { attempts: 3, correct: 3 } };
@@ -1238,11 +1290,11 @@ await step('no screen prints a percentage it has no sample for', async () => {
 
   const faults = [];
   for (const [route, selector, what, least] of [
-    ['#home', '.stat', 'the home stat tiles', 4],
+    ['#train', '.stat', 'the training stat tiles', 4],
     ['#stats', '.stat, .calib-value', 'the progress tiles and calibration rows', 5],
   ]) {
     // The reload above is what makes the seeded profile real: going straight
-    // from #home to #stats is only a fragment navigation, so the app keeps
+    // from #train to #stats is only a fragment navigation, so the app keeps
     // the profile it already holds and never re-reads storage — which is why
     // the first version of this check was measuring an untouched profile.
     await page.evaluate((hash) => { window.location.hash = hash; }, route);
@@ -1271,7 +1323,7 @@ await step('a lesson is played, not answered', async () => {
   // everything and asks you to read your hand (hand-rankings), and one whose
   // spot is rarest (bluffing).
   for (const [id, seats] of [['preflop', 6], ['cbet', 2], ['hand-rankings', 2], ['bluffing', 2]]) {
-    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
     await page.goto(`${BASE}/#play?lesson=${id}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.felt', { timeout: 8000 });
 
@@ -1305,7 +1357,7 @@ await step('a lesson is played, not answered', async () => {
 await step('a lesson run ends in a report and is remembered afterwards', async () => {
   // The three properties that make a lesson out of a table: it ends, it is
   // marked, and what you got wrong is still there next time.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#play?lesson=pot-odds`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.felt', { timeout: 8000 });
   await page.click('button.btn.primary.lg');
@@ -1353,7 +1405,7 @@ await step('a lesson run ends in a report and is remembered afterwards', async (
 
   // And the memory has to survive leaving the table entirely.
   if (named) {
-    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
     await page.goto(`${BASE}/#play?lesson=pot-odds`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.lesson-note', { timeout: 8000 });
     const warning = await page.$('.lesson-warning');
@@ -1366,7 +1418,7 @@ await step('a lesson run ends in a report and is remembered afterwards', async (
 });
 
 await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);
   await page.click('.rank-chip');
   await page.waitForTimeout(400);
@@ -1417,7 +1469,7 @@ await step('the rank chip opens the ladder, and locked ranks stay locked', async
 });
 
 await step('the language switch turns the whole app Dutch and persists', async () => {
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
 
   const englishNav = await page.$$eval('.tab', (n) => n.map((x) => x.textContent.trim()));
@@ -1451,7 +1503,7 @@ await step('the language switch turns the whole app Dutch and persists', async (
   }
 
   // And it survives a reload, because it lives in the profile.
-  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
   const stillDutch = await page.$eval('.lang-chip.active', (n) => n.textContent);
   if (!/NL/.test(stillDutch)) throw new Error(`language did not persist: ${stillDutch}`);
