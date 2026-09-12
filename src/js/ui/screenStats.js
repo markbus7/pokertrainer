@@ -1,6 +1,7 @@
 /** Career stats, mastery, achievements and the leak report. */
 
 import { el, mount, fmt, sparkline, toast } from './dom.js';
+import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { MODULE_META } from '../data/curriculum.js';
 import { scoreLine, EVIDENCE_BAR } from '../state/mastery.js';
@@ -72,7 +73,7 @@ export function renderStats(ctx) {
           return el('div', { style: { padding: '8px 0', borderBottom: '1px solid var(--border)' } },
             el('div.spread',
               el('div.row',
-                el('span', locked ? '🔒' : meta.icon),
+                el('span.module-glyph', icon(meta.icon, { size: 16 })),
                 el('span', { style: { fontWeight: '600' } }, meta.name),
                 locked ? el('span.badge', t('Level {level}', { level: meta.unlockLevel })) : null,
               ),
@@ -189,7 +190,7 @@ function renderLearningReport(ctx) {
 
   return el('div.panel',
     el('div.panel-title',
-      el('h2', '🧾 Learning report'),
+      el('h2', icon('clipboard', { size: 20 }), t('Learning report')),
       el('span.faint', 'for improving the lessons'),
     ),
     el('div.faint', { style: { marginBottom: '10px' } },
@@ -232,7 +233,7 @@ function renderVersionPanel() {
   }
 
   return el('div.panel',
-    el('div.panel-title', el('h2', '🏷️ Version'), el('span.faint', REPO)),
+    el('div.panel-title', el('h2', icon('clock', { size: 20 }), t('Version')), el('span.faint', REPO)),
     el('div.spread',
       el('div',
         el('div.row',
@@ -259,7 +260,7 @@ function renderCalibration(profile) {
 
   return el('div.panel',
     el('div.panel-title',
-      el('h2', '🎯 Calibration'),
+      el('h2', icon('target', { size: 20 }), t('Calibration')),
       el('span.faint', t('{n} judged answers', { n: report.total })),
     ),
     el('p.muted', 'How often you were right, split by how sure you felt at the time.'),
@@ -294,7 +295,7 @@ function renderRetention(profile) {
   if (!studied.length) return null;
 
   return el('div.panel',
-    el('div.panel-title', el('h2', '🔁 Retention'), el('span.faint', 'spaced review schedule')),
+    el('div.panel-title', el('h2', icon('clock', { size: 20 }), t('Retention')), el('span.faint', 'spaced review schedule')),
     el('p.muted', 'Each concept comes back at a widening gap for as long as you keep getting it right. A miss brings it back tomorrow.'),
     el('div.stack-sm',
       studied.map((meta) => {
@@ -302,7 +303,7 @@ function renderRetention(profile) {
         const label = nextReviewLabel(profile, meta.id);
         return el('div', { style: { padding: '8px 0', borderBottom: '1px solid var(--border)' } },
           el('div.spread',
-            el('div.row', el('span', meta.icon), el('span', { style: { fontWeight: '600' } }, meta.name)),
+            el('div.row', el('span.module-glyph', icon(meta.icon, { size: 16 })), el('span', { style: { fontWeight: '600' } }, meta.name)),
             el('span.faint.mono', label),
           ),
           el('div.bar.green', { style: { marginTop: '6px', height: '6px' } },
@@ -575,7 +576,7 @@ function renderManualSync(ctx) {
 function renderSyncPanel(ctx) {
   const connected = cloudSync.getStatus().connected;
   return el('div.panel',
-    el('div.panel-title', el('h2', '🔄 Sync progress'), el('span.faint', connected ? 'automatic' : 'no account needed')),
+    el('div.panel-title', el('h2', icon('chip', { size: 20 }), t('Sync progress')), el('span.faint', connected ? 'automatic' : 'no account needed')),
     renderAutoSync(ctx),
     el('div', { style: { borderTop: '1px solid var(--border)', margin: '18px 0' } }),
     renderManualSync(ctx),
@@ -614,7 +615,7 @@ export function renderCharts(ctx, params = {}) {
 
   return el('div.screen',
     el('div.panel',
-      el('h1', '📋 Range charts'),
+      el('h1', icon('charts', { size: 22 }), t('Range charts')),
       el('p.muted', 'These are the ranges the drills grade you against, and the ranges the "Solid Regular" bot plays. Learn one position at a time — the button and the big blind matter most.'),
       el('div.row',
         ['UTG', 'HJ', 'CO', 'BTN', 'SB'].map((pos) => el(`button.btn.sm${view === pos ? '.primary' : '.ghost'}`, {
@@ -695,7 +696,7 @@ export function renderGlossary() {
   const terms = allTerms();
   return el('div.screen',
     el('div.panel',
-      el('h1', '📖 Glossary'),
+      el('h1', icon('book', { size: 22 }), t('Glossary')),
       el('p.muted', `Every piece of jargon the lessons use, in plain language. Terms appear underlined inside a lesson — tap one there and it explains itself without losing your place.`),
       el('span.badge', t('{n} terms', { n: terms.length })),
     ),

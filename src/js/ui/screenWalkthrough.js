@@ -9,6 +9,7 @@
  */
 
 import { el, mount, richText, toast } from './dom.js';
+import { icon } from './icons.js';
 import { lessonTable } from '../data/lessonTables.js';
 import { makePractice } from '../trainers/practice.js';
 import { review } from '../state/spacing.js';
@@ -120,7 +121,7 @@ export function renderWalkthrough(ctx, params) {
 
     mount(header,
       el('div.row',
-        el('span', { style: { fontSize: '2rem' } }, meta.icon),
+        el('span.module-glyph.lg', icon(meta.icon, { size: 24 })),
         el('div',
           el('h1', { style: { margin: 0 } }, 'Lesson complete'),
           el('div.muted', `${meta.name} — ${state.correctCount} of ${totalSteps} checks correct first time`),
@@ -153,7 +154,7 @@ export function renderWalkthrough(ctx, params) {
     mount(header,
       el('div.spread',
         el('div.row',
-          el('span', { style: { fontSize: '1.6rem' } }, meta.icon),
+          el('span.module-glyph', icon(meta.icon, { size: 20 })),
           el('div',
             el('div', { style: { fontWeight: '650' } }, meta.name),
             el('div.faint', t('Step {n} of {total}', { n: stepNumber, total: totalSteps })),

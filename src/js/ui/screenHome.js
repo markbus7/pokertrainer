@@ -1,6 +1,7 @@
 /** Dashboard: where you are, what to do next. */
 
 import { el, fmt } from './dom.js';
+import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { MODULE_META, nextUp } from '../data/curriculum.js';
 import { dueConcepts, nextReviewLabel, hasStudied } from '../state/spacing.js';
@@ -22,8 +23,8 @@ function nextRankHint(profile, next) {
   const worst = behind.reduce((a, b) => ((a.have / a.need) <= (b.have / b.need) ? a : b));
   const remaining = worst.need - worst.have;
   return worst.key === 'xp'
-    ? t('{n} XP to {rank}', { n: fmt.chips(remaining), rank: `${next.emoji} ${t(next.name)}` })
-    : t('{n} more to {rank}: {what}', { n: remaining, rank: `${next.emoji} ${t(next.name)}`, what: t(worst.label).toLowerCase() });
+    ? t('{n} XP to {rank}', { n: fmt.chips(remaining), rank: t(next.name) })
+    : t('{n} more to {rank}: {what}', { n: remaining, rank: t(next.name), what: t(worst.label).toLowerCase() });
 }
 
 export function renderHome(ctx) {
@@ -48,7 +49,7 @@ export function renderHome(ctx) {
     el('div.panel',
       el('div.spread',
         el('div.row',
-          el('div', { style: { fontSize: '3rem', lineHeight: '1' } }, rank.emoji),
+          el('div.rank-emblem', rank.emoji),
           el('div',
             el('div.faint', t('Level {level} of {total}', { level: rank.level, total: RANKS.length })),
             el('h1', { style: { margin: '2px 0 4px' } }, rank.name),
@@ -80,7 +81,7 @@ export function renderHome(ctx) {
     // training, and the lesson is what you open when the coach names
     // something you do not know yet.
     el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
-      el('div.panel-title', el('h3', '▶ Sit down and play')),
+      el('div.panel-title', el('h3', icon('play', { size: 18 }), t('Sit down and play'))),
       el('div.spread',
         el('div.row',
           el('div', { style: { fontSize: '2rem' } }, '🃏'),
@@ -109,9 +110,9 @@ export function renderHome(ctx) {
 
     /* ---- quick actions ---- */
     el('div.grid.cols-3',
-      quickCard('🎛️', 'The Lab', 'Solve spots at a table — type the equity, size the bet. No multiple choice.', 'Open the Lab', () => go('lab')),
-      quickCard('🔍', 'Hand review', 'The hands you misplayed, replayed one action at a time so you can see where they turned.', 'Look back', () => go('review')),
-      quickCard('💰', 'Bankroll Challenge', t('Climb from NL2 to NL500. You are at {stake} with {money}.', { stake: stake.name, money: fmt.money(profile.data.bankroll) }), 'Grind', () => go('grind')),
+      quickCard('lab', 'The Lab', 'Solve spots at a table — type the equity, size the bet. No multiple choice.', 'Open the Lab', () => go('lab')),
+      quickCard('review', 'Hand review', 'The hands you misplayed, replayed one action at a time so you can see where they turned.', 'Look back', () => go('review')),
+      quickCard('bankroll', 'Bankroll Challenge', t('Climb from NL2 to NL500. You are at {stake} with {money}.', { stake: stake.name, money: fmt.money(profile.data.bankroll) }), 'Grind', () => go('grind')),
     ),
 
     /* ---- stats strip ---- */
@@ -157,7 +158,7 @@ function duePanel(profile, go) {
     return el('div.panel',
       el('div.spread',
         el('div',
-          el('h3', { style: { margin: 0 } }, '✅ Nothing due for review'),
+          el('h3', { style: { margin: 0 } }, icon('check', { size: 18 }), t('Nothing due for review')),
           el('div.faint', soonest
             ? t('Everything you have studied is still fresh. {module} is {when}.',
               { module: t(soonest.m.name), when: t(soonest.label) })
@@ -172,7 +173,7 @@ function duePanel(profile, go) {
   return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
     el('div.spread',
       el('div',
-        el('h3', { style: { margin: 0 } }, t('🔁 {n} ready for review', { n: due.length })),
+        el('h3', { style: { margin: 0 } }, icon('clock', { size: 18 }), t('{n} ready for review', { n: due.length })),
         el('div.faint', 'These are due now — practising a concept just as it starts to fade is what makes it stick.'),
       ),
       el('button.btn.sm.primary', { onclick: () => go('lab') }, 'Review now'),
@@ -180,7 +181,7 @@ function duePanel(profile, go) {
     el('div.row', { style: { marginTop: '12px' } },
       due.slice(0, 6).map((id) => {
         const meta = metaFor(id);
-        return meta ? el('span.badge.gold', meta.icon, ' ', t(meta.name)) : null;
+        return meta ? el('span.badge.gold', icon(meta.icon, { size: 14 }), ' ', t(meta.name)) : null;
       }),
     ),
   );
@@ -201,7 +202,7 @@ function mistakesPanel(go) {
   return el('div.panel', { style: { borderColor: 'var(--red)' } },
     el('div.spread',
       el('div',
-        el('h3', { style: { margin: 0 } }, t('🔍 {n} hands worth another look', { n: summary.total })),
+        el('h3', { style: { margin: 0 } }, icon('review', { size: 18 }), t('{n} hands worth another look', { n: summary.total })),
         el('div.faint', `${parts.join(', ')}. ${t('Play them back and see where they turned.')}`),
       ),
       el('button.btn.sm.primary', { onclick: () => go('review') }, 'Review hands'),
@@ -251,9 +252,9 @@ function whyThisOne(plan) {
     + 'barely tried cannot jump the queue.');
 }
 
-function quickCard(icon, title, body, cta, onclick) {
+function quickCard(mark, title, body, cta, onclick) {
   return el('div.panel', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
-    el('div', { style: { fontSize: '1.8rem' } }, icon),
+    el('span.module-glyph.lg', icon(mark, { size: 22 })),
     el('h3', { style: { margin: 0 } }, title),
     el('div.faint', { style: { flex: '1' } }, body),
     el('button.btn.block', { onclick }, cta),
@@ -284,7 +285,7 @@ function moduleTile(meta, profile, go, recommendedId) {
     onclick: () => !locked && go('learn', { module: meta.id }),
   },
     el('div.spread',
-      el('span.icon', locked ? '🔒' : meta.icon),
+      el('span.module-glyph', icon(meta.icon, { size: 20 })),
       el('div.row', { style: { gap: '6px' } },
         isNext ? el('span.badge.next-badge', t('DO THIS NEXT')) : null,
         locked

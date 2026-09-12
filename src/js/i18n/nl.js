@@ -1682,7 +1682,7 @@ export const NL = {
   'waiting for the flop': 'wachten op de flop',
   'Ready when you are.': 'Klaar wanneer jij het bent.',
   'Waiting for your turn…': 'Wachten tot jij aan de beurt bent…',
-  '📊 This session': '📊 Deze sessie',
+  '📊 This session': 'Deze sessie',
   '🧭 Coach': '🧭 Coach',
   '📜 Hand log': '📜 Handlog',
   'Hands': 'Handen',
@@ -1740,7 +1740,7 @@ export const NL = {
     'Klik om te vergelijken met de laatst gepubliceerde versie.',
   '🏷️ Version': '🏷️ Versie',
   '🎯 Calibration': '🎯 Kalibratie',
-  '🔁 Spaced review': '🔁 Herhaling met tussenpozen',
+  '🔁 Spaced review': 'Herhaling met tussenpozen',
   'One-time setup: create a free GitHub token, paste it below, and this device will sync automatically from then on — no code to copy, ever.':
     'Eenmalige instelling: maak een gratis GitHub-token aan, plak hem hieronder, en dit apparaat synchroniseert vanaf dan automatisch — nooit meer een code kopiëren.',
   '— the description and the "gist" scope are already filled in for you.':
@@ -1822,7 +1822,7 @@ export const NL = {
   'Climb from NL2 to NL500. You are at {stake} with {money}.':
     'Klim van NL2 naar NL500. Je zit op {stake} met {money}.',
   '{n} of {total} unlocked': '{n} van {total} ontgrendeld',
-  '🔁 {n} ready for review': '🔁 {n} klaar om te herhalen',
+  '{n} ready for review': '{n} klaar om te herhalen',
   '{correct}/{attempts} correct': '{correct}/{attempts} goed',
   '{correct} of {attempts}': '{correct} van {attempts}',
 
@@ -2275,7 +2275,7 @@ export const NL = {
 
   /* ---- Hand review: the list ---- */
 
-  '🔍 Hand review': '🔍 Handen terugkijken',
+  '🔍 Hand review': 'Handen terugkijken',
   'Hand review': 'Handen terugkijken',
   'Review': 'Terugkijken',
   'Every hand here has something in it. Tap one to play it back.':
@@ -2356,7 +2356,7 @@ export const NL = {
   'final pot': 'eindpot',
   'Review this hand': 'Deze hand terugkijken',
   'Replay this spot': 'Deze spot terugspelen',
-  '🔍 {n} hands worth another look': '🔍 {n} handen die een tweede blik verdienen',
+  '{n} hands worth another look': '{n} handen die een tweede blik verdienen',
   '{n} with a mistake in': '{n} met een fout erin',
   '{n} you lost through no fault of yours': '{n} die je zonder eigen schuld verloor',
   'Play them back and see where they turned.': 'Speel ze terug en zie waar ze kantelden.',
@@ -3052,6 +3052,20 @@ export const NL = {
   'You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive kind of session, because nothing about it tells you to stop.':
     'Je won chips met {pct} van je beslissingen juist. Betaald krijgen voor de verkeerde keuze is het dure soort sessie, want niets erin zegt je dat je moet stoppen.',
   'Show me the chart': 'Laat me de chart zien',
+  'Nothing due for review': 'Niets te herhalen',
+  'Sit down and play': 'Ga zitten en speel',
+  'The Gauntlet': 'De Gauntlet',
+  'Learning report': 'Leerrapport',
+  'Calibration': 'Kalibratie',
+  'Retention': 'Retentie',
+  'Range charts': 'Range-charts',
+  'Coach': 'Coach',
+  'This session': 'Deze sessie',
+  'Hand log': 'Handlog',
+  'Top of the ladder': 'Top van de ladder',
+  'Version': 'Versie',
+  'Sync progress': 'Voortgang synchroniseren',
+  'Your XP is ahead of your skills': 'Je XP loopt voor op je vaardigheden',
   'They have noticed how you play': 'Ze hebben gezien hoe jij speelt',
   'You have folded to {pct} of the bets you faced. {names} {verb} accordingly — bluffing you {direction}.':
     'Je hebt {pct} van de bets waar je tegenover stond gefold. {names} {verb} zich daarop aan — en bluft je {direction}.',
@@ -3086,7 +3100,7 @@ export const NL = {
     'Omdat {equity} hoger is dan de {need} die je nodig hebt, is dit een winstgevende call.',
   'Since {equity} falls short of the {need} you need, folding is correct.':
     'Omdat {equity} onder de {need} blijft die je nodig hebt, is folden juist.',
-  '🧊 Gone cold': '🧊 Weggezakt',
+  'Gone cold': 'Weggezakt',
   'Your rank counts these at their best, so it is safe. Recent answers have them lower — which is what the tiles and "do this next" are reading.':
     'Je rang telt deze op hun beste stand, dus die is veilig. Je recente antwoorden staan lager — en dat is wat de tegels en "doe dit hierna" lezen.',
   '{was} → {now} on recent answers': '{was} → {now} op recente antwoorden',
@@ -3158,7 +3172,7 @@ export const NL = {
   '3-bet {pos}': '3-bet {pos}',
   '📖 Glossary': '📖 Woordenlijst',
   '{n} terms': '{n} termen',
-  '🔁 Retention': '🔁 Vasthouden',
+  '🔁 Retention': 'Vasthouden',
   'spaced review schedule': 'schema voor gespreide herhaling',
   'built {date}': 'gebouwd op {date}',
   '🔄 Sync progress': '🔄 Voortgang synchroniseren',
@@ -3335,7 +3349,7 @@ export const NL = {
   'Right to give up': 'Terecht opgegeven',
   '{equity} on a {tags} board. They have too many hands that continue — betting here donates chips. Checking costs nothing and keeps the pot small.':
     '{equity} op een {tags} board. Ze hebben te veel handen die doorgaan — hier betten doneert chips. Checken kost niets en houdt de pot klein.',
-  '🎓 What this hand asked you': '🎓 Wat deze hand van je vroeg',
+  'What this hand asked you': 'Wat deze hand van je vroeg',
   'Teach me {skill}': 'Leer me {skill}',
   '▶ Sit down and play': '▶ Ga zitten en speel',
   'Six seats, and a coach that names the skill before you act':
@@ -3584,7 +3598,7 @@ export const NL = {
     'Geen fouten te noemen. Speel een ronde van iets anders, of kom terug als deze is weggezakt.',
   'Another {n} spots': 'Nog {n} momenten',
   'Back to the lesson': 'Terug naar de les',
-  '📊 This run': '📊 Deze ronde',
+  'This run': 'Deze ronde',
   'Spots': 'Momenten',
   'Right': 'Goed',
   'Hands dealt to find them': 'Handen gedeeld om ze te vinden',

@@ -14,6 +14,7 @@
  */
 
 import { el, mount, richText, fmt, toast } from './dom.js';
+import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { cardRow } from './cardView.js';
 import { renderFelt } from './feltView.js';
@@ -49,7 +50,7 @@ function renderList(ctx) {
     el('div.panel',
       el('div.spread',
         el('div',
-          el('h1', { style: { margin: 0 } }, '🔍 Hand review'),
+          el('h1', { style: { margin: 0 } }, icon('review', { size: 22 }), t('Hand review')),
           el('div.faint', { style: { marginTop: '4px' } },
             'Every hand here has something in it. Tap one to play it back.'),
         ),

@@ -1,6 +1,7 @@
 /** Lessons, drills and the Gauntlet. */
 
 import { el, mount, richText, toast, fmt } from './dom.js';
+import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { scenarioView } from './scenarioView.js';
 import { copyButton } from './copySpot.js';
@@ -120,7 +121,7 @@ export function renderLearn(ctx, params) {
     el('div.panel',
       el('div.spread',
         el('div.row',
-          el('span', { style: { fontSize: '2.4rem' } }, meta.icon),
+          el('span.module-glyph.lg', icon(meta.icon, { size: 28 })),
           el('div',
             el('h1', { style: { margin: 0 } }, meta.name),
             el('div.muted', meta.tagline),
@@ -400,7 +401,7 @@ export function renderDrill(ctx, params) {
     mount(header,
       el('div.spread',
         el('div.row',
-          el('span', { style: { fontSize: '1.6rem' } }, q.icon),
+          el('span.module-glyph', icon(q.icon, { size: 20 })),
           el('div',
             el('div', { style: { fontWeight: '650' } }, gauntlet ? 'The Gauntlet' : q.moduleName),
             el('div.faint', gauntlet
@@ -627,10 +628,10 @@ export function renderGauntletIntro(ctx) {
   const unlocked = MODULE_META.filter((m) => m.unlockLevel <= profile.level);
   return el('div.screen',
     el('div.panel',
-      el('h1', '⚡ The Gauntlet'),
+      el('h1', icon('spark', { size: 22 }), t('The Gauntlet')),
       el('p.muted', 'Ten questions drawn at random from every module you have unlocked. You will not know which skill is coming, which is exactly the point — at the table, nobody tells you that this is a pot-odds spot.'),
       el('div.row', { style: { marginBottom: '16px' } },
-        unlocked.map((m) => el('span.badge', m.icon, ' ', t(m.name))),
+        unlocked.map((m) => el('span.badge', icon(m.icon, { size: 13 }), ' ', t(m.name))),
       ),
       el('button.btn.primary.lg', { onclick: () => go('drill', { mode: 'gauntlet' }) }, 'Begin the run'),
     ),

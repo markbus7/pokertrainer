@@ -54,7 +54,7 @@ export function generateQuestion(moduleId, rng = makeRng(), difficulty = 3) {
     const question = gen(rng, difficulty);
     if (question && question.options && question.options.length >= 2) {
       const meta = moduleMeta(moduleId);
-      return { ...question, module: moduleId, moduleName: meta ? meta.name : moduleId, icon: meta ? meta.icon : '🎲' };
+      return { ...question, module: moduleId, moduleName: meta ? meta.name : moduleId, icon: meta ? meta.icon : 'target' };
     }
   }
   throw new Error(`Could not generate a question for ${moduleId}`);

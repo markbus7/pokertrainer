@@ -4,6 +4,7 @@
  */
 
 import { el, mount, toast, fmt } from './dom.js';
+import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 
 /**
@@ -78,7 +79,7 @@ export function renderTable(ctx, params = {}) {
   if (params.lesson && !lesson) {
     const meta = moduleMeta(params.lesson);
     return el('div.screen', el('div.panel',
-      el('h1', meta ? `${meta.icon} ${t(meta.name)}` : t('No table for that')),
+      el('h1', meta ? icon(meta.icon, { size: 22 }) : null, meta ? t(meta.name) : t('No table for that')),
       el('p.muted', meta && params.lesson === 'icm'
         ? t('ICM is a tournament idea and this is a cash table, so there is no honest way to '
           + 'play it here. The lesson and its drill still teach it.')
@@ -182,7 +183,7 @@ export function renderTable(ctx, params = {}) {
     el('div.spread', { style: { marginBottom: '14px' } },
       el('div.row',
         el('h1', { style: { margin: 0 } }, lessonMeta
-          ? `${lessonMeta.icon} ${t(lessonMeta.name)}`
+          ? t(lessonMeta.name)
           : grind ? `${stake.name} — Bankroll Challenge` : VARIANTS[variantKey].name),
         el('span.badge.gold', lesson ? t('Lesson table') : VARIANTS[variantKey].short),
       ),
@@ -1033,7 +1034,7 @@ export function renderTable(ctx, params = {}) {
       .filter(Boolean);
 
     mount(coachHost,
-      el('h3', '🧭 Coach'),
+      el('h3', icon('coach', { size: 18 }), t('Coach')),
       adjusted.length
         ? el('div.notice', { style: { marginBottom: '10px' } },
           el('div', { style: { fontWeight: '600' } }, t('They have noticed how you play')),
@@ -1049,7 +1050,7 @@ export function renderTable(ctx, params = {}) {
         : null,
       spot
         ? el('div.spot-tag',
-            el('span.spot-icon', spotMeta ? spotMeta.icon : '🎯'),
+            el('span.spot-icon', icon(spotMeta ? spotMeta.icon : 'target', { size: 18 })),
             el('div',
               el('div.spot-name', spotMeta ? t(spotMeta.name) : spot.id),
               el('div.spot-why', t(spot.why)),
@@ -1113,7 +1114,7 @@ export function renderTable(ctx, params = {}) {
 
       session.learned.length
         ? el('div', { style: { marginTop: '16px' } },
-            el('h3', t('🎓 What this hand asked you')),
+            el('h3', icon('target', { size: 18 }), t('What this hand asked you')),
             el('div.stack-sm', session.learned.map((entry) => el('div.learned-row',
               el(`span.${entry.right ? 'right' : 'wrong'}`, entry.right ? '✓' : '✗'),
               el('span', t(entry.name)),
@@ -1124,13 +1125,13 @@ export function renderTable(ctx, params = {}) {
       // while it searched for your spot, so a VPIP or a win rate built from
       // them describes the autopilot and not you. The run is what you did.
       lesson ? el('div',
-        el('h3', { style: { marginTop: '18px' } }, t('📊 This run')),
+        el('h3', { style: { marginTop: '18px' } }, icon('charts', { size: 18 }), t('This run')),
         metric('Spots', `${session.run ? session.run.spots.length : 0} / ${RUN_LENGTH}`),
         metric('Right', String(session.run
           ? session.run.spots.filter((sp) => sp.level !== 'bad').length : 0)),
         metric('Hands dealt to find them', String(summary.hands)),
       ) : null,
-      lesson ? null : el('h3', { style: { marginTop: '18px' } }, '📊 This session'),
+      lesson ? null : el('h3', { style: { marginTop: '18px' } }, icon('charts', { size: 18 }), t('This session')),
       // Hands and result are facts about what happened. Everything below them
       // is a rate estimated from those hands, and a rate needs a sample: VPIP
       // after one hand is 0% or 100%, and bb/100 after one hand is four
@@ -1166,7 +1167,7 @@ export function renderTable(ctx, params = {}) {
       // bad ones is the reading that actually costs money later.
       lesson ? null : divergenceNote(session.decisions, summary),
 
-      el('h3', { style: { marginTop: '18px' } }, '📜 Hand log'),
+      el('h3', { style: { marginTop: '18px' } }, icon('clipboard', { size: 18 }), t('Hand log')),
       el('div.log', session.logLines.slice().reverse().map((l) =>
         el(`div${l.isStreet ? '.street-line' : ''}`, l.line))),
 
