@@ -320,7 +320,7 @@ function priceView(spot, onDone) {
 
 const moneyTile = (label, value) => el('div.practice-money-tile',
   el('div.practice-label', t(label)),
-  el('div.mono', { style: { fontSize: '1.25rem', fontWeight: '700' } },
+  el('div.mono', { style: { fontSize: 'var(--t-lg)', fontWeight: '700' } },
     // Some tiles carry a seat name or an already-formatted figure; only raw
     // numbers want the thousands separator.
     typeof value === 'number' ? fmt.chips(value) : t(String(value))),

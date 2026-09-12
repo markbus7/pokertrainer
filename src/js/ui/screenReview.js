@@ -79,7 +79,7 @@ function renderList(ctx) {
           + 'when you lose {n} big blinds or more having played it right. Go and play a few hands.',
           { n: COOLER_BB }))),
     el('div.panel',
-      el('div.faint', { style: { fontSize: '0.82rem' } }, richText(t(
+      el('div.faint', { style: { fontSize: 'var(--t-sm)' } }, richText(t(
         '**What gets saved.** A hand is kept when the coach graded one of your decisions bad, or when you lost '
         + '{n} big blinds or more with no mistake in it — the second kind matters as much as the first, because '
         + 'it is the proof that losing and misplaying are different things. The last {cap} mistakes are kept. '
@@ -185,7 +185,7 @@ function renderOneHand(ctx, id) {
     mount(feltHost, renderFelt({
       players: frame.players.map((p) => ({
         ...p,
-        emoji: !p.isHero && p.profileKey ? getProfile(p.profileKey).emoji : null,
+        tag: !p.isHero && p.profileKey ? getProfile(p.profileKey).tag : null,
         wonPot: reveal && hand.result.winners.includes(p.id),
       })),
       heroSeat: (hand.seats.find((s) => s.isHero) || hand.seats[0]).seat,
@@ -220,7 +220,7 @@ function renderOneHand(ctx, id) {
     el('div.panel',
       el('div.spread',
         el('div.row',
-          el('span', { style: { fontSize: '1.5rem' } }, review.kind === 'cooler' ? '🧊' : '🔍'),
+          el('span', { style: { fontSize: 'var(--t-lg)' } }, review.kind === 'cooler' ? '🧊' : '🔍'),
           el('div',
             el('div', { style: { fontWeight: '650' } }, review.headline),
             el('div.faint', [
@@ -236,7 +236,7 @@ function renderOneHand(ctx, id) {
     el('div.panel.replay-panel', feltHost, transport),
     stepHost,
     el('div.panel',
-      el('div.faint', { style: { fontSize: '0.8rem' } }, richText(t(
+      el('div.faint', { style: { fontSize: 'var(--t-sm)' } }, richText(t(
         '**Where the equity comes from.** It is measured by dealing the rest of the hand out thousands of times '
         + 'against the players still in, and counting how often you end up winning. It assumes they could hold '
         + 'anything, which is generous to you when somebody has bet big — a real range is stronger than a random '

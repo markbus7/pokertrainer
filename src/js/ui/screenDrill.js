@@ -64,10 +64,10 @@ function masteryLadder(profile, moduleId, go) {
       return el(`div.rung${state === 'here' ? '.rung-here' : ''}`,
         el('div.spread', { style: { alignItems: 'center' } },
           el('div.row',
-            el('span', { style: { fontSize: '1.3rem', opacity: state === 'ahead' ? '0.5' : '1' } }, rung.icon),
+            el('span', { style: { fontSize: 'var(--t-lg)', opacity: state === 'ahead' ? '0.5' : '1' } }, rung.icon),
             el('div',
               el('div', { style: { fontWeight: '600' } }, t(rung.name)),
-              el('div.faint', { style: { fontSize: '0.78rem' } }, t(rung.blurb)),
+              el('div.faint', { style: { fontSize: 'var(--t-xs)' } }, t(rung.blurb)),
             ),
           ),
           el(`span.badge${tone ? `.${tone}` : ''}`,
@@ -76,7 +76,7 @@ function masteryLadder(profile, moduleId, go) {
 
         rung.rows.length
           ? el('div', { style: { marginTop: '10px' } }, rung.rows.map((row) => requirementRow(row)))
-          : el('div.faint', { style: { marginTop: '8px', fontSize: '0.82rem' } },
+          : el('div.faint', { style: { marginTop: '8px', fontSize: 'var(--t-sm)' } },
             t('Nothing to earn — this is where you stand from your first answer.')),
 
         // The number the reader asked for, and the one a window makes
@@ -259,7 +259,7 @@ export function renderDrill(ctx, params) {
 
     mount(header,
       el('div.row',
-        el('span', { style: { fontSize: '2rem' } }, passed ? '✅' : '📘'),
+        el('span', { style: { fontSize: 'var(--t-xl)' } }, passed ? '✅' : '📘'),
         el('div',
           el('h1', { style: { margin: 0 } }, gauntlet ? 'Gauntlet complete' : passed ? 'Session passed' : 'Session complete'),
           el('div.muted', t('{correct} of {answered} correct — {pct}',
@@ -279,7 +279,7 @@ export function renderDrill(ctx, params) {
       promoted
         ? el('div.panel', { style: { marginTop: '16px', borderColor: 'var(--green)', background: 'rgba(62,207,142,0.08)' } },
             el('div.row',
-              el('span', { style: { fontSize: '1.8rem' } }, promoted.icon),
+              el('span', { style: { fontSize: 'var(--t-xl)' } }, promoted.icon),
               el('div',
                 el('h3', { style: { margin: 0 } },
                   t('{module} is now {tier}', { module: t(meta.name), tier: t(promoted.name) })),

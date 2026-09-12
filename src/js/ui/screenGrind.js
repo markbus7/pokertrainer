@@ -47,7 +47,7 @@ export function renderGrind(ctx) {
           el('div.muted', 'Start at NL2 with $200. Beat each level, build a proper roll, and move up. Bust and you move back down — exactly like the real thing.'),
         ),
         el('div', { style: { textAlign: 'right' } },
-          el('div.mono', { style: { fontSize: '2rem', fontWeight: '700', color: 'var(--gold)' } }, fmt.money(bankroll)),
+          el('div.mono', { style: { fontSize: 'var(--t-xl)', fontWeight: '700', color: 'var(--gold)' } }, fmt.money(bankroll)),
           el('div.faint', 'bankroll'),
         ),
       ),

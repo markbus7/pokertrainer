@@ -253,7 +253,7 @@ export function renderLab(ctx) {
     mount(header,
       el('div.spread',
         el('div.row',
-          el('span', { style: { fontSize: '1.6rem' } }, '🎛️'),
+          el('span', { style: { fontSize: 'var(--t-xl)' } }, '🎛️'),
           el('div',
             el('div', { style: { fontWeight: '650' } }, 'The Lab'),
             el('div.faint', t('Spot {n} of {total} · {kind}',
