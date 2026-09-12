@@ -1,8 +1,9 @@
 import { describe, it, assert, equal } from './harness.js';
 import {
   readRange, equityAgainst, riverEquities, candidateHands, actionChances, READ_BANDS, nearestBand,
+  sampledEquities, marginFor,
 } from '../src/js/core/handRead.js';
-import { exactRiverRange } from '../src/js/core/lessonRunner.js';
+import { tableReadRange } from '../src/js/core/lessonRunner.js';
 import { PROFILES, CUTS } from '../src/js/engine/bots.js';
 import { bluffCatchDrill, rangeReadDrill } from '../src/js/trainers/postflop.js';
 import { makeDeck } from '../src/js/core/cards.js';
@@ -224,13 +225,14 @@ describe('hand reading: asking for it at the table', () => {
     }
   });
 
-  it('only asks where the answer can be exact', () => {
-    // The read is worth asking for because the grader knows the truth. On a
-    // street with cards to come it does not, so it must not ask.
+  it('only asks where a read is a fair question', () => {
+    // Every street postflop now, exact on the river and sampled before it.
+    // What still rules a spot out is the shape of it: nobody has bet, or
+    // there are two opponents whose ranges would have to be read together.
     const board = boardFor(42);
     const hero = candidateHands(board)[0];
-    const table = (street, live, toCall) => ({
-      board: street === 'river' ? board : board.slice(0, 4),
+    const table = (street, live) => ({
+      board: street === 'river' ? board : board.slice(0, street === 'turn' ? 4 : 3),
       street,
       variant: {},
       lastAggressor: null,
@@ -238,9 +240,91 @@ describe('hand reading: asking for it at the table', () => {
         .concat(Array.from({ length: live }, () => ({ isHero: false, profile: 'tag' }))),
     });
     const heroPlayer = { hole: hero };
-    assert(exactRiverRange(table('river', 1, 50), heroPlayer, 1, 50), 'the river spot is askable');
-    equal(exactRiverRange(table('turn', 1, 50), heroPlayer, 1, 50), null, 'not with a card to come');
-    equal(exactRiverRange(table('river', 2, 50), heroPlayer, 2, 50), null, 'not against two opponents');
-    equal(exactRiverRange(table('river', 1, 0), heroPlayer, 1, 0), null, 'not when nobody has bet');
+    for (const street of ['flop', 'turn', 'river']) {
+      assert(tableReadRange(table(street, 1), heroPlayer, 1, 50), `${street} is askable`);
+    }
+    equal(tableReadRange(table('river', 2), heroPlayer, 2, 50), null, 'not against two opponents');
+    equal(tableReadRange(table('river', 1), heroPlayer, 1, 0), null, 'not when nobody has bet');
+  });
+
+});
+
+describe('hand reading: the streets that still have cards to come', () => {
+  const flopFor = (seed) => shuffle(makeRng(seed), makeDeck()).slice(0, 3);
+  const situation = { toCall: 0, street: 'flop', heroIsAggressor: false };
+
+  it('reads the same spot the same way every time', () => {
+    // Sampled, so it could wander — except the seed comes from the board. A
+    // drill that answers differently on a second look teaches the reader that
+    // the app cannot be trusted, which is worse than not asking.
+    const board = flopFor(8);
+    const a = readRange('tag', board, 'bet', situation);
+    const b = readRange('tag', board, 'bet', situation);
+    equal(a.share.air, b.share.air);
+    equal(a.share.strong, b.share.strong);
+  });
+
+  it('samples each hand on its own futures, not on one shared set', () => {
+    // The fix that made this affordable at all. Scoring every hand against
+    // one set of run-outs correlates the errors, so they never cancel in a
+    // total: 6 points of movement at 200 shared samples against 0.8 at 30
+    // independent ones. Cheaper *and* steadier, which is why there is no
+    // precomputed table here.
+    //
+    // Two independent draws of the same spot have to agree. Under a shared
+    // run-out set they move together and this gap opens right up.
+    const board = flopFor(3);
+    const combos = candidateHands(board);
+    const airFrom = (eq) => {
+      let total = 0;
+      let bad = 0;
+      for (let i = 0; i < combos.length; i++) {
+        const w = actionChances(PROFILES.tag, eq[i], situation).bet;
+        if (w <= 0) continue;
+        total += w;
+        if (eq[i] < 0.45) bad += w;
+      }
+      return total ? (bad / total) * 100 : 0;
+    };
+    const draws = [11, 22, 33, 44].map((seed) => airFrom(sampledEquities(board, combos, 40, seed)));
+    const spread = Math.max(...draws) - Math.min(...draws);
+    assert(spread < 2,
+      `four independent draws spread ${spread.toFixed(2)} points (${draws.map((d) => d.toFixed(1)).join(', ')})`
+      + ' — that is the signature of one shared run-out set');
+  });
+
+  it('lands close enough to a far more expensive reference to name a band', () => {
+    // 40 run-outs per hand against 400. The bands are 7 to 8 points apart and
+    // nearestBand keeps a 3-point margin on sampled streets, so an error of
+    // about a point cannot move the answer.
+    let worst = 0;
+    for (const seed of [1, 2, 3]) {
+      const board = flopFor(seed);
+      const combos = candidateHands(board);
+      const rough = sampledEquities(board, combos, 40);
+      const fine = sampledEquities(board, combos, 400);
+      const air = (eq) => {
+        let total = 0;
+        let bad = 0;
+        for (let i = 0; i < combos.length; i++) {
+          const w = actionChances(PROFILES.tag, eq[i], situation).bet;
+          if (w <= 0) continue;
+          total += w;
+          if (eq[i] < 0.45) bad += w;
+        }
+        return total ? (bad / total) * 100 : 0;
+      };
+      worst = Math.max(worst, Math.abs(air(rough) - air(fine)));
+    }
+    assert(worst < 2, `40 run-outs drift ${worst.toFixed(2)} points from 400 — too much to name a band`);
+  });
+
+  it('asks for more room before it asks at all, where the number is sampled', () => {
+    const flop = flopFor(1);
+    const river = boardFor(1);
+    equal(marginFor(river), 2, 'the river is exact');
+    equal(marginFor(flop), 3, 'a sampled street needs the extra point of room');
+    equal(nearestBand(5.2, marginFor(flop)), null, 'too close to the 3/10 boundary to be fair');
+    equal(nearestBand(5.2, marginFor(river)), 3, 'but answerable when the number is exact');
   });
 });

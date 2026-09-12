@@ -1250,6 +1250,10 @@ await step('a lesson run ends in a report and is remembered afterwards', async (
     if (await page.$('.run-report')) break;
     const opt = await page.$('.practice-option:not([disabled])');
     if (opt) { await opt.click(); await page.waitForTimeout(120); continue; }
+    // A read comes before the buttons on any postflop street where one
+    // opponent has bet, which inside a lesson is most of them.
+    const band = await page.$('.read-bands .btn');
+    if (band) { await band.click(); await page.waitForTimeout(120); continue; }
     const act = await page.$('.action-buttons button');
     if (act) { await act.click(); await page.waitForTimeout(120); continue; }
     const deal = await page.$('.action-bar button.btn.primary');

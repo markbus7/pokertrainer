@@ -3052,6 +3052,11 @@ export const NL = {
   'You won chips with {pct} of your decisions right. Getting paid for the wrong choice is the expensive kind of session, because nothing about it tells you to stop.':
     'Je won chips met {pct} van je beslissingen juist. Betaald krijgen voor de verkeerde keuze is het dure soort sessie, want niets erin zegt je dat je moet stoppen.',
   'Show me the chart': 'Laat me de chart zien',
+  '{street}. You check and {name} ({style}) bets {bet} into {pot}. Of every hand they would bet here, roughly what share is air — a hand that only wins if you fold?':
+    '{street}. Jij checkt en {name} ({style}) bet {bet} in een pot van {pot}. Van alle handen waarmee hij hier zou betten, welk deel is ongeveer lucht — een hand die alleen wint als jij foldt?',
+  'Flop': 'Flop',
+  'Turn': 'Turn',
+  'River': 'River',
   'Before you act: {name} ({style}) has bet.':
     'Voordat je handelt: {name} ({style}) heeft gebet.',
   'Of every hand they would bet here, roughly what share is air?':
