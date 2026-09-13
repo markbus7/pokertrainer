@@ -167,6 +167,9 @@ const emptyProfile = () => ({
   // furthest door that has opened, and `beaten` the rooms whose regular you
   // have taken a stack off.
   career: { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: [] },
+  // The range ladder: per checkpoint, which rung of support you are on
+  // and whether you have cleared the unaided one.
+  ranges: {},
   stakeKey: 'nl2',
   handsPlayed: 0,
   lifetimeProfitBb: 0,
@@ -407,6 +410,49 @@ export class Profile {
     c.beaten.push(key);
     this.save();
     return true;
+  }
+
+  /* ---- the range ladder --------------------------------------------- */
+
+  get ranges() {
+    if (!this.data.ranges) this.data.ranges = {};
+    return this.data.ranges;
+  }
+
+  rangeProgress(key) {
+    return this.ranges[key] || { stage: 0, cleared: false, runs: 0, peeks: 0 };
+  }
+
+  /**
+   * Record one run at a checkpoint.
+   *
+   * A run is only credited with answers given unaided: peeking at the chart on
+   * the rung where peeking is allowed is the point of that rung, but it cannot
+   * count toward passing it, or the support never comes off.
+   *
+   * Progress never goes backwards on a bad run. Losing a rung you have already
+   * cleared would make the ladder punish the practice it is asking for, and a
+   * reader who has shown they know under-the-gun does not un-know it.
+   */
+  noteRangeRun(key, { right = 0, asked = 0, peeks = 0, stage = 0, pass = 12 } = {}) {
+    const before = this.rangeProgress(key);
+    const passed = right >= pass;
+    const next = {
+      stage: passed ? Math.max(before.stage, stage + 1) : before.stage,
+      cleared: before.cleared || (passed && stage >= 2),
+      runs: (before.runs || 0) + 1,
+      peeks: (before.peeks || 0) + peeks,
+      best: Math.max(before.best || 0, right),
+      lastAsked: asked,
+    };
+    this.ranges[key] = next;
+    this.save();
+    return { passed, advanced: next.stage > before.stage, cleared: next.cleared && !before.cleared };
+  }
+
+  /** How much of the ladder is behind you, for the one line that says so. */
+  rangesCleared(keys) {
+    return keys.filter((k) => this.rangeProgress(k).cleared).length;
   }
 
   /** Guided lessons are tracked apart from drills so they cannot skew accuracy. */

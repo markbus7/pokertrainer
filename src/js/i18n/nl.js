@@ -3732,4 +3732,81 @@ export const NL = {
   'Show my leaks': 'Laat mijn lekken zien',
   'Look': 'Uiterlijk',
   'Pick how the app looks': 'Kies hoe de app eruitziet',
+
+  // ---- the range trainer ---------------------------------------------
+  'Range trainer': 'Rangetrainer',
+  'With the chart open': 'Met de chart erbij',
+  'The chart is on screen. Find the hand and read the answer off it.':
+    'De chart staat erbij. Zoek de hand op en lees het antwoord af.',
+  'Chart on request': 'Chart op verzoek',
+  'The chart is behind a button. Peeking is allowed and is not counted — this rung is about how much you already know.':
+    'De chart zit achter een knop. Spieken mag en telt niet mee — deze trede meet hoeveel je al weet.',
+  'From memory, on the clock': 'Uit je hoofd, op de klok',
+  'No chart, twelve seconds a hand. This is the rung that matters: it is the speed the table asks for.':
+    'Geen chart, twaalf seconden per hand. Dit is de trede die telt: dit is het tempo van de tafel.',
+
+  'Opening from under the gun': 'Openen van under the gun',
+  'Opening from the hijack': 'Openen van de hijack',
+  'Opening from the cutoff': 'Openen van de cutoff',
+  'Opening from the button': 'Openen van de button',
+  'Opening from the small blind': 'Openen van de small blind',
+  'Defending the big blind': 'De big blind verdedigen',
+  'Three-betting a raise': 'Een raise 3-betten',
+  'The exam': 'Het examen',
+  'Every position, every spot, no chart. Pass this and you know them.':
+    'Elke positie, elke situatie, geen chart. Haal dit en je kent ze.',
+
+  'One question, over and over: what does the chart say to do with this hand, here. Each checkpoint is walked three times — with the chart open, with it behind a button, and then from memory on a clock. The last one is the only one that counts, because it is the one the table asks for.':
+    'Eén vraag, steeds opnieuw: wat zegt de chart dat je met deze hand doet, hier. Elk ijkpunt loop je drie keer — met de chart erbij, met de chart achter een knop, en daarna uit je hoofd op de klok. Alleen die laatste telt echt, want dat is wat de tafel van je vraagt.',
+  '{done} of {total} in your head': '{done} van {total} in je hoofd',
+  'In your head.': 'In je hoofd.',
+  'Opens once the rest are in your head.': 'Gaat open zodra de rest in je hoofd zit.',
+  'Learn the charts until you do not need them': 'Leer de charts tot je ze niet meer nodig hebt',
+  'Eight checkpoints. Each one walked with the chart open, then behind a button, then from memory on a clock.':
+    'Acht ijkpunten. Elk één keer met de chart erbij, dan achter een knop, dan uit je hoofd op de klok.',
+  'Start': 'Beginnen',
+
+  'Folded to you in the {seat}. {hand}.': 'Naar jou gefold in de {seat}. {hand}.',
+  'The {seat} raises. You are in the big blind with {hand}.':
+    'De {seat} raiset. Jij zit in de big blind met {hand}.',
+  'An early raise comes to you in the {seat} with {hand}.':
+    'Een vroege raise komt bij jou in de {seat} met {hand}.',
+  '{hand} is in the {seat} opening range. Nobody has raised, so it is a raise — never a limp.':
+    '{hand} zit in de openrange van de {seat}. Er is nog niet geraiset, dus raisen — nooit limpen.',
+  '{hand} is not in the {seat} opening range. Fold it.':
+    '{hand} zit niet in de openrange van de {seat}. Folden.',
+  '{hand} three-bets against a {seat} open.': '{hand} 3-bet je tegen een open van de {seat}.',
+  '{hand} is a call. You have a discount to see the flop, but not enough hand to raise.':
+    '{hand} is een call. Je ziet de flop met korting, maar je hand is niet sterk genoeg om te raisen.',
+  '{hand} is not worth a call even at the discount. Fold.':
+    '{hand} is zelfs met korting geen call waard. Folden.',
+  '{hand} is a three-bet from the {seat} — {kind}.': '{hand} is een 3-bet vanuit de {seat} — {kind}.',
+  'for value': 'voor value',
+  'as a bluff': 'als bluf',
+  '{hand} is not in the {seat} three-betting range. Fold it.':
+    '{hand} zit niet in de 3-betrange van de {seat}. Folden.',
+
+  'Opening range — {seat}': 'Openrange — {seat}',
+  'Big blind against a {seat} open': 'Big blind tegen een open van de {seat}',
+  'Three-betting range — {seat}': '3-betrange — {seat}',
+
+  'Right — but you looked': 'Goed — maar je keek',
+  'Not that one': 'Die niet',
+  'The clock ran out. At the table it does too.': 'De klok liep af. Aan tafel gebeurt dat ook.',
+  'Next hand': 'Volgende hand',
+  'See how it went': 'Kijk hoe het ging',
+  'Show me the chart': 'Laat de chart zien',
+  'This one will not be counted.': 'Deze telt niet mee.',
+  'Run it again': 'Nog een ronde',
+  'Back to the ladder': 'Terug naar de ladder',
+  'Cleared, with no chart and a clock running. That is the one that matters.':
+    'Gehaald, zonder chart en met de klok lopend. Dat is de trede die telt.',
+  'Passed. The next run takes some of the help away.':
+    'Gehaald. De volgende ronde haalt een stukje hulp weg.',
+  '{pass} of {asked} passes this rung. Run it again — the hands you missed come back.':
+    '{pass} van {asked} haalt deze trede. Doe nog een ronde — de handen die je miste komen terug.',
+  'You looked at the chart {n} times. Those answers were not counted, which is what the number is for — it says how much is still on the wall rather than in your head.':
+    'Je hebt {n} keer op de chart gekeken. Die antwoorden telden niet mee, en daar is dat getal voor — het zegt hoeveel er nog aan de muur hangt in plaats van in je hoofd zit.',
+  '{name} is in your head': '{name} zit in je hoofd',
+  'No chart, on the clock, and you still knew it.': 'Geen chart, klok aan, en je wist het toch.',
 };

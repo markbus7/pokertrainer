@@ -1876,3 +1876,98 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
   .theme-switch { order: 2; }
   .theme-option { min-height: 48px; }
 }
+
+/* ---- the range ladder ----------------------------------------------- */
+
+.ladder-head { display: flex; justify-content: flex-end; margin-bottom: var(--s-3); }
+.rungs { display: flex; flex-direction: column; gap: var(--s-2); }
+
+.rung-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  padding: var(--s-3) var(--s-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms, background 140ms;
+}
+.rung-row:hover:not(:disabled) { border-color: var(--border-bright); background: var(--bg-hover); }
+.rung-row.done { border-left: 3px solid var(--green); }
+.rung-row.shut { opacity: 0.45; cursor: not-allowed; }
+
+.rung-mark {
+  display: grid;
+  place-items: center;
+  width: 30px; height: 30px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: var(--t-sm);
+  color: var(--text-dim);
+}
+.rung-row.done .rung-mark { color: var(--green); border-color: rgba(var(--green-rgb), 0.45); }
+
+.rung-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.rung-name { font-weight: 650; }
+.rung-note { font-size: var(--t-xs); color: var(--text-faint); }
+
+.rung-pips { display: flex; gap: 4px; flex: 0 0 auto; }
+.pip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border-bright); }
+.pip-dot.lit { background: var(--accent); }
+
+/* ---- a run ---------------------------------------------------------- */
+
+.run-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s-3); }
+.run-where { font-weight: 650; }
+.run-count { font-family: var(--mono); color: var(--text-faint); font-size: var(--t-sm); }
+.run-score {
+  font-family: var(--mono);
+  font-size: var(--t-3xl);
+  font-weight: 700;
+  color: var(--accent);
+  margin: var(--s-3) 0;
+}
+
+/* Twelve seconds, draining. The table gives you about this long. */
+.clock-bar { height: 3px; background: var(--bg-sunken); border-radius: 99px; overflow: hidden; margin: var(--s-3) 0; }
+.clock-bar > span { display: block; height: 100%; background: var(--accent); animation: drain linear forwards; transform-origin: left; }
+@keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .clock-bar > span { animation: none; transform: scaleX(1); } }
+
+.range-ask { margin-top: var(--s-4); color: var(--text-dim); }
+.hand-big {
+  font-family: var(--mono);
+  font-size: var(--t-3xl);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: var(--s-2) 0 var(--s-4);
+}
+
+.ask-options { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+.ask-option { flex: 1 1 120px; min-height: 52px; }
+.ask-option.correct { border-color: var(--green); background: rgba(var(--green-rgb), 0.14); color: var(--green); }
+.ask-option.wrong { border-color: var(--red); background: rgba(var(--red-rgb), 0.14); color: var(--red); }
+
+.chart-panel { margin-top: var(--s-4); }
+.chart-caption {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+  margin-bottom: var(--s-2);
+}
+/* The hand you were asked about, ringed so the eye finds it in 169 cells. */
+.range-cell.you { outline: 2px solid var(--text); outline-offset: -1px; z-index: 3; font-weight: 800; }
+
+@media (max-width: 720px) {
+  .ask-option { flex: 1 1 100%; }
+  .rung-row { padding: var(--s-3); }
+}
