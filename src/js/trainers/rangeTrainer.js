@@ -11,6 +11,7 @@
 import { CHARTS, POSITIONS } from '../data/ranges.js';
 import { edgeHands, allHands, seatName } from '../data/rangeLadder.js';
 import { randInt, pick } from '../core/rng.js';
+import { expandHandKey } from '../core/cards.js';
 import { t } from '../i18n/index.js';
 
 /** Seven of every ten questions come off the edge of the range. */
@@ -27,6 +28,12 @@ function drawHand(rng, range, asked) {
   return pool[randInt(rng, pool.length)];
 }
 
+/** One real pair of cards for a hand type, so the reader sees suits. */
+const dealFrom = (rng, key) => {
+  const combos = expandHandKey(key);
+  return combos[randInt(rng, combos.length)] || combos[0];
+};
+
 const OPEN = { raise: 'Raise', call: 'Call', fold: 'Fold' };
 
 /** An unopened pot: the chart says raise, and everything else is a fold. */
@@ -36,6 +43,11 @@ function openQuestion(rng, seat, asked) {
   const inRange = range.has(hand);
   return {
     hand,
+    // "88" is correct notation and unreadable until you already know it. The
+    // reader asked outright: "what is 88? Are that cards, and suited or
+    // offsuit?" So the question carries the cards as well, drawn once here so
+    // they cannot change under a redraw.
+    cards: dealFrom(rng, hand),
     seat,
     raiser: null,
     prompt: t('Folded to you in the {seat}. {hand}.', { seat: t(seatName(seat)), hand }),
@@ -59,6 +71,7 @@ function defendQuestion(rng, asked) {
   const isCall = !isThree && defend.has(hand);
   return {
     hand,
+    cards: dealFrom(rng, hand),
     seat: 'BB',
     raiser,
     prompt: t('The {seat} raises. You are in the big blind with {hand}.', { seat: t(seatName(raiser)), hand }),
@@ -80,6 +93,7 @@ function threeBetQuestion(rng, asked) {
   const isThree = three.all.has(hand);
   return {
     hand,
+    cards: dealFrom(rng, hand),
     seat,
     raiser: 'UTG',
     prompt: t('An early raise comes to you in the {seat} with {hand}.', { seat: t(seatName(seat)), hand }),

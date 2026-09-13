@@ -1172,6 +1172,18 @@ await step('the range trainer takes the chart away one rung at a time', async ()
   const options = await page.$$eval('.ask-option', (els) => els.map((e) => e.textContent.trim()));
   if (!options.length || options.length > 3) throw new Error(`asked with ${options.length} options`);
 
+  // A seat name is a phrase you have to have been taught; a seat two to the
+  // left of the button is something you can see. And "88" says nothing about
+  // suits, which for every non-pair is the whole question.
+  if (!(await page.$('.ask-table .felt'))) throw new Error('the question does not draw the table');
+  const seats = await page.$$eval('.ask-table .seat-pos', (els) =>
+    els.map((e) => e.textContent.trim()).filter(Boolean));
+  if (seats.length !== 6) throw new Error(`the table shows ${seats.length} named seats`);
+  const cards = await page.$$eval('.hand-row .card', (els) => els.length);
+  if (cards !== 2) throw new Error(`the hand is shown as ${cards} cards`);
+  const note = ((await page.textContent('.hand-note')) || '').trim();
+  if (!note) throw new Error('the notation is not spelled out');
+
   await page.click('.ask-option');
   await page.waitForTimeout(300);
   const ringed = await page.$$eval('.range-cell.you', (els) => els.length);
@@ -1223,6 +1235,12 @@ await step('the range trainer takes the chart away one rung at a time', async ()
     throw new Error('the unaided rung shows the chart');
   }
   if (await page.$('button.btn.ghost')) throw new Error('the unaided rung still offers a peek');
+
+  // Handing a spot back should not require a screenshot.
+  await page.click('.ask-option');
+  await page.waitForTimeout(300);
+  const copy = (await page.$('button:has-text("Copy")')) || (await page.$('button:has-text("Kopieer")'));
+  if (!copy) throw new Error('the trainer cannot copy a question out');
 
   // Leave no fixture behind: a later step counts what this profile knows.
   await page.evaluate(() => {

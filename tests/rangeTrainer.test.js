@@ -6,6 +6,8 @@ import {
 import { rangeQuestion } from '../src/js/trainers/rangeTrainer.js';
 import { makeRng } from '../src/js/core/rng.js';
 import { Profile } from '../src/js/state/profile.js';
+import { handKey } from '../src/js/core/cards.js';
+import { readFileSync } from 'node:fs';
 
 describe('range trainer: the questions are the chart and nothing else', () => {
   it('never asks anything but raise, call or fold', () => {
@@ -149,5 +151,65 @@ describe('range trainer: the ladder is finite and ends somewhere', () => {
       kinds.add(q.raiser === null ? 'open' : q.seat === 'BB' ? 'defend' : 'threebet');
     }
     equal(kinds.size, 3, `the exam only ever asked about: ${[...kinds].join(', ')}`);
+  });
+});
+
+describe('range trainer: the question is readable without already knowing it', () => {
+  it('deals real cards for every hand it names', () => {
+    // "88" is correct notation and says nothing to somebody still learning to
+    // read it — and for every non-pair it hides the one thing that decides
+    // the answer. The reader asked outright: "what is 88? Are that cards, and
+    // suited or offsuit?"
+    const rng = makeRng(31);
+    for (const checkpoint of CHECKPOINTS) {
+      for (let i = 0; i < 40; i++) {
+        const q = rangeQuestion(checkpoint, rng, new Set());
+        assert(Array.isArray(q.cards) && q.cards.length === 2,
+          `${checkpoint.key}: ${q.hand} came with no cards`);
+      }
+    }
+  });
+
+  it('never shows cards that are a different hand from the one it asks about', () => {
+    // The cards and the notation have to be the same hand, or the reader is
+    // marked against a chart entry for a hand they were not shown. Checked by
+    // reading the cards back through the same function the engine uses.
+    const rng = makeRng(32);
+    for (const checkpoint of CHECKPOINTS) {
+      for (let i = 0; i < 60; i++) {
+        const q = rangeQuestion(checkpoint, rng, new Set());
+        equal(handKey(q.cards), q.hand,
+          `${checkpoint.key}: asked about ${q.hand} and dealt ${handKey(q.cards)}`);
+      }
+    }
+  });
+
+  it('draws suited hands in one suit and offsuit hands in two', () => {
+    const rng = makeRng(33);
+    const suitOf = (card) => card % 4;
+    for (let i = 0; i < 200; i++) {
+      const q = rangeQuestion(CHECKPOINTS[3], rng, new Set());
+      const same = suitOf(q.cards[0]) === suitOf(q.cards[1]);
+      if (q.hand.endsWith('s')) assert(same, `${q.hand} was dealt in two suits`);
+      if (q.hand.endsWith('o')) assert(!same, `${q.hand} was dealt in one suit`);
+      if (q.hand.length === 2) assert(!same, `the pair ${q.hand} was dealt as two of the same card`);
+    }
+  });
+
+  it('shows the table, so a seat name is something you can see', () => {
+    // "Under the gun" is a phrase you have to have been taught. Two seats to
+    // the left of the button is something you can look at.
+    const src = readFileSync(new URL('../src/js/ui/screenRangeTrainer.js', import.meta.url), 'utf8');
+    assert(/seatFelt\(/.test(src), 'the question does not draw the table');
+    assert(/heroPosition: state\.question\.seat/.test(src),
+      'the table is not built around the seat the question puts you in');
+    // Rebuilding it per redraw would move the button while it is being read.
+    assert(/state\.ring = seatRing/.test(src) && !/seatRing\(rng, \{ heroPosition: q\./.test(src),
+      'the seat picture is rebuilt on every redraw');
+  });
+
+  it('can hand a spot back without a screenshot', () => {
+    const src = readFileSync(new URL('../src/js/ui/screenRangeTrainer.js', import.meta.url), 'utf8');
+    assert(/copyButton\(/.test(src), 'there is no way to copy a question out of the trainer');
   });
 });

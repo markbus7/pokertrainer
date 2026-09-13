@@ -2017,3 +2017,27 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
 .chart-swatch.in { background: var(--accent); border-color: var(--accent); }
 .chart-swatch.value { background: var(--green); border-color: var(--green); }
 .chart-swatch.bluff { background: var(--orange); border-color: var(--orange); }
+
+/* ---- the seat picture above a range question ------------------------ */
+
+/* The full felt is 420px tall, which above a question on a phone pushes the
+   answer buttons off the screen entirely. This one only has to show where
+   the seats are. */
+.felt.seat-felt.compact {
+  min-height: 200px;
+  aspect-ratio: 16 / 8;
+  border-width: 8px;
+}
+.ask-table { margin: var(--s-3) 0 var(--s-4); }
+.ask-table .seat-plate { padding: 3px 6px; }
+.ask-table .seat-name { font-size: var(--t-xs); }
+.ask-table .seat-stack { display: none; }
+.ask-table .seat-cards { min-height: 0; }
+
+.hand-row { display: flex; align-items: center; gap: var(--s-4); margin: var(--s-2) 0 var(--s-4); flex-wrap: wrap; }
+.hand-row .hand-big { margin: 0; }
+.hand-note { font-size: var(--t-sm); color: var(--text-faint); }
+
+@media (max-width: 720px) {
+  .felt.seat-felt.compact { min-height: 150px; }
+}
