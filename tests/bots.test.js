@@ -49,8 +49,14 @@ describe('bots: profiles are distinct', () => {
     assert(rock < tag, `nit (${rock.toFixed(2)}) must be tighter than TAG (${tag.toFixed(2)})`);
     assert(tag < lag, `TAG (${tag.toFixed(2)}) must be tighter than LAG (${lag.toFixed(2)})`);
     assert(lag < maniac, `LAG (${lag.toFixed(2)}) must be tighter than maniac (${maniac.toFixed(2)})`);
-    assert(rock < 0.25, `the nit should fold most hands, played ${rock.toFixed(2)}`);
-    assert(maniac > 0.45, `the maniac should play most hands, played ${maniac.toFixed(2)}`);
+    // Two-sided, and pinned to the real game rather than to whatever the bots
+    // happened to do: a live nit runs about 12% VPIP and a maniac about 40%.
+    // The upper bound is the one that matters — this used to demand the maniac
+    // play MORE than 45%, which was a threshold written around bots that were
+    // far too loose, and it failed the moment they were corrected.
+    assert(rock > 0.04 && rock < 0.22, `a nit plays about 12% of hands, played ${rock.toFixed(2)}`);
+    assert(maniac > 0.33 && maniac < 0.62, `a maniac plays about 40% of hands, played ${maniac.toFixed(2)}`);
+    assert(tag > 0.14 && tag < 0.34, `a TAG plays about 22% of hands, played ${tag.toFixed(2)}`);
   });
 
   it('bets more often as the profile gets more aggressive', () => {
@@ -198,5 +204,80 @@ describe('bots: folding after the flop is a thing that happens', () => {
     assert(r.tag > r.lag, `the TAG should fold more than the LAG (${(100 * r.tag).toFixed(0)}% vs ${(100 * r.lag).toFixed(0)}%)`);
     assert(r.lag > r.station, `the LAG should fold more than the station (${(100 * r.lag).toFixed(0)}% vs ${(100 * r.station).toFixed(0)}%)`);
     assert(r.station < 0.25, `the calling station is not calling: ${(100 * r.station).toFixed(0)}%`);
+  });
+});
+
+describe('bots: the preflop tree has four nodes, not one', () => {
+  /**
+   * Preflop was a single decision repeated: the three-bet branch fired again
+   * against a three-bet and again against a four-bet, at the same frequency,
+   * so four-bets ran at 3-7% of hands where a real game shows 1-2%. Opens were
+   * sized `2.2-3.3bb + 0.35bb per opponent`, which on six seats is 4-5bb —
+   * nearly double a real online open — and the pot arrived at the flop four to
+   * seven times too big before a card was dealt.
+   */
+  const preflop = (profile, games = 110) => {
+    let dealt = 0; let fourBets = 0; let fiveBets = 0; const opens = []; const flopPots = [];
+    const rng = makeRng(77);
+    for (let g = 0; g < games; g++) {
+      const seats = Array.from({ length: 6 }, (_, i) => ({ id: `p${i}`, stack: 200, profile }));
+      const t = createTable({ players: seats, smallBlind: 1, bigBlind: 2, rng, button: g % 6 });
+      for (let h = 0; h < 6; h++) {
+        for (const p of t.players) p.stack = 200;
+        t.startHand();
+        dealt += 6;
+        let guard = 0;
+        let sawFlop = false;
+        while (!t.handOver && guard++ < 400) {
+          const pre = t.street === 'preflop';
+          const before = t.raisesThisStreet;
+          const a = botAction(t, t.actor, rng);
+          if (pre && (a.type === 'raise' || a.type === 'bet')) {
+            if (before === 0) opens.push(a.amount / 2);
+            if (before === 2) fourBets++;
+            if (before >= 3) fiveBets++;
+          }
+          t.act(a);
+          if (t.street !== 'preflop') sawFlop = true;
+        }
+        if (!t.handOver) break;
+        if (sawFlop) flopPots.push(t.players.reduce((s, p) => s + p.totalCommitted, 0) / 2);
+      }
+    }
+    const median = (xs) => (xs.length ? xs.sort((a, b) => a - b)[Math.floor(xs.length / 2)] : 0);
+    return {
+      open: median(opens), fourBetRate: fourBets / dealt, fiveBetRate: fiveBets / dealt,
+      flopPot: median(flopPots),
+    };
+  };
+
+  it('opens to a size a real online game would recognise', () => {
+    for (const key of ['rock', 'tag', 'lag', 'pro']) {
+      const { open } = preflop(key);
+      assert(open >= 2 && open <= 3.2, `${key} opens to ${open.toFixed(1)}bb — a real open is 2.2-2.5bb`);
+    }
+  });
+
+  it('four-bets like a real game, not like a three-bet repeated', () => {
+    // This first watched the FIVE-bet rate and passed happily while the
+    // four-bet range was widened back to the three-bet range — the bug it
+    // exists to catch. Found by reintroducing that bug and seeing green.
+    // A real four-bet runs 1-2% of hands dealt; the fifth bet is rarer still.
+    for (const key of ['tag', 'lag', 'pro']) {
+      const { fourBetRate, fiveBetRate } = preflop(key);
+      assert(fourBetRate < 0.035,
+        `${key} four-bets ${(100 * fourBetRate).toFixed(1)}% of hands dealt — a real game shows 1-2%`);
+      assert(fiveBetRate < 0.015, `${key} five-bets ${(100 * fiveBetRate).toFixed(1)}% of hands dealt`);
+    }
+  });
+
+  it('arrives at the flop with a pot the size of a real one', () => {
+    // The reg profiles only: six maniacs really do build a 40bb pot, and that
+    // is the maniac being a maniac rather than the tree being broken.
+    for (const key of ['tag', 'pro']) {
+      const { flopPot } = preflop(key);
+      assert(flopPot > 2 && flopPot < 14,
+        `${key} tables reach the flop with ${flopPot.toFixed(1)}bb — a real one is 5-9bb`);
+    }
   });
 });
