@@ -16,6 +16,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <!-- The theme has to be on <html> before the first paint, not after the
+       module graph has loaded, or every reload flashes the default palette
+       and then corrects itself. Reading storage directly duplicates a little
+       of profile.js on purpose: a module import here would be deferred and
+       lose the race it exists to win. Wrapped because private mode throws on
+       the first touch of localStorage. -->
+  <script>
+    try {
+      var s = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+      var th = (s.settings || {}).theme;
+      if (['midnight', 'felt', 'mahogany', 'daylight'].indexOf(th) >= 0) {
+        document.documentElement.setAttribute('data-theme', th);
+      }
+    } catch (e) { /* no storage: the default in themes.css stands */ }
+  </script>
+  <link rel="stylesheet" href="src/css/themes.css">
   <link rel="stylesheet" href="src/css/base.css">
   <link rel="stylesheet" href="src/css/table.css">
 </head>

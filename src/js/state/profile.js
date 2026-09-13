@@ -18,6 +18,7 @@ import {
   masteryTier, bestTier, tierRank, EVIDENCE_BAR, MASTERY_WINDOW, legacyTier, seedWindow,
 } from './mastery.js';
 import { MODULE_META } from '../data/curriculum.js';
+import { DEFAULT_THEME } from '../data/themes.js';
 
 const STORAGE_KEY = 'poker-trainer.profile.v1';
 
@@ -170,9 +171,13 @@ const emptyProfile = () => ({
   handsPlayed: 0,
   lifetimeProfitBb: 0,
   sessions: [],
-  // lang lives in settings so it travels with the cloud sync: pick Dutch on
-  // the iPad and the iPhone is in Dutch too, without setting it twice.
-  settings: { sound: true, coach: true, fourColour: false, autoMuck: true, lang: 'en' },
+  // lang and theme both live in settings so they travel with the cloud
+  // sync: pick Dutch and Daylight on the iPad and the iPhone matches,
+  // without setting either twice.
+  settings: {
+    sound: true, coach: true, fourColour: false, autoMuck: true,
+    lang: 'en', theme: DEFAULT_THEME,
+  },
 });
 
 /** localStorage in the browser, a plain object under test. */

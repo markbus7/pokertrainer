@@ -1,0 +1,309 @@
+/* ============================================================
+   Poker Trainer — the four rooms
+   ============================================================
+ *
+ * The reader's verdict on the single palette this replaces was "kots groen",
+ * and they were right twice over. Once because a green cast on every surface
+ * of every screen is a lot of green, and once because taste is not something
+ * one person gets to settle for another. So the palette stops being a decree
+ * and becomes a choice.
+ *
+ * Four rooms, not four hues. Each sets its own ground, its own accent and its
+ * own felt, because the felt is the largest single surface in the app and a
+ * theme that leaves it alone has not really changed anything. They differ in
+ * temperature (cold, neutral, warm, and daylight) rather than in hue-rotation,
+ * which is what makes them read as different places rather than as the same
+ * screen with a filter over it.
+ *
+ * Every colour the interface uses is declared here, and nowhere else. That is
+ * the rule that makes a theme land everywhere instead of on 70% of the screen:
+ * a hardcoded hex in a component is a surface that silently keeps the old
+ * theme, and there were forty of them before this file existed — including a
+ * purple-and-navy wash still painted behind every screen from a palette two
+ * versions dead, which is the other half of why the app looked muddy.
+ *
+ * Structural tokens (type scale, spacing, radii) are NOT here. They do not
+ * change between rooms, and mixing them in would invite a theme to quietly
+ * restyle the layout.
+ */
+
+/* ------------------------------------------------------------------
+ * MIDNIGHT — the default.
+ * Ink blue-black, one warm lamp. What the screen looks like at 2am when
+ * the only light in the room is the one you are playing under. Cold ground,
+ * warm accent: the contrast is the whole character.
+ * ------------------------------------------------------------------ */
+:root,
+[data-theme='midnight'] {
+  --bg: #0a0e15;
+  --bg-raised: #111825;
+  --bg-card: #161f2e;
+  --bg-hover: #1e2a3c;
+  --bg-sunken: #06090f;
+
+  --border: #22304a;
+  --border-bright: #33465f;
+  --accent-line: #5e4718;
+
+  --text: #eef3fa;
+  --text-dim: #a6b3c6;
+  --text-faint: #8290a6;
+
+  --accent: #f2b23c;
+  --accent-dim: #8a641b;
+  --on-accent: #1a1206;
+  --accent-rgb: 242, 178, 60;
+  --accent-hi: #f7c765;
+
+  --green: #4fd18b;
+  --red: #ff7b84;
+  --blue: #6cb3f5;
+  --purple: #b39ae8;
+  --orange: #f0a03c;
+  --on-green: #04220f;
+  --on-red: #2a0a0c;
+  --green-rgb: 79, 209, 139;
+  --red-rgb: 255, 123, 132;
+  --blue-rgb: 108, 179, 245;
+  --text-rgb: 238, 243, 250;
+
+  /* Blue felt. Plenty of card rooms lay one; here it keeps the table in the
+     same key as the ground rather than dropping a green rectangle into it. */
+  --felt-1: #1e5c82;
+  --felt-2: #10395a;
+  --felt-3: #08223a;
+  --felt-rail: #2c3a4e;
+  --on-felt-accent: #f2b23c;
+
+  /* The wash behind every screen. Two faint pools of light, in the theme's
+     own colours — this is the slot the dead purple-and-navy gradient used to
+     occupy, which is why it survived three palettes without being noticed. */
+  --wash-1: rgba(36, 82, 122, 0.35);
+  --wash-2: rgba(120, 88, 30, 0.16);
+
+  /* Surface finish: a lit top edge on raised things, a scrim over the felt.
+     On a dark theme the highlight is white; a light theme has to invert it,
+     which is exactly why these are tokens and not literals. */
+  --hairline: rgba(255, 255, 255, 0.06);
+  --hairline-strong: rgba(255, 255, 255, 0.16);
+  --scrim: rgba(0, 0, 0, 0.42);
+  --topbar-bg: rgba(10, 14, 21, 0.88);
+
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.45);
+  --inset: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+  --drop: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* ------------------------------------------------------------------
+ * FELT — the card room, kept because some people liked it.
+ * Black with a green cast, brass rather than yellow. This is the palette the
+ * app shipped with; it stays on the list, it just stops being compulsory.
+ * ------------------------------------------------------------------ */
+[data-theme='felt'] {
+  --bg: #080d0a;
+  --bg-raised: #0f1712;
+  --bg-card: #141f18;
+  --bg-hover: #1b2a20;
+  --bg-sunken: #050908;
+
+  --border: #24352a;
+  --border-bright: #354a3b;
+  --accent-line: #6b5423;
+
+  --text: #f4efe3;
+  --text-dim: #b9b09c;
+  --text-faint: #8f8878;
+
+  --accent: #d9b44a;
+  --accent-dim: #8a6f23;
+  --on-accent: #23180a;
+  --accent-rgb: 217, 180, 74;
+  --accent-hi: #e8c96e;
+
+  --green: #58c68b;
+  --red: #f2717a;
+  --blue: #6aa9e8;
+  --purple: #b39ae8;
+  --orange: #e8a33d;
+  --on-green: #04220f;
+  --on-red: #2a0a0c;
+  --green-rgb: 88, 198, 139;
+  --red-rgb: 242, 113, 122;
+  --blue-rgb: 106, 169, 232;
+  --text-rgb: 244, 239, 227;
+
+  --felt-1: #24714f;
+  --felt-2: #17563b;
+  --felt-3: #0e3f2a;
+  --felt-rail: #2b1d12;
+  --on-felt-accent: #d9b44a;
+
+  --wash-1: rgba(29, 107, 70, 0.28);
+  --wash-2: rgba(107, 84, 35, 0.14);
+
+  --hairline: rgba(255, 255, 255, 0.05);
+  --hairline-strong: rgba(255, 255, 255, 0.14);
+  --scrim: rgba(0, 0, 0, 0.45);
+  --topbar-bg: rgba(8, 13, 10, 0.9);
+
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.65);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.5);
+  --inset: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+  --drop: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* ------------------------------------------------------------------
+ * MAHOGANY — the members' club.
+ * Oxblood and old wood, copper instead of gold. The warmest room on the
+ * list, and the one that looks least like software.
+ * ------------------------------------------------------------------ */
+[data-theme='mahogany'] {
+  --bg: #120b0b;
+  --bg-raised: #1c1211;
+  --bg-card: #241817;
+  --bg-hover: #30201e;
+  --bg-sunken: #0c0707;
+
+  --border: #3a2622;
+  --border-bright: #513531;
+  --accent-line: #7a4526;
+
+  --text: #f6ece3;
+  --text-dim: #c4ab9c;
+  --text-faint: #9a8375;
+
+  --accent: #e08b4c;
+  --accent-dim: #8f5225;
+  --on-accent: #1d0f06;
+  --accent-rgb: 224, 139, 76;
+  --accent-hi: #eda76d;
+
+  --green: #6cc48c;
+  --red: #f4767b;
+  --blue: #79a8d8;
+  --purple: #bb9ada;
+  --orange: #e8a33d;
+  --on-green: #06220f;
+  --on-red: #2a0a0c;
+  --green-rgb: 108, 196, 140;
+  --red-rgb: 244, 118, 123;
+  --blue-rgb: 121, 168, 216;
+  --text-rgb: 246, 236, 227;
+
+  /* Burgundy cloth over dark wood. */
+  --felt-1: #82303c;
+  --felt-2: #4a1922;
+  --felt-3: #2a0d14;
+  --felt-rail: #2a1810;
+  --on-felt-accent: #e08b4c;
+
+  --wash-1: rgba(122, 42, 53, 0.3);
+  --wash-2: rgba(143, 82, 37, 0.18);
+
+  --hairline: rgba(255, 235, 220, 0.06);
+  --hairline-strong: rgba(255, 235, 220, 0.16);
+  --scrim: rgba(0, 0, 0, 0.44);
+  --topbar-bg: rgba(18, 11, 11, 0.9);
+
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.62);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.5);
+  --inset: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+  --drop: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* ------------------------------------------------------------------
+ * DAYLIGHT — paper and ink.
+ * The only light room, and the reason the list has four entries rather than
+ * three: this is played on an iPad, often in a lit room, and every other
+ * option asks the screen to be the brightest thing in front of you. Ground
+ * is warm paper rather than white, so it does not glare; the accent is the
+ * felt green used as ink, which keeps the app recognisably itself.
+ *
+ * A light theme is where a token system earns its keep or falls over. Every
+ * white-on-dark highlight has to invert, every shadow has to lose most of
+ * its weight, and the ink on the accent flips from near-black to near-white.
+ * That is all done here — no component knows which room it is standing in.
+ * ------------------------------------------------------------------ */
+[data-theme='daylight'] {
+  --bg: #efebe1;
+  --bg-raised: #f8f5ee;
+  --bg-card: #fffdf8;
+  --bg-hover: #e6e0d2;
+  --bg-sunken: #e0dace;
+
+  --border: #d3cbb8;
+  --border-bright: #b2a68c;
+  --accent-line: #b2a68c;
+
+  --text: #1b1a16;
+  --text-dim: #56534a;
+  --text-faint: #6a6759;
+
+  --accent: #1c6b45;
+  --accent-dim: #0f4b2e;
+  --on-accent: #f6f4ec;
+  --accent-rgb: 28, 107, 69;
+  --accent-hi: #268a5a;
+
+  --green: #12784a;
+  --red: #bd2a30;
+  --blue: #16559f;
+  --purple: #6b4bab;
+  --orange: #a8620d;
+  --on-green: #f2fbf5;
+  --on-red: #fff2f2;
+  --green-rgb: 18, 120, 74;
+  --red-rgb: 189, 42, 48;
+  --blue-rgb: 22, 85, 159;
+  --text-rgb: 27, 26, 22;
+
+  --felt-1: #23724e;
+  --felt-2: #15583c;
+  --felt-3: #10492f;
+  --felt-rail: #6b4a2c;
+  --on-felt-accent: #e8c15c;
+
+  --wash-1: rgba(28, 107, 69, 0.1);
+  --wash-2: rgba(168, 98, 13, 0.07);
+
+  /* Inverted: the lit edge on a pale surface is a shadow, not a highlight. */
+  --hairline: rgba(27, 26, 22, 0.07);
+  --hairline-strong: rgba(27, 26, 22, 0.18);
+  --scrim: rgba(0, 0, 0, 0.34);
+  --topbar-bg: rgba(248, 245, 238, 0.92);
+
+  --shadow: 0 14px 34px rgba(60, 52, 35, 0.16);
+  --shadow-sm: 0 1px 4px rgba(60, 52, 35, 0.14);
+  --inset: inset 0 1px 2px rgba(60, 52, 35, 0.16);
+  --drop: 0 6px 18px rgba(60, 52, 35, 0.1);
+}
+
+/* ------------------------------------------------------------------
+ * Ink for the cloth.
+ *
+ * The felt is dark material in every room — including daylight, where the
+ * app around it is paper — so anything painted on it takes this ink rather
+ * than the room's. Without it the light room renders seat names in near-black
+ * on a near-black plate, which is how the whole table went blank the first
+ * time it was looked at.
+ *
+ * Constant on purpose, and outside the [data-theme] blocks: a token that
+ * differs per room is a token a room can get wrong.
+ * ------------------------------------------------------------------ */
+:root {
+  --on-felt: #f2f5f9;
+  --on-felt-dim: rgba(242, 245, 249, 0.7);
+  --on-felt-faint: rgba(242, 245, 249, 0.5);
+}
+
+/* Back-compatibility. Half the stylesheet asks for --gold by name, from when
+   there was one palette and its accent happened to be gold. Renaming every
+   call site in the same change that introduces the themes would make both
+   impossible to review, so the old name is kept as an alias of the new one
+   and the accent is correct in every room either way. */
+:root {
+  --gold: var(--accent);
+  --gold-dim: var(--accent-dim);
+  --brass-line: var(--accent-line);
+}
