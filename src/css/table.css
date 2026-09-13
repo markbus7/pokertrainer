@@ -14,7 +14,7 @@
   min-height: 420px;
   border-radius: 48% / 40%;
   background:
-    radial-gradient(ellipse at 50% 42%, var(--felt-1) 0%, var(--felt-2) 72%);
+    radial-gradient(ellipse at 50% 42%, var(--felt-1) 0%, var(--felt-3) 72%);
   border: 14px solid var(--felt-rail);
   box-shadow:
     inset 0 0 90px rgba(0, 0, 0, 0.55),
@@ -96,21 +96,22 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .seat.acting .seat-plate {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(227, 178, 60, 0.2), 0 0 22px rgba(227, 178, 60, 0.35);
+  border-color: var(--on-felt-accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2), 0 0 22px rgba(var(--accent-rgb), 0.35);
 }
-.seat.hero .seat-plate { border-color: rgba(77, 159, 255, 0.5); }
-.seat.winner .seat-plate { border-color: var(--green); box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.22); }
+.seat.hero .seat-plate { border-color: rgba(var(--blue-rgb), 0.5); }
+.seat.winner .seat-plate { border-color: var(--green); box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.22); }
 
 .seat-name {
   font-size: var(--t-sm); font-weight: 650;
+  color: var(--on-felt);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   display: flex; align-items: center; justify-content: center; gap: 5px;
 }
-.seat-stack { font-size: var(--t-base); font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
+.seat-stack { font-size: var(--t-base); font-weight: 700; color: var(--on-felt-accent); font-variant-numeric: tabular-nums; }
 .seat-pos {
   font-size: var(--t-xs); letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--text-faint); font-weight: 700;
+  color: var(--on-felt-faint); font-weight: 700;
 }
 
 .seat-cards { display: flex; gap: 3px; min-height: 54px; align-items: center; }
@@ -127,9 +128,10 @@
   white-space: nowrap;
   z-index: 3;
 }
+.seat-action { color: var(--on-felt); }
 .seat-action.aggressive { border-color: var(--red); color: #ff9ea2; }
 .seat-action.passive { border-color: var(--blue); color: #9ecbff; }
-.seat-action.fold { border-color: var(--border); color: var(--text-faint); }
+.seat-action.fold { border-color: var(--on-felt-faint); color: var(--on-felt-faint); }
 
 .seat-bet {
   position: absolute;
@@ -137,8 +139,8 @@
   font-size: var(--t-xs); font-weight: 700;
   font-variant-numeric: tabular-nums;
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(227, 178, 60, 0.45);
-  color: var(--gold);
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
+  color: var(--on-felt-accent);
   border-radius: 99px;
   padding: 2px 10px;
   white-space: nowrap;
@@ -285,7 +287,7 @@
 }
 .size-tune .raise-input {
   width: 92px; flex: none;
-  background: var(--bg-deep, #10161f);
+  background: var(--bg-sunken);
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--gold);
@@ -378,15 +380,15 @@ input[type="range"] {
   font-size: 0.6rem;
   font-weight: 700;
   border-radius: 3px;
-  background: #131c26;
-  color: #55677d;
+  background: var(--bg-sunken);
+  color: var(--text-faint);
   border: 1px solid transparent;
   cursor: default;
   user-select: none;
 }
-.range-cell.in { background: var(--gold); color: #23180a; }
-.range-cell.value { background: #2fa06a; color: #04220f; }
-.range-cell.bluff { background: #b8532f; color: #fee; }
+.range-cell.in { background: var(--accent); color: var(--on-accent); }
+.range-cell.value { background: var(--green); color: var(--on-green); }
+.range-cell.bluff { background: var(--orange); color: var(--on-accent); }
 .range-cell.pair { border-color: rgba(255,255,255,0.35); }
 .range-cell.highlight { outline: 2px solid var(--blue); outline-offset: 1px; z-index: 2; }
 
@@ -609,7 +611,7 @@ input[type="range"] {
   padding: 10px 12px;
   margin-bottom: 12px;
   border-radius: var(--radius-sm);
-  background: rgba(214, 168, 63, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
   border: 1px solid var(--gold-dim);
 }
 .spot-icon { font-size: 1.3rem; line-height: 1.2; }
@@ -632,12 +634,17 @@ input[type="range"] {
 .learned-row .right { color: var(--green); }
 .learned-row .wrong { color: var(--red); }
 
+/* Every colour literal left in this file is on one of two surfaces that do
+   not take the theme: the felt, which is dark cloth in all four rooms, and a
+   playing card, which is white with red and black pips wherever it is dealt.
+   Tokenising those would make daylight paint white text on a white card. */
+
 /* The felt: a table is a material, and a flat green ellipse is a shape.
    Lives here rather than in base.css because this sheet loads second and
    would otherwise quietly win the argument. */
 .felt {
   background:
-    radial-gradient(ellipse 70% 60% at 50% 38%, #24714f 0%, #17563b 45%, #0e3f2a 100%);
+    radial-gradient(ellipse 70% 60% at 50% 38%, var(--felt-1) 0%, var(--felt-2) 45%, var(--felt-3) 100%);
   box-shadow:
     inset 0 2px 30px rgba(0, 0, 0, 0.35),
     inset 0 -18px 40px rgba(0, 0, 0, 0.25);

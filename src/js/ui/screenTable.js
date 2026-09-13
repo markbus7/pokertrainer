@@ -1194,7 +1194,7 @@ export function renderTable(ctx, params = {}) {
         el(`div${l.isStreet ? '.street-line' : ''}`, l.line))),
 
       el('div', { style: { marginTop: '16px' } },
-        el('button.btn.sm.ghost.block', { onclick: () => showLeaks() }, 'Show my leaks'),
+        el('button.btn.sm.ghost.block', { onclick: () => showLeaks() }, t('Show my leaks')),
       ),
     );
   }

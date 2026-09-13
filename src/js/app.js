@@ -9,6 +9,7 @@ import { renderCareer } from './ui/screenCareer.js';
 import { Profile } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
 import { VERSION, checkForUpdate } from './version.js';
+import { THEMES, applyTheme, isTheme, themeFor, DEFAULT_THEME } from './data/themes.js';
 import { t, setLang, getLang, LANGUAGES } from './i18n/index.js';
 import { makeRng } from './core/rng.js';
 import { renderHome } from './ui/screenHome.js';
@@ -52,11 +53,17 @@ const TABS = [
 ];
 
 const profile = Profile.load();
-// The stored language has to be live before anything renders, or the first
-// paint is English and then flips.
+// The stored language and theme both have to be live before anything renders,
+// or the first paint is English on the wrong palette and then flips. index.html
+// paints the theme earlier still, straight from storage, so the very first
+// frame is right too; this is the authoritative pass once the profile is
+// parsed and knows about defaults and bad values.
 setLang(profile.settings.lang || 'en');
+applyTheme(isTheme(profile.settings.theme) ? profile.settings.theme : DEFAULT_THEME);
 const rng = makeRng();
 let currentCtx = null;
+// Survives the topbar redraw that picking a theme causes.
+let pickerOpen = false;
 
 function parseHash() {
   const raw = location.hash.replace(/^#/, '');
@@ -128,6 +135,80 @@ function languageToggle() {
   );
 }
 
+/**
+ * Room picker.
+ *
+ * A dropdown of four words would have been a third of the code, and would
+ * have asked the reader to choose a palette by name before ever seeing it.
+ * So each entry paints itself: its ground, its accent and its cloth, in the
+ * arrangement they appear on a real screen. Choosing is then recognition
+ * rather than recall, which is the same reason the drills show a board
+ * instead of describing one.
+ *
+ * It applies on tap and leaves the panel open, so the four can be compared
+ * against the actual screen behind them rather than against a swatch.
+ */
+function themeSwatch(theme) {
+  return el('span.theme-swatch', { 'aria-hidden': 'true' },
+    el('span.theme-swatch-ground', { style: { background: theme.swatch.bg } },
+      el('span.theme-swatch-felt', { style: { background: theme.swatch.felt } }),
+      el('span.theme-swatch-accent', { style: { background: theme.swatch.accent } }),
+    ),
+  );
+}
+
+function themePicker() {
+  const current = profile.settings.theme || DEFAULT_THEME;
+
+  const panel = el('div.theme-panel', { hidden: true, role: 'listbox', 'aria-label': t('Look') },
+    THEMES.map((theme) => el(`button.theme-option${theme.key === current ? '.active' : ''}`, {
+      role: 'option',
+      'aria-selected': theme.key === current ? 'true' : 'false',
+      onclick: () => {
+        applyTheme(theme.key);
+        profile.updateSettings({ theme: theme.key });
+        render();
+        openPicker();
+      },
+    },
+      themeSwatch(theme),
+      el('span.theme-text',
+        el('span.theme-name', t(theme.name)),
+        el('span.theme-blurb', t(theme.blurb)),
+      ),
+    )),
+  );
+
+  const button = el('button.theme-button', {
+    'aria-haspopup': 'listbox',
+    'aria-expanded': 'false',
+    title: 'Pick how the app looks',
+    onclick: (e) => { e.stopPropagation(); togglePicker(); },
+  }, themeSwatch(themeFor(current)));
+
+  function togglePicker() {
+    const show = panel.hidden;
+    panel.hidden = !show;
+    button.setAttribute('aria-expanded', show ? 'true' : 'false');
+  }
+
+  // Re-rendering the topbar rebuilds this, so the flag has to live outside it.
+  function openPicker() { pickerOpen = true; }
+
+  if (pickerOpen) { panel.hidden = false; button.setAttribute('aria-expanded', 'true'); }
+
+  // Anywhere else closes it — a panel with no way out is a trap on a tablet,
+  // where there is no Escape key in reach.
+  document.addEventListener('click', () => {
+    if (panel.hidden) return;
+    panel.hidden = true;
+    pickerOpen = false;
+    button.setAttribute('aria-expanded', 'false');
+  }, { once: true });
+
+  return el('div.theme-switch', { onclick: (e) => e.stopPropagation() }, button, panel);
+}
+
 function drawTopbar(activeTab) {
   const rank = profile.rank;
   const next = profile.nextRank;
@@ -142,6 +223,7 @@ function drawTopbar(activeTab) {
       title: t(tab.label),
       'aria-label': t(tab.label),
     }, icon(tab.icon, { size: 17 }), el('span', t(tab.label))))),
+    themePicker(),
     languageToggle(),
     el('button.rank-chip', {
       onclick: () => go('levels'),

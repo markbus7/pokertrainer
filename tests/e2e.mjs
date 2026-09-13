@@ -1013,6 +1013,54 @@ await step('opponents notice how you play, and say so', async () => {
   if (left !== 0) throw new Error(`the fixture did not clean up after itself: ${left} hands left`);
 });
 
+await step('the room you play in is a choice, and it survives a reload', async () => {
+  // "Kots groen" — one palette imposed on every screen. The picker is the
+  // answer, so it has to do three things here: open, actually repaint, and
+  // still be repainted after a reload without a frame of the old colours.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+
+  const closed = await page.evaluate(() => document.querySelector('.theme-panel').hidden);
+  if (!closed) throw new Error('the picker starts open');
+
+  await page.click('.theme-button');
+  await page.waitForTimeout(150);
+  const rooms = await page.$$eval('.theme-option', (els) => els.map((e) => e.textContent.slice(0, 40)));
+  if (rooms.length !== 4) throw new Error(`the picker offers ${rooms.length} rooms, not 4`);
+
+  const before = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await page.click('.theme-option:last-child');   // Daylight, the light one
+  await page.waitForTimeout(250);
+
+  const after = await page.evaluate(() => ({
+    theme: document.documentElement.getAttribute('data-theme'),
+    bg: getComputedStyle(document.body).backgroundColor,
+    // The felt is the biggest surface in the app; a theme that leaves it
+    // alone has not really changed anything.
+    ink: getComputedStyle(document.body).color,
+  }));
+  if (after.theme !== 'daylight') throw new Error(`picked daylight, got ${after.theme}`);
+  if (after.bg === before) throw new Error(`the ground did not repaint: still ${before}`);
+
+  // A light room means dark ink. If this still reads as near-white, the
+  // tokens are being ignored and only the attribute moved.
+  const lightness = (after.ink.match(/\d+/g) || []).slice(0, 3).reduce((a, b) => a + +b, 0) / 3;
+  if (lightness > 120) throw new Error(`daylight is still painting light ink: ${after.ink}`);
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  const kept = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+  if (kept !== 'daylight') throw new Error(`the choice did not survive a reload: ${kept}`);
+
+  // Put it back so the screens that follow are shot in the default room.
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    raw.settings = { ...(raw.settings || {}), theme: 'midnight' };
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  console.log(`      four rooms offered, daylight repainted ${before} → ${after.bg}, kept across a reload`);
+});
+
 await step('the front door is a room you are standing in', async () => {
   // The reader's verdict on the whole app: "it is still the same game." It
   // was not a game — a grid of modules with a progress bar has nowhere to be

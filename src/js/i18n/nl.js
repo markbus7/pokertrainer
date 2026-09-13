@@ -3712,4 +3712,24 @@ export const NL = {
   'That is not a lesson this game can deal.': 'Dat is geen les die dit spel kan delen.',
   'Open the Bankroll Challenge': 'Open de Bankroll Challenge',
   'Back': 'Terug',
+
+  // ---- the room picker ----------------------------------------------
+  // Room names are translated rather than kept: these are furniture, not
+  // poker terms, and "Daglicht" tells a Dutch reader what it is at a glance
+  // where "Daylight" makes them stop and parse.
+  'Midnight': 'Middernacht',
+  'Card room': 'Speelzaal',
+  'Mahogany': 'Mahonie',
+  'Daylight': 'Daglicht',
+  'Ink blue and one warm lamp. What the screen looks like at 2am.':
+    'Inktblauw met één warme lamp. Hoe je scherm er om 2 uur \'s nachts uitziet.',
+  'Black with a green cast and brass edges. The original.':
+    'Zwart met een groene zweem en messing randen. De originele.',
+  'Oxblood, old wood and copper. The warmest room on the list.':
+    'Ossenbloed, oud hout en koper. De warmste zaal van de lijst.',
+  'Paper and ink. For playing in a lit room without the glare.':
+    'Papier en inkt. Om te spelen in een verlichte kamer, zonder de felheid.',
+  'Show my leaks': 'Laat mijn lekken zien',
+  'Look': 'Uiterlijk',
+  'Pick how the app looks': 'Kies hoe de app eruitziet',
 };
