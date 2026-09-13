@@ -5,6 +5,7 @@
 
 import { el, mount, toast, fmt } from './dom.js';
 import { icon } from './icons.js';
+import { rangeGridFor, priceSheet } from './reference.js';
 import { t } from '../i18n/index.js';
 
 /**
@@ -34,7 +35,7 @@ import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
 import { review } from '../state/spacing.js';
-import { cardsToString } from '../core/cards.js';
+import { cardsToString, handKey } from '../core/cards.js';
 import { shuffle } from '../core/rng.js';
 import { SessionStats, leakReport, stakeFor, bankrollAdvice, SAMPLE } from '../state/stats.js';
 import { HandRecorder, keepHand } from '../state/handHistory.js';
@@ -49,6 +50,58 @@ const BOT_DELAY = 620;
  */
 const MAX_SEARCH = 120;
 const HERO_ID = 'hero';
+
+/**
+ * The chart and the price, at the table, without leaving it.
+ *
+ * The reader's note: "in het echt online zou ik de chart er ook bij kunnen
+ * halen maar dan gaat het te langzaam, daarom wil ik het hier gewoon leren".
+ * That is exactly the right reason to put it here and exactly the right reason
+ * not to charge for it. This is a reference, not an answer — the thing being
+ * memorised, with a whole ladder elsewhere built to take it away on purpose.
+ * Charging for it here as well would be charging twice for the same lesson.
+ *
+ * What it shows follows the spot rather than making you pick: preflop it opens
+ * on the chart for the seat you are actually in, and once there is a board the
+ * chart has nothing left to say, so it opens on the price.
+ */
+function referenceDrawer(session, hero, table, draw) {
+  const preflop = table.street === 'preflop';
+  const facing = table.currentBet > table.bigBlind && table.lastAggressor && table.lastAggressor !== hero;
+  const seat = hero.position || 'BTN';
+  const raiser = facing && table.lastAggressor ? table.lastAggressor.position : null;
+  const mine = hero.hole.length === 2 ? handKey(hero.hole) : null;
+
+  const tabs = [
+    preflop ? { key: 'chart', label: 'Chart' } : null,
+    { key: 'price', label: 'The price' },
+  ].filter(Boolean);
+
+  if (!session.sheet) {
+    return el('button.btn.sm.ghost.block', {
+      style: { marginTop: '10px' },
+      onclick: () => { session.sheet = preflop ? 'chart' : 'price'; draw(); },
+    }, icon('charts', { size: 15 }), t('Open the reference'));
+  }
+
+  const open = tabs.some((tab) => tab.key === session.sheet) ? session.sheet : tabs[0].key;
+  return el('div.reference-drawer',
+    el('div.reference-head',
+      el('div.reference-tabs', tabs.map((tab) => el(`button.reference-tab${tab.key === open ? '.active' : ''}`, {
+        onclick: () => { session.sheet = tab.key; draw(); },
+      }, t(tab.label)))),
+      el('button.reference-close', {
+        onclick: () => { session.sheet = null; draw(); },
+        'aria-label': t('Close'),
+      }, '×'),
+    ),
+    open === 'chart'
+      ? rangeGridFor({ seat, raiser, hand: mine })
+      : priceSheet(),
+    el('div.faint', t('Yours to look at. It costs you nothing — the range trainer is where it '
+      + 'gets taken away on purpose.')),
+  );
+}
 
 export function renderTable(ctx, params = {}) {
   const grind = params.mode === 'grind';
@@ -173,6 +226,9 @@ export function renderTable(ctx, params = {}) {
     // Set when the reader asks the coach to do the sum for them. Reset every
     // decision, so asking once does not silence the coach for the whole hand.
     peeked: false,
+    // The reference drawer: which tab, and whether it is open. It survives
+    // the hand so it can be left up the way a chart on your desk would be.
+    sheet: null,
     // A lesson is a fixed run of spots with a report at the end, not an
     // endless table: without a last hand there is no moment where anyone
     // says how it went.
@@ -1114,6 +1170,7 @@ export function renderTable(ctx, params = {}) {
               : el('button.btn.sm.ghost.block', { style: { marginTop: '10px' },
                 onclick: () => { session.peeked = true; draw(); } },
               t('I am stuck — show me the numbers')),
+            referenceDrawer(session, hero, table, draw),
           )
         : el('div.faint', table.handOver ? 'Hand complete. Review below, then deal again.' : 'Waiting for your turn…'),
 

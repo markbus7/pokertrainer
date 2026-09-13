@@ -7,6 +7,7 @@ const modules = [
   './icons.test.js',
   './career.test.js',
   './rangeTrainer.test.js',
+  './reference.test.js',
   './equity.test.js',
   './odds.test.js',
   './ranges.test.js',

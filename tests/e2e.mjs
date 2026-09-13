@@ -1013,6 +1013,71 @@ await step('opponents notice how you play, and say so', async () => {
   if (left !== 0) throw new Error(`the fixture did not clean up after itself: ${left} hands left`);
 });
 
+await step('the chart is reachable at the table, without leaving it', async () => {
+  // "tijdens het spelen de chart kan klikken en inzien" — the table had a
+  // peek button, but it handed over your own equity, which is the answer
+  // rather than the reference. The chart and the price ladder live here now.
+  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(900);
+  for (const label of ['Deal me in', 'Deal in', 'Deal']) {
+    const button = await page.$(`button:has-text("${label}")`);
+    if (button) { await button.click(); break; }
+  }
+  await page.waitForTimeout(2500);
+
+  // textContent waits for a selector that may never appear — the hero's seat
+  // plate has no position label in every layout — so ask, don't wait.
+  const textOf = async (selector) => {
+    const node = await page.$(selector);
+    return node ? (await node.textContent()) || '' : '';
+  };
+
+  const open = await page.$('button:has-text("Open the reference")');
+  if (!open) throw new Error('there is no way to open the chart at the table');
+  await open.click();
+  await page.waitForTimeout(350);
+
+  const grid = await page.$$eval('.reference-drawer .range-grid', (els) => els.length);
+  if (!grid) throw new Error('the reference opened without a chart in it');
+  const ringed = await page.$$eval('.reference-drawer .range-cell.you', (els) => els.length);
+  if (ringed !== 1) throw new Error(`${ringed} cells are ringed as the hand you hold`);
+
+  // The chart has to be the one for the seat you are in, not a fixed one.
+  const caption = await textOf('.reference-drawer .chart-caption');
+  const seat = (await textOf('.seat.hero .seat-pos')).trim();
+  // The seat plate says BTN; the caption says Button. Same seat, different
+  // register — the first version of this check compared them directly and
+  // failed on a chart that was perfectly correct.
+  const SEAT_NAMES = {
+    UTG: 'under the gun', HJ: 'hijack', CO: 'cutoff',
+    BTN: 'button', SB: 'small blind', BB: 'big blind',
+  };
+  const expected = SEAT_NAMES[seat.toUpperCase()];
+  if (expected && !caption.toLowerCase().includes(expected) && !/big blind/i.test(caption)) {
+    throw new Error(`sitting in the ${seat} and shown "${caption}"`);
+  }
+  if (!(await page.$('.reference-drawer .chart-legend'))) throw new Error('the chart has no legend');
+
+  // ...and the price ladder is the other tab, derived rather than typed.
+  const tabs = await page.$$('.reference-tab');
+  if (tabs.length < 2) throw new Error(`the drawer has ${tabs.length} tab(s)`);
+  await tabs[tabs.length - 1].click();
+  await page.waitForTimeout(250);
+  const rows = await page.$$eval('.reference-drawer .cheat-table tbody tr', (els) => els.length);
+  if (rows < 4) throw new Error(`the price ladder has ${rows} rows`);
+
+  // Looking is free; being handed the answer still is not.
+  const body = await textOf('.reference-drawer');
+  if (!/costs you nothing|kost je niets/.test(body)) {
+    throw new Error('the reference does not say it is free to look at');
+  }
+  // Asking for the element beats scraping a panel whose class the first
+  // version of this guessed at.
+  const stuck = await page.$('button:has-text("I am stuck")');
+  if (!stuck) throw new Error('the answer button disappeared along with the reference');
+  console.log(`      chart for the ${seat || 'hero'} seat, legend, ${rows}-row price ladder, free to look at`);
+});
+
 await step('the range trainer takes the chart away one rung at a time', async () => {
   // The reader asked for a preflop-only drill they may use the chart with,
   // "tot de chart ranges in mn hoofd zitten". A drill that simply allows the
