@@ -65,14 +65,17 @@ export function spotFelt(spot, settings = {}) {
  * @param {boolean} hideSeatNames blank the position plates — leaving them on
  *                                prints the answer when the name is the question
  */
-export function seatFelt(ring, { hideSeatNames = false, fourColour = false } = {}) {
+export function seatFelt(ring, { hideSeatNames = false, fourColour = false, raiser = null, compact = false } = {}) {
   const table = renderFelt({
     players: ring.seats.map((seat) => ({
       id: `s${seat.seat}`,
       seat: seat.seat,
       name: seat.name,
       stack: 100,
-      committed: 0,
+      // A seat that has raised gets a chip and a tag, so "the cutoff opens
+      // and it is on you" is a picture rather than a sentence to hold.
+      lastAction: raiser && seat.position === raiser ? t('Raise') : null,
+      committed: raiser && seat.position === raiser ? 2.5 : 0,
       isHero: seat.isHero,
       folded: false,
       position: hideSeatNames ? '' : seat.position,
@@ -89,5 +92,6 @@ export function seatFelt(ring, { hideSeatNames = false, fourColour = false } = {
     boardPlaceholder: '',
   });
   table.classList.add('seat-felt');
+  if (compact) table.classList.add('compact');
   return table;
 }

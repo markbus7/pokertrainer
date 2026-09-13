@@ -3829,4 +3829,10 @@ export const NL = {
   'Eight steps on why position decides how many hands you play, how to read the shorthand, and the five numbers that replace the grid. You can drill without it — but the boundary is much easier to remember once you know why it is there.':
     'Acht stappen over waarom positie bepaalt hoeveel handen je speelt, hoe je de notatie leest, en de vijf getallen die het raster vervangen. Je kunt zonder, maar de grens onthoud je een stuk makkelijker als je weet waaróm hij daar ligt.',
   'Read it first': 'Lees hem eerst',
+
+  // ---- the seat picture and the hand notation -------------------------
+  'a pair': 'een paar',
+  'suited — same suit': 'suited — zelfde kleur',
+  'offsuit — different suits': 'offsuit — verschillende kleuren',
+  '(the clock ran out)': '(de klok liep af)',
 };

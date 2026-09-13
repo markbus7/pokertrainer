@@ -20,10 +20,20 @@ import {
 import { rangeQuestion } from '../trainers/rangeTrainer.js';
 import { makeRng } from '../core/rng.js';
 import { rangeGridFor } from './reference.js';
+import { seatFelt } from './spotFelt.js';
+import { seatRing } from '../core/seatMap.js';
+import { cardRow } from './cardView.js';
+import { copyButton } from './copySpot.js';
 
 /* ------------------------------------------------------------------ *
  * The ladder
  * ------------------------------------------------------------------ */
+
+/** The notation, said out loud — the part "88" leaves to your memory. */
+function handNote(key) {
+  if (key.length === 2) return t('a pair');
+  return key[2] === 's' ? t('suited — same suit') : t('offsuit — different suits');
+}
 
 export function renderRangeLadder(ctx) {
   const { profile, go } = ctx;
@@ -109,6 +119,9 @@ export function renderRangeRun(ctx) {
 
   function nextQuestion() {
     state.question = rangeQuestion(checkpoint, rng, state.asked);
+    // The seat picture is built once per question. Rebuilding it on every
+    // redraw would move the button around while the reader is looking at it.
+    state.ring = seatRing(rng, { heroPosition: state.question.seat });
     state.asked.add(state.question.hand);
     state.answered = null;
     state.peeked = false;
@@ -196,8 +209,29 @@ export function renderRangeRun(ctx) {
         style: { animationDuration: `${stage.seconds}s` },
       })) : null,
 
+      // Where you are sitting, drawn rather than named. "Under the gun" is a
+      // phrase you have to have learned; a seat two to the left of the button
+      // is something you can see. The reader asked for exactly this: "if I
+      // forgot what location under the gun is, I keep seeing the table".
+      state.ring
+        ? el('div.ask-table', seatFelt(state.ring, {
+          raiser: q.raiser,
+          fourColour: !!profile.settings.fourColour,
+          compact: true,
+        }))
+        : null,
+
       el('div.range-ask', q.prompt),
-      el('div.hand-big', q.hand),
+      // The notation and the cards together. "88" is correct and unreadable
+      // until you already know it — and it does not say whether the hand is
+      // suited, which for every non-pair is the whole question.
+      el('div.hand-row',
+        q.cards ? cardRow(q.cards, { size: 'lg', fourColour: !!profile.settings.fourColour }) : null,
+        el('div',
+          el('div.hand-big', q.hand),
+          el('div.hand-note', handNote(q.hand)),
+        ),
+      ),
 
       el('div.ask-options', q.options.map((option) => {
         const mark = a && (option === q.answer ? '.correct' : option === a.choice ? '.wrong' : '');
@@ -216,6 +250,18 @@ export function renderRangeRun(ctx) {
           state.showChart ? rangeGridFor({ seat: q.seat, raiser: q.raiser, hand: q.hand }) : null,
           el('button.btn.primary.lg.block', { onclick: advance },
             state.index + 1 >= ASKED ? t('See how it went') : t('Next hand')),
+          // Reproducing a spot by hand is enough work that nobody does it,
+          // so the trainer writes it out — the drills have had this and the
+          // reader had to send a screenshot instead.
+          copyButton(() => ({
+            module: t(checkpoint.name),
+            scenario: { hole: q.cards, position: q.seat, heroSeat: q.seat, raiser: q.raiser },
+            question: q.prompt,
+            options: q.options.map((o) => ({ key: o, label: o })),
+            given: a.choice === null ? t('(the clock ran out)') : a.choice,
+            correct: q.answer,
+            explanation: q.why,
+          })),
         )
         : stage.showsChart
           ? rangeGridFor({ seat: q.seat, raiser: q.raiser })
