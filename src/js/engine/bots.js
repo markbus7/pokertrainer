@@ -39,6 +39,7 @@ export const PROFILES = {
     callDown: 0.22,
     respect: 1.25,
     callPrice: 2.13,
+    limps: 0.15,
     sizings: [0.5, 0.66],
     blurb: 'Folds and folds, then wakes up with the nuts.',
     tell: 'If Rocky raises, Rocky has it. He has never bluffed in his life.',
@@ -51,13 +52,14 @@ export const PROFILES = {
     style: 'Tight-Aggressive',
     tag: 'TAG',
     openPct: 0.22,
-    defendPct: 0.24,
-    threeBetPct: 0.07,
+    defendPct: 0.17,
+    threeBetPct: 0.14,
     aggression: 0.55,
     bluff: 0.22,
     callDown: 0.45,
     respect: 1.0,
     callPrice: 1.52,
+    limps: 0.05,
     sizings: [0.5, 0.66, 0.75],
     blurb: 'Plays few hands, but plays them hard. The standard winning reg.',
     tell: 'She only continues with real equity, and she barrels when the board favours her range.',
@@ -70,13 +72,14 @@ export const PROFILES = {
     style: 'Loose-Aggressive',
     tag: 'LAG',
     openPct: 0.38,
-    defendPct: 0.42,
+    defendPct: 0.17,
     threeBetPct: 0.13,
     aggression: 0.72,
     bluff: 0.38,
     callDown: 0.5,
     respect: 0.85,
     callPrice: 1.04,
+    limps: 0.1,
     sizings: [0.66, 0.75, 1.0],
     blurb: 'Applies pressure in every pot and makes you guess.',
     tell: 'He bets far too often for his range to be strong.',
@@ -88,14 +91,15 @@ export const PROFILES = {
     name: 'Stan',
     style: 'Calling Station',
     tag: 'STA',
-    openPct: 0.30,
-    defendPct: 0.62,
+    openPct: 0.09,
+    defendPct: 0.55,
     threeBetPct: 0.02,
     aggression: 0.12,
     bluff: 0.02,
     callDown: 0.88,
     respect: 0.7,
     callPrice: 0.42,
+    limps: 1.0,
     sizings: [0.33, 0.5],
     blurb: 'Came to see cards, not to fold them.',
     tell: 'He calls with any piece of the board, and almost never raises.',
@@ -108,13 +112,14 @@ export const PROFILES = {
     style: 'The Maniac',
     tag: 'MAN',
     openPct: 0.58,
-    defendPct: 0.55,
+    defendPct: 0.15,
     threeBetPct: 0.22,
     aggression: 0.86,
     bluff: 0.55,
     callDown: 0.55,
     respect: 0.7,
     callPrice: 0.77,
+    limps: 0.05,
     sizings: [0.75, 1.0, 1.35],
     blurb: 'Raises everything. Occasionally has aces.',
     tell: 'Enormous bets with nothing at all, over and over.',
@@ -127,13 +132,14 @@ export const PROFILES = {
     style: 'Solid Regular',
     tag: 'REG',
     openPct: 0.24,
-    defendPct: 0.34,
-    threeBetPct: 0.09,
+    defendPct: 0.16,
+    threeBetPct: 0.16,
     aggression: 0.6,
     bluff: 0.3,
     callDown: 0.52,
     respect: 1.0,
     callPrice: 1.45,
+    limps: 0.0,
     usesCharts: true,
     sizings: [0.33, 0.5, 0.75],
     blurb: 'Plays the charts you are learning, and plays them well.',
@@ -225,62 +231,93 @@ function preflopDecision({ table, player, profile, legal, rng, toCall, pot, canC
     ? monteCarlo(player.hole, [], table, rng, 300, 1)
     : (HAND_STRENGTH[handKey(player.hole)] ?? 0.42);
 
-  // Chart players use the real opening ranges; everyone else uses a
-  // percentile cut widened or tightened by position.
   const posFactor = positionFactor(table, player);
-  let openThreshold = profile.openPct * (0.55 + 1.1 * posFactor);
-  if (profile.usesCharts && !table.variant.omaha) {
-    const chart = CHARTS.rfi[player.position] || CHARTS.rfi.CO;
-    const inRange = chart.has(handKey(player.hole));
-    openThreshold = inRange ? 1 : 0;
-  }
-
   const rank = table.variant.omaha ? null : STRENGTH_RANK[handKey(player.hole)];
   const percentile = rank ? rank / 169 : 1 - strength;
-
-  const facingRaise = toCall > table.bigBlind;
   const raiseSpec = pickLegal(legal, 'raise') || pickLegal(legal, 'bet');
+  const bb = table.bigBlind;
 
-  // --- Nobody has raised: open or check the option -----------------
-  if (!facingRaise) {
+  // Which node of the tree this is. Derived from the raise count rather than
+  // from the size of the bet, because a 4bb open into a limped pot and a 4bb
+  // three-bet are the same number and very much not the same decision.
+  const raises = table.raisesThisStreet || 0;
+
+  /* ---- nobody has raised: open, limp or fold --------------------- */
+  if (raises === 0) {
+    let openThreshold = profile.openPct * (0.55 + 1.1 * posFactor);
+    if (profile.usesCharts && !table.variant.omaha) {
+      const chart = CHARTS.rfi[player.position] || CHARTS.rfi.CO;
+      openThreshold = chart.has(handKey(player.hole)) ? 1 : 0;
+    }
     const opening = profile.usesCharts ? openThreshold === 1 : percentile <= openThreshold;
     if (opening && raiseSpec) {
-      const open = Math.round(table.bigBlind * (2.2 + rng() * 1.1) + table.bigBlind * opponents * 0.35);
+      // 2.2-2.5bb plus one for each limper already in. The old size was
+      // 2.2-3.3bb PLUS 0.35bb per opponent, which on a six-handed table opened
+      // to 4-5bb — nearly double a real online open, and the pot arrived at
+      // the flop four to seven times too big before a single card was dealt.
+      const limpers = table.contestants.filter((p) => p !== player && p.committed >= bb).length;
+      const open = bb * (2.2 + rng() * 0.3) + bb * Math.max(0, limpers - 1);
       return { ...raiseTo(legal, raiseSpec.type, open), note: 'opening' };
     }
     if (canCheck) return { type: 'check' };
-    // Limping is a leak; loose profiles do it anyway.
-    if (percentile <= profile.defendPct && pickLegal(legal, 'call')) return { type: 'call', note: 'limp' };
+    // Limping is a leak. Loose passive players do it; a reg never should.
+    if (percentile <= profile.defendPct * profile.limps && pickLegal(legal, 'call')) {
+      return { type: 'call', note: 'limp' };
+    }
     return { type: 'fold' };
   }
 
-  // --- Facing a raise ----------------------------------------------
-  const threeBetCut = profile.threeBetPct;
-  const wantsThreeBet = percentile <= threeBetCut
-    || (rng() < profile.bluff * 0.35 && percentile <= threeBetCut * 4);
-
-  if (wantsThreeBet && raiseSpec) {
-    const target = Math.round(table.currentBet * (2.8 + rng() * 0.9));
-    return { ...raiseTo(legal, raiseSpec.type, target), note: '3-bet' };
+  /* ---- facing an open: 3-bet, call or fold ----------------------- */
+  if (raises === 1) {
+    const valueCut = profile.threeBetPct;
+    const bluffing = rng() < profile.bluff * 0.3 && percentile <= valueCut * 4.5;
+    if ((percentile <= valueCut || bluffing) && raiseSpec) {
+      // Three-bet to 3x in position, 4x out of it — the standard shape,
+      // because the out-of-position player has to charge more to deny the
+      // realisation they will not get back postflop.
+      const target = table.currentBet * (posFactor > 0.55 ? 3 : 4);
+      return { ...raiseTo(legal, raiseSpec.type, target), note: '3-bet' };
+    }
+    const priceIn = requiredEquity(toCall, pot);
+    const defendCut = profile.defendPct * (0.7 + 0.8 * posFactor)
+      * (toCall > bb * 6 ? 0.45 : 1);
+    if (percentile <= defendCut && strength > priceIn * profile.respect * 0.9
+      && pickLegal(legal, 'call')) {
+      return { type: 'call', note: 'defend' };
+    }
+    if (canCheck) return { type: 'check' };
+    return { type: 'fold' };
   }
 
-  const priceIn = requiredEquity(toCall, pot);
-  const defendCut = profile.defendPct * (0.7 + 0.8 * posFactor)
-    * (toCall > table.bigBlind * 6 ? 0.45 : 1);
-  if (percentile <= defendCut && strength > priceIn * profile.respect * 0.9) {
-    if (pickLegal(legal, 'call')) return { type: 'call', note: 'defend' };
+  /* ---- facing a 3-bet: 4-bet, call or fold ----------------------- */
+  if (raises === 2) {
+    // A quarter of the three-betting range. Real four-bet frequencies sit at
+    // 1-2% of hands dealt; reusing the three-bet range here, which is what
+    // this did before, produced 3-7% and turned every big pot into a war.
+    const fourBetCut = profile.threeBetPct * 0.28;
+    const bluffing = rng() < profile.bluff * 0.12 && percentile <= fourBetCut * 3;
+    if ((percentile <= fourBetCut || bluffing) && raiseSpec) {
+      return { ...raiseTo(legal, raiseSpec.type, table.currentBet * 2.2), note: '4-bet' };
+    }
+    if (percentile <= profile.threeBetPct * 1.7 && pickLegal(legal, 'call')) {
+      return { type: 'call', note: 'call 3-bet' };
+    }
+    if (canCheck) return { type: 'check' };
+    return { type: 'fold' };
+  }
+
+  /* ---- facing a 4-bet or worse: it is aces or it is over --------- */
+  const jamCut = profile.threeBetPct * 0.14;
+  if (percentile <= jamCut && raiseSpec) {
+    return { ...raiseTo(legal, raiseSpec.type, raiseSpec.max), note: '5-bet' };
+  }
+  if (percentile <= profile.threeBetPct * 0.55 && pickLegal(legal, 'call')) {
+    return { type: 'call', note: 'call 4-bet' };
   }
   if (canCheck) return { type: 'check' };
   return { type: 'fold' };
 }
 
-/**
- * How often the player who just bet would do that with a given hand.
- *
- * Falls back to a flat weight when nobody is identifiable as the aggressor,
- * which makes the call revert to equity against a random hand rather than
- * quietly inventing an opponent.
- */
 function bettingWeight(table, player) {
   const bettor = table.lastAggressor && table.lastAggressor !== player ? table.lastAggressor : null;
   if (!bettor) return () => 1;

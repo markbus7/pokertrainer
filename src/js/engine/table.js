@@ -128,6 +128,8 @@ export class Table {
     this.commit(this.players[bbIndex], Math.min(this.bigBlind, this.players[bbIndex].stack), 'big blind');
 
     this.currentBet = this.bigBlind;
+    // The blinds are posted, not raised: a preflop open is the first raise.
+    this.raisesThisStreet = 0;
     this.minRaise = this.bigBlind;
     this.bbIndex = bbIndex;
 
@@ -292,6 +294,7 @@ export class Table {
           }
         }
         player.acted = true;
+        this.raisesThisStreet++;
         this.lastAggressor = player;
         player.lastAction = player.allIn ? `All-in ${player.committed}` : `${action.type === 'bet' ? 'Bet' : 'Raise to'} ${player.committed}`;
         this.log(action.type, { player: player.id, amount: paid, to: player.committed, allIn: player.allIn });
@@ -362,6 +365,7 @@ export class Table {
     }
     this.currentBet = 0;
     this.minRaise = this.bigBlind;
+    this.raisesThisStreet = 0;
     for (const p of this.players) p.acted = false;
   }
 
@@ -375,6 +379,7 @@ export class Table {
 
     for (const p of this.players) { p.acted = false; p.lastAction = null; }
     this.lastAggressor = null;
+    this.raisesThisStreet = 0;
 
     const first = this.nextToAct(this.button);
     if (first === -1 || this.bettable.length <= 1) return this.runOutAndShowdown();
