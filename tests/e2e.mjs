@@ -725,19 +725,37 @@ await step('a preflop drill has somewhere to look, and a looked-up answer is not
   await look.click();
   await page.waitForTimeout(250);
 
+  // Two shapes are correct here, and this used to insist on the first. A
+  // question that names the seat you are in gets that seat's grid — which is
+  // strictly more use than five columns, and is what makes the three-betting
+  // charts reachable at all. A question that does not name a seat is asking
+  // you to compare seats, and the five-column table says that better.
   const sheet = await page.evaluate(() => {
     const table = document.querySelector('.cheat-table');
-    if (!table) return null;
+    if (table) {
+      return {
+        kind: 'columns',
+        rows: table.querySelectorAll('tbody tr').length,
+        seats: [...table.querySelectorAll('thead th')].map((n) => n.textContent),
+      };
+    }
+    const grid = document.querySelector('.range-grid');
+    if (!grid) return null;
     return {
-      rows: table.querySelectorAll('tbody tr').length,
-      seats: [...table.querySelectorAll('thead th')].map((n) => n.textContent),
-      body: table.textContent.replace(/\s+/g, ' '),
+      kind: 'grid',
+      rows: grid.querySelectorAll('.range-cell').length,
+      caption: (document.querySelector('.chart-caption') || {}).textContent || '',
     };
   });
   if (!sheet) throw new Error('the chart button showed no chart');
-  if (sheet.rows < 4) throw new Error(`only ${sheet.rows} rows of chart`);
-  for (const seat of ['UTG', 'CO', 'BTN']) {
-    if (!sheet.seats.includes(seat)) throw new Error(`the sheet is missing ${seat}: ${sheet.seats.join(' ')}`);
+  if (sheet.kind === 'columns') {
+    if (sheet.rows < 4) throw new Error(`only ${sheet.rows} rows of chart`);
+    for (const seat of ['UTG', 'CO', 'BTN']) {
+      if (!sheet.seats.includes(seat)) throw new Error(`the sheet is missing ${seat}: ${sheet.seats.join(' ')}`);
+    }
+  } else {
+    if (sheet.rows !== 169) throw new Error(`the grid has ${sheet.rows} cells, not 169`);
+    if (!sheet.caption.trim()) throw new Error('the grid does not say which range it is');
   }
 
   // Answering after looking still teaches, but it is not evidence of recall,
@@ -755,7 +773,7 @@ await step('a preflop drill has somewhere to look, and a looked-up answer is not
   if (after.correct !== before.correct) {
     throw new Error('an answer read off the chart was banked as one you knew');
   }
-  console.log(`      chart offered (${sheet.rows} rows), and the peeked answer scored ${after.correct - before.correct}`);
+  console.log(`      chart offered (${sheet.kind}, ${sheet.rows}), and the peeked answer scored ${after.correct - before.correct}`);
 });
 
 await step('a pot-odds question offers the shortcut, not a chart', async () => {
@@ -1011,6 +1029,62 @@ await step('opponents notice how you play, and say so', async () => {
   const left = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).handsPlayed);
   if (left !== 0) throw new Error(`the fixture did not clean up after itself: ${left} hands left`);
+});
+
+await step('the drill lets you check your answer against the chart', async () => {
+  // "als ik antwoord heb gegeven kan ik het spiekbriefje/chart helaas niet
+  // meer zien, dus ik kan het antwoord ook niet meer controleren" — it was
+  // withheld on purpose, reasoning that the answer was already on screen.
+  // Knowing the answer covers one hand; seeing where it sits on the grid is
+  // the shape, which is the part that carries to the next hand.
+  // Questions are drawn at random, so this hunts for the shapes it wants
+  // rather than assuming three in a row will contain them. The first version
+  // demanded a ringed hand across any three questions and failed on the run
+  // where all three happened to be seat-comparison questions.
+  let checked = 0;
+  let grids = 0;
+  let ringed = 0;
+  for (let attempt = 0; attempt < 40 && (checked < 3 || ringed < 1); attempt++) {
+    const module = attempt % 2 ? 'position' : 'preflop';
+    await page.goto(`${BASE}/#drill?module=${module}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(450);
+    const option = await page.$('.option:not([disabled])');
+    if (!option) continue;
+    await option.click();
+    await page.waitForTimeout(300);
+
+    const review = await page.$('button:has-text("Check it against")');
+    if (!review) continue;           // equity questions have no chart behind them
+    await review.click();
+    await page.waitForTimeout(220);
+
+    const caption = await page.$('.chart-caption');
+    if (caption) {
+      grids++;
+      const text = (await caption.textContent()).trim();
+      const seatBadge = await page.$('.badge.gold');
+      const seat = seatBadge ? (await seatBadge.textContent()) : '';
+      // The chart has to be for the seat the question puts you in. It used to
+      // show big-blind defence to anyone facing a raise, so the three-betting
+      // charts were reachable from nowhere at all.
+      if (/big blind/i.test(seat) && !/big blind/i.test(text)) {
+        throw new Error(`in the big blind and shown "${text}"`);
+      }
+      // Ring the hand when there is a hand. The boundary questions name a
+      // seat but deal no cards — "how far down the suited jacks do you go"
+      // is about the row, not about a holding — so demanding a ring on every
+      // seat chart failed on a question that was behaving correctly.
+      const dealt = await page.$$eval('.spot-hole .card', (els) => els.length);
+      const marked = await page.$$eval('.range-cell.you', (els) => els.length);
+      if (dealt && marked !== 1) throw new Error(`"${text}" dealt a hand and ringed ${marked} cells`);
+      if (!dealt && marked) throw new Error(`"${text}" ringed a hand it never dealt`);
+      ringed += marked;
+    }
+    checked++;
+  }
+  if (checked < 3) throw new Error(`only ${checked} questions offered a chart to check against`);
+  if (!grids) throw new Error('no question ever produced a seat chart to check against');
+  console.log(`      ${checked} questions checked, ${grids} of them a seat chart, hand ringed on ${ringed}`);
 });
 
 await step('the chart is reachable at the table, without leaving it', async () => {
