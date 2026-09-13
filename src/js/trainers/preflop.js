@@ -30,7 +30,7 @@ export function openingDrill(rng, difficulty = 2) {
   return {
     module: 'preflop',
     difficulty,
-    scenario: { hole: expandHandKey(hand)[0], position, positionName: t(POSITION_INFO[position].name) },
+    scenario: { hole: expandHandKey(hand)[0], position, heroSeat: position, positionName: t(POSITION_INFO[position].name) },
     question: t('It folds to you in the {seat}. What is your move?', { seat: t(POSITION_INFO[position].name) }),
     options,
     answer,
@@ -61,7 +61,7 @@ export function facingRaiseDrill(rng, difficulty = 3) {
   return {
     module: 'preflop',
     difficulty,
-    scenario: { hole: expandHandKey(hand)[0], position, positionName: t(POSITION_INFO[position].name), raiser },
+    scenario: { hole: expandHandKey(hand)[0], position, heroSeat: position, positionName: t(POSITION_INFO[position].name), raiser },
     question: t('{raiser} opens to 2.5 big blinds and it folds to you in the {seat}. What is your move?',
       { raiser, seat: t(POSITION_INFO[position].name) }),
     options,
@@ -116,7 +116,7 @@ export function blindDefenceDrill(rng, difficulty = 3) {
   return {
     module: 'position',
     difficulty,
-    scenario: { hole: expandHandKey(hand)[0], position: 'BB', positionName: t('Big Blind'), raiser },
+    scenario: { hole: expandHandKey(hand)[0], position: 'BB', heroSeat: 'BB', positionName: t('Big Blind'), raiser },
     question: t('{raiser} raises to 2.5 big blinds and everyone folds to you in the big blind. What is your move?',
       { raiser }),
     options,
@@ -308,7 +308,7 @@ export function rangeEquityDrill(rng, difficulty = 2) {
   return {
     module: 'preflop',
     difficulty,
-    scenario: { hole: expandHandKey(hand)[0], position, positionName: t(POSITION_INFO[position].name) },
+    scenario: { hole: expandHandKey(hand)[0], position, raiser: position, positionName: t(POSITION_INFO[position].name) },
     question: t('You hold {hand}. Against a random hand it wins {random}. Now {seat} raises, so you are up '
       + 'against the top {width}% of hands instead. What does {hand} win against that?',
     { hand, random: pct(vsRandom, 0), seat: t(POSITION_INFO[position].name), width: RANGE_WIDTH[position] }),
@@ -456,7 +456,17 @@ export function chartBoundaryDrill(rng, difficulty = 2) {
   return {
     module: 'preflop',
     difficulty,
-    scenario: { position: pick.position, positionName: seat },
+    // `position` on this question is the seat that OPENS, which is not the
+    // seat the reader is in — and with no hole cards to disambiguate it, a
+    // reference had no way to tell "open from the cutoff" from "defend the
+    // big blind against a cutoff open" and showed the wrong chart for the
+    // second. So the scenario names the reader's own seat rather than
+    // leaving it to be guessed from the question text.
+    scenario: pick.kind === 'defend'
+      ? { position: pick.position, positionName: seat, heroSeat: 'BB', raiser: pick.position }
+      : pick.kind === 'open'
+        ? { position: pick.position, positionName: seat, heroSeat: pick.position }
+        : { position: pick.position, positionName: seat, raiser: pick.position },
     question,
     options,
     answer,

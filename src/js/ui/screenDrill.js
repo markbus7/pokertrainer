@@ -14,7 +14,9 @@ import {
 import { requirementRow } from './screenLevels.js';
 import { review } from '../state/spacing.js';
 import { WALKTHROUGHS } from '../data/walkthroughs.js';
-import { boundarySheet, priceSheet } from './reference.js';
+import { boundarySheet, priceSheet, rangeGridFor } from './reference.js';
+import { CHARTS } from '../data/ranges.js';
+import { handKey } from '../core/cards.js';
 
 /** The lesson page for a module, with the drill entry point. */
 /** What the guided lesson actually is, in one line, so the name is not a riddle. */
@@ -231,6 +233,7 @@ export function renderDrill(ctx, params) {
     state.locked = false;
     state.typed = null;
     state.peeked = false;
+    state.reviewing = false;
     state.index++;
     draw();
     return null;
@@ -443,7 +446,7 @@ export function renderDrill(ctx, params) {
     // offers you a shortlist. The options still appear afterwards, marked, so
     // you always see the right number next to the one you gave.
     const entryBox = q.entry && chosen === null ? typedAnswer(q) : null;
-    const sheet = cheatSheet(q);
+    const sheet = cheatSheet(q, { answered: chosen !== null });
 
     mount(body,
       scenarioView(q.scenario, ctx.profile.settings),
@@ -481,14 +484,22 @@ export function renderDrill(ctx, params) {
         correct: (q.options.find((o) => o.key === q.answer) || {}).label,
         explanation: q.explanation,
       })),
-      // Somewhere to look. Offered before you answer, because afterwards the
-      // right answer is already on screen and a chart adds nothing.
-      chosen === null && sheet
-        ? (state.peeked
+      // Somewhere to look, on both sides of the answer. Left open if it was
+      // already open: having to reopen the same chart you were just reading
+      // is the kind of small friction that stops people checking at all.
+      sheet
+        ? (state.peeked || state.reviewing
           ? sheet.node
           : el('button.btn.sm.ghost.block', {
             style: { marginTop: '14px' },
-            onclick: () => { state.peeked = true; draw(); },
+            onclick: () => {
+              if (chosen === null) state.peeked = true; else state.reviewing = true;
+              // draw() takes the answer as an argument and defaults it to
+              // null, so redrawing without passing it back forgets that the
+              // question was answered — and the chart came up with nothing
+              // ringed on it, which is the one thing it was reopened for.
+              draw(chosen);
+            },
           }, t(sheet.label)))
         : null,
 
@@ -542,23 +553,69 @@ const PRICE_MODULES = new Set(['pot-odds', 'outs']);
  *
  * Returns null when the question is not one a chart answers.
  */
-function cheatSheet(question) {
+/**
+ * Somewhere to look — before you answer, and after.
+ *
+ * It used to vanish the moment you answered, on the reasoning that "the right
+ * answer is already on screen and a chart adds nothing". That is wrong, and
+ * the range trainer had already been built on the opposite principle without
+ * this being brought into line. Knowing the answer was Fold tells you about
+ * one hand. Seeing WHERE that hand sits — a rank outside the boundary, or the
+ * suited twin of something that plays — is the shape, and the shape is the
+ * part that transfers to the next hand you are dealt.
+ *
+ * So the difference between before and after is not whether you may look. It
+ * is whether your hand is ringed on it: finding it yourself is the work, and
+ * ringing it beforehand would hand over an opening question outright.
+ */
+function cheatSheet(question, { answered = false } = {}) {
   if (PRICE_MODULES.has(question.module)) {
-    return { node: priceSheet(), label: 'Show me the method' };
+    // The price is as worth checking afterwards as it was beforehand — this
+    // is where you find out whether you divided when you should have counted.
+    return { node: priceSheet(), label: answered ? 'Check it against the method' : 'Show me the method' };
   }
   // Only the two modules these charts actually answer. Defence frequency is
   // a formula from the numbers in its own question; offering a preflop grid
   // beside it is noise pretending to be help.
   if (!CHART_MODULES.has(question.module)) return null;
+
   const scenario = question.scenario || {};
-  const defending = Boolean(scenario.raiser);
-  const node = boundarySheet({
-    defending,
-    highlight: defending ? scenario.raiser : scenario.position,
-  });
+  const label = answered ? 'Check it against the chart' : 'Show me the chart';
+
+  // A question with a seat gets that seat's chart. This used to read "somebody
+  // raised, therefore big-blind defence", which showed BB defence to a reader
+  // sitting in the small blind facing a button open — a three-bet spot. The
+  // three-betting charts were reachable from nowhere as a result.
+  // Which seat the reader is in — stated by the question or not at all.
+  // Inferring it from `position` was wrong twice over: on the boundary
+  // questions `position` is whoever opened, and on the domination question it
+  // is the raiser even though hole cards are dealt. A question that does not
+  // say where you are sitting gets the five-column comparison instead.
+  // `heroSeat`, not `hero`: spotFelt already reads `scenario.hero` and means
+  // the hero's CARDS by it, so naming a seat that passed a string to a
+  // function expecting a card array and blanked the felt on every question.
+  const heroSeat = scenario.heroSeat || null;
+  if (heroSeat && (CHARTS.rfi[heroSeat] || heroSeat === 'BB')) {
+    const node = rangeGridFor({
+      seat: heroSeat,
+      raiser: scenario.raiser || null,
+      hand: answered && scenario.hole ? handKey(scenario.hole) : null,
+    });
+    node.appendChild(el('div.faint', t('This one does not count toward your score.')));
+    return { node, label };
+  }
+
+  // An all-in equity question has no chart behind it at all. Offering the
+  // preflop grid there is noise pretending to be help, which is the same
+  // reason defence frequency is kept off this list.
+  if (scenario.compare) return null;
+
+  // No seat in the question means the question is about comparing seats, and
+  // five columns say that better than one grid does.
+  const node = boundarySheet({ defending: Boolean(scenario.raiser), highlight: scenario.raiser });
   if (!node) return null;
   node.appendChild(el('div.faint', t('This one does not count toward your score.')));
-  return { node, label: 'Show me the chart' };
+  return { node, label };
 }
 
 
