@@ -10,6 +10,9 @@ import { RANKS, requirementRows } from '../state/profile.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { stakeFor } from '../state/stats.js';
 import { handSummary } from '../state/handHistory.js';
+import { CHECKPOINTS } from '../data/rangeLadder.js';
+
+const RANGE_KEYS = CHECKPOINTS.map((c) => c.key);
 
 /**
  * What is actually still missing for the next rank. Reports the requirement
@@ -102,6 +105,25 @@ export function renderHome(ctx) {
         el('button.btn.sm.ghost', { onclick: () => go('learn', { module: recommended.id }) },
           t('The {module} lesson', { module: t(recommended.name) })),
         el('span.faint', describeProgress(profile, recommended.id)),
+      ),
+    ),
+
+    // The chart ladder. It sits above the module grid because knowing your
+    // ranges cold is the thing that frees attention for everything below it:
+    // you cannot think about sizing while you are still deciding whether to
+    // play the hand at all.
+    el('div.panel',
+      el('div.panel-title', el('h3', icon('charts', { size: 18 }), t('Range trainer'))),
+      el('div.spread',
+        el('div',
+          el('div', { style: { fontWeight: '650' } }, t('Learn the charts until you do not need them')),
+          el('div.faint', t('Eight checkpoints. Each one walked with the chart open, then behind a '
+            + 'button, then from memory on a clock.')),
+        ),
+        el('button.btn.primary', { onclick: () => go('ranges') },
+          profile.rangesCleared(RANGE_KEYS)
+            ? t('{done} of {total} in your head', { done: profile.rangesCleared(RANGE_KEYS), total: RANGE_KEYS.length })
+            : t('Start')),
       ),
     ),
 

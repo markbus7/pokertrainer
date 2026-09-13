@@ -1013,6 +1013,89 @@ await step('opponents notice how you play, and say so', async () => {
   if (left !== 0) throw new Error(`the fixture did not clean up after itself: ${left} hands left`);
 });
 
+await step('the range trainer takes the chart away one rung at a time', async () => {
+  // The reader asked for a preflop-only drill they may use the chart with,
+  // "tot de chart ranges in mn hoofd zitten". A drill that simply allows the
+  // chart never gets there — you get very good at reading a grid. So the
+  // support is designed to come off, and this walks all three rungs.
+  await page.goto(`${BASE}/#ranges`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  const rungs = await page.$$eval('.rung-row', (els) => els.length);
+  if (rungs !== 8) throw new Error(`the ladder has ${rungs} checkpoints, not 8`);
+  const locked = await page.$$eval('.rung-row.shut', (els) => els.length);
+  if (locked !== 1) throw new Error(`${locked} checkpoints are locked; the exam alone should be`);
+
+  // Rung one: the chart is on screen before you answer.
+  await page.click('.rung-row');
+  await page.waitForTimeout(400);
+  const withChart = await page.$$eval('.range-grid', (els) => els.length);
+  if (!withChart) throw new Error('the first rung does not show the chart');
+  const options = await page.$$eval('.ask-option', (els) => els.map((e) => e.textContent.trim()));
+  if (!options.length || options.length > 3) throw new Error(`asked with ${options.length} options`);
+
+  await page.click('.ask-option');
+  await page.waitForTimeout(300);
+  const ringed = await page.$$eval('.range-cell.you', (els) => els.length);
+  if (ringed !== 1) throw new Error(`${ringed} cells are ringed as the hand you were asked about`);
+  const verdict = await page.textContent('.verdict-box');
+  if (!verdict.trim()) throw new Error('an answer produced no verdict');
+
+  // Rung two: the chart is behind a button, and a peek is not credited.
+  await page.evaluate(() => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    raw.ranges = { 'open:UTG': { stage: 1, cleared: false, runs: 1 } };
+    localStorage.setItem(key, JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#ranges`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  await page.click('.rung-row');
+  await page.waitForTimeout(400);
+  if (await page.$$eval('.range-grid', (els) => els.length)) {
+    throw new Error('the second rung shows the chart before it is asked for');
+  }
+  await page.click('button.btn.ghost');
+  await page.waitForTimeout(250);
+  if (!(await page.$$eval('.range-grid', (els) => els.length))) {
+    throw new Error('peeking did not produce the chart');
+  }
+  const warned = await page.textContent('.panel');
+  if (!/not be counted|telt niet mee/.test(warned)) {
+    throw new Error('a peek is not marked as uncredited');
+  }
+
+  // Rung three: no chart, and a clock.
+  await page.evaluate(() => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    raw.ranges = { 'open:UTG': { stage: 2, cleared: false, runs: 2 } };
+    localStorage.setItem(key, JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#ranges`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  await page.click('.rung-row');
+  await page.waitForTimeout(400);
+  if (!(await page.$$eval('.clock-bar', (els) => els.length))) {
+    throw new Error('the unaided rung is not timed');
+  }
+  if (await page.$$eval('.range-grid', (els) => els.length)) {
+    throw new Error('the unaided rung shows the chart');
+  }
+  if (await page.$('button.btn.ghost')) throw new Error('the unaided rung still offers a peek');
+
+  // Leave no fixture behind: a later step counts what this profile knows.
+  await page.evaluate(() => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    delete raw.ranges;
+    localStorage.setItem(key, JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  console.log('      8 checkpoints, chart shown then hidden then gone, clock on the last rung');
+});
+
 await step('the room you play in is a choice, and it survives a reload', async () => {
   // "Kots groen" — one palette imposed on every screen. The picker is the
   // answer, so it has to do three things here: open, actually repaint, and
