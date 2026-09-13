@@ -1971,3 +1971,49 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
   .ask-option { flex: 1 1 100%; }
   .rung-row { padding: var(--s-3); }
 }
+
+/* ---- the reference drawer at the table ------------------------------ */
+
+.reference-drawer {
+  margin-top: 10px;
+  padding: var(--s-3);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.reference-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); margin-bottom: var(--s-2); }
+.reference-tabs { display: flex; gap: 4px; }
+.reference-tab {
+  padding: 4px 10px;
+  font-size: var(--t-xs);
+  font-weight: 650;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.reference-tab:hover { color: var(--text); }
+.reference-tab.active { background: var(--bg-hover); border-color: var(--accent-dim); color: var(--accent); }
+.reference-close {
+  background: none; border: 0; cursor: pointer;
+  color: var(--text-faint); font-size: var(--t-lg); line-height: 1;
+  padding: 0 4px;
+}
+.reference-close:hover { color: var(--text); }
+/* The grid has to shrink to fit a side panel without losing the shape. */
+.reference-drawer .range-grid { font-size: 9px; }
+.reference-drawer .range-cell { padding: 0; min-height: 18px; }
+.reference-drawer .chart-caption { margin-bottom: var(--s-2); }
+.reference-drawer .cheat-sheet { margin: 0; }
+/* The drawer sits in a narrow side panel, so the grid has to fit or scroll
+   rather than run off the edge of it. */
+.reference-drawer .range-grid-scroll { overflow-x: auto; max-width: 100%; }
+.reference-drawer .range-grid { font-size: 8px; min-width: 0; grid-template-columns: repeat(13, minmax(0, 1fr)); }
+.reference-drawer .range-cell { min-height: 16px; letter-spacing: -0.02em; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-2); font-size: var(--t-xs); color: var(--text-dim); }
+.chart-key { display: inline-flex; align-items: center; gap: 5px; }
+.chart-swatch { width: 11px; height: 11px; border-radius: 2px; display: inline-block; background: var(--bg-sunken); border: 1px solid var(--border); }
+.chart-swatch.in { background: var(--accent); border-color: var(--accent); }
+.chart-swatch.value { background: var(--green); border-color: var(--green); }
+.chart-swatch.bluff { background: var(--orange); border-color: var(--orange); }

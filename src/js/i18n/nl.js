@@ -3809,4 +3809,24 @@ export const NL = {
     'Je hebt {n} keer op de chart gekeken. Die antwoorden telden niet mee, en daar is dat getal voor — het zegt hoeveel er nog aan de muur hangt in plaats van in je hoofd zit.',
   '{name} is in your head': '{name} zit in je hoofd',
   'No chart, on the clock, and you still knew it.': 'Geen chart, klok aan, en je wist het toch.',
+
+  // ---- the reference at the table -------------------------------------
+  'Open the reference': 'Spiekbriefje openen',
+  'The price': 'De prijs',
+  'Close': 'Sluiten',
+  'Yours to look at. It costs you nothing — the range trainer is where it gets taken away on purpose.':
+    'Kijk gerust. Het kost je niets — in de rangetrainer wordt hij er juist expres afgehaald.',
+  'Raise': 'Raise',
+  '3-bet for value': '3-bet voor value',
+  '3-bet as a bluff': '3-bet als bluf',
+  'Everything else folds — outside the big blind there is no calling range.':
+    'De rest foldt — buiten de big blind is er geen callrange.',
+  'Pairs and suited aces are always in.': 'Paren en suited azen zitten er altijd in.',
+  'Worth knowing cold.': 'Waard om uit je hoofd te kennen.',
+  'This one does not count toward your score.': 'Deze telt niet mee voor je score.',
+
+  'There is a lesson behind these charts': 'Achter deze charts zit een les',
+  'Eight steps on why position decides how many hands you play, how to read the shorthand, and the five numbers that replace the grid. You can drill without it — but the boundary is much easier to remember once you know why it is there.':
+    'Acht stappen over waarom positie bepaalt hoeveel handen je speelt, hoe je de notatie leest, en de vijf getallen die het raster vervangen. Je kunt zonder, maar de grens onthoud je een stuk makkelijker als je weet waaróm hij daar ligt.',
+  'Read it first': 'Lees hem eerst',
 };

@@ -14,55 +14,12 @@
 import { el, mount, fmt, toast } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
-import { handGrid } from '../core/cards.js';
-import { CHARTS, POSITION_INFO } from '../data/ranges.js';
 import {
   CHECKPOINTS, STAGES, ASKED, PASS, checkpointFor, stageAt, seatName,
 } from '../data/rangeLadder.js';
 import { rangeQuestion } from '../trainers/rangeTrainer.js';
 import { makeRng } from '../core/rng.js';
-
-/* ------------------------------------------------------------------ *
- * The grid
- * ------------------------------------------------------------------ */
-
-/**
- * The chart the current question is testing, shaded, with your hand ringed.
- * One component for the on-screen chart and for the after-the-answer reveal,
- * so what you study and what you are marked against cannot drift apart.
- */
-function chartGrid(question, { highlight = true } = {}) {
-  const { seat, raiser } = question;
-  let member = () => '';
-  let caption = '';
-
-  if (!raiser) {
-    const range = CHARTS.rfi[seat];
-    member = (key) => (range.has(key) ? 'in' : '');
-    caption = t('Opening range — {seat}', { seat: t(seatName(seat)) });
-  } else if (seat === 'BB') {
-    const defend = CHARTS.bbDefend[raiser];
-    const three = CHARTS.threeBet.BB;
-    member = (key) => (three.all.has(key) ? 'value' : defend.has(key) ? 'in' : '');
-    caption = t('Big blind against a {seat} open', { seat: t(seatName(raiser)) });
-  } else {
-    const three = CHARTS.threeBet[seat];
-    member = (key) => (three.value.has(key) ? 'value' : three.bluff.has(key) ? 'bluff' : '');
-    caption = t('Three-betting range — {seat}', { seat: t(seatName(seat)) });
-  }
-
-  return el('div.chart-panel',
-    el('div.chart-caption', caption),
-    el('div.range-grid-scroll', el('div.range-grid',
-      handGrid().flat().map((key) => {
-        const classes = [member(key)];
-        if (key.length === 2) classes.push('pair');
-        if (highlight && key === question.hand) classes.push('you');
-        return el(`div.range-cell${classes.filter(Boolean).map((c) => `.${c}`).join('')}`, key);
-      }),
-    )),
-  );
-}
+import { rangeGridFor } from './reference.js';
 
 /* ------------------------------------------------------------------ *
  * The ladder
@@ -102,6 +59,26 @@ export function renderRangeLadder(ctx) {
         + 'Each checkpoint is walked three times — with the chart open, with it behind a button, and '
         + 'then from memory on a clock. The last one is the only one that counts, because it is the '
         + 'one the table asks for.')),
+      // The reader's own report said it plainly: "DRILLED WITHOUT READING THE
+      // LESSON: Preflop Ranges". The lesson exists and teaches exactly this —
+      // step 4 reads the shorthand, step 7 is five numbers instead of a
+      // hundred and sixty-nine — and nothing had ever pointed at it from the
+      // place somebody sits down to learn ranges. Reading it is not required;
+      // not knowing it is there is a different thing.
+      profile.hasCompletedWalkthrough('preflop')
+        ? null
+        : el('div.notice', { style: { marginBottom: 'var(--s-3)' } },
+          el('div', { style: { fontWeight: '600' } }, t('There is a lesson behind these charts')),
+          el('div.faint', { style: { marginTop: '4px' } },
+            t('Eight steps on why position decides how many hands you play, how to read the '
+              + 'shorthand, and the five numbers that replace the grid. You can drill without it — '
+              + 'but the boundary is much easier to remember once you know why it is there.')),
+          el('button.btn.sm.ghost', {
+            style: { marginTop: '8px' },
+            onclick: () => go('walkthrough', { module: 'preflop' }),
+          }, t('Read it first')),
+        ),
+
       el('div.ladder-head',
         el('span.badge.gold', t('{done} of {total} in your head', { done: cleared, total: CHECKPOINTS.length })),
       ),
@@ -236,16 +213,16 @@ export function renderRangeRun(ctx) {
             el('strong', a.correct ? (a.credited ? t('Right') : t('Right — but you looked')) : t('Not that one')),
             el('div', q.why),
             a.choice === null ? el('div.faint', t('The clock ran out. At the table it does too.')) : null),
-          state.showChart ? chartGrid(q) : null,
+          state.showChart ? rangeGridFor({ seat: q.seat, raiser: q.raiser, hand: q.hand }) : null,
           el('button.btn.primary.lg.block', { onclick: advance },
             state.index + 1 >= ASKED ? t('See how it went') : t('Next hand')),
         )
         : stage.showsChart
-          ? chartGrid(q, { highlight: false })
+          ? rangeGridFor({ seat: q.seat, raiser: q.raiser })
           : stage.canPeek
             ? el('div',
               state.showChart
-                ? chartGrid(q, { highlight: false })
+                ? rangeGridFor({ seat: q.seat, raiser: q.raiser })
                 : el('button.btn.ghost', {
                   onclick: () => { state.peeked = true; state.showChart = true; draw(); },
                 }, icon('charts', { size: 15 }), t('Show me the chart')),
