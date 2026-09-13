@@ -133,3 +133,70 @@ describe('bots: legality and termination', () => {
     equal(botAction(t, actor, rng).type, 'fold', 'a nit folds trash');
   });
 });
+
+describe('bots: folding after the flop is a thing that happens', () => {
+  /**
+   * The bug this pins was the most damaging one the project has had, and no
+   * test saw it: every profile folded to a postflop bet between 2% and 13% of
+   * the time, against a real 6-max range of 40-60%. Pots averaged 98bb rather
+   * than 10 and a solid player beat the table for +229bb/100.
+   *
+   * The cause was that the calling rule compared the pot-odds price against
+   * equity vs a RANDOM holding, which almost any hand clears. Somebody who
+   * bets does not hold a random hand, so the number was answering a question
+   * nobody had asked.
+   *
+   * Bounds are wide on purpose: this asserts that the game is poker, not that
+   * a particular constant is 1.45. What it will not tolerate is the table
+   * going back to a place where nobody can be bluffed, because a trainer whose
+   * tables punish every bluff teaches the opposite of its own lessons.
+   */
+  const foldRates = (games = 90) => {
+    const faced = {};
+    const folded = {};
+    for (const k of PROFILE_KEYS) { faced[k] = 0; folded[k] = 0; }
+    const rng = makeRng(99);
+    for (let game = 0; game < games; game++) {
+      const seats = Array.from({ length: 6 }, (_, i) => ({
+        id: `p${i}`, stack: 200, profile: PROFILE_KEYS[(game + i) % PROFILE_KEYS.length],
+      }));
+      const t = createTable({ players: seats, smallBlind: 1, bigBlind: 2, rng, button: game % 6 });
+      for (let h = 0; h < 6; h++) {
+        for (const p of t.players) p.stack = 200;
+        t.startHand();
+        let guard = 0;
+        while (!t.handOver && guard++ < 400) {
+          const actor = t.actor;
+          const facing = t.currentBet - actor.committed > 0 && t.street !== 'preflop';
+          const action = botAction(t, actor, rng);
+          if (facing) { faced[actor.profile]++; if (action.type === 'fold') folded[actor.profile]++; }
+          t.act(action);
+        }
+        if (!t.handOver) break;
+      }
+    }
+    return Object.fromEntries(PROFILE_KEYS.map((k) => [k, faced[k] ? folded[k] / faced[k] : 0]));
+  };
+
+  it('lets every profile fold to a bet, at a rate a real game would recognise', () => {
+    const rates = foldRates();
+    const report = PROFILE_KEYS.map((k) => `${k} ${(100 * rates[k]).toFixed(0)}%`).join(', ');
+    // Even the station folds sometimes; even the nit calls sometimes.
+    for (const k of PROFILE_KEYS) {
+      assert(rates[k] > 0.05, `${k} almost never folds after the flop — ${report}`);
+      assert(rates[k] < 0.85, `${k} folds to almost everything — ${report}`);
+    }
+    // The whole table cannot be a calling station: bluffing has to work
+    // somewhere, or every lesson about fold equity is contradicted by the felt.
+    const table = Object.values(rates).reduce((a, b) => a + b, 0) / PROFILE_KEYS.length;
+    assert(table > 0.25, `the table folds ${(100 * table).toFixed(0)}% of the time — nobody can be bluffed: ${report}`);
+  });
+
+  it('folds in the order the profiles claim to play', () => {
+    const r = foldRates();
+    assert(r.rock > r.tag, `the nit should fold more than the TAG (${(100 * r.rock).toFixed(0)}% vs ${(100 * r.tag).toFixed(0)}%)`);
+    assert(r.tag > r.lag, `the TAG should fold more than the LAG (${(100 * r.tag).toFixed(0)}% vs ${(100 * r.lag).toFixed(0)}%)`);
+    assert(r.lag > r.station, `the LAG should fold more than the station (${(100 * r.lag).toFixed(0)}% vs ${(100 * r.station).toFixed(0)}%)`);
+    assert(r.station < 0.25, `the calling station is not calling: ${(100 * r.station).toFixed(0)}%`);
+  });
+});

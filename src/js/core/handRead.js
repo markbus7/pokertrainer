@@ -17,9 +17,13 @@ import { makeDeck, removeCards } from './cards.js';
 import { evaluate } from './evaluator.js';
 import { makeRng, shuffle } from './rng.js';
 
-import { CUTS, getProfile } from '../engine/bots.js';
+import { CUTS, getProfile, actionChances } from '../engine/bots.js';
 
 /** Every two-card holding still available once these cards are visible. */
+// actionChances lives in bots.js now — the rule and the numbers it is built
+// from belong together — and is re-exported so this module's API is unchanged.
+export { actionChances };
+
 export function candidateHands(dead) {
   const rest = removeCards(makeDeck(), dead);
   const out = [];
@@ -113,37 +117,6 @@ export function sampledEquities(board, candidates, samples = 40, seed = null) {
 export const equitiesFor = (board, candidates) => (board.length >= 5
   ? riverEquities(board, candidates)
   : sampledEquities(board, candidates));
-
-/**
- * How often this profile takes each action at this equity.
- *
- * Composed in the same order the bot rolls its dice, because the order is the
- * rule: a hand that fails the value-bet roll goes on to be offered as a
- * bluff, and one that passes never reaches the later branches at all.
- */
-export function actionChances(profile, equity, situation) {
-  const { toCall = 0, needed = 0, street = 'flop', heroIsAggressor = false } = situation;
-  // getProfile hands an object straight back, so an adapted profile keeps its
-  // adjustments here. Looking the key up again would read the archetype while
-  // the bot plays an adjusted version of it — a read of somebody else.
-  const p = getProfile(profile);
-
-  if (toCall > 0) {
-    const valueRaise = equity > CUTS.valueRaise(p) ? CUTS.valueRaiseChance(p) : 0;
-    const bluffRaise = equity < CUTS.bluffRaiseCeiling && street !== 'river'
-      ? CUTS.bluffRaiseChance(p) : 0;
-    // The two raise branches are separated by equity, so at most one applies.
-    const raise = Math.min(1, valueRaise + bluffRaise);
-    const calls = equity > CUTS.callThreshold(p, needed) ? 1 : 0;
-    return { raise, call: (1 - raise) * calls, fold: (1 - raise) * (1 - calls), bet: 0, check: 0 };
-  }
-
-  const value = equity > CUTS.valueBet(p) ? CUTS.valueBetChance(p) : 0;
-  const bluff = equity < CUTS.bluffCeiling ? CUTS.bluffChance(p, { heroIsAggressor, street }) : 0;
-  const thin = equity > CUTS.thinValue ? CUTS.thinValueChance(p) : 0;
-  const bet = Math.min(1, value + (1 - value) * (bluff + (1 - bluff) * thin));
-  return { bet, check: 1 - bet, raise: 0, call: 0, fold: 0 };
-}
 
 /**
  * Buckets by what a hand is worth here, not by its name.

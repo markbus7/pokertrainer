@@ -18,7 +18,7 @@
  */
 
 import { handKey } from '../core/cards.js';
-import { equityVsField } from '../core/equity.js';
+import { equityVsField, equityVsBettors } from '../core/equity.js';
 import { requiredEquity } from '../core/odds.js';
 import { HAND_STRENGTH, STRENGTH_RANK } from '../data/handStrength.js';
 import { CHARTS } from '../data/ranges.js';
@@ -38,6 +38,7 @@ export const PROFILES = {
     bluff: 0.04,
     callDown: 0.22,
     respect: 1.25,
+    callPrice: 2.13,
     sizings: [0.5, 0.66],
     blurb: 'Folds and folds, then wakes up with the nuts.',
     tell: 'If Rocky raises, Rocky has it. He has never bluffed in his life.',
@@ -56,6 +57,7 @@ export const PROFILES = {
     bluff: 0.22,
     callDown: 0.45,
     respect: 1.0,
+    callPrice: 1.52,
     sizings: [0.5, 0.66, 0.75],
     blurb: 'Plays few hands, but plays them hard. The standard winning reg.',
     tell: 'She only continues with real equity, and she barrels when the board favours her range.',
@@ -74,6 +76,7 @@ export const PROFILES = {
     bluff: 0.38,
     callDown: 0.5,
     respect: 0.85,
+    callPrice: 1.04,
     sizings: [0.66, 0.75, 1.0],
     blurb: 'Applies pressure in every pot and makes you guess.',
     tell: 'He bets far too often for his range to be strong.',
@@ -92,6 +95,7 @@ export const PROFILES = {
     bluff: 0.02,
     callDown: 0.88,
     respect: 0.7,
+    callPrice: 0.42,
     sizings: [0.33, 0.5],
     blurb: 'Came to see cards, not to fold them.',
     tell: 'He calls with any piece of the board, and almost never raises.',
@@ -110,6 +114,7 @@ export const PROFILES = {
     bluff: 0.55,
     callDown: 0.55,
     respect: 0.7,
+    callPrice: 0.77,
     sizings: [0.75, 1.0, 1.35],
     blurb: 'Raises everything. Occasionally has aces.',
     tell: 'Enormous bets with nothing at all, over and over.',
@@ -128,6 +133,7 @@ export const PROFILES = {
     bluff: 0.3,
     callDown: 0.52,
     respect: 1.0,
+    callPrice: 1.45,
     usesCharts: true,
     sizings: [0.33, 0.5, 0.75],
     blurb: 'Plays the charts you are learning, and plays them well.',
@@ -268,14 +274,57 @@ function preflopDecision({ table, player, profile, legal, rng, toCall, pot, canC
   return { type: 'fold' };
 }
 
+/**
+ * How often the player who just bet would do that with a given hand.
+ *
+ * Falls back to a flat weight when nobody is identifiable as the aggressor,
+ * which makes the call revert to equity against a random hand rather than
+ * quietly inventing an opponent.
+ */
+function bettingWeight(table, player) {
+  const bettor = table.lastAggressor && table.lastAggressor !== player ? table.lastAggressor : null;
+  if (!bettor) return () => 1;
+  const theirProfile = profileAt(table, bettor);
+  const p = getProfile(theirProfile);
+  // How likely they were to be in the pot at all. A hand they would have
+  // folded before the flop is not a hand they can be betting now, and
+  // counting it widens their range with air that was never there.
+  const playsPreflop = (hole) => {
+    if (table.variant.omaha || hole.length !== 2) return 1;
+    const rank = STRENGTH_RANK[handKey(hole)];
+    if (!rank) return 1;
+    const percentile = rank / 169;
+    // Wider than the opening range: they may have defended, 3-bet or called.
+    const width = Math.min(1, p.defendPct * 1.15);
+    return percentile <= width ? 1 : 0.06;
+  };
+  return (equity, hole) => playsPreflop(hole) * actionChances(theirProfile, equity, {
+    toCall: 0, street: table.street, heroIsAggressor: false,
+  }).bet;
+}
+
 function postflopDecision({ table, player, profile, legal, rng, toCall, pot, canCheck }) {
   const opponents = Math.max(1, table.contestants.length - 1);
   const trials = opponents > 2 ? 220 : 320;
-  const equity = monteCarlo(player.hole, table.board, table, rng, trials, opponents);
 
   const raiseSpec = pickLegal(legal, 'raise') || pickLegal(legal, 'bet');
   const needed = toCall > 0 ? requiredEquity(toCall, pot) : 0;
   const heroIsAggressor = table.lastAggressor === player;
+
+  // Facing a bet, the question is not "how do I do against a random hand" but
+  // "how do I do against the hands that would have bet". Asking the first one
+  // is what made every profile call down with anything: a pot-odds threshold
+  // of 25% is cleared by almost any holding once the comparison is against a
+  // random hand, so fold-to-bet sat at 2-13% where a real game runs 40-60%.
+  //
+  // The bettor's own profile decides the weighting, so a maniac's bet is
+  // called wider than a rock's — the bots read each other with the same rule
+  // the reader is taught to use.
+  const equity = toCall > 0
+    ? equityVsBettors(player.hole, table.board, table.variant, rng, {
+      weightOf: bettingWeight(table, player),
+    })
+    : monteCarlo(player.hole, table.board, table, rng, trials, opponents);
 
   // --- Facing a bet -------------------------------------------------
   if (toCall > 0) {
@@ -329,8 +378,22 @@ export const CUTS = {
   valueRaiseChance: (p) => 0.35 + p.aggression * 0.5,
   bluffRaiseCeiling: 0.3,
   bluffRaiseChance: (p) => p.bluff * 0.25,
-  /** Calling looks at the price, stretched by how much respect the bet gets. */
-  callThreshold: (p, needed) => needed * p.respect - p.callDown * 0.16,
+  /**
+   * What a call costs, as a multiple of the pot-odds price.
+   *
+   * This used to read `needed * respect - callDown * 0.16`, and the constant
+   * subtraction was half the reason nobody folded: it knocked a third off the
+   * requirement, so a half-pot bet needing 25% was called by anything over
+   * 17%. Worse, it was compared against equity vs a RANDOM hand, which almost
+   * everything clears.
+   *
+   * Both halves are fixed now. The equity handed in is against the hands that
+   * would have bet, and the threshold is a straight multiple of the price,
+   * solved per profile from measured fold-to-bet rates rather than guessed:
+   * 1.0 calls exactly at the price, the nit demands twice it, the station
+   * calls at well under half.
+   */
+  callThreshold: (p, needed) => needed * p.callPrice,
   valueBet: (p) => 0.62 - p.aggression * 0.08,
   valueBetChance: (p) => 0.55 + p.aggression * 0.4,
   bluffCeiling: 0.42,
@@ -351,4 +414,35 @@ export function pickOpponents(count, rng = makeRng()) {
     [chosen[i], chosen[j]] = [chosen[j], chosen[i]];
   }
   return chosen;
+}
+
+/**
+ * How often this profile takes each action at this equity.
+ *
+ * Composed in the same order the bot rolls its dice, because the order is the
+ * rule: a hand that fails the value-bet roll goes on to be offered as a
+ * bluff, and one that passes never reaches the later branches at all.
+ */
+export function actionChances(profile, equity, situation) {
+  const { toCall = 0, needed = 0, street = 'flop', heroIsAggressor = false } = situation;
+  // getProfile hands an object straight back, so an adapted profile keeps its
+  // adjustments here. Looking the key up again would read the archetype while
+  // the bot plays an adjusted version of it — a read of somebody else.
+  const p = getProfile(profile);
+
+  if (toCall > 0) {
+    const valueRaise = equity > CUTS.valueRaise(p) ? CUTS.valueRaiseChance(p) : 0;
+    const bluffRaise = equity < CUTS.bluffRaiseCeiling && street !== 'river'
+      ? CUTS.bluffRaiseChance(p) : 0;
+    // The two raise branches are separated by equity, so at most one applies.
+    const raise = Math.min(1, valueRaise + bluffRaise);
+    const calls = equity > CUTS.callThreshold(p, needed) ? 1 : 0;
+    return { raise, call: (1 - raise) * calls, fold: (1 - raise) * (1 - calls), bet: 0, check: 0 };
+  }
+
+  const value = equity > CUTS.valueBet(p) ? CUTS.valueBetChance(p) : 0;
+  const bluff = equity < CUTS.bluffCeiling ? CUTS.bluffChance(p, { heroIsAggressor, street }) : 0;
+  const thin = equity > CUTS.thinValue ? CUTS.thinValueChance(p) : 0;
+  const bet = Math.min(1, value + (1 - value) * (bluff + (1 - bluff) * thin));
+  return { bet, check: 1 - bet, raise: 0, call: 0, fold: 0 };
 }
