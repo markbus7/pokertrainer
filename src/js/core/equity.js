@@ -173,6 +173,86 @@ export function equityVsHands(hole, board, hands, {
   return counted ? total / counted : 0.5;
 }
 
+/**
+ * Your equity against the hands that would actually have bet at you.
+ *
+ * The bots had a bug that made the whole game the wrong game: their calling
+ * rule compared the pot odds it needed against `equityVsField`, which is
+ * equity against a RANDOM holding. Against a random holding bottom pair is a
+ * 70% favourite, so a pot-odds threshold of 25% was cleared by nearly every
+ * hand and nobody ever folded after the flop. Measured across all six
+ * profiles: 2-13% fold-to-bet, where a real game runs 40-60%. Pots averaged
+ * 98bb instead of 10, and a solid player beat the table for +229bb/100.
+ *
+ * The fix is not a fudge factor on the threshold — it is asking the right
+ * question. Somebody who bets does not hold a random hand; they hold one of
+ * the hands they would bet with. So: sample villain holdings, estimate what
+ * each is worth here, weight it by how often this profile bets that, and
+ * average your result over the weighted set.
+ *
+ * The weight is two questions, not one: would they have played this hand
+ * before the flop at all, and would they bet it now. Asking only the second
+ * puts hands in the range that were folded three streets ago — which is a
+ * quiet way of stuffing the range with air and handing the caller equity it
+ * has not got.
+ *
+ * `weightOf` comes from the bot's own rule rather than a second copy of it,
+ * so a profile that stops bluffing is immediately harder to call down — the
+ * adaptation and the read move together because they are the same numbers.
+ *
+ * Run-outs are drawn independently per candidate. Sharing one set across all
+ * of them correlates the errors so they never cancel, which is the bug that
+ * made the hand-reading table unstable before it was measured.
+ */
+export function equityVsBettors(hole, board, variant = HOLDEM, rng = makeRng(), opts = {}) {
+  const { candidates = 60, runouts = 8, weightOf = () => 1 } = opts;
+  const used = new Set([...hole, ...board]);
+  const deck = makeDeck(variant.shortDeck).filter((c) => !used.has(c));
+  const need = cardsToCome(board.length);
+  const holeCards = variant.holeCards || 2;
+  // villain + a reference hand to price villain against, plus the run-out.
+  const draw = holeCards * 2 + need;
+  if (draw > deck.length) return 0.5;
+
+  let num = 0;
+  let den = 0;
+  let flat = 0;
+  for (let c = 0; c < candidates; c++) {
+    // Villain's cards are fixed for this candidate; everything else is
+    // redrawn each run-out.
+    for (let k = 0; k < holeCards; k++) {
+      const j = k + Math.floor(rng() * (deck.length - k));
+      const tmp = deck[k]; deck[k] = deck[j]; deck[j] = tmp;
+    }
+    const villain = deck.slice(0, holeCards);
+
+    let villainBeatsRandom = 0;
+    let heroBeatsVillain = 0;
+    for (let r = 0; r < runouts; r++) {
+      for (let k = holeCards; k < draw; k++) {
+        const j = k + Math.floor(rng() * (deck.length - k));
+        const tmp = deck[k]; deck[k] = deck[j]; deck[j] = tmp;
+      }
+      const reference = deck.slice(holeCards, holeCards * 2);
+      const full = board.concat(deck.slice(holeCards * 2, holeCards * 2 + need));
+      const v = evaluateHand(villain, full, variant);
+      const h = evaluateHand(hole, full, variant);
+      const ref = evaluateHand(reference, full, variant);
+      villainBeatsRandom += v > ref ? 1 : v === ref ? 0.5 : 0;
+      heroBeatsVillain += h > v ? 1 : h === v ? 0.5 : 0;
+    }
+    const theirs = villainBeatsRandom / runouts;
+    const mine = heroBeatsVillain / runouts;
+    const weight = weightOf(theirs, villain);
+    flat += mine;
+    num += weight * mine;
+    den += weight;
+  }
+  // A profile that would never bet anything here leaves nothing to average;
+  // fall back to the unweighted number rather than inventing one.
+  return den > 0.001 ? num / den : flat / candidates;
+}
+
 export function equityVsField(hole, board, opponents, variant = HOLDEM, rng = makeRng(), trials = 400) {
   const used = new Set([...hole, ...board]);
   const deck = makeDeck(variant.shortDeck).filter((c) => !used.has(c));
