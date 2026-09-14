@@ -147,17 +147,10 @@
   z-index: 4;
 }
 
-.dealer-button {
-  position: absolute;
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  background: linear-gradient(160deg, #ffffff, #cbd5e1);
-  color: #0b0f14;
-  font-size: 0.72rem; font-weight: 900;
-  display: grid; place-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  z-index: 5;
-}
+/* The dealer button's own look lives in base.css beside the two blind
+   markers it is now one of. What stays here is where it sits on the oval,
+   which is a property of the felt rather than of the marker. */
+.table-marker.dealer { width: 26px; height: 26px; padding: 0; border-radius: 50%; font-size: 0.72rem; font-weight: 900; }
 
 /* Seat placement around the oval.
    Side seats anchor to the rail rather than centring on a percentage: a
@@ -190,12 +183,12 @@
 .seat[data-slot="0"] .seat-bet { top: -30px; bottom: auto; left: 50%; transform: translateX(-50%); }
 .seat[data-slot="3"] .seat-bet { bottom: -30px; top: auto; left: 50%; transform: translateX(-50%); }
 
-.seat[data-slot="0"] .dealer-button { top: -8px; right: -6px; }
-.seat[data-slot="1"] .dealer-button { top: -8px; right: -6px; }
-.seat[data-slot="2"] .dealer-button { bottom: -8px; right: -6px; }
-.seat[data-slot="3"] .dealer-button { bottom: -8px; left: -6px; }
-.seat[data-slot="4"] .dealer-button { bottom: -8px; left: -6px; }
-.seat[data-slot="5"] .dealer-button { top: -8px; left: -6px; }
+.seat[data-slot="0"] .table-marker { top: -8px; right: -6px; }
+.seat[data-slot="1"] .table-marker { top: -8px; right: -6px; }
+.seat[data-slot="2"] .table-marker { bottom: -8px; right: -6px; }
+.seat[data-slot="3"] .table-marker { bottom: -8px; left: -6px; }
+.seat[data-slot="4"] .table-marker { bottom: -8px; left: -6px; }
+.seat[data-slot="5"] .table-marker { top: -8px; left: -6px; }
 
 /* ---------------- playing cards ---------------- */
 

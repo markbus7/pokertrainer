@@ -3730,6 +3730,10 @@ export const NL = {
   'Paper and ink. For playing in a lit room without the glare.':
     'Papier en inkt. Om te spelen in een verlichte kamer, zonder de felheid.',
   'Show my leaks': 'Laat mijn lekken zien',
+  'Folded to you in the {seat}.': 'Naar jou gefold in de {seat}.',
+  'The {seat} raises and it is on you in the big blind.':
+    'De {seat} raiset en het is aan jou in de big blind.',
+  'An early raise comes to you in the {seat}.': 'Een vroege raise komt bij jou in de {seat}.',
   'Look': 'Uiterlijk',
   'Pick how the app looks': 'Kies hoe de app eruitziet',
 
@@ -3766,11 +3770,6 @@ export const NL = {
     'Acht ijkpunten. Elk één keer met de chart erbij, dan achter een knop, dan uit je hoofd op de klok.',
   'Start': 'Beginnen',
 
-  'Folded to you in the {seat}. {hand}.': 'Naar jou gefold in de {seat}. {hand}.',
-  'The {seat} raises. You are in the big blind with {hand}.':
-    'De {seat} raiset. Jij zit in de big blind met {hand}.',
-  'An early raise comes to you in the {seat} with {hand}.':
-    'Een vroege raise komt bij jou in de {seat} met {hand}.',
   '{hand} is in the {seat} opening range. Nobody has raised, so it is a raise — never a limp.':
     '{hand} zit in de openrange van de {seat}. Er is nog niet geraiset, dus raisen — nooit limpen.',
   '{hand} is not in the {seat} opening range. Fold it.':
@@ -3831,8 +3830,5 @@ export const NL = {
   'Read it first': 'Lees hem eerst',
 
   // ---- the seat picture and the hand notation -------------------------
-  'a pair': 'een paar',
-  'suited — same suit': 'suited — zelfde kleur',
-  'offsuit — different suits': 'offsuit — verschillende kleuren',
   '(the clock ran out)': '(de klok liep af)',
 };
