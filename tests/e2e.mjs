@@ -1181,8 +1181,16 @@ await step('the range trainer takes the chart away one rung at a time', async ()
   if (seats.length !== 6) throw new Error(`the table shows ${seats.length} named seats`);
   const cards = await page.$$eval('.hand-row .card', (els) => els.length);
   if (cards !== 2) throw new Error(`the hand is shown as ${cards} cards`);
-  const note = ((await page.textContent('.hand-note')) || '').trim();
-  if (!note) throw new Error('the notation is not spelled out');
+  // The cards alone. Printing "32o" beside them does the reading for you, and
+  // reading it is the skill — the chart below is labelled in notation, so
+  // finding your hand on it is the translation exercise, every question.
+  if (await page.$('.hand-row .hand-big, .hand-row .hand-note')) {
+    throw new Error('the hand is spelled out beside its own cards');
+  }
+  // A real table marks all three seats that the order runs from.
+  const markers = await page.$$eval('.ask-table .table-marker',
+    (els) => els.map((e) => e.textContent.trim()).sort().join(','));
+  if (markers !== 'BB,D,SB') throw new Error(`the table is marked [${markers}], not the dealer and both blinds`);
 
   await page.click('.ask-option');
   await page.waitForTimeout(300);

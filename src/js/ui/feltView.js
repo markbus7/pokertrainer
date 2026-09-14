@@ -61,7 +61,9 @@ export function renderFelt(state) {
         el('div.seat-pos', p.position),
       ),
       p.committed > 0 ? el('div.seat-bet', '🪙', fmt.chips(p.committed)) : null,
-      p.seat === button ? el('div.dealer-button', 'D') : null,
+      p.seat === button ? el('div.table-marker.dealer', 'D') : null,
+      p.position === 'SB' ? el('div.table-marker.blind.sb', 'SB') : null,
+      p.position === 'BB' ? el('div.table-marker.blind.bb', 'BB') : null,
     );
   });
 

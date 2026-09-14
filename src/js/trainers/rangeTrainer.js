@@ -50,7 +50,7 @@ function openQuestion(rng, seat, asked) {
     cards: dealFrom(rng, hand),
     seat,
     raiser: null,
-    prompt: t('Folded to you in the {seat}. {hand}.', { seat: t(seatName(seat)), hand }),
+    prompt: t('Folded to you in the {seat}.', { seat: t(seatName(seat)) }),
     options: [OPEN.raise, OPEN.call, OPEN.fold],
     answer: inRange ? OPEN.raise : OPEN.fold,
     // Limping is on the list at every question and is never the answer here.
@@ -74,7 +74,7 @@ function defendQuestion(rng, asked) {
     cards: dealFrom(rng, hand),
     seat: 'BB',
     raiser,
-    prompt: t('The {seat} raises. You are in the big blind with {hand}.', { seat: t(seatName(raiser)), hand }),
+    prompt: t('The {seat} raises and it is on you in the big blind.', { seat: t(seatName(raiser)) }),
     options: [OPEN.raise, OPEN.call, OPEN.fold],
     answer: isThree ? OPEN.raise : isCall ? OPEN.call : OPEN.fold,
     why: isThree
@@ -96,7 +96,7 @@ function threeBetQuestion(rng, asked) {
     cards: dealFrom(rng, hand),
     seat,
     raiser: 'UTG',
-    prompt: t('An early raise comes to you in the {seat} with {hand}.', { seat: t(seatName(seat)), hand }),
+    prompt: t('An early raise comes to you in the {seat}.', { seat: t(seatName(seat)) }),
     options: [OPEN.raise, OPEN.fold],
     answer: isThree ? OPEN.raise : OPEN.fold,
     why: isThree

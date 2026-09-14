@@ -161,7 +161,7 @@ describe('theme: colour lives in themes.css and nowhere else', () => {
     // The exemptions are the felt and a playing card: dark cloth and a white
     // card are the same material in every room, and tokenising them would
     // make daylight paint white text onto a white card.
-    const exempt = /felt|card|pot-chip|seat-plate|seat-action|spot-hole|replay-dot|range-cell|chip|watermark|dealer-button/i;
+    const exempt = /felt|card|pot-chip|seat-plate|seat-action|spot-hole|replay-dot|range-cell|chip|watermark|dealer-button|table-marker/i;
     const offenders = [];
     for (const file of ['base.css', 'table.css']) {
       const text = readFileSync(new URL(`../src/css/${file}`, import.meta.url), 'utf8');

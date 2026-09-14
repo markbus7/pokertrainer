@@ -213,3 +213,32 @@ describe('range trainer: the question is readable without already knowing it', (
     assert(/copyButton\(/.test(src), 'there is no way to copy a question out of the trainer');
   });
 });
+
+describe('range trainer: the picture is a real table', () => {
+  it('marks the dealer and both blinds, not only the button', () => {
+    // A table with one marker on it makes you count seats to work out who
+    // pays what. A real one shows all three, and the felt draws every table
+    // in the app — the question, the lessons and the game itself.
+    const src = readFileSync(new URL('../src/js/ui/feltView.js', import.meta.url), 'utf8');
+    assert(/table-marker\.dealer/.test(src), 'the dealer button is not drawn');
+    assert(/blind\.sb/.test(src) && /blind\.bb/.test(src), 'the blinds are not marked');
+    assert(!/dealer-button/.test(src), 'the old single-marker class is still being rendered');
+  });
+
+  it('shows the cards and lets the chart carry the notation', () => {
+    const src = readFileSync(new URL('../src/js/ui/screenRangeTrainer.js', import.meta.url), 'utf8');
+    assert(/cardRow\(q\.cards/.test(src), 'the hand is not shown as cards');
+    assert(!/hand-big|hand-note/.test(src), 'the notation is printed beside its own cards');
+  });
+
+  it('does not name the hand in the prompt either', () => {
+    const rng = makeRng(41);
+    for (const checkpoint of CHECKPOINTS) {
+      for (let i = 0; i < 30; i++) {
+        const q = rangeQuestion(checkpoint, rng, new Set());
+        assert(!q.prompt.includes(q.hand),
+          `${checkpoint.key}: the prompt says "${q.hand}" with the cards right under it`);
+      }
+    }
+  });
+});

@@ -29,12 +29,6 @@ import { copyButton } from './copySpot.js';
  * The ladder
  * ------------------------------------------------------------------ */
 
-/** The notation, said out loud — the part "88" leaves to your memory. */
-function handNote(key) {
-  if (key.length === 2) return t('a pair');
-  return key[2] === 's' ? t('suited — same suit') : t('offsuit — different suits');
-}
-
 export function renderRangeLadder(ctx) {
   const { profile, go } = ctx;
   const cleared = profile.rangesCleared(CHECKPOINTS.map((c) => c.key));
@@ -222,15 +216,12 @@ export function renderRangeRun(ctx) {
         : null,
 
       el('div.range-ask', q.prompt),
-      // The notation and the cards together. "88" is correct and unreadable
-      // until you already know it — and it does not say whether the hand is
-      // suited, which for every non-pair is the whole question.
+      // Just the cards. Printing "32o" beside them, with a line explaining
+      // what the o means, does the reading for you — and reading it is the
+      // skill. The chart below is labelled in notation, so finding your hand
+      // on it is the translation exercise, every question, for free.
       el('div.hand-row',
         q.cards ? cardRow(q.cards, { size: 'lg', fourColour: !!profile.settings.fourColour }) : null,
-        el('div',
-          el('div.hand-big', q.hand),
-          el('div.hand-note', handNote(q.hand)),
-        ),
       ),
 
       el('div.ask-options', q.options.map((option) => {

@@ -2041,3 +2041,37 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
 @media (max-width: 720px) {
   .felt.seat-felt.compact { min-height: 150px; }
 }
+
+/* ---- table markers: dealer, and the two seats that pay to be there --- */
+
+.table-marker {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  height: 22px;
+  min-width: 22px;
+  padding: 0 5px;
+  border-radius: 11px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  z-index: 5;
+}
+.table-marker.dealer {
+  background: linear-gradient(160deg, #ffffff, #cbd5e1);
+  color: #0b0f14;
+  border: 1px solid #94a3b8;
+}
+/* The blinds are chips, not a button, so they read as chips: darker discs
+   with the room's accent on them rather than ivory. */
+.table-marker.blind {
+  background: var(--scrim);
+  color: var(--on-felt-accent);
+  border: 1px solid var(--on-felt-accent);
+  backdrop-filter: blur(4px);
+}
+
+/* The seat picture above a question is a diagram, not a table to play at:
+   on a wide screen it should not take half the page to say where you sit. */
+.ask-table { max-width: 560px; }
