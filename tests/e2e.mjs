@@ -417,13 +417,13 @@ await step('range charts render', async () => {
 });
 if (SHOT) await page.screenshot({ path: `${SHOT}/07-charts.png` });
 
-await step('gauntlet, bankroll and progress screens render', async () => {
-  for (const [route, sel] of [['gauntlet', '.btn.primary.lg'], ['grind', '.panel'], ['stats', '.achievement']]) {
+await step('gauntlet and progress screens render', async () => {
+  for (const [route, sel] of [['gauntlet', '.btn.primary.lg'], ['stats', '.achievement']]) {
     await page.goto(`${BASE}/#${route}`, { waitUntil: 'networkidle' });
     await page.waitForSelector(sel, { timeout: 5000 });
   }
 });
-if (SHOT) await page.screenshot({ path: `${SHOT}/08-grind.png` });
+if (SHOT) await page.screenshot({ path: `${SHOT}/08-gauntlet.png` });
 
 await step('progress persists across a reload', async () => {
   await page.goto(`${BASE}/#train`, { waitUntil: 'networkidle' });
@@ -1700,7 +1700,7 @@ await step('the home screen names one module and the grid marks the same one', a
   if (marked.length !== 1) throw new Error(`expected exactly one marked tile, got ${marked.length}`);
 
   const banner = await page.$eval('.panel', (p) => p.textContent);
-  const named = await page.$eval('.panel .btn.sm.ghost', (b) => b.textContent);
+  const named = await page.$eval('.panel .btn.primary.lg', (b) => b.textContent);
   if (!named.includes(marked[0])) {
     throw new Error(`the banner points at "${named}" but the grid marks "${marked[0]}"`);
   }
@@ -1962,7 +1962,7 @@ await step('no screen is half in English when the app is in Dutch', async () => 
   // what this actually measures is the fixed chrome of every screen.
   const routes = [
     '#home', '#lab-run', '#review', '#charts?chart=BTN', '#glossary', '#stats',
-    '#levels', '#grind', '#gauntlet', '#drill?module=outs', '#walkthrough?module=pot-odds',
+    '#levels', '#gauntlet', '#drill?module=outs', '#walkthrough?module=pot-odds',
   ];
 
   // domcontentloaded rather than networkidle: the app fires an update check

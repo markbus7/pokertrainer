@@ -8,7 +8,6 @@ import { dueConcepts, nextReviewLabel, hasStudied } from '../state/spacing.js';
 import { masteryTier, nextTierGoal, tierByKey, scoreLine, EVIDENCE_BAR } from '../state/mastery.js';
 import { RANKS, requirementRows } from '../state/profile.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
-import { stakeFor } from '../state/stats.js';
 import { handSummary } from '../state/handHistory.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
 
@@ -36,7 +35,6 @@ export function renderHome(ctx) {
   const next = profile.nextRank;
   const plan = nextUp(profile);
   const recommended = plan.module;
-  const stake = stakeFor(profile.data.stakeKey);
 
   const totals = Object.values(profile.data.drills).reduce(
     (acc, d) => ({ attempts: acc.attempts + d.attempts, correct: acc.correct + d.correct }),
@@ -77,33 +75,34 @@ export function renderHome(ctx) {
       ),
     ),
 
-    /* ---- next step: the table, with the lesson behind it ---- */
-    // Playing is the front door now. Every decision at a table is graded
-    // against the skill it exercises and counts toward mastery the same as a
-    // drill answer, so sitting down is not a break from training — it is the
-    // training, and the lesson is what you open when the coach names
-    // something you do not know yet.
+    /* ---- next step: the one module most worth studying now ---- */
+    // Career (the home tab) is the front door: a room, a bankroll, a seat
+    // that costs real chips. This panel used to also claim that job with its
+    // own "Play a hand" button — the exact same bare go('play') the Play tab
+    // already offers — which left two buttons on two screens doing the same
+    // thing. Its actual, distinct job was always to point at the one module
+    // worth studying next; the copy already said so, it was just sitting
+    // behind the secondary button.
     el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
-      el('div.panel-title', el('h3', icon('play', { size: 18 }), t('Sit down and play'))),
+      el('div.panel-title', el('h3', icon(recommended.icon, { size: 18 }), t('Up next'))),
       el('div.spread',
         el('div.row',
           el('div', { style: { fontSize: 'var(--t-xl)' } }, '🃏'),
           el('div',
             el('div', { style: { fontWeight: '650' } },
-              t('Six seats, and a coach that names the skill before you act')),
-            el('div.faint', t('Every decision counts toward a skill. {weakest} is the one to work on.',
-              { weakest: t(recommended.name) })),
+              t('Every decision counts toward a skill. {weakest} is the one to work on.',
+                { weakest: t(recommended.name) })),
             // Naming a module without saying why leaves the reader to guess,
             // and the module grid below shows two things reading "Learning".
             el('div.faint', whyThisOne(plan)),
           ),
         ),
-        el('button.btn.primary.lg', { onclick: () => go('play') }, 'Play a hand'),
+        el('button.btn.primary.lg', { onclick: () => go('learn', { module: recommended.id }) },
+          t('Study {module}', { module: t(recommended.name) })),
       ),
       el('div.row', { style: { marginTop: '12px', flexWrap: 'wrap' } },
-        el('span.faint', t('Rather read first?')),
-        el('button.btn.sm.ghost', { onclick: () => go('learn', { module: recommended.id }) },
-          t('The {module} lesson', { module: t(recommended.name) })),
+        el('span.faint', t('Rather just play?')),
+        el('button.btn.sm.ghost', { onclick: () => go('play') }, t('Play a hand')),
         el('span.faint', describeProgress(profile, recommended.id)),
       ),
     ),
@@ -150,9 +149,6 @@ export function renderHome(ctx) {
         el('nav.doors',
           doorway('lab', 'The Lab', 'Type the equity, size the bet.', () => go('lab')),
           doorway('review', 'Hand review', 'Replay what you misplayed.', () => go('review')),
-          doorway('bankroll', 'Bankroll Challenge',
-            t('{stake} · {money}', { stake: stake.name, money: fmt.money(profile.data.bankroll) }),
-            () => go('grind')),
         ),
       ),
       /* ---- the work itself ---- */

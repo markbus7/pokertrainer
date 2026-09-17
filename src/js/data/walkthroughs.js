@@ -1334,7 +1334,7 @@ export const WALKTHROUGHS = {
           'The rule for no-limit cash games is to keep **30 to 50 buy-ins** for the stake you play. At NL10, where a buy-in is $10, that is $300 to $500.',
           'The number is not superstition — it comes directly from the variance above. Since normal downswings run to 20 buy-ins or more, a roll of 10 buy-ins means a completely ordinary bad run ends your poker.',
           'This is the trap that catches good players: **the edge is real, but it needs time to show up**, and going broke removes your access to that time.',
-          'Move down when your roll drops below the threshold. It is not a demotion, it is what keeps you in the game — and the trainer’s Bankroll Challenge enforces exactly this.',
+          'Move down when your roll drops below the threshold. It is not a demotion, it is what keeps you in the game — and Career, this trainer’s own stakes ladder, enforces exactly this.',
         ],
         check: {
           question: 'You have $200 and want to play NL25 ($25 buy-ins). Should you?',

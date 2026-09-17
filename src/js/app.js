@@ -18,7 +18,6 @@ import { renderLearn, renderDrill, renderGauntletIntro } from './ui/screenDrill.
 import { renderWalkthrough } from './ui/screenWalkthrough.js';
 import { renderLab, renderLabIntro } from './ui/screenLab.js';
 import { renderTable } from './ui/screenTable.js';
-import { renderGrind } from './ui/screenGrind.js';
 import { renderReview } from './ui/screenReview.js';
 import { renderStats, renderCharts, renderGlossary } from './ui/screenStats.js';
 import { renderLevels } from './ui/screenLevels.js';
@@ -35,7 +34,6 @@ const ROUTES = {
   lab: { render: renderLabIntro, tab: 'lab', title: 'The Lab' },
   'lab-run': { render: renderLab, tab: 'lab', title: 'The Lab' },
   play: { render: renderTable, tab: 'play', title: 'Table' },
-  grind: { render: renderGrind, tab: 'home', title: 'Bankroll' },
   review: { render: renderReview, tab: 'review', title: 'Hand review' },
   charts: { render: renderCharts, tab: 'charts', title: 'Charts' },
   glossary: { render: renderGlossary, tab: 'glossary', title: 'Glossary' },

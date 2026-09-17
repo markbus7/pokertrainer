@@ -92,7 +92,7 @@ describe('lesson tables: every lesson actually asks you something', () => {
       assert(id in LESSON_TABLES, `${id} has no entry — every module must be decided about`);
     }
     equal(lessonTable('icm'), null, 'ICM is a tournament idea and this is a cash table');
-    equal(lessonTable('bankroll'), null, 'the Bankroll Challenge already is that lesson');
+    equal(lessonTable('bankroll'), null, 'Career already is that lesson');
   });
 });
 
@@ -126,6 +126,6 @@ describe('lesson tables: a lesson without a table does not pretend', () => {
       assert(cfg.seats && cfg.lastStreet, `${id}: a playable lesson needs a table`);
     }
     assert(!playableModules().includes('icm'), 'ICM has no cash table to be played on');
-    assert(!playableModules().includes('bankroll'), 'Bankroll is the Bankroll Challenge');
+    assert(!playableModules().includes('bankroll'), 'Bankroll is played at Career, not at a lesson table');
   });
 });

@@ -1124,8 +1124,8 @@ export const NL = {
     'Het getal is geen bijgeloof — het komt rechtstreeks uit de variantie hierboven. Omdat normale downswings tot 20 buy-ins of meer oplopen, betekent een roll van 10 buy-ins dat een volstrekt gewone slechte reeks een eind maakt aan je poker.',
   'This is the trap that catches good players: **the edge is real, but it needs time to show up**, and going broke removes your access to that time.':
     'Dit is de val waar goede spelers in lopen: **het voordeel is echt, maar het heeft tijd nodig om zichtbaar te worden**, en failliet gaan neemt je toegang tot die tijd weg.',
-  'Move down when your roll drops below the threshold. It is not a demotion, it is what keeps you in the game — and the trainer’s Bankroll Challenge enforces exactly this.':
-    'Zak een niveau als je roll onder de drempel komt. Het is geen degradatie, het is wat je in het spel houdt — en de Bankroll Challenge in deze trainer dwingt precies dit af.',
+  'Move down when your roll drops below the threshold. It is not a demotion, it is what keeps you in the game — and Career, this trainer’s own stakes ladder, enforces exactly this.':
+    'Zak een niveau als je roll onder de drempel komt. Het is geen degradatie, het is wat je in het spel houdt — en Career, de eigen stakes-ladder van deze trainer, dwingt precies dit af.',
   'You have $200 and want to play NL25 ($25 buy-ins). Should you?':
     'Je hebt $200 en wilt NL25 spelen (buy-ins van $25). Zou je dat doen?',
   'No — that is only 8 buy-ins, so a normal downswing busts you':
@@ -1658,7 +1658,6 @@ export const NL = {
   'Six seats, real opponents, a coach watching every decision.':
     'Zes stoelen, echte tegenstanders, een coach die elke beslissing meekijkt.',
   'Sit down': 'Ga zitten',
-  'Bankroll Challenge': 'Bankroll Challenge',
   'Grind': 'Grind',
   'Training modules': 'Trainingsmodules',
   'Hands played': 'Handen gespeeld',
@@ -3116,9 +3115,8 @@ export const NL = {
   'Training': 'Training',
   'Replay what you misplayed.': 'Speel terug wat je verkeerd speelde.',
   'Type the equity, size the bet.': 'Typ de equity, bepaal de bet.',
-  '{stake} · {money}': '{stake} · {money}',
   'Nothing due for review': 'Niets te herhalen',
-  'Sit down and play': 'Ga zitten en speel',
+  'Up next': 'Als volgende',
   'The Gauntlet': 'De Gauntlet',
   'Learning report': 'Leerrapport',
   'Calibration': 'Kalibratie',
@@ -3416,14 +3414,11 @@ export const NL = {
     '{equity} op een {tags} board. Ze hebben te veel handen die doorgaan — hier betten doneert chips. Checken kost niets en houdt de pot klein.',
   'What this hand asked you': 'Wat deze hand van je vroeg',
   'Teach me {skill}': 'Leer me {skill}',
-  '▶ Sit down and play': '▶ Ga zitten en speel',
-  'Six seats, and a coach that names the skill before you act':
-    'Zes plekken, en een coach die de vaardigheid benoemt voordat je handelt',
   'Every decision counts toward a skill. {weakest} is the one to work on.':
     'Elke beslissing telt mee voor een vaardigheid. {weakest} is degene om aan te werken.',
   'Play a hand': 'Speel een hand',
-  'Rather read first?': 'Liever eerst lezen?',
-  'The {module} lesson': 'De les {module}',
+  'Study {module}': 'Bestudeer {module}',
+  'Rather just play?': 'Liever meteen spelen?',
   'Hand review': 'Handen terugkijken',
   'The hands you misplayed, replayed one action at a time so you can see where they turned.':
     'De handen die je verkeerd speelde, actie voor actie teruggespeeld zodat je ziet waar ze kantelden.',
@@ -3707,10 +3702,9 @@ export const NL = {
   'No table for that': 'Daar is geen tafel voor',
   'ICM is a tournament idea and this is a cash table, so there is no honest way to play it here. The lesson and its drill still teach it.':
     'ICM hoort bij toernooien en dit is een cashtafel, dus er is geen eerlijke manier om het hier te spelen. De les en de drill leren het wel.',
-  'Which table to sit at is the whole subject, so the Bankroll Challenge is this lesson — climbing the stakes with a real roll is the exercise.':
-    'Aan welke tafel je gaat zitten is het hele onderwerp, dus de Bankroll Challenge ís deze les — met een echte roll de limieten opklimmen is de oefening.',
+  'Which table to sit at is the whole subject, so Career is this lesson — climbing the stakes with a real roll is the exercise.':
+    'Aan welke tafel je gaat zitten is het hele onderwerp, dus Career ís deze les — met een echte roll de limieten opklimmen is de oefening.',
   'That is not a lesson this game can deal.': 'Dat is geen les die dit spel kan delen.',
-  'Open the Bankroll Challenge': 'Open de Bankroll Challenge',
   'Back': 'Terug',
 
   // ---- the room picker ----------------------------------------------
