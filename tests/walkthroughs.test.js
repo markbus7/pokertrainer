@@ -615,3 +615,74 @@ describe('walkthroughs: hands-on exercises', () => {
     }
   });
 });
+
+describe('preflop lesson: the step about calling agrees with the charts', () => {
+  const step = WALKTHROUGHS.preflop.steps.find((s) => s.title === 'The one seat where calling is right');
+
+  it('exists, and sits right after the rule it is the exception to', () => {
+    // The reader asked "wanneer callen dan ipv raisen?" after reading a chart
+    // that offers both. The lesson said raise-or-fold and never said when a
+    // call is right, so the question had nowhere to be answered.
+    assert(step, 'the preflop lesson does not explain when calling is correct');
+    const titles = WALKTHROUGHS.preflop.steps.map((s) => s.title);
+    const rule = titles.indexOf('Raise or fold — almost never limp');
+    const exception = titles.indexOf(step.title);
+    assert(rule >= 0 && exception === rule + 1,
+      `the exception is step ${exception + 1} and the rule it bends is step ${rule + 1}`);
+  });
+
+  it('quotes the price the engine actually charges', () => {
+    // Facing a 2.5bb open: from the big blind you owe 1.5 into a pot of 4;
+    // from anywhere else you owe the full 2.5. Both percentages in the table
+    // are derived here rather than trusted.
+    const fromBlind = Math.round(requiredEquity(1.5, 4) * 100);
+    const fromElsewhere = Math.round(requiredEquity(2.5, 4) * 100);
+    const printed = step.visual.rows.map((r) => r[r.length - 1]);
+    equal(printed[0], `${fromBlind}%`, 'the big blind price in the lesson');
+    equal(printed[1], `${fromElsewhere}%`, 'the price from any other seat');
+    assert(fromBlind < fromElsewhere, 'the blind is supposed to be a discount');
+  });
+
+  it('counts the defending range the way the chart does', () => {
+    const defend = CHARTS.bbDefend.CO;
+    const three = CHARTS.threeBet.BB.all;
+    const raises = [...defend].filter((h) => three.has(h)).length;
+    const calls = defend.size - raises;
+    const caption = step.visual.caption;
+    for (const [what, n] of [['hands defended', defend.size], ['three-bets', raises], ['calls', calls]]) {
+      assert(caption.includes(String(n)),
+        `the caption does not say ${n} ${what}: "${caption}"`);
+    }
+  });
+
+  it('marks the example hand the way the chart marks it', () => {
+    // The check asks about a pair of eights in the big blind against a cutoff
+    // open and answers "call". If the chart ever three-bets or folds it, the
+    // lesson teaches one thing and the drill marks another.
+    const hand = '88';
+    const isThreeBet = CHARTS.threeBet.BB.all.has(hand);
+    const isCall = !isThreeBet && CHARTS.bbDefend.CO.has(hand);
+    assert(isCall, `the chart does not call ${hand} against a cutoff open`);
+    const answer = step.check.options.find((o) => o.key === step.check.answer);
+    equal(answer.label, 'Call', 'the check answers something other than a call');
+  });
+
+  it('names the value range the chart actually three-bets with', () => {
+    // "tens and better, A-J suited and better, A-Q offsuit and better, K-Q
+    // suited" is THREE_BET.BB.value said in words. If one is edited without
+    // the other, the lesson describes a range nobody plays.
+    const body = step.body.join(' ');
+    for (const [phrase, hand] of [
+      ['tens and better', 'TT'], ['A-J suited and better', 'AJs'],
+      ['A-Q offsuit and better', 'AQo'], ['K-Q suited', 'KQs'],
+    ]) {
+      assert(body.includes(phrase), `the lesson does not name ${phrase}`);
+      assert(CHARTS.threeBet.BB.value.has(hand),
+        `the lesson says ${phrase} is a value three-bet and the chart disagrees`);
+    }
+    // ...and the hand one rung below the cut-off is not in it, or "tens and
+    // better" would be describing a boundary that is not there.
+    assert(!CHARTS.threeBet.BB.value.has('99'),
+      'nines are a value three-bet, so "tens and better" is the wrong cut-off');
+  });
+});
