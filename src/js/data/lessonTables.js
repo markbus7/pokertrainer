@@ -109,7 +109,7 @@ export const LESSON_TABLES = {
     simplified: 'Three players to the river, so there is a real opponent to read rather than a described one.',
   },
   // ICM is a tournament idea and this is a cash table; Bankroll is about
-  // which table to sit at, which is what the Bankroll Challenge already is.
+  // which table to sit at, which is what Career already is.
   // Saying so is better than inventing a table that teaches neither.
   icm: null,
   bankroll: null,

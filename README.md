@@ -84,12 +84,13 @@ Six profiles, each statistically distinct and each beatable a different way:
 Learning to *name* the player type in front of you is most of what separates a
 winning player from a losing one, so the trainer makes that explicit.
 
-### 💰 The Bankroll Challenge
+### 💰 Career
 
-Climb the online stakes ladder from NL2 to NL500 on a simulated bankroll. Buy
-in, play, cash out. Bust and you move down. Bankroll rules are enforced the way
-a serious player enforces them — 30 to 50 buy-ins per stake — and the game will
-tell you when you are taking a shot you cannot afford.
+Climb the online stakes ladder from NL2 to NL500 on a simulated bankroll. Each
+stake is a room with a regular who sits there every night. Buy in, play, cash
+out. Bust and you move down. Bankroll rules are enforced the way a serious
+player enforces them — 30 to 50 buy-ins per stake — and the game will tell you
+when you are taking a shot you cannot afford.
 
 ### 📋 Interactive range charts
 
@@ -157,8 +158,8 @@ node tools/generate-strength.js 60000
 
 ## A note on playing for real money
 
-This trainer teaches the game with simulated money, and the Bankroll Challenge
-models the economics honestly — including the parts that are not encouraging:
+This trainer teaches the game with simulated money, and Career models the
+economics honestly — including the parts that are not encouraging:
 
 - A realistic small-stakes win rate is **3–8bb/100**. At NL10 that is a few
   dollars an hour. Anyone promising more is selling something.

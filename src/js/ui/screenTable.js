@@ -119,7 +119,7 @@ export function renderTable(ctx, params = {}) {
       el('h1', 'Not enough bankroll'),
       el('p.muted', t('A {stake} buy-in costs {cost} and you have {have}.',
         { stake: stake.name, cost: fmt.money(stake.buyIn), have: fmt.money(profile.data.bankroll) })),
-      el('button.btn.primary', { onclick: () => go('grind') }, 'Choose a lower stake'),
+      el('button.btn.primary', { onclick: () => go('home') }, 'Choose a lower stake'),
     ));
   }
 
@@ -139,16 +139,13 @@ export function renderTable(ctx, params = {}) {
         ? t('ICM is a tournament idea and this is a cash table, so there is no honest way to '
           + 'play it here. The lesson and its drill still teach it.')
         : meta && params.lesson === 'bankroll'
-          ? t('Which table to sit at is the whole subject, so the Bankroll Challenge is this '
+          ? t('Which table to sit at is the whole subject, so Career is this '
             + 'lesson — climbing the stakes with a real roll is the exercise.')
           : t('That is not a lesson this game can deal.')),
       el('div.row',
         meta
           ? el('button.btn.primary', { onclick: () => go('walkthrough', { module: params.lesson }) },
             t('Read the lesson'))
-          : null,
-        params.lesson === 'bankroll'
-          ? el('button.btn.ghost', { onclick: () => go('grind') }, t('Open the Bankroll Challenge'))
           : null,
         el('button.btn.ghost', { onclick: () => go('home') }, t('Back')),
       ),
