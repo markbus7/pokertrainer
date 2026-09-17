@@ -3831,4 +3831,43 @@ export const NL = {
 
   // ---- the seat picture and the hand notation -------------------------
   '(the clock ran out)': '(de klok liep af)',
+
+  // ---- preflop lesson: the one seat where calling is right ------------
+  'The one seat where calling is right': 'De enige stoel waar callen wél klopt',
+  'The last step said raise or fold, and meant it. There is exactly one seat where that rule bends, and it is worth knowing precisely, because it is the seat you sit in more often than any other.':
+    'De vorige stap zei raise of fold, en meende dat. Er is precies één stoel waar die regel buigt, en die is het waard om precies te kennen — want het is de stoel waar je vaker in zit dan in welke andere ook.',
+  'In the **big blind** you have already paid. When somebody opens to 2.5 big blinds you are not paying 2.5 to see a flop — you are paying the 1.5 you have not put in yet, to win a pot of 4.':
+    'In de **big blind** heb je al betaald. Als iemand opent naar 2,5 big blinds betaal je geen 2,5 om de flop te zien — je betaalt de 1,5 die je nog niet hebt ingelegd, om een pot van 4 te winnen.',
+  'That discount is the entire reason a calling range exists at all. On top of it you **close the action**: nobody can raise behind you, so there is no risk of calling and then facing a squeeze.':
+    'Die korting is de hele reden dat er überhaupt een callrange bestaat. Daar komt bij dat jij **de actie sluit**: niemand kan achter je nog verhogen, dus je loopt niet het risico te callen en daarna alsnog een squeeze voor je kiezen te krijgen.',
+  'So which hands call rather than three-bet? Three-bet the two ends of your range. **For value** with hands that want a bigger pot — tens and better, A-J suited and better, A-Q offsuit and better, K-Q suited. **As a bluff** with hands that need a fold but hold a card he wants: small suited aces, suited kings, the better suited connectors. Your ace blocks half the hands that would beat you.':
+    'Welke handen callen dan in plaats van 3-betten? 3-bet de twee uiteinden van je range. **Voor value** met handen die een grotere pot willen — tens and better, A-J suited and better, A-Q offsuit and better, K-Q suited. **Als bluf** met handen die een fold nodig hebben maar een kaart vasthouden die hij wil: kleine suited azen, suited heren, de betere suited connectors. Jouw aas blokkeert de helft van de handen die je zouden verslaan.',
+  'Call with the middle. Pairs below tens, medium suited aces, suited broadways and connectors — hands that want to see a cheap flop but cannot survive a four-bet.':
+    'Call met het midden. Paren onder de tienen, middelmatige suited azen, suited broadways en connectors — handen die een goedkope flop willen zien maar een 4-bet niet overleven.',
+  'The mistake is three-betting that middle. It folds out the worse half of his range and keeps the better half, and leaves you in a big pot **out of position** with a hand that wanted a cheap look instead.':
+    'De fout is juist dát midden 3-betten. Je foldt de slechtere helft van zijn range weg en houdt de betere helft over, en je zit in een grote pot **uit positie** met een hand die eigenlijk een goedkope flop wilde.',
+  'Facing a 2.5bb open': 'Tegen een open van 2,5bb',
+  'You put in': 'Jij legt bij',
+  'To win': 'Om te winnen',
+  'You need': 'Je hebt nodig',
+  'From the big blind': 'Vanuit de big blind',
+  'From any other seat': 'Vanuit elke andere stoel',
+  'Eleven points of discount, and it is the whole story. Against a cutoff open the big blind defends 90 hands: 23 of them three-bet and 67 just call. From every other seat there is no calling range at all in these charts — it is three-bet or fold.':
+    'Elf punten korting, en dat is het hele verhaal. Tegen een open van de cutoff verdedigt de big blind 90 handen: 23 daarvan 3-betten en 67 callen gewoon. Vanuit elke andere stoel bestaat er in deze charts helemaal geen callrange — het is 3-betten of folden.',
+  'The cutoff opens to 2.5 big blinds and folds around to you in the big blind. You hold a pair of eights. What is your play?':
+    'De cutoff opent naar 2,5 big blinds en het wordt naar jou gefold in de big blind. Je hebt een paar achten. Wat doe je?',
+  'Right. Eights flop well enough to be worth 1.5 more at those odds, but they are not a hand that wants a four-bet decision. Take the cheap flop and play it in a small pot.':
+    'Klopt. Achten floppen goed genoeg om er tegen die odds 1,5 bij te leggen, maar het is geen hand die een 4-bet-beslissing wil. Neem de goedkope flop en speel hem in een kleine pot.',
+  'Three-bet — a pair is strong enough to raise': '3-betten — een paar is sterk genoeg om te verhogen',
+  'This is the common mistake, and it costs in both directions. Everything worse than eights folds, everything better calls or four-bets, and you play a big pot out of position against the half of his range that beats you. Tens are the cut-off for value here.':
+    'Dit is de klassieke fout, en hij kost aan twee kanten. Alles wat slechter is dan achten foldt, alles wat beter is callt of 4-bet, en jij speelt een grote pot uit positie tegen de helft van zijn range die je verslaat. Tienen zijn hier de grens voor value.',
+  'Fold — it is only a middling pair out of position': 'Folden — het is maar een middelmatig paar uit positie',
+  'Far too tight. You are getting 27% odds because of the blind you already posted, and a pair beats his unpaired hands often enough to clear that easily.':
+    'Veel te strak. Je krijgt 27% odds door de blind die je al hebt gepost, en een paar verslaat zijn ongepaarde handen vaak genoeg om dat ruim te halen.',
+  // Dutch writes a comma as the decimal separator, so these are a
+  // translation rather than a passthrough — and the body of the same step
+  // already says "2,5 big blinds".
+  '1.5 bb': '1,5 bb',
+  '2.5 bb': '2,5 bb',
+  '4 bb': '4 bb',
 };
