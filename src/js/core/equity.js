@@ -253,34 +253,70 @@ export function equityVsBettors(hole, board, variant = HOLDEM, rng = makeRng(), 
   return den > 0.001 ? num / den : flat / candidates;
 }
 
-export function equityVsField(hole, board, opponents, variant = HOLDEM, rng = makeRng(), trials = 400) {
+/**
+ * Equity against `opponents` unknown hands, each dealt uniformly at random
+ * by default — what a genuinely first-to-act, no-information equity number
+ * looks like, which is what the drills that quote it are actually asking.
+ *
+ * `qualifies(holeCards)`, when given, narrows who a random deal is allowed to
+ * hand out: a candidate that fails it is set aside and the next one tried
+ * instead, capped so a narrow filter on a thin deck still terminates — past
+ * the cap the field fills in unfiltered rather than silently understating it.
+ * This is for the postflop bot deciding whether to bet into opponents who
+ * have not bet — checked to it, or yet to act behind it. Dealing them
+ * literally random cards there is the same bug equityVsBettors exists to fix
+ * on the calling side, just uncaught on the betting side: nobody who folded
+ * preflop is still in the pot, so a random 2-card hand is on average weaker
+ * than everyone actually left in the hand. Overstating their weakness
+ * overstates how often betting is good, which is why bots kept betting the
+ * turn and river more often than the flop that started the line rather than
+ * less: a made hand needs less and less luck to clear a fixed equity bar as
+ * the same artificially weak field is asked to fold to it again on every
+ * remaining street.
+ */
+export function equityVsField(hole, board, opponents, variant = HOLDEM, rng = makeRng(), trials = 400, qualifies = null) {
   const used = new Set([...hole, ...board]);
   const deck = makeDeck(variant.shortDeck).filter((c) => !used.has(c));
   const need = cardsToCome(board.length);
   const holeCards = variant.holeCards || 2;
-  const draw = opponents * holeCards + need;
   if (opponents < 1) return 1;
-  if (draw > deck.length) return 0.5;
+  if (opponents * holeCards + need > deck.length) return 0.5;
 
+  const scanBudget = qualifies ? opponents * 12 + 6 : opponents;
   let total = 0;
+  let trialsRun = 0;
+
   for (let t = 0; t < trials; t++) {
-    for (let k = 0; k < draw; k++) {
-      const j = k + Math.floor(rng() * (deck.length - k));
-      const tmp = deck[k]; deck[k] = deck[j]; deck[j] = tmp;
+    shuffle(rng, deck);
+    const villains = [];
+    let idx = 0;
+    let scanned = 0;
+    while (villains.length < opponents && scanned < scanBudget && idx + holeCards <= deck.length) {
+      const candidate = deck.slice(idx, idx + holeCards);
+      idx += holeCards;
+      scanned++;
+      if (!qualifies || qualifies(candidate)) villains.push(candidate);
     }
-    const offset = opponents * holeCards;
-    const full = board.concat(deck.slice(offset, offset + need));
+    // Ran dry within budget: fill the rest unfiltered so the field is never
+    // thinner than asked for, just less range-accurate for the overflow.
+    while (villains.length < opponents && idx + holeCards <= deck.length) {
+      villains.push(deck.slice(idx, idx + holeCards));
+      idx += holeCards;
+    }
+    if (villains.length < opponents || idx + need > deck.length) continue;
+
+    const full = board.concat(deck.slice(idx, idx + need));
     const heroScore = evaluateHand(hole, full, variant);
     let best = heroScore;
     let ties = 1;
-    for (let o = 0; o < opponents; o++) {
-      const villain = deck.slice(o * holeCards, (o + 1) * holeCards);
+    for (const villain of villains) {
       const score = evaluateHand(villain, full, variant);
       if (score > best) { best = score; ties = 1; } else if (score === best) ties++;
     }
     if (heroScore === best) total += 1 / ties;
+    trialsRun++;
   }
-  return total / trials;
+  return trialsRun ? total / trialsRun : 0.5;
 }
 
 /**
