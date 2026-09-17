@@ -2075,3 +2075,18 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
 /* The seat picture above a question is a diagram, not a table to play at:
    on a wide screen it should not take half the page to say where you sit. */
 .ask-table { max-width: 560px; }
+
+/* ---- "I don't know": an exit, not a fifth option --------------------- */
+
+/* Deliberately understated relative to the real options — a ghost button
+   below them, not another tile in the row. Reaching for it should be a
+   deliberate act of honesty, not the path of least resistance. */
+.idk-btn { margin-top: var(--s-2); color: var(--text-faint); border-color: var(--border); }
+.idk-btn:hover:not(:disabled) { color: var(--text-dim); border-color: var(--border-bright); }
+
+/* A third feedback tone: not red, not green. Being honest about not
+   knowing is not a failure in the way a wrong guess is, even though it
+   scores the same — the colour should not punish the one thing this
+   feature exists to make safe to do. */
+.feedback.skip { border-left-color: var(--border-bright); }
+.feedback.skip .verdict { color: var(--text-dim); }

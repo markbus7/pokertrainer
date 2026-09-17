@@ -24,6 +24,7 @@ import { seatFelt } from './spotFelt.js';
 import { seatRing } from '../core/seatMap.js';
 import { cardRow } from './cardView.js';
 import { copyButton } from './copySpot.js';
+import { IDK, dontKnowButton } from './dontKnow.js';
 
 /* ------------------------------------------------------------------ *
  * The ladder
@@ -231,11 +232,14 @@ export function renderRangeRun(ctx) {
           onclick: () => answer(option),
         }, t(option));
       })),
+      !a ? dontKnowButton(() => answer(IDK)) : null,
 
       a
         ? el('div',
-          el('div.verdict-box' + (a.correct ? '.good' : '.bad'),
-            el('strong', a.correct ? (a.credited ? t('Right') : t('Right — but you looked')) : t('Not that one')),
+          el('div.verdict-box' + (a.choice === IDK ? '.skip' : a.correct ? '.good' : '.bad'),
+            el('strong', a.choice === IDK
+              ? t("You said you didn't know — here it is.")
+              : a.correct ? (a.credited ? t('Right') : t('Right — but you looked')) : t('Not that one')),
             el('div', q.why),
             a.choice === null ? el('div.faint', t('The clock ran out. At the table it does too.')) : null),
           state.showChart ? rangeGridFor({ seat: q.seat, raiser: q.raiser, hand: q.hand }) : null,
@@ -249,7 +253,8 @@ export function renderRangeRun(ctx) {
             scenario: { hole: q.cards, position: q.seat, heroSeat: q.seat, raiser: q.raiser },
             question: q.prompt,
             options: q.options.map((o) => ({ key: o, label: o })),
-            given: a.choice === null ? t('(the clock ran out)') : a.choice,
+            given: a.choice === null ? t('(the clock ran out)')
+              : a.choice === IDK ? t("I don't know") : a.choice,
             correct: q.answer,
             explanation: q.why,
           })),

@@ -15,6 +15,7 @@ import { requirementRow } from './screenLevels.js';
 import { review } from '../state/spacing.js';
 import { WALKTHROUGHS } from '../data/walkthroughs.js';
 import { boundarySheet, priceSheet, rangeGridFor } from './reference.js';
+import { IDK, dontKnowButton } from './dontKnow.js';
 import { CHARTS } from '../data/ranges.js';
 import { handKey } from '../core/cards.js';
 
@@ -452,12 +453,17 @@ export function renderDrill(ctx, params) {
       scenarioView(q.scenario, ctx.profile.settings),
       el('div.question', { style: { marginTop: q.scenario ? '16px' : '0' } }, richText(q.question)),
       entryBox || options,
-      chosen === null ? null : el(`div.feedback.${chosen === q.answer ? 'correct' : 'wrong'}`,
-        el('div.verdict', chosen === q.answer
-          ? t('✓ Correct')
-          : state.typed != null
-            ? t('✗ Not quite — you said {said}', { said: withUnit(state.typed, q.entry) })
-            : t('✗ Not quite')),
+      chosen === null ? dontKnowButton(() => answer(IDK)) : null,
+      chosen === null ? null : el(`div.feedback.${
+        chosen === IDK ? 'skip' : chosen === q.answer ? 'correct' : 'wrong'
+      }`,
+        el('div.verdict', chosen === IDK
+          ? t("You said you didn't know — here it is.")
+          : chosen === q.answer
+            ? t('✓ Correct')
+            : state.typed != null
+              ? t('✗ Not quite — you said {said}', { said: withUnit(state.typed, q.entry) })
+              : t('✗ Not quite')),
         // Through richText, not as a bare string: the explanations carry
         // **emphasis**, and every jargon word in them can explain itself.
         el('div', richText(q.explanation)),
@@ -478,9 +484,11 @@ export function renderDrill(ctx, params) {
         scenario: q.scenario,
         question: q.question,
         options: q.options,
-        given: state.typed != null
-          ? withUnit(state.typed, q.entry)
-          : (q.options.find((o) => o.key === chosen) || {}).label,
+        given: chosen === IDK
+          ? t("I don't know")
+          : state.typed != null
+            ? withUnit(state.typed, q.entry)
+            : (q.options.find((o) => o.key === chosen) || {}).label,
         correct: (q.options.find((o) => o.key === q.answer) || {}).label,
         explanation: q.explanation,
       })),

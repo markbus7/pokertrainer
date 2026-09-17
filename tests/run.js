@@ -8,6 +8,7 @@ const modules = [
   './career.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
+  './dontKnow.test.js',
   './equity.test.js',
   './odds.test.js',
   './ranges.test.js',
