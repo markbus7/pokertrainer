@@ -40,7 +40,7 @@ export const PROFILES = {
     respect: 1.25,
     callPrice: 2.13,
     limps: 0.15,
-    sizings: [0.5, 0.66],
+    sizings: [0.33, 0.5, 0.66],
     blurb: 'Folds and folds, then wakes up with the nuts.',
     tell: 'If Rocky raises, Rocky has it. He has never bluffed in his life.',
     counter: 'Steal his blinds relentlessly, and fold the moment he raises you.',
@@ -60,7 +60,7 @@ export const PROFILES = {
     respect: 1.0,
     callPrice: 1.52,
     limps: 0.05,
-    sizings: [0.5, 0.66, 0.75],
+    sizings: [0.4, 0.55, 0.66],
     blurb: 'Plays few hands, but plays them hard. The standard winning reg.',
     tell: 'She only continues with real equity, and she barrels when the board favours her range.',
     counter: 'Give her credit on scary boards, but attack when she checks twice — she gives up.',
@@ -80,7 +80,7 @@ export const PROFILES = {
     respect: 0.85,
     callPrice: 1.04,
     limps: 0.1,
-    sizings: [0.66, 0.75, 1.0],
+    sizings: [0.5, 0.66, 0.85],
     blurb: 'Applies pressure in every pot and makes you guess.',
     tell: 'He bets far too often for his range to be strong.',
     counter: 'Widen your calling range and let him bluff into you. Trap with strong hands.',
@@ -120,7 +120,7 @@ export const PROFILES = {
     respect: 0.7,
     callPrice: 0.77,
     limps: 0.05,
-    sizings: [0.75, 1.0, 1.35],
+    sizings: [0.6, 0.85, 1.1],
     blurb: 'Raises everything. Occasionally has aces.',
     tell: 'Enormous bets with nothing at all, over and over.',
     counter: 'Tighten up, stop bluffing, and wait to snap him off with a real hand.',
@@ -141,7 +141,7 @@ export const PROFILES = {
     callPrice: 1.45,
     limps: 0.0,
     usesCharts: true,
-    sizings: [0.33, 0.5, 0.75],
+    sizings: [0.33, 0.5, 0.66],
     blurb: 'Plays the charts you are learning, and plays them well.',
     tell: 'Balanced. There is no obvious leak to attack.',
     counter: 'Play your own solid game. Grind small edges and avoid marginal spots out of position.',
@@ -340,6 +340,35 @@ function bettingWeight(table, player) {
   }).bet;
 }
 
+// Same role as bettingWeight's playsPreflop above, for the opposite question:
+// checked to, deciding whether to bet, there is no single bettor whose
+// profile sets the width — several different opponents may still be live.
+// One width per street stands in for the mix, narrowing on each later street
+// because the field it describes has too: anyone still around on the turn
+// already declined to fold to a flop bet, which is a real filter this fixed
+// preflop-shaped one does not otherwise see. See equityVsField's own comment
+// for why the filter matters at all — it is what keeps the equity handed
+// back from being measured against literally random cards.
+//
+// These are wider than a single profile's own continuing range would be,
+// which looks generous until the reason shows up in what else is calibrated
+// against them: the maniac's whole character is betting close to every time
+// he is checked to, and the tests hold every profile to its stated leak,
+// river air share included — a wider maniac stays diagnosable, a maniac who
+// only fires when actually ahead is not a maniac anymore. Tightened as far
+// as that overlapping calibration allows before it started flattening the
+// very personalities the reader is taught to exploit.
+const CONTINUING_RANGE_WIDTH = { flop: 0.68, turn: 0.6, river: 0.48 };
+
+function continuingRangeFilter(table) {
+  if (table.variant.omaha) return null;
+  const width = CONTINUING_RANGE_WIDTH[table.street] ?? 0.42;
+  return (hole) => {
+    const rank = STRENGTH_RANK[handKey(hole)];
+    return !rank || rank / 169 <= width;
+  };
+}
+
 function postflopDecision({ table, player, profile, legal, rng, toCall, pot, canCheck }) {
   const opponents = Math.max(1, table.contestants.length - 1);
   const trials = opponents > 2 ? 220 : 320;
@@ -356,12 +385,14 @@ function postflopDecision({ table, player, profile, legal, rng, toCall, pot, can
   //
   // The bettor's own profile decides the weighting, so a maniac's bet is
   // called wider than a rock's — the bots read each other with the same rule
-  // the reader is taught to use.
+  // the reader is taught to use. Checked to, the same fix applies for the
+  // same reason: whoever is still in the pot already cleared a preflop
+  // filter, so the field they are bet into is not a random one either.
   const equity = toCall > 0
     ? equityVsBettors(player.hole, table.board, table.variant, rng, {
       weightOf: bettingWeight(table, player),
     })
-    : monteCarlo(player.hole, table.board, table, rng, trials, opponents);
+    : equityVsField(player.hole, table.board, opponents, table.variant, rng, trials, continuingRangeFilter(table));
 
   // --- Facing a bet -------------------------------------------------
   if (toCall > 0) {
@@ -370,7 +401,7 @@ function postflopDecision({ table, player, profile, legal, rng, toCall, pot, can
       return { ...raiseTo(legal, raiseSpec.type, table.currentBet + chooseSizing(profile, rng, pot, table.bigBlind)), note: 'value raise' };
     }
     // Bluff-raise, but only from profiles that actually do it.
-    if (equity < CUTS.bluffRaiseCeiling && raiseSpec && rng() < CUTS.bluffRaiseChance(profile)
+    if (equity < CUTS.bluffRaiseCeiling && raiseSpec && rng() < CUTS.bluffRaiseChance(profile, table.street)
       && table.street !== 'river') {
       return { ...raiseTo(legal, raiseSpec.type, table.currentBet + chooseSizing(profile, rng, pot, table.bigBlind)), note: 'bluff raise' };
     }
@@ -393,7 +424,7 @@ function postflopDecision({ table, player, profile, legal, rng, toCall, pot, can
       return { ...raiseTo(legal, raiseSpec.type, chooseSizing(profile, rng, pot, table.bigBlind)), note: 'bluff' };
     }
     // Thin value from stations who bet only when they connect.
-    if (equity > CUTS.thinValue && rng() < CUTS.thinValueChance(profile)) {
+    if (equity > CUTS.thinValue && rng() < CUTS.thinValueChance(profile, table.street)) {
       return { ...raiseTo(legal, raiseSpec.type, chooseSizing(profile, rng, pot, table.bigBlind)), note: 'thin value' };
     }
   }
@@ -410,11 +441,31 @@ function postflopDecision({ table, player, profile, legal, rng, toCall, pot, can
  * runs the same rule the bot ran — so it lives here, and both callers read it
  * rather than one of them keeping a copy that quietly drifts.
  */
+// Continuing to fire with air is supposed to be a plan made before the flop
+// bet, not a fresh coin flip every street — see the cbet lesson: "if you fire
+// the flop and turn and then check the river, you have told the whole table
+// you missed. Plan all three streets before the first one." Nothing here
+// tracked a plan, so a bluff that survived the flop got re-rolled at
+// essentially flop odds on the turn and only eased off on the river.
+//
+// Measured on tools/measure-postflop.mjs (see its own header): before any of
+// this, turn barrels fired MORE often than the flop c-bet that started the
+// line, not less, and pots averaged ~65bb once a flop was seen. This decays
+// bluffing and thin value specifically by street — not the main value bet,
+// which a station's "three streets, size up" is meant to keep firing
+// regardless — leaving pots at ~55bb, still real money but no longer
+// climbing the way a plan-less bot's bluffs did. It would go lower still
+// except every profile is also held, by the tests next to this file, to a
+// stated leak: the maniac has to stay recognisably a maniac even on the
+// river, and a decay steep enough to fully flatten the pot flattened him
+// with it. This is as far as the two requirements agree.
+const BARREL_DECAY = { flop: 1, turn: 0.8, river: 0.65 };
+
 export const CUTS = {
   valueRaise: (p) => 0.78 - p.aggression * 0.1,
   valueRaiseChance: (p) => 0.35 + p.aggression * 0.5,
   bluffRaiseCeiling: 0.3,
-  bluffRaiseChance: (p) => p.bluff * 0.25,
+  bluffRaiseChance: (p, street = 'flop') => p.bluff * 0.25 * (BARREL_DECAY[street] ?? 1),
   /**
    * What a call costs, as a multiple of the pot-odds price.
    *
@@ -435,9 +486,14 @@ export const CUTS = {
   valueBetChance: (p) => 0.55 + p.aggression * 0.4,
   bluffCeiling: 0.42,
   bluffChance: (p, { heroIsAggressor, street }) =>
-    p.bluff * (heroIsAggressor ? 1.15 : 0.8) * (street === 'river' ? 0.7 : 1),
+    p.bluff * (heroIsAggressor ? 1.15 : 0.8) * (BARREL_DECAY[street] ?? 1),
   thinValue: 0.55,
-  thinValueChance: (p) => p.aggression * 0.5,
+  // Thin value is the pot-control case: not strong enough to want a big pot,
+  // just barely ahead of what continues. A disciplined player scales that
+  // back as the pot grows across streets, unlike a genuine value hand, which
+  // is why only this one and the bluff decay by street and the main value
+  // bet does not.
+  thinValueChance: (p, street = 'flop') => p.aggression * 0.5 * (BARREL_DECAY[street] ?? 1),
 };
 
 /** Deal a fresh table of opponents with distinct styles. */
@@ -470,7 +526,7 @@ export function actionChances(profile, equity, situation) {
   if (toCall > 0) {
     const valueRaise = equity > CUTS.valueRaise(p) ? CUTS.valueRaiseChance(p) : 0;
     const bluffRaise = equity < CUTS.bluffRaiseCeiling && street !== 'river'
-      ? CUTS.bluffRaiseChance(p) : 0;
+      ? CUTS.bluffRaiseChance(p, street) : 0;
     // The two raise branches are separated by equity, so at most one applies.
     const raise = Math.min(1, valueRaise + bluffRaise);
     const calls = equity > CUTS.callThreshold(p, needed) ? 1 : 0;
@@ -479,7 +535,7 @@ export function actionChances(profile, equity, situation) {
 
   const value = equity > CUTS.valueBet(p) ? CUTS.valueBetChance(p) : 0;
   const bluff = equity < CUTS.bluffCeiling ? CUTS.bluffChance(p, { heroIsAggressor, street }) : 0;
-  const thin = equity > CUTS.thinValue ? CUTS.thinValueChance(p) : 0;
+  const thin = equity > CUTS.thinValue ? CUTS.thinValueChance(p, street) : 0;
   const bet = Math.min(1, value + (1 - value) * (bluff + (1 - bluff) * thin));
   return { bet, check: 1 - bet, raise: 0, call: 0, fold: 0 };
 }
