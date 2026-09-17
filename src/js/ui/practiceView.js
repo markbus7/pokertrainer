@@ -13,6 +13,7 @@ import { t } from '../i18n/index.js';
 import { cardEl, cardRow } from './cardView.js';
 import { spotFelt, seatFelt } from './spotFelt.js';
 import { rankOf, suitOf, RANK_CHARS, SUIT_SYMBOLS, makeCard } from '../core/cards.js';
+import { IDK, IDK_NUMBER, isSkipped, dontKnowButton } from './dontKnow.js';
 
 const cardName = (card) => RANK_CHARS[rankOf(card) - 2] + SUIT_SYMBOLS[suitOf(card)];
 
@@ -66,7 +67,8 @@ function pictureChoiceView(spot, onDone, picture) {
 
   const pick = (key) => {
     if (graded) return;
-    graded = spot.grade(key);
+    graded = { ...spot.grade(key), skipped: isSkipped(key) };
+    if (graded.skipped) graded.correct = false;
     for (const b of buttons) {
       b.disabled = true;
       if (b.dataset.key === graded.answer) b.classList.add('correct');
@@ -87,6 +89,7 @@ function pictureChoiceView(spot, onDone, picture) {
       buttons.push(b);
       return b;
     })),
+    dontKnowButton(() => pick(IDK)),
     feedback,
   );
 }
@@ -111,12 +114,23 @@ function feltNumberView(spot, onDone, settings) {
     },
   }, t('Check my answer'));
 
+  const skip = dontKnowButton(() => {
+    if (graded) return;
+    graded = { ...spot.grade(IDK_NUMBER), skipped: true, correct: false };
+    input.disabled = true;
+    submit.disabled = true;
+    feedback.appendChild(gradeBox(graded, graded.exact !== undefined
+      ? [t('The answer is {value}{unit}.', { value: graded.exact, unit: spot.unit || '' })] : []));
+    onDone(graded);
+  });
+
   setTimeout(() => input.focus(), 30);
 
   return shell(spot,
     spotFelt(spot, settings),
     el('div.practice-question', richText(t(spot.question))),
     el('div.practice-entry', input, spot.unit ? el('span.lab-unit', spot.unit) : null, submit),
+    skip,
     feedback,
   );
 }
@@ -179,30 +193,37 @@ function countOutsView(spot, onDone, settings) {
     ]),
   );
 
-  const submit = el('button.btn.primary', {
-    onclick: () => {
-      if (graded) return;
-      graded = spot.grade([...picked]);
-      submit.disabled = true;
-      // Mark the deck itself: found, missed, and wrongly chosen.
-      for (const c of graded.hits) byCard.get(c)?.classList.add('hit');
-      for (const c of graded.missed) byCard.get(c)?.classList.add('missed');
-      for (const c of graded.wrong) byCard.get(c)?.classList.add('wrong');
-      for (const cell of cells) cell.disabled = true;
+  // Shared by the real submit and by "I don't know" — a skip is graded as an
+  // empty pick, which this grading function already treats correctly as
+  // "found none of them": every real out shows up as missed, nothing shows
+  // up as a wrong guess, because none was made.
+  const finish = (picked, skipped) => {
+    if (graded) return;
+    graded = { ...spot.grade(picked), skipped };
+    if (skipped) graded.correct = false;
+    submit.disabled = true;
+    // Mark the deck itself: found, missed, and wrongly chosen.
+    for (const c of graded.hits) byCard.get(c)?.classList.add('hit');
+    for (const c of graded.missed) byCard.get(c)?.classList.add('missed');
+    for (const c of graded.wrong) byCard.get(c)?.classList.add('wrong');
+    for (const cell of cells) cell.disabled = true;
 
-      const lines = [
-        graded.missed.length ? t('{n} you missed are outlined in gold.', { n: graded.missed.length }) : null,
-        graded.wrong.length ? t('{n} you picked do not win the hand.', { n: graded.wrong.length }) : null,
-      ];
-      if (graded.wrongLesson) {
-        const { card, wouldBe, villain } = graded.wrongLesson;
-        lines.push(t('Take {card}: it would leave you with {hand}, which still loses to {villain}. '
-          + 'A card that improves your hand is only an out if it also beats theirs.',
-          { card: cardName(card), hand: wouldBe, villain }));
-      }
-      feedback.appendChild(gradeBox(graded, lines.filter(Boolean)));
-      onDone(graded);
-    },
+    const lines = [
+      graded.missed.length ? t('{n} you missed are outlined in gold.', { n: graded.missed.length }) : null,
+      graded.wrong.length ? t('{n} you picked do not win the hand.', { n: graded.wrong.length }) : null,
+    ];
+    if (graded.wrongLesson) {
+      const { card, wouldBe, villain } = graded.wrongLesson;
+      lines.push(t('Take {card}: it would leave you with {hand}, which still loses to {villain}. '
+        + 'A card that improves your hand is only an out if it also beats theirs.',
+        { card: cardName(card), hand: wouldBe, villain }));
+    }
+    feedback.appendChild(gradeBox(graded, lines.filter(Boolean)));
+    onDone(graded);
+  };
+
+  const submit = el('button.btn.primary', {
+    onclick: () => finish([...picked], false),
   }, t('Check my outs'));
 
   return shell(spot,
@@ -229,7 +250,8 @@ function countOutsView(spot, onDone, settings) {
       count,
     ),
     grid,
-    el('div.row', { style: { marginTop: '12px' } }, submit),
+    el('div.row', { style: { marginTop: '12px', gap: '8px', flexWrap: 'wrap' } },
+      submit, dontKnowButton(() => finish([], true))),
     feedback,
   );
 }
@@ -245,7 +267,8 @@ function pickWinnerView(spot, onDone, settings) {
 
   const choose = (key) => {
     if (graded) return;
-    graded = spot.grade(key);
+    graded = { ...spot.grade(key), skipped: isSkipped(key) };
+    if (graded.skipped) graded.correct = false;
     for (const b of buttons) {
       b.disabled = true;
       if (b.dataset.key === graded.winner) b.classList.add('correct');
@@ -275,7 +298,10 @@ function pickWinnerView(spot, onDone, settings) {
       cardRow(spot.board, { fourColour: settings.fourColour }),
     ),
     el('div.practice-hands', spot.hands.map(handButton)),
-    spot.allowSplit ? el('div.row', { style: { marginTop: '10px' } }, split) : null,
+    el('div.row', { style: { marginTop: '10px', gap: '8px', flexWrap: 'wrap' } },
+      spot.allowSplit ? split : null,
+      dontKnowButton(() => choose(IDK)),
+    ),
     feedback,
   );
 }
@@ -306,6 +332,16 @@ function priceView(spot, onDone) {
 
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit.click(); });
 
+  const skip = dontKnowButton(() => {
+    if (graded) return;
+    graded = { ...spot.grade(IDK_NUMBER), skipped: true, correct: false };
+    submit.disabled = true;
+    input.disabled = true;
+    feedback.appendChild(gradeBox(graded, graded.exact !== undefined
+      ? [t('The answer is {pct}%.', { pct: graded.exact.toFixed(1) })] : []));
+    onDone(graded);
+  });
+
   return shell(spot,
     el('div.practice-money',
       moneyTile('In the pot', spot.pot),
@@ -314,6 +350,7 @@ function priceView(spot, onDone) {
     ),
     el('div.row', { style: { marginTop: '12px', gap: '8px', flexWrap: 'wrap' } },
       input, el('span.faint', '%'), submit),
+    skip,
     feedback,
   );
 }
@@ -337,7 +374,8 @@ function decideView(spot, onDone, settings) {
 
   const act = (key) => {
     if (graded) return;
-    graded = spot.grade(key);
+    graded = { ...spot.grade(key), skipped: isSkipped(key) };
+    if (graded.skipped) graded.correct = false;
     for (const b of buttons) b.disabled = true;
     feedback.appendChild(gradeBox(graded));
     onDone(graded);
@@ -359,6 +397,7 @@ function decideView(spot, onDone, settings) {
         buttons.push(b);
         return b;
       }),
+      dontKnowButton(() => act(IDK)),
     ),
     feedback,
   );
@@ -391,10 +430,21 @@ function numberView(spot, onDone) {
   }, t('Check my answer'));
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit.click(); });
 
+  const skip = dontKnowButton(() => {
+    if (graded) return;
+    graded = { ...spot.grade(IDK_NUMBER), skipped: true, correct: false };
+    submit.disabled = true;
+    input.disabled = true;
+    feedback.appendChild(gradeBox(graded, graded.exact !== undefined
+      ? [t('The answer is {value}.', { value: fmtExact(graded.exact, spot.unit) })] : []));
+    onDone(graded);
+  });
+
   return shell(spot,
     el('div.practice-money', spot.tiles.map((tile) => moneyTile(tile.label, tile.value))),
     el('div.row', { style: { marginTop: '12px', gap: '8px', flexWrap: 'wrap' } },
       input, spot.unit ? el('span.faint', spot.unit) : null, submit),
+    skip,
     feedback,
   );
 }
@@ -410,7 +460,8 @@ function choiceView(spot, onDone, settings) {
 
   const act = (key) => {
     if (graded) return;
-    graded = spot.grade(key);
+    graded = { ...spot.grade(key), skipped: isSkipped(key) };
+    if (graded.skipped) graded.correct = false;
     for (const b of buttons) {
       b.disabled = true;
       if (b.dataset.key === graded.answer) b.classList.add('correct');
@@ -434,13 +485,17 @@ function choiceView(spot, onDone, settings) {
       buttons.push(b);
       return b;
     })),
+    dontKnowButton(() => act(IDK)),
     feedback,
   );
 }
 
 function gradeBox(result, extraLines = []) {
-  return el(`div.feedback.${result.correct ? 'correct' : 'wrong'}`, { style: { marginTop: '14px' } },
-    el('div.verdict', result.correct ? t('✓ That is right') : t('✗ Not quite')),
+  const tone = result.skipped ? 'skip' : result.correct ? 'correct' : 'wrong';
+  return el(`div.feedback.${tone}`, { style: { marginTop: '14px' } },
+    el('div.verdict', result.skipped
+      ? t("You said you didn't know — here it is.")
+      : result.correct ? t('✓ That is right') : t('✗ Not quite')),
     ...extraLines.map((line) => el('div', { style: { marginBottom: '6px' } }, line)),
     el('div', richText(result.explanation)),
   );

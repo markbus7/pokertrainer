@@ -40,6 +40,7 @@ import { shuffle } from '../core/rng.js';
 import { SessionStats, leakReport, stakeFor, bankrollAdvice, SAMPLE } from '../state/stats.js';
 import { HandRecorder, keepHand } from '../state/handHistory.js';
 import { checkAchievements } from '../state/achievements.js';
+import { IDK, dontKnowButton } from './dontKnow.js';
 
 const BOT_DELAY = 620;
 /**
@@ -796,7 +797,8 @@ export function renderTable(ctx, params = {}) {
     const pick = (choice) => {
       if (session.namedThisHand) return;
       session.namedThisHand = true;
-      const right = choice === correct;
+      const skipped = choice === IDK;
+      const right = !skipped && choice === correct;
       session.playedByReader = true;
       // Reading your hand is this lesson's spot, so it is what the run marks.
       if (session.run && !runComplete(session.run)) {
@@ -811,8 +813,10 @@ export function renderTable(ctx, params = {}) {
         if (b.dataset.key === correct) b.classList.add('correct');
         else if (b.dataset.key === choice) b.classList.add('wrong');
       }
-      feedback.appendChild(el(`div.feedback.${right ? 'correct' : 'wrong'}`,
-        el('div.verdict', right ? t('✓ Correct') : t('✗ Not quite — you said {said}', { said: t(choice) })),
+      feedback.appendChild(el(`div.feedback.${skipped ? 'skip' : right ? 'correct' : 'wrong'}`,
+        el('div.verdict', skipped
+          ? t("You said you didn't know — here it is.")
+          : right ? t('✓ Correct') : t('✗ Not quite — you said {said}', { said: t(choice) })),
         el('div', t('{hand} — using {hole} with {board}.', {
           hand: describeScore(score, table.variant.shortDeck),
           hole: cardsToString(hero.hole),
@@ -830,6 +834,7 @@ export function renderTable(ctx, params = {}) {
         buttons.push(b);
         return b;
       })),
+      dontKnowButton(() => pick(IDK)),
       feedback,
     );
   }
@@ -1056,17 +1061,21 @@ export function renderTable(ctx, params = {}) {
           el('div.read-bands', READ_BANDS.map((band) => el('button.btn.sm', {
             onclick: () => answerRead(band),
           }, `${band}%`))),
+          dontKnowButton(() => answerRead(IDK)),
         ),
       ));
       return null;
     }
 
     mount(actionHost, el('div.action-bar',
-      read ? el('div.read-said',
+      read ? el(`div.read-said${read.picked === IDK ? '.skip' : ''}`,
         read.picked === read.band
           ? t('✓ Read: {air} of their bets here are air. Now play it.', { air: `${Math.round(read.air)}%` })
-          : t('✗ You said {said}; it is {air} air. Now play it.',
-            { said: `${read.picked}%`, air: `${Math.round(read.air)}%` })) : null,
+          : read.picked === IDK
+            ? t("You said you didn't know. At the table that is a fold, not a guess. It is {air} air. Now play it.",
+              { air: `${Math.round(read.air)}%` })
+            : t('✗ You said {said}; it is {air} air. Now play it.',
+              { said: `${read.picked}%`, air: `${Math.round(read.air)}%` })) : null,
       sizingRows,
       el('div.action-buttons',
         legal.some((a) => a.type === 'fold')

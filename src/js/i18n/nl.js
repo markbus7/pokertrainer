@@ -3870,4 +3870,11 @@ export const NL = {
   '1.5 bb': '1,5 bb',
   '2.5 bb': '2,5 bb',
   '4 bb': '4 bb',
+
+  // ---- the honest escape hatch: I don't know ---------------------------
+  "I don't know": 'Ik weet het niet',
+  "You said you didn't know — here it is.": 'Je zei dat je het niet wist — hier is het.',
+  'The clock ran out. At the table it does too.': 'De klok liep af. Aan tafel gebeurt dat ook.',
+  "You said you didn't know. At the table that is a fold, not a guess. It is {air} air. Now play it.":
+    'Je zei dat je het niet wist. Aan tafel is dat een fold, geen gok. Het is {air} air. Speel het nu.',
 };

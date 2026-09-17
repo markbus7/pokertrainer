@@ -344,6 +344,11 @@ input[type="range"] {
 .verdict-box.good { border-left-color: var(--green); }
 .verdict-box.bad { border-left-color: var(--red); }
 .verdict-box.ok { border-left-color: var(--blue); }
+/* Being honest about not knowing is not a failure the way a wrong guess
+   is, even though it scores the same — see base.css for .feedback.skip,
+   the same tone used outside the table. */
+.verdict-box.skip { border-left-color: var(--border-bright); }
+.verdict-box.skip strong { color: var(--text-dim); }
 .verdict-box .head { font-weight: 700; margin-bottom: 4px; }
 
 .log {

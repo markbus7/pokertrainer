@@ -17,6 +17,7 @@ import { practiceView } from './practiceView.js';
 import { t } from '../i18n/index.js';
 import { renderVisual } from './visuals.js';
 import { moduleMeta, WALKTHROUGHS } from '../data/curriculum.js';
+import { IDK, dontKnowButton } from './dontKnow.js';
 
 /**
  * Builds one hands-on exercise. A generator can decline a deal, so this
@@ -185,6 +186,7 @@ export function renderWalkthrough(ctx, params) {
       ? (state.practice || (state.practice = buildPractice(step.practice)))
       : null;
     const chosenOption = answered ? check.options.find((o) => o.key === state.chosen) : null;
+    const skipped = state.chosen === IDK;
     const isCorrect = answered && state.chosen === check.answer;
 
     mount(body,
@@ -236,17 +238,20 @@ export function renderWalkthrough(ctx, params) {
           )),
         ),
         answered
-          ? el(`div.feedback.${isCorrect ? 'correct' : 'wrong'}`,
-              el('div.verdict', isCorrect ? '✓ That is right' : '✗ Not quite'),
-              el('div', richText(chosenOption.why)),
+          ? el(`div.feedback.${skipped ? 'skip' : isCorrect ? 'correct' : 'wrong'}`,
+              el('div.verdict', skipped
+                ? t("You said you didn't know — here it is.")
+                : isCorrect ? '✓ That is right' : '✗ Not quite'),
+              skipped ? null : el('div', richText(chosenOption.why)),
               !isCorrect
                 ? el('div', { style: { marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)' } },
-                    el('strong', 'The answer: '),
+                    skipped ? null : el('strong', 'The answer: '),
                     richText(check.options.find((o) => o.key === check.answer).why),
                   )
                 : null,
             )
           : null,
+        answered ? null : el('div', { style: { marginTop: '10px' } }, dontKnowButton(() => answer(IDK))),
       ) : null,
     );
 

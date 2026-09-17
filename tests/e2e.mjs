@@ -519,6 +519,83 @@ await step('lessons deal real cards and grade what you do with them', async () =
   }
 });
 
+await step('"I don\'t know" treats an empty pick as an honest search, not a wrong guess', async () => {
+  // The outs grid is the one exercise where a skip has no dedicated sentinel
+  // at all — it is graded as an empty selection, which the grading already
+  // treats as "found nothing" rather than "picked something wrong". This is
+  // the one place that distinction is worth watching in a real browser: if
+  // it ever regressed, every real out would wrongly render as a mistake
+  // rather than as something simply not found.
+  // goto() to a hash the browser is already sitting on is a no-op in a
+  // single-page app — the earlier outs step above lands on this exact route,
+  // and without a reload this one silently ran against ITS already-graded
+  // exercise instead of a fresh one, which is why the first version of this
+  // step saw two cells already marked wrong before ever clicking skip.
+  await page.goto(`${BASE}/#walkthrough?module=outs`, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+  for (let i = 0; i < 8 && !(await page.$('.out-cell')); i++) {
+    const opts = await page.$$('.option:not([disabled]), .practice-option:not([disabled])');
+    if (opts.length) { await opts[0].click(); await page.waitForTimeout(250); }
+    const entry = await page.$('.practice-entry input');
+    if (entry) {
+      await entry.fill('25');
+      const send = await page.$('.practice-entry button');
+      if (send) { await send.click(); await page.waitForTimeout(250); }
+    }
+    let moved = false;
+    for (const b of await page.$$('button.btn.primary')) {
+      if (/next step/i.test((await b.textContent()) || '')) { await b.click(); moved = true; break; }
+    }
+    if (!moved) break;
+    await page.waitForTimeout(400);
+  }
+  const cells = await page.$$('.out-cell');
+  if (cells.length !== 45) throw new Error(`expected 45 unseen cards, got ${cells.length}`);
+  if (await page.$('.out-cell.picked')) throw new Error('the exercise did not start fresh — a cell is already picked');
+
+  const skip = await page.$('.idk-btn');
+  if (!skip) throw new Error('the outs exercise offers no way to say "I don\'t know"');
+  await skip.click();
+  await page.waitForTimeout(400);
+
+  if (await page.$('.out-cell.wrong')) {
+    throw new Error('an empty pick was marked as a wrong guess on the grid');
+  }
+  const missed = await page.$$eval('.out-cell.missed', (els) => els.length);
+  if (missed === 0) throw new Error('an empty pick left nothing marked as missed — this hand has no real outs to test with');
+  const verdict = await page.textContent('.practice .feedback .verdict').catch(() => '');
+  if (!/didn't know/i.test(verdict)) throw new Error(`the skip verdict reads like a real guess: "${verdict}"`);
+  console.log(`      ${missed} real outs shown as missed, none marked wrong, no guess pretended`);
+});
+
+await step('"I don\'t know" is offered, honest, and unaccredited on the drill and the range trainer', async () => {
+  // Two more surfaces, one step: the main drill (a picked-option question)
+  // and the range trainer (the reader\'s own ask, "wanneer callen ipv
+  // raisen" — exactly where a genuine "I don\'t know" beats a guess).
+  await page.goto(`${BASE}/#drill?module=hand-rankings`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+  if (!(await page.$('.idk-btn'))) throw new Error('the drill offers no "I don\'t know"');
+  await page.click('.idk-btn');
+  await page.waitForTimeout(300);
+  if (await page.$('.option.wrong')) throw new Error('skipping the drill painted an option wrong');
+  if (!(await page.$('.option.correct'))) throw new Error('skipping the drill did not reveal the right option');
+  const drillClass = await page.$eval('.feedback', (e) => e.className);
+  if (!/\bskip\b/.test(drillClass)) throw new Error(`the drill feedback is not toned as a skip: ${drillClass}`);
+
+  await page.goto(`${BASE}/#ranges`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  await page.click('.rung-row');
+  await page.waitForTimeout(400);
+  if (!(await page.$('.idk-btn'))) throw new Error('the range trainer offers no "I don\'t know"');
+  await page.click('.idk-btn');
+  await page.waitForTimeout(350);
+  const boxClass = await page.$eval('.verdict-box', (e) => e.className);
+  if (!/\bskip\b/.test(boxClass)) throw new Error(`the range trainer feedback is not toned as a skip: ${boxClass}`);
+  if (await page.$('.ask-option.wrong')) throw new Error('skipping the range trainer painted an option wrong');
+  console.log('      neither surface painted a red guess or credited a skip');
+});
+
 await step('numeric drills make you produce the number, not pick it', async () => {
   // MDF is the clean case: every question has a number for an answer, so the
   // entry box must always be there and the options must not.
@@ -966,6 +1043,63 @@ await step('the table asks for a read before it hands back the buttons', async (
   console.log(`      asked, answered, recorded (${attempts} attempt) — "${said.replace(/\s+/g, ' ').slice(0, 76)}…"`);
 });
 
+await step('"I don\'t know" is honest at the read-ask, and does not crash the reader back into a guess', async () => {
+  // The read-ask is the one place in the app where the sentinel's shape
+  // actually matters: the "you said {said}%" line builds a template literal
+  // directly out of whatever was picked. A Symbol sentinel throws the moment
+  // that happens; this proves the string sentinel this app actually uses
+  // does not, in the one browser that can tell.
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    raw.drills = raw.drills || {};
+    delete raw.drills.exploit;
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  // The previous step leaves its hand dangling on purpose — read answered,
+  // hero action never taken, so its own assertions stay about the read. A
+  // goto that only changes the hash does not tear that session down, and
+  // this step's own search loop can land a click on ITS leftover action
+  // button, recording a real attempt against 'exploit' before this step's
+  // own read is even asked. A reload forces a genuinely fresh profile and
+  // table, same fix as the outs step below needed for the same reason.
+  await page.goto(`${BASE}/#play?lesson=mdf`, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(900);
+
+  let asked = false;
+  const deadline = Date.now() + 70000;
+  while (Date.now() < deadline && !asked) {
+    if (await page.$('.idk-btn')) { asked = true; break; }
+    const next = await page.$('.action-bar .btn.primary');
+    const act = (await page.$('.action-buttons .btn.success'))
+      || (await page.$('.action-buttons .btn:not(.danger):not(.primary)'))
+      || (await page.$('.action-buttons .btn.danger'));
+    await (next || act)?.click().catch(() => {});
+    await page.waitForTimeout(260);
+  }
+  if (!asked) throw new Error('played to the river heads-up and never saw the "I don\'t know" option on a read');
+
+  const before = await page.evaluate(() =>
+    (JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).drills.exploit || {}).attempts || 0);
+
+  await page.click('.idk-btn');
+  await page.waitForTimeout(350);
+
+  const said = await page.textContent('.read-said').catch(() => null);
+  if (!said) throw new Error('clicking "I don\'t know" produced no verdict at all');
+  if (!/air/i.test(said)) throw new Error(`the honest air percentage is missing from the verdict: ${said}`);
+  if (/__idk__/.test(said)) throw new Error(`the raw sentinel leaked into the reader-facing text: ${said}`);
+  if (!await page.$('.action-buttons .btn')) throw new Error('the buttons did not come back after a skip');
+
+  const after = await page.evaluate(() =>
+    (JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).drills.exploit || {}).attempts || 0);
+  if (after !== before + 1) throw new Error(`a skip was not recorded as an attempt: ${before} -> ${after}`);
+  const correctAfter = await page.evaluate(() =>
+    (JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).drills.exploit || {}).correct || 0);
+  console.log(`      skipped honestly, verdict shown, recorded as attempt ${after} (${correctAfter} correct so far)`);
+});
+
 await step('opponents notice how you play, and say so', async () => {
   // The wiring no unit test can reach: the reader's folds reach the session
   // memory, the memory reaches the table, the table reaches botAction and the
@@ -1214,7 +1348,10 @@ await step('the range trainer takes the chart away one rung at a time', async ()
   if (await page.$$eval('.range-grid', (els) => els.length)) {
     throw new Error('the second rung shows the chart before it is asked for');
   }
-  await page.click('button.btn.ghost');
+  // A plain '.btn.ghost' selector stopped being unique on this screen the
+  // moment the reader could also skip the question outright — both buttons
+  // carry that class. Text is the stable handle now.
+  await page.click('button:has-text("Show me the chart")');
   await page.waitForTimeout(250);
   if (!(await page.$$eval('.range-grid', (els) => els.length))) {
     throw new Error('peeking did not produce the chart');
@@ -1242,7 +1379,14 @@ await step('the range trainer takes the chart away one rung at a time', async ()
   if (await page.$$eval('.range-grid', (els) => els.length)) {
     throw new Error('the unaided rung shows the chart');
   }
-  if (await page.$('button.btn.ghost')) throw new Error('the unaided rung still offers a peek');
+  // ".btn.ghost" is no longer unique to the peek button — "I don't know" is
+  // meant to stay available here, on purpose, since the unaided rung is
+  // exactly where an honest skip matters most. What must not survive onto
+  // this rung is the CHART peek specifically.
+  if (await page.$('button:has-text("Show me the chart")')) {
+    throw new Error('the unaided rung still offers a peek');
+  }
+  if (!(await page.$('.idk-btn'))) throw new Error('the unaided rung dropped the "I don\'t know" button');
 
   // Handing a spot back should not require a screenshot.
   await page.click('.ask-option');
