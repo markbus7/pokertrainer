@@ -17,7 +17,7 @@ import { t } from '../i18n/index.js';
 import {
   CHECKPOINTS, STAGES, ASKED, PASS, checkpointFor, stageAt, seatName,
 } from '../data/rangeLadder.js';
-import { rangeQuestion } from '../trainers/rangeTrainer.js';
+import { rangeQuestion, rangeQuestionForHand } from '../trainers/rangeTrainer.js';
 import { makeRng } from '../core/rng.js';
 import { rangeGridFor } from './reference.js';
 import { seatFelt } from './spotFelt.js';
@@ -26,6 +26,16 @@ import { cardRow } from './cardView.js';
 import { copyButton } from './copySpot.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
 
+// The exam mixes all three question kinds under one checkpoint key, so a
+// hand missed there has no single chart to practise it back against —
+// excluded from weak-hand tracking and practice alike, everywhere both are
+// used below.
+const PRACTICABLE = CHECKPOINTS.filter((c) => c.kind !== 'exam');
+const PRACTICABLE_KEYS = PRACTICABLE.map((c) => c.key);
+
+/** Three-betting has no seat of its own; everything else can just show its seat. */
+const shortLabel = (checkpoint) => (checkpoint.kind === 'threebet' ? t('3-bet') : checkpoint.seat);
+
 /* ------------------------------------------------------------------ *
  * The ladder
  * ------------------------------------------------------------------ */
@@ -33,6 +43,7 @@ import { IDK, dontKnowButton } from './dontKnow.js';
 export function renderRangeLadder(ctx) {
   const { profile, go } = ctx;
   const cleared = profile.rangesCleared(CHECKPOINTS.map((c) => c.key));
+  const weakCount = profile.weakRangeHands(PRACTICABLE_KEYS, 999).length;
 
   const rung = (checkpoint) => {
     const p = profile.rangeProgress(checkpoint.key);
@@ -89,6 +100,18 @@ export function renderRangeLadder(ctx) {
       ),
       el('div.rungs', CHECKPOINTS.map(rung)),
     ),
+
+    // Only appears once there is something to show: a hand nobody has ever
+    // missed unaided is not a weak spot, and a button that opens onto an
+    // empty screen is worse than no button.
+    weakCount
+      ? el('div.panel',
+        el('div.panel-title', el('h3', icon('charts', { size: 18 }), t('Your weak hands'))),
+        el('p.muted', t('{n} hands you have missed outside an open chart, across every checkpoint. '
+          + 'Run them again, mixed together or one seat at a time.', { n: weakCount })),
+        el('button.btn.primary', { onclick: () => go('ranges-weak') }, t('Practise them')),
+      )
+      : null,
   );
 }
 
@@ -137,6 +160,15 @@ export function renderRangeRun(ctx) {
     state.answered = { choice, correct, credited: correct && !state.peeked };
     if (state.answered.credited) state.right++;
     if (state.peeked) state.peeks++;
+    // Weak-hand memory only means something for an unaided attempt: reading
+    // the chart off the screen, or peeking at it, proves nothing about
+    // whether the hand is actually known. The exam mixes three different
+    // kinds of question under one checkpoint key, so a hand recorded there
+    // would come back as the wrong kind of question if ever re-asked — left
+    // out on purpose rather than recorded wrong.
+    if (!state.peeked && !stage.showsChart && checkpoint.kind !== 'exam') {
+      profile.recordRangeHand(checkpoint.key, state.question.hand, correct);
+    }
     // The chart comes up either way — right answers need the shape too.
     state.showChart = true;
     draw();
@@ -274,6 +306,187 @@ export function renderRangeRun(ctx) {
                 }, icon('charts', { size: 15 }), t('Show me the chart')),
               state.peeked ? el('div.faint', t('This one will not be counted.')) : null)
             : null,
+    );
+  }
+
+  nextQuestion();
+  return root;
+}
+
+/* ------------------------------------------------------------------ *
+ * Weak hands: practice sourced from what you actually get wrong, not
+ * another random draw from the whole chart.
+ * ------------------------------------------------------------------ */
+
+export function renderRangeWeak(ctx) {
+  const { profile, go, params } = ctx;
+  const scopeKey = params.spot && PRACTICABLE.some((c) => c.key === params.spot) ? params.spot : null;
+
+  // One uncapped pass over everything there is to practise. It feeds both
+  // the chip row — only a checkpoint that actually has something shows a
+  // chip at all — and the "how many total" count on the mixed one.
+  const everything = profile.weakRangeHands(PRACTICABLE_KEYS, 999);
+  const countFor = (key) => everything.filter((row) => row.checkpointKey === key).length;
+
+  const sessionKeys = scopeKey ? [scopeKey] : PRACTICABLE_KEYS;
+  const pool = profile.weakRangeHands(sessionKeys);
+
+  const rng = makeRng();
+  const root = el('div.screen');
+
+  function empty() {
+    return el('div.panel',
+      el('div.panel-title', el('h3', icon('charts', { size: 18 }), t('Your weak hands'))),
+      el('p.muted', scopeKey
+        ? t('Nothing missed here yet — that is a good sign, not a bug.')
+        : t('Nothing missed yet. Play a rung on the ladder without the chart open, and the hands you '
+          + 'get wrong start showing up here.')),
+      el('button.btn.ghost', { onclick: () => go('ranges') }, t('Back to the ladder')),
+    );
+  }
+
+  if (!pool.length) {
+    mount(root, empty());
+    return root;
+  }
+
+  const state = {
+    index: 0, right: 0,
+    checkpoint: null, question: null, answered: null, peeked: false, showChart: false, done: false,
+  };
+
+  function nextQuestion() {
+    const row = pool[state.index];
+    state.checkpoint = checkpointFor(row.checkpointKey);
+    state.question = rangeQuestionForHand(state.checkpoint, row.hand, rng);
+    // Same reason as the ladder: built once per question, not per redraw, so
+    // the seat picture does not move while it is being read.
+    state.ring = seatRing(rng, { heroPosition: state.question.seat });
+    state.answered = null;
+    state.peeked = false;
+    state.showChart = false;
+    draw();
+  }
+
+  function answer(choice) {
+    if (state.answered) return;
+    const correct = choice === state.question.answer;
+    state.answered = { choice, correct, credited: correct && !state.peeked };
+    if (state.answered.credited) state.right++;
+    // Feed the result straight back into the same tracker the ladder writes
+    // to. Improve on a hand here and it works its own way off this list;
+    // miss it again and it stays exactly where it was.
+    if (!state.peeked) profile.recordRangeHand(state.checkpoint.key, state.question.hand, correct);
+    state.showChart = true;
+    draw();
+  }
+
+  function advance() {
+    state.index++;
+    if (state.index >= pool.length) return finish();
+    return nextQuestion();
+  }
+
+  function finish() {
+    state.done = true;
+    draw();
+  }
+
+  function draw() {
+    if (state.done) return mount(root, summary());
+    mount(root, running());
+  }
+
+  function chips() {
+    return el('div.row', { style: { flexWrap: 'wrap', marginBottom: '14px' } },
+      el(`button.btn.sm${scopeKey ? '.ghost' : ''}`, { onclick: () => go('ranges-weak') },
+        t('All ({n})', { n: everything.length })),
+      PRACTICABLE.filter((c) => countFor(c.key) > 0).map((c) => el(
+        `button.btn.sm${scopeKey === c.key ? '' : '.ghost'}`,
+        { onclick: () => go('ranges-weak', { spot: c.key }) },
+        `${shortLabel(c)} (${countFor(c.key)})`,
+      )),
+    );
+  }
+
+  function summary() {
+    const stillWeak = profile.weakRangeHands(sessionKeys, 999).length;
+    return el('div.panel',
+      el('div.panel-title', el('h3', t('Your weak hands'))),
+      el('div.run-score', `${state.right} / ${pool.length}`),
+      el('p', stillWeak
+        ? t('{n} of these are still on the list — run it again and they come back.', { n: stillWeak })
+        : t('None of these are still on the list. Come back once there are more.')),
+      el('div.row',
+        el('button.btn.primary', { onclick: () => go('ranges-weak', scopeKey ? { spot: scopeKey } : {}) },
+          t('Run it again')),
+        el('button.btn.ghost', { onclick: () => go('ranges') }, t('Back to the ladder')),
+      ),
+    );
+  }
+
+  function running() {
+    const q = state.question;
+    const a = state.answered;
+    return el('div.panel',
+      chips(),
+      el('div.run-head',
+        el('div',
+          el('div.run-where', t(state.checkpoint.name)),
+          el('div.faint', t('From your weak hands')),
+        ),
+        el('div.run-count', `${state.index + 1} / ${pool.length}`),
+      ),
+
+      state.ring
+        ? el('div.ask-table', seatFelt(state.ring, {
+          raiser: q.raiser,
+          fourColour: !!profile.settings.fourColour,
+          compact: true,
+        }))
+        : null,
+
+      el('div.range-ask', q.prompt),
+      el('div.hand-row',
+        q.cards ? cardRow(q.cards, { size: 'lg', fourColour: !!profile.settings.fourColour }) : null,
+      ),
+
+      el('div.ask-options', q.options.map((option) => {
+        const mark = a && (option === q.answer ? '.correct' : option === a.choice ? '.wrong' : '');
+        return el(`button.btn.lg.ask-option${mark || ''}`, {
+          disabled: !!a,
+          onclick: () => answer(option),
+        }, t(option));
+      })),
+      !a ? dontKnowButton(() => answer(IDK)) : null,
+
+      a
+        ? el('div',
+          el('div.verdict-box' + (a.choice === IDK ? '.skip' : a.correct ? '.good' : '.bad'),
+            el('strong', a.choice === IDK
+              ? t("You said you didn't know — here it is.")
+              : a.correct ? (a.credited ? t('Right') : t('Right — but you looked')) : t('Not that one')),
+            el('div', q.why)),
+          el('button.btn.primary.lg.block', { onclick: advance },
+            state.index + 1 >= pool.length ? t('See how it went') : t('Next hand')),
+          state.showChart ? rangeGridFor({ seat: q.seat, raiser: q.raiser, hand: q.hand }) : null,
+          copyButton(() => ({
+            module: t(state.checkpoint.name),
+            scenario: { hole: q.cards, position: q.seat, heroSeat: q.seat, raiser: q.raiser },
+            question: q.prompt,
+            options: q.options.map((o) => ({ key: o, label: o })),
+            given: a.choice === IDK ? t("I don't know") : a.choice,
+            correct: q.answer,
+            explanation: q.why,
+          })),
+        )
+        : el('div',
+          state.showChart
+            ? rangeGridFor({ seat: q.seat, raiser: q.raiser })
+            : el('button.btn.ghost', {
+              onclick: () => { state.peeked = true; state.showChart = true; draw(); },
+            }, icon('charts', { size: 15 }), t('Show me the chart')),
+          state.peeked ? el('div.faint', t('This one will not be counted.')) : null),
     );
   }
 

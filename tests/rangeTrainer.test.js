@@ -3,7 +3,7 @@ import { CHARTS, POSITIONS } from '../src/js/data/ranges.js';
 import {
   CHECKPOINTS, STAGES, ASKED, PASS, edgeHands, allHands, checkpointFor, stageAt,
 } from '../src/js/data/rangeLadder.js';
-import { rangeQuestion } from '../src/js/trainers/rangeTrainer.js';
+import { rangeQuestion, rangeQuestionForHand } from '../src/js/trainers/rangeTrainer.js';
 import { makeRng } from '../src/js/core/rng.js';
 import { Profile } from '../src/js/state/profile.js';
 import { handKey } from '../src/js/core/cards.js';
@@ -120,6 +120,107 @@ describe('range trainer: the support comes off', () => {
     const result = p.noteRangeRun('open:HJ', { right: PASS - 1, asked: ASKED, peeks: 9, stage: 1, pass: PASS });
     assert(!result.passed, 'passed a rung on looked-up answers');
     equal(p.rangeProgress('open:HJ').peeks, 9, 'peeks are not recorded');
+  });
+});
+
+describe('range trainer: it remembers which hands you actually miss', () => {
+  it('never surfaces a hand that has not been missed', () => {
+    const p = new Profile();
+    p.recordRangeHand('open:UTG', 'AA', true);
+    p.recordRangeHand('open:UTG', 'AA', true);
+    equal(p.weakRangeHands(['open:UTG']).length, 0, 'a hand with no misses was called weak');
+  });
+
+  it('surfaces a hand with a real miss in its recent window', () => {
+    const p = new Profile();
+    p.recordRangeHand('open:UTG', '72o', false);
+    const weak = p.weakRangeHands(['open:UTG']);
+    equal(weak.length, 1);
+    equal(weak[0].hand, '72o');
+    equal(weak[0].checkpointKey, 'open:UTG');
+  });
+
+  it('a peeked or aided answer is not something to record at all', () => {
+    // Nothing in the profile decides "aided" — that judgement is the
+    // screen's, made once before ever calling recordRangeHand. This just
+    // proves the reverse holds: never calling it leaves nothing to surface.
+    const p = new Profile();
+    equal(p.weakRangeHands(['open:UTG']).length, 0, 'a checkpoint with no recorded hands found one anyway');
+  });
+
+  it('the window forgets: enough right answers since retire a miss', () => {
+    const p = new Profile();
+    p.recordRangeHand('open:BTN', 'K9o', false);
+    assert(p.weakRangeHands(['open:BTN']).length === 1, 'the first miss did not register');
+    for (let i = 0; i < 5; i++) p.recordRangeHand('open:BTN', 'K9o', true);
+    equal(p.weakRangeHands(['open:BTN']).length, 0,
+      'five right answers since did not push the one miss out of the window');
+  });
+
+  it('ranks the worst share first, and a fresher miss ahead of a diluted one', () => {
+    const p = new Profile();
+    // 1 of 1 wrong: the worst possible share.
+    p.recordRangeHand('open:CO', 'J9o', false);
+    // 1 of 3 wrong, same absolute miss count, better share.
+    p.recordRangeHand('open:CO', 'Q8s', false);
+    p.recordRangeHand('open:CO', 'Q8s', true);
+    p.recordRangeHand('open:CO', 'Q8s', true);
+    const weak = p.weakRangeHands(['open:CO']);
+    equal(weak[0].hand, 'J9o', 'the 100%-wrong hand should rank first');
+    equal(weak[1].hand, 'Q8s');
+  });
+
+  it('mixes across every checkpoint it is asked about, and none it is not', () => {
+    const p = new Profile();
+    p.recordRangeHand('open:UTG', 'A5o', false);
+    p.recordRangeHand('open:BTN', 'K4s', false);
+    p.recordRangeHand('threebet', 'Q9s', false);
+
+    const mixed = p.weakRangeHands(['open:UTG', 'open:BTN', 'threebet']);
+    equal(mixed.length, 3, 'a mixed pull did not find every checkpoint it was given');
+
+    const utgOnly = p.weakRangeHands(['open:UTG']);
+    equal(utgOnly.length, 1, 'asking for one checkpoint leaked another one in');
+    equal(utgOnly[0].hand, 'A5o');
+  });
+
+  it('respects the limit, worst-first', () => {
+    const p = new Profile();
+    const hands = ['A2o', 'A3o', 'A4o', 'A5o', 'A6o'];
+    for (const h of hands) p.recordRangeHand('open:SB', h, false);
+    equal(p.weakRangeHands(['open:SB'], 2).length, 2, 'the limit was not respected');
+  });
+});
+
+describe('range trainer: a weak hand can be asked about again on purpose', () => {
+  it('asks about the requested hand, not a drawn one, for every kind of checkpoint', () => {
+    const rng = makeRng(51);
+    const cases = [
+      [checkpointFor('open:UTG'), 'AKo'],
+      [checkpointFor('defend:BB'), 'T9s'],
+      [checkpointFor('threebet'), '65s'],
+    ];
+    for (const [checkpoint, hand] of cases) {
+      for (let i = 0; i < 10; i++) {
+        const q = rangeQuestionForHand(checkpoint, hand, rng);
+        equal(q.hand, hand, `${checkpoint.key} did not ask about the hand it was told to`);
+      }
+    }
+  });
+
+  it('still grades the forced hand straight off the chart', () => {
+    const rng = makeRng(52);
+    const utg = checkpointFor('open:UTG');
+    const inRange = CHARTS.rfi.UTG.has('AKo') ? 'Raise' : 'Fold';
+    const q = rangeQuestionForHand(utg, 'AKo', rng);
+    equal(q.answer, inRange, 'the forced-hand question disagreed with the chart');
+    assert(q.options.includes(q.answer), 'the graded answer is not even on the option list');
+  });
+
+  it('deals real cards for the forced hand too', () => {
+    const rng = makeRng(53);
+    const q = rangeQuestionForHand(checkpointFor('open:BTN'), 'J9s', rng);
+    equal(handKey(q.cards), 'J9s', 'the dealt cards do not match the requested hand');
   });
 });
 

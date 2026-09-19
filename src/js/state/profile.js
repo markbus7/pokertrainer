@@ -22,6 +22,9 @@ import { DEFAULT_THEME } from '../data/themes.js';
 
 const STORAGE_KEY = 'poker-trainer.profile.v1';
 
+/** How many recent unaided attempts at one hand, in one checkpoint, to remember. */
+const RANGE_HAND_WINDOW = 5;
+
 export const RANKS = [
   {
     level: 1, xp: 0, name: 'Fish', emoji: '🐟',
@@ -453,6 +456,51 @@ export class Profile {
   /** How much of the ladder is behind you, for the one line that says so. */
   rangesCleared(keys) {
     return keys.filter((k) => this.rangeProgress(k).cleared).length;
+  }
+
+  /**
+   * Record how one specific hand went, unaided, at one checkpoint.
+   *
+   * Only unaided attempts are worth recording here — a peeked answer or one
+   * read straight off an open chart proves nothing about whether the hand is
+   * actually known, the same standard "credited" already holds the ladder
+   * itself to. A short window rather than a lifetime tally, so a hand missed
+   * three times last month and nailed five times since stops being flagged:
+   * the same "a window forgets" reasoning mastery.js already uses for a whole
+   * module, here at the scale of one hand in one chart.
+   */
+  recordRangeHand(checkpointKey, hand, correct) {
+    const entry = this.ranges[checkpointKey] || { stage: 0, cleared: false, runs: 0, peeks: 0 };
+    const hands = { ...(entry.hands || {}) };
+    hands[hand] = ((hands[hand] || '') + (correct ? '1' : '0')).slice(-RANGE_HAND_WINDOW);
+    this.ranges[checkpointKey] = { ...entry, hands };
+    this.save();
+  }
+
+  /**
+   * The hands worth drilling again, worst first, across whichever
+   * checkpoints are asked for.
+   *
+   * Only hands with at least one real miss in the window qualify — a hand
+   * nobody has gotten wrong is not a weak spot, it is simply untested, and
+   * surfacing it here would turn "practise what you are bad at" into
+   * "practise at random again", which is already what the ladder itself
+   * does. Ties go to whichever has fewer attempts recorded, so a hand seen
+   * once and missed once outranks one seen five times and missed once at the
+   * same share — the fresher miss is the one still worth confirming.
+   */
+  weakRangeHands(checkpointKeys, limit = 15) {
+    const rows = [];
+    for (const key of checkpointKeys) {
+      const hands = (this.ranges[key] || {}).hands || {};
+      for (const [hand, recent] of Object.entries(hands)) {
+        const wrong = [...recent].filter((c) => c === '0').length;
+        if (!wrong) continue;
+        rows.push({ checkpointKey: key, hand, wrongShare: wrong / recent.length, attempts: recent.length });
+      }
+    }
+    rows.sort((a, b) => b.wrongShare - a.wrongShare || a.attempts - b.attempts);
+    return rows.slice(0, limit);
   }
 
   /** Guided lessons are tracked apart from drills so they cannot skew accuracy. */

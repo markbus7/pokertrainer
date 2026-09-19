@@ -1963,6 +1963,7 @@ await step('no screen is half in English when the app is in Dutch', async () => 
   const routes = [
     '#home', '#lab-run', '#review', '#charts?chart=BTN', '#glossary', '#stats',
     '#levels', '#gauntlet', '#drill?module=outs', '#walkthrough?module=pot-odds',
+    '#ranges', '#ranges-run', '#ranges-weak',
   ];
 
   // domcontentloaded rather than networkidle: the app fires an update check

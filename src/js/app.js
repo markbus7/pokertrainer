@@ -6,7 +6,7 @@
 import { el, mount, $, toast, fmt } from './ui/dom.js';
 import { icon } from './ui/icons.js';
 import { renderCareer } from './ui/screenCareer.js';
-import { renderRangeLadder, renderRangeRun } from './ui/screenRangeTrainer.js';
+import { renderRangeLadder, renderRangeRun, renderRangeWeak } from './ui/screenRangeTrainer.js';
 import { Profile } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
 import { VERSION, checkForUpdate } from './version.js';
@@ -30,6 +30,7 @@ const ROUTES = {
   drill: { render: renderDrill, tab: 'train', title: 'Drill' },
   ranges: { render: renderRangeLadder, tab: 'train', title: 'Range trainer' },
   'ranges-run': { render: renderRangeRun, tab: 'train', title: 'Range trainer' },
+  'ranges-weak': { render: renderRangeWeak, tab: 'train', title: 'Weak hands' },
   gauntlet: { render: renderGauntletIntro, tab: 'gauntlet', title: 'Gauntlet' },
   lab: { render: renderLabIntro, tab: 'lab', title: 'The Lab' },
   'lab-run': { render: renderLab, tab: 'lab', title: 'The Lab' },
