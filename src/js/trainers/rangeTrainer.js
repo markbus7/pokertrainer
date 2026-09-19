@@ -37,9 +37,9 @@ const dealFrom = (rng, key) => {
 const OPEN = { raise: 'Raise', call: 'Call', fold: 'Fold' };
 
 /** An unopened pot: the chart says raise, and everything else is a fold. */
-function openQuestion(rng, seat, asked) {
+function openQuestion(rng, seat, asked, forcedHand = null) {
   const range = CHARTS.rfi[seat];
-  const hand = drawHand(rng, range, asked);
+  const hand = forcedHand || drawHand(rng, range, asked);
   const inRange = range.has(hand);
   return {
     hand,
@@ -62,11 +62,11 @@ function openQuestion(rng, seat, asked) {
 }
 
 /** Big blind facing one raise: three-bet, call the discount, or fold. */
-function defendQuestion(rng, asked) {
+function defendQuestion(rng, asked, forcedHand = null) {
   const raiser = pick(rng, POSITIONS.filter((p) => CHARTS.bbDefend[p]));
   const defend = CHARTS.bbDefend[raiser];
   const three = CHARTS.threeBet.BB;
-  const hand = drawHand(rng, defend, asked);
+  const hand = forcedHand || drawHand(rng, defend, asked);
   const isThree = three.all.has(hand);
   const isCall = !isThree && defend.has(hand);
   return {
@@ -86,10 +86,10 @@ function defendQuestion(rng, asked) {
 }
 
 /** Facing a raise outside the blinds: it three-bets or it goes. */
-function threeBetQuestion(rng, asked) {
+function threeBetQuestion(rng, asked, forcedHand = null) {
   const seat = pick(rng, ['CO', 'BTN', 'SB']);
   const three = CHARTS.threeBet[seat];
-  const hand = drawHand(rng, three.all, asked);
+  const hand = forcedHand || drawHand(rng, three.all, asked);
   const isThree = three.all.has(hand);
   return {
     hand,
@@ -120,4 +120,21 @@ export function rangeQuestion(checkpoint, rng, asked = new Set()) {
   if (roll < 0.6) return openQuestion(rng, pick(rng, Object.keys(CHARTS.rfi)), asked);
   if (roll < 0.8) return defendQuestion(rng, asked);
   return threeBetQuestion(rng, asked);
+}
+
+/**
+ * The same question a checkpoint would ask, but about one specific hand
+ * rather than a drawn one — for practising the hands a reader has actually
+ * been missing instead of whatever comes up next at random.
+ *
+ * The exam mixes all three kinds by design, so a hand recorded against it
+ * has no single chart to rebuild the question from; nothing records weak
+ * hands against the exam in the first place; the fallback below is only a
+ * safety net.
+ */
+export function rangeQuestionForHand(checkpoint, hand, rng) {
+  if (checkpoint.kind === 'open') return openQuestion(rng, checkpoint.seat, new Set(), hand);
+  if (checkpoint.kind === 'defend') return defendQuestion(rng, new Set(), hand);
+  if (checkpoint.kind === 'threebet') return threeBetQuestion(rng, new Set(), hand);
+  return rangeQuestion(checkpoint, rng, new Set());
 }

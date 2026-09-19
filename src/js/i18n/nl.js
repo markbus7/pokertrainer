@@ -3803,6 +3803,22 @@ export const NL = {
   '{name} is in your head': '{name} zit in je hoofd',
   'No chart, on the clock, and you still knew it.': 'Geen chart, klok aan, en je wist het toch.',
 
+  // ---- the range trainer: weak hands ------------------------------------
+  'Your weak hands': 'Je zwakke handen',
+  '{n} hands you have missed outside an open chart, across every checkpoint. Run them again, mixed together or one seat at a time.':
+    '{n} handen die je zonder de chart erbij hebt gemist, verspreid over alle ijkpunten. Speel ze opnieuw, gemixt of één plek tegelijk.',
+  'Practise them': 'Oefen ze',
+  'Nothing missed here yet — that is a good sign, not a bug.':
+    'Nog niets gemist hier — dat is een goed teken, geen bug.',
+  'Nothing missed yet. Play a rung on the ladder without the chart open, and the hands you get wrong start showing up here.':
+    'Nog niets gemist. Speel een trede op de ladder zonder de chart erbij, en de handen die je mist verschijnen hier.',
+  'All ({n})': 'Alle ({n})',
+  '{n} of these are still on the list — run it again and they come back.':
+    '{n} hiervan staan nog op de lijst — doe nog een ronde en ze komen terug.',
+  'None of these are still on the list. Come back once there are more.':
+    'Geen hiervan staat nog op de lijst. Kom terug zodra er meer zijn.',
+  'From your weak hands': 'Uit je zwakke handen',
+
   // ---- the reference at the table -------------------------------------
   'Open the reference': 'Spiekbriefje openen',
   'The price': 'De prijs',
