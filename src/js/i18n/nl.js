@@ -3798,6 +3798,8 @@ export const NL = {
     'Gehaald, zonder chart en met de klok lopend. Dat is de trede die telt.',
   'Passed. The next run takes some of the help away.':
     'Gehaald. De volgende ronde haalt een stukje hulp weg.',
+  'Passed — but {seen} of {total} edge hands have not come up yet, so it is not in your head yet. Run it again; it steers toward what you have not seen.':
+    'Gehaald — maar {seen} van {total} grenshanden zijn nog niet langsgekomen, dus hij zit nog niet in je hoofd. Doe nog een ronde; hij stuurt nu naar wat je nog niet hebt gezien.',
   '{pass} of {asked} passes this rung. Run it again — the hands you missed come back.':
     '{pass} van {asked} haalt deze trede. Doe nog een ronde — de handen die je miste komen terug.',
   'You looked at the chart {n} times. Those answers were not counted, which is what the number is for — it says how much is still on the wall rather than in your head.':

@@ -17,8 +17,8 @@ import { t } from '../i18n/index.js';
 import {
   CHECKPOINTS, STAGES, ASKED, PASS, checkpointFor, stageAt, seatName,
 } from '../data/rangeLadder.js';
-import { rangeQuestion, rangeQuestionForHand } from '../trainers/rangeTrainer.js';
-import { makeRng } from '../core/rng.js';
+import { rangeQuestion, rangeQuestionForHand, edgePoolFor } from '../trainers/rangeTrainer.js';
+import { makeRng, randInt } from '../core/rng.js';
 import { rangeGridFor } from './reference.js';
 import { seatFelt } from './spotFelt.js';
 import { seatRing } from '../core/seatMap.js';
@@ -42,6 +42,11 @@ const shortLabel = (checkpoint) => (checkpoint.kind === 'threebet' ? t('3-bet') 
 
 export function renderRangeLadder(ctx) {
   const { profile, go } = ctx;
+  // "Cleared" started requiring the boundary actually seen, not just a good
+  // fifteen-question sample of it. A badge earned before that bar existed
+  // gets re-checked against it once; the call is cheap and a no-op after
+  // the first time it runs.
+  profile.migrateEdgeCoverage(Object.fromEntries(PRACTICABLE.map((c) => [c.key, edgePoolFor(c)])));
   const cleared = profile.rangesCleared(CHECKPOINTS.map((c) => c.key));
   const weakCount = profile.weakRangeHands(PRACTICABLE_KEYS, 999).length;
 
@@ -126,6 +131,9 @@ export function renderRangeRun(ctx) {
   const stageIndex = checkpoint.only === 'blind' ? 2 : Math.min(progress.stage, STAGES.length - 1);
   const stage = stageAt(stageIndex);
   const rng = makeRng();
+  // The boundary this checkpoint has to have been asked about, unaided,
+  // before it can honestly call itself cleared.
+  const pool = edgePoolFor(checkpoint);
 
   const state = {
     index: 0, right: 0, peeks: 0, asked: new Set(),
@@ -136,7 +144,20 @@ export function renderRangeRun(ctx) {
   const root = el('div.screen');
 
   function nextQuestion() {
-    state.question = rangeQuestion(checkpoint, rng, state.asked);
+    // Chart-open answers never get recorded, so biasing toward what is
+    // "uncovered" would only be steering toward the edge again — which the
+    // normal draw already does. On the rungs that actually count, spend the
+    // question on a boundary hand that has never been asked before, until
+    // there are none left; only then fall back to the ordinary edge-biased
+    // draw, which can repeat hands that are already known.
+    const seenHands = profile.rangeProgress(checkpoint.key).hands || {};
+    const uncovered = !stage.showsChart
+      ? pool.filter((h) => !(h in seenHands) && !state.asked.has(h))
+      : [];
+    const forcedHand = uncovered.length ? uncovered[randInt(rng, uncovered.length)] : null;
+    state.question = forcedHand
+      ? rangeQuestionForHand(checkpoint, forcedHand, rng)
+      : rangeQuestion(checkpoint, rng, state.asked);
     // The seat picture is built once per question. Rebuilding it on every
     // redraw would move the button around while the reader is looking at it.
     state.ring = seatRing(rng, { heroPosition: state.question.seat });
@@ -183,22 +204,24 @@ export function renderRangeRun(ctx) {
   function finish() {
     state.done = true;
     clearTimeout(state.timer);
+    const coverage = profile.rangeCoverage(checkpoint.key, pool);
     const result = profile.noteRangeRun(checkpoint.key, {
       right: state.right, asked: ASKED, peeks: state.peeks, stage: stageIndex, pass: PASS,
+      covered: coverage.complete,
     });
     if (result.cleared) {
       toast({ icon: 'check', title: t('{name} is in your head', { name: t(checkpoint.name) }),
         desc: t('No chart, on the clock, and you still knew it.'), duration: 7000 });
     }
-    draw(result);
+    draw(result, coverage);
   }
 
-  function draw(result = null) {
-    if (state.done) return mount(root, summary(result));
+  function draw(result = null, coverage = null) {
+    if (state.done) return mount(root, summary(result, coverage));
     mount(root, running());
   }
 
-  function summary(result) {
+  function summary(result, coverage) {
     const passed = state.right >= PASS;
     return el('div.panel',
       el('div.panel-title', el('h3', t(checkpoint.name))),
@@ -206,7 +229,11 @@ export function renderRangeRun(ctx) {
       el('p', passed
         ? result && result.cleared
           ? t('Cleared, with no chart and a clock running. That is the one that matters.')
-          : t('Passed. The next run takes some of the help away.')
+          : stageIndex < 2
+            ? t('Passed. The next run takes some of the help away.')
+            : t('Passed — but {seen} of {total} edge hands have not come up yet, so it is not in '
+              + 'your head yet. Run it again; it steers toward what you have not seen.',
+            { seen: coverage.seen, total: coverage.total })
         : t('{pass} of {asked} passes this rung. Run it again — the hands you missed come back.',
           { pass: PASS, asked: ASKED })),
       state.peeks
