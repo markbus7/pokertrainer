@@ -242,9 +242,13 @@ export function renderRangeRun(ctx) {
               : a.correct ? (a.credited ? t('Right') : t('Right — but you looked')) : t('Not that one')),
             el('div', q.why),
             a.choice === null ? el('div.faint', t('The clock ran out. At the table it does too.')) : null),
-          state.showChart ? rangeGridFor({ seat: q.seat, raiser: q.raiser, hand: q.hand }) : null,
+          // The button comes before the chart, not after: the chart is a
+          // study aid, not a gate you have to scroll past to move on. A
+          // 169-cell grid is tall enough that "next hand" used to sit off
+          // the bottom of the screen every single question.
           el('button.btn.primary.lg.block', { onclick: advance },
             state.index + 1 >= ASKED ? t('See how it went') : t('Next hand')),
+          state.showChart ? rangeGridFor({ seat: q.seat, raiser: q.raiser, hand: q.hand }) : null,
           // Reproducing a spot by hand is enough work that nobody does it,
           // so the trainer writes it out — the drills have had this and the
           // reader had to send a screenshot instead.
