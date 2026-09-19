@@ -447,22 +447,41 @@ export class Profile {
   }
 
   /**
+   * How much of a boundary has actually been asked, unaided, for one
+   * checkpoint — regardless of whether it was answered right or wrong.
+   * recordRangeHand already writes a key for every unaided attempt, so this
+   * reads what is already there rather than tracking anything new.
+   */
+  rangeCoverage(key, pool) {
+    if (!pool.length) return { seen: 0, total: 0, complete: true };
+    const hands = (this.ranges[key] || {}).hands || {};
+    const seen = pool.filter((h) => h in hands).length;
+    return { seen, total: pool.length, complete: seen === pool.length };
+  }
+
+  /**
    * Record one run at a checkpoint.
    *
    * A run is only credited with answers given unaided: peeking at the chart on
    * the rung where peeking is allowed is the point of that rung, but it cannot
    * count toward passing it, or the support never comes off.
    *
+   * Clearing needs the boundary covered as well as the count passed — fifteen
+   * hands is a sample, and a good sample of the wrong fifteen would say
+   * "cleared" about a boundary that is only half known. `covered` is the
+   * caller's to compute, because it depends on the chart, which this class
+   * does not know about.
+   *
    * Progress never goes backwards on a bad run. Losing a rung you have already
    * cleared would make the ladder punish the practice it is asking for, and a
    * reader who has shown they know under-the-gun does not un-know it.
    */
-  noteRangeRun(key, { right = 0, asked = 0, peeks = 0, stage = 0, pass = 12 } = {}) {
+  noteRangeRun(key, { right = 0, asked = 0, peeks = 0, stage = 0, pass = 12, covered = true } = {}) {
     const before = this.rangeProgress(key);
     const passed = right >= pass;
     const next = {
       stage: passed ? Math.max(before.stage, stage + 1) : before.stage,
-      cleared: before.cleared || (passed && stage >= 2),
+      cleared: before.cleared || (passed && stage >= 2 && covered),
       runs: (before.runs || 0) + 1,
       peeks: (before.peeks || 0) + peeks,
       best: Math.max(before.best || 0, right),
@@ -476,6 +495,26 @@ export class Profile {
     this.ranges[key] = next;
     this.save();
     return { passed, advanced: next.stage > before.stage, cleared: next.cleared && !before.cleared };
+  }
+
+  /**
+   * "Cleared" used to mean nothing more than one good run of the blind
+   * rung; it now means the whole boundary has been seen. A badge earned
+   * under the old bar does not mean anything under the new one, so every
+   * checkpoint is checked against it exactly once. Stage and hand history
+   * are untouched — only a cleared flag that was not actually earned yet
+   * comes back off, the same way a bad run never took one away either.
+   */
+  migrateEdgeCoverage(poolsByCheckpoint) {
+    if (this.data.edgeCoverageMigrated) return;
+    for (const [key, pool] of Object.entries(poolsByCheckpoint)) {
+      const entry = this.ranges[key];
+      if (entry && entry.cleared && !this.rangeCoverage(key, pool).complete) {
+        this.ranges[key] = { ...entry, cleared: false };
+      }
+    }
+    this.data.edgeCoverageMigrated = true;
+    this.save();
   }
 
   /** How much of the ladder is behind you, for the one line that says so. */

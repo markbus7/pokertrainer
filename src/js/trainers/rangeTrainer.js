@@ -118,6 +118,39 @@ function threeBetQuestion(rng, asked, forcedHand = null) {
 }
 
 /**
+ * The hands worth having been asked, unaided, before a checkpoint can
+ * honestly call itself cleared — the same edge this file already leans on
+ * for 70% of its draws, so "covered" means "asked about everything the
+ * ladder was already trying hardest to ask about."
+ *
+ * defend and threebet each mix in a randomised raiser or seat per question
+ * (the same simplification the weak-hand tracker already accepts), so
+ * there is no single fixed range to take an edge of — the pool is the
+ * union of every sub-scenario's edge instead. The exam mixes all three
+ * kinds under one key with nothing to take an edge of at all, so it opts
+ * out the same way it already does everywhere else.
+ */
+export function edgePoolFor(checkpoint) {
+  if (checkpoint.kind === 'open') return edgeHands(CHARTS.rfi[checkpoint.seat]);
+  if (checkpoint.kind === 'defend') {
+    const pool = new Set();
+    for (const raiser of POSITIONS.filter((p) => CHARTS.bbDefend[p])) {
+      for (const hand of edgeHands(CHARTS.bbDefend[raiser])) pool.add(hand);
+    }
+    return [...pool];
+  }
+  if (checkpoint.kind === 'threebet') {
+    const pool = new Set();
+    for (const seat of ['CO', 'BTN', 'SB']) {
+      const active = new Set([...CHARTS.threeBet[seat].all, ...CHARTS.callVsRaise[seat]]);
+      for (const hand of edgeHands(active)) pool.add(hand);
+    }
+    return [...pool];
+  }
+  return [];
+}
+
+/**
  * One question for a checkpoint. The exam draws from all three kinds, which
  * is the point of it: at the table nobody announces which chart you are in.
  */

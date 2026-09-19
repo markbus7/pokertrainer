@@ -3,7 +3,7 @@ import { CHARTS, POSITIONS } from '../src/js/data/ranges.js';
 import {
   CHECKPOINTS, STAGES, ASKED, PASS, edgeHands, allHands, checkpointFor, stageAt,
 } from '../src/js/data/rangeLadder.js';
-import { rangeQuestion, rangeQuestionForHand } from '../src/js/trainers/rangeTrainer.js';
+import { rangeQuestion, rangeQuestionForHand, edgePoolFor } from '../src/js/trainers/rangeTrainer.js';
 import { makeRng } from '../src/js/core/rng.js';
 import { Profile } from '../src/js/state/profile.js';
 import { handKey } from '../src/js/core/cards.js';
@@ -140,6 +140,110 @@ describe('range trainer: the support comes off', () => {
     const result = p.noteRangeRun('open:HJ', { right: PASS - 1, asked: ASKED, peeks: 9, stage: 1, pass: PASS });
     assert(!result.passed, 'passed a rung on looked-up answers');
     equal(p.rangeProgress('open:HJ').peeks, 9, 'peeks are not recorded');
+  });
+});
+
+describe('range trainer: a pass is a sample, and cleared wants the whole boundary', () => {
+  it('names the same edge the draw already leans on, for a single fixed range', () => {
+    const utg = CHECKPOINTS.find((c) => c.key === 'open:UTG');
+    const pool = edgePoolFor(utg);
+    const expected = edgeHands(CHARTS.rfi.UTG);
+    equal(pool.length, expected.length, 'the pool size does not match the chart edge');
+    for (const hand of expected) assert(pool.includes(hand), `${hand} is on the chart edge but not in the pool`);
+  });
+
+  it('unions the edge across every raiser or seat a compound checkpoint can land on', () => {
+    const defend = CHECKPOINTS.find((c) => c.key === 'defend:BB');
+    const pool = new Set(edgePoolFor(defend));
+    // A hand that is only ever an edge case against one particular raiser
+    // still has to show up in the pool, or that raiser's boundary would
+    // never get covered.
+    let foundOne = false;
+    for (const raiser of POSITIONS.filter((p) => CHARTS.bbDefend[p])) {
+      for (const hand of edgeHands(CHARTS.bbDefend[raiser])) {
+        assert(pool.has(hand), `${hand} is an edge case against a ${raiser} open but missing from the pool`);
+        foundOne = true;
+      }
+    }
+    assert(foundOne, 'the test itself found no edge hands to check');
+  });
+
+  it('opts the exam out, the same way weak-hand tracking already does', () => {
+    const exam = CHECKPOINTS.find((c) => c.kind === 'exam');
+    equal(edgePoolFor(exam).length, 0, 'the exam has a boundary to cover, and it should not');
+  });
+
+  it('counts what has actually been asked, not what has been answered right', () => {
+    const p = new Profile();
+    p.recordRangeHand('open:UTG', 'AJo', false);
+    p.recordRangeHand('open:UTG', 'K9s', true);
+    const coverage = p.rangeCoverage('open:UTG', ['AJo', 'K9s', 'T8s']);
+    equal(coverage.seen, 2, 'a right answer did not count as seen');
+    equal(coverage.total, 3);
+    assert(!coverage.complete, 'a hand never asked was counted as covered');
+  });
+
+  it('a good sample of fifteen does not clear a boundary of more than fifteen', () => {
+    const p = new Profile();
+    // Every one of these fifteen is answered right, on the blind rung — the
+    // old bar for "cleared" — but the checkpoint's edge is larger than
+    // fifteen hands, and none of the rest have ever been asked.
+    const result = p.noteRangeRun('open:UTG', {
+      right: PASS, asked: ASKED, stage: 2, pass: PASS, covered: false,
+    });
+    assert(result.passed, 'the run itself did not pass');
+    assert(!result.cleared, 'fifteen right answers cleared a boundary nobody has fully seen');
+    assert(!p.rangeProgress('open:UTG').cleared);
+  });
+
+  it('clears once the boundary actually has been seen, not before', () => {
+    const p = new Profile();
+    p.noteRangeRun('open:UTG', { right: PASS, asked: ASKED, stage: 2, pass: PASS, covered: false });
+    assert(!p.rangeProgress('open:UTG').cleared, 'set up wrong: already cleared before the covered run');
+    const result = p.noteRangeRun('open:UTG', { right: PASS, asked: ASKED, stage: 2, pass: PASS, covered: true });
+    assert(result.cleared, 'a fully covered, passing run still did not clear it');
+  });
+});
+
+describe('range trainer: a "cleared" earned before coverage counted gets re-checked once', () => {
+  it('downgrades a checkpoint that was cleared without ever seeing its boundary', () => {
+    const p = new Profile({
+      ranges: { 'open:UTG': { stage: 2, cleared: true, runs: 3, peeks: 0, best: 15, hands: { AA: '1' } } },
+    });
+    const pool = edgePoolFor(CHECKPOINTS.find((c) => c.key === 'open:UTG'));
+    p.migrateEdgeCoverage({ 'open:UTG': pool });
+    assert(!p.rangeProgress('open:UTG').cleared, 'a badge earned on a single seen hand survived the re-check');
+    // Stage and history are not the thing that changed shape here — only
+    // the bar "cleared" has to clear. Punishing a bad run already does not
+    // take a rung away, and this should not either.
+    equal(p.rangeProgress('open:UTG').stage, 2, 'the re-check took the rung away, not just the badge');
+  });
+
+  it('leaves a checkpoint alone whose boundary really was fully seen', () => {
+    const utg = CHECKPOINTS.find((c) => c.key === 'open:UTG');
+    const pool = edgePoolFor(utg);
+    const hands = Object.fromEntries(pool.map((h) => [h, '1']));
+    const p = new Profile({
+      ranges: { 'open:UTG': { stage: 2, cleared: true, runs: 3, peeks: 0, best: 15, hands } },
+    });
+    p.migrateEdgeCoverage({ 'open:UTG': pool });
+    assert(p.rangeProgress('open:UTG').cleared, 'a genuinely earned badge was taken away');
+  });
+
+  it('runs exactly once, and does not undo progress earned after it ran', () => {
+    const utg = CHECKPOINTS.find((c) => c.key === 'open:UTG');
+    const pool = edgePoolFor(utg);
+    const p = new Profile({
+      ranges: { 'open:UTG': { stage: 2, cleared: true, runs: 1, peeks: 0, best: 15, hands: { AA: '1' } } },
+    });
+    p.migrateEdgeCoverage({ 'open:UTG': pool });
+    assert(!p.rangeProgress('open:UTG').cleared, 'set up wrong: the first pass did not downgrade it');
+    // Earn it properly, the way the ladder itself would after the downgrade.
+    for (const hand of pool) p.recordRangeHand('open:UTG', hand, true);
+    p.noteRangeRun('open:UTG', { right: PASS, asked: ASKED, stage: 2, pass: PASS, covered: true });
+    assert(p.rangeProgress('open:UTG').cleared, 'set up wrong: could not earn it back');
+    p.migrateEdgeCoverage({ 'open:UTG': pool });
+    assert(p.rangeProgress('open:UTG').cleared, 'a second migration pass erased progress earned after the first');
   });
 });
 
