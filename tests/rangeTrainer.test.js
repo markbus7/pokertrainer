@@ -190,6 +190,21 @@ describe('range trainer: it remembers which hands you actually miss', () => {
     for (const h of hands) p.recordRangeHand('open:SB', h, false);
     equal(p.weakRangeHands(['open:SB'], 2).length, 2, 'the limit was not respected');
   });
+
+  it('a miss survives the run finishing, not just the question being answered', () => {
+    // The screen calls recordRangeHand once per question, then noteRangeRun
+    // once at the end of the whole rung. noteRangeRun used to rebuild the
+    // checkpoint's stored progress from scratch and drop the hands map that
+    // recordRangeHand had just written — so every miss vanished the instant
+    // the rung you missed it on was completed, and the weak-hands panel
+    // never had anything to show.
+    const p = new Profile();
+    p.recordRangeHand('open:UTG', '72o', false);
+    p.noteRangeRun('open:UTG', { right: PASS, asked: ASKED, stage: 1, pass: PASS });
+    const weak = p.weakRangeHands(['open:UTG']);
+    equal(weak.length, 1, 'the miss did not survive the rung being completed');
+    equal(weak[0].hand, '72o');
+  });
 });
 
 describe('range trainer: a weak hand can be asked about again on purpose', () => {
