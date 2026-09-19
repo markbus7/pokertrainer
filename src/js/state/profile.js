@@ -447,6 +447,11 @@ export class Profile {
       peeks: (before.peeks || 0) + peeks,
       best: Math.max(before.best || 0, right),
       lastAsked: asked,
+      // recordRangeHand has already written this run's misses in here by the
+      // time a run finishes — dropping it on every rung completed was
+      // exactly that: the weak-hand list going empty the moment you reached
+      // the summary screen that was supposed to be built from it.
+      hands: before.hands,
     };
     this.ranges[key] = next;
     this.save();
