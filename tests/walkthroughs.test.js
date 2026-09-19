@@ -617,7 +617,7 @@ describe('walkthroughs: hands-on exercises', () => {
 });
 
 describe('preflop lesson: the step about calling agrees with the charts', () => {
-  const step = WALKTHROUGHS.preflop.steps.find((s) => s.title === 'The one seat where calling is right');
+  const step = WALKTHROUGHS.preflop.steps.find((s) => s.title === 'Why the big blind calls wider');
 
   it('exists, and sits right after the rule it is the exception to', () => {
     // The reader asked "wanneer callen dan ipv raisen?" after reading a chart

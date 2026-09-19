@@ -128,6 +128,23 @@ export const THREE_BET = {
   BB: { value: 'TT+, AJs+, AQo+, KQs', bluff: 'A5s-A2s, K9s-K7s, QTs, J9s, T8s, 87s, 76s' },
 };
 
+/*
+ * ---- Calling a raise outside the blinds: the middle between three-betting
+ * and folding -------------------------------------------------------
+ *
+ * Always against a UTG open, the same simplification the three-betting
+ * chart already makes. Scaled by seat the way the three-bet bluff ranges
+ * already are: widest on the button, tightest in the small blind, because
+ * the small blind is out of position for the rest of the hand against
+ * everyone, UTG included, and a speculative hand needs position to pay for
+ * itself.
+ */
+export const CALL_VS_RAISE = {
+  CO: '22-99, A6s-A9s, KTs+, QJs, 98s, 76s, KQo',
+  BTN: '22-88, A6s-A9s, K9s-KJs, QTs-QJs, JTs, T9s, 98s, 87s, 54s, KQo, KJo',
+  SB: '22-88, A6s-A9s, KTs-KJs, QTs-QJs, JTs, 87s, 76s, KQo',
+};
+
 /* ---- Big blind defence: call wide, but only against wide openers -- */
 export const BB_DEFEND = {
   UTG: '22+, A2s+, K7s+, Q8s+, J8s+, T8s+, 97s+, 86s+, 75s+, 65s, 54s, A9o+, KTo+, QTo+, JTo',
@@ -149,10 +166,13 @@ function build() {
     threeBet[pos] = { value, bluff, all: new Set([...value, ...bluff]) };
   }
 
+  const callVsRaise = {};
+  for (const [pos, notation] of Object.entries(CALL_VS_RAISE)) callVsRaise[pos] = parseRange(notation);
+
   const bbDefend = {};
   for (const [pos, notation] of Object.entries(BB_DEFEND)) bbDefend[pos] = parseRange(notation);
 
-  return { rfi, threeBet, bbDefend };
+  return { rfi, threeBet, callVsRaise, bbDefend };
 }
 
 export const CHARTS = build();

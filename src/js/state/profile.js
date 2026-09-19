@@ -212,6 +212,7 @@ export class Profile {
     this.data.settings = { ...emptyProfile().settings, ...(data.settings || {}) };
     this.listeners = new Set();
     this.carryForwardTiers();
+    this.migrateThreeBetCall();
   }
 
   /**
@@ -227,6 +228,25 @@ export class Profile {
       stats.best = stats.earned;
       stats.recent = seedWindow(stats.attempts || 0, stats.correct || 0);
     }
+  }
+
+  /**
+   * "Facing a raise" used to be a binary three-bet-or-fold decision; it is
+   * now three-bet/call/fold, a different question with a different answer
+   * for every hand in the middle. Progress and weak-hand history recorded
+   * against the old binary version do not mean anything against the new
+   * one, so it resets exactly once — this flag is what keeps it from
+   * resetting again on every later load, including for a checkpoint a
+   * player only starts after this shipped, which never needed resetting
+   * at all.
+   */
+  migrateThreeBetCall() {
+    if (this.data.threebetCallMigrated) return;
+    if (this.data.ranges.threebet) {
+      delete this.data.ranges.threebet;
+      this.save();
+    }
+    this.data.threebetCallMigrated = true;
   }
 
   static load(storage = createStorage()) {

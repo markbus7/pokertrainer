@@ -49,19 +49,18 @@ export function rangeGridFor({ seat, raiser = null, hand = null, caption = true 
     title = t('Big blind against a {seat} open', { seat: t(seatName(raiser)) });
   } else {
     const three = CHARTS.threeBet[seat] || CHARTS.threeBet.CO;
-    member = (key) => (three.value.has(key) ? 'value' : three.bluff.has(key) ? 'bluff' : '');
-    title = t('Three-betting range — {seat}', { seat: t(seatName(seat)) });
+    const call = CHARTS.callVsRaise[seat] || CHARTS.callVsRaise.CO;
+    member = (key) => (three.value.has(key) ? 'value' : three.bluff.has(key) ? 'bluff' : call.has(key) ? 'in' : '');
+    title = t('Facing a raise — {seat}', { seat: t(seatName(seat)) });
   }
 
-  // What the shading means. Without this the grid is three colours and a
-  // guess — and for a three-betting chart the honest note is that the hands
-  // it leaves blank are not all folds: there is no call-an-open chart outside
-  // the big blind, so saying nothing here would imply one.
+  // What the shading means. Without this the grid is four colours and a
+  // guess.
   const legend = !raiser
     ? [['in', 'Raise']]
     : seat === 'BB'
       ? [['value', '3-bet'], ['in', 'Call']]
-      : [['value', '3-bet for value'], ['bluff', '3-bet as a bluff']];
+      : [['value', '3-bet for value'], ['bluff', '3-bet as a bluff'], ['in', 'Call']];
 
   return el('div.chart-panel',
     caption ? el('div.chart-caption', title) : null,
@@ -76,9 +75,6 @@ export function rangeGridFor({ seat, raiser = null, hand = null, caption = true 
     el('div.chart-legend',
       legend.map(([cls, label]) => el('span.chart-key',
         el('span', { class: `chart-swatch ${cls}` }), t(label))),
-      raiser && seat !== 'BB'
-        ? el('span.faint', t('Everything else folds — outside the big blind there is no calling range.'))
-        : null,
     ),
   );
 }

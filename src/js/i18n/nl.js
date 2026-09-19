@@ -3749,7 +3749,7 @@ export const NL = {
   'Opening from the button': 'Openen van de button',
   'Opening from the small blind': 'Openen van de small blind',
   'Defending the big blind': 'De big blind verdedigen',
-  'Three-betting a raise': 'Een raise 3-betten',
+  'Facing a raise': 'Tegen een raise',
   'The exam': 'Het examen',
   'Every position, every spot, no chart. Pass this and you know them.':
     'Elke positie, elke situatie, geen chart. Haal dit en je kent ze.',
@@ -3776,12 +3776,14 @@ export const NL = {
   '{hand} is a three-bet from the {seat} — {kind}.': '{hand} is een 3-bet vanuit de {seat} — {kind}.',
   'for value': 'voor value',
   'as a bluff': 'als bluf',
-  '{hand} is not in the {seat} three-betting range. Fold it.':
-    '{hand} zit niet in de 3-betrange van de {seat}. Folden.',
+  '{hand} calls from the {seat} — enough to see a flop for the price, not enough to raise.':
+    '{hand} callt vanuit de {seat} — genoeg voor de prijs van een flop, niet genoeg om te raisen.',
+  '{hand} does not continue from the {seat} against a raise. Fold it.':
+    '{hand} gaat niet door vanuit de {seat} tegen een raise. Folden.',
 
   'Opening range — {seat}': 'Openrange — {seat}',
   'Big blind against a {seat} open': 'Big blind tegen een open van de {seat}',
-  'Three-betting range — {seat}': '3-betrange — {seat}',
+  'Facing a raise — {seat}': 'Tegen een raise — {seat}',
 
   'Right — but you looked': 'Goed — maar je keek',
   'Not that one': 'Die niet',
@@ -3828,8 +3830,6 @@ export const NL = {
   'Raise': 'Raise',
   '3-bet for value': '3-bet voor value',
   '3-bet as a bluff': '3-bet als bluf',
-  'Everything else folds — outside the big blind there is no calling range.':
-    'De rest foldt — buiten de big blind is er geen callrange.',
   'Pairs and suited aces are always in.': 'Paren en suited azen zitten er altijd in.',
   'Worth knowing cold.': 'Waard om uit je hoofd te kennen.',
   'This one does not count toward your score.': 'Deze telt niet mee voor je score.',
@@ -3843,9 +3843,9 @@ export const NL = {
   '(the clock ran out)': '(de klok liep af)',
 
   // ---- preflop lesson: the one seat where calling is right ------------
-  'The one seat where calling is right': 'De enige stoel waar callen wél klopt',
-  'The last step said raise or fold, and meant it. There is exactly one seat where that rule bends, and it is worth knowing precisely, because it is the seat you sit in more often than any other.':
-    'De vorige stap zei raise of fold, en meende dat. Er is precies één stoel waar die regel buigt, en die is het waard om precies te kennen — want het is de stoel waar je vaker in zit dan in welke andere ook.',
+  'Why the big blind calls wider': 'Waarom de big blind breder callt',
+  'The last step said raise or fold, and meant it almost everywhere. One seat bends it furthest, and it is worth knowing precisely why, because it is the seat you sit in more often than any other.':
+    'De vorige stap zei raise of fold, en meende dat bijna overal. Eén stoel buigt die regel het verst, en het is de moeite waard om precies te weten waarom — want het is de stoel waar je vaker in zit dan in welke andere ook.',
   'In the **big blind** you have already paid. When somebody opens to 2.5 big blinds you are not paying 2.5 to see a flop — you are paying the 1.5 you have not put in yet, to win a pot of 4.':
     'In de **big blind** heb je al betaald. Als iemand opent naar 2,5 big blinds betaal je geen 2,5 om de flop te zien — je betaalt de 1,5 die je nog niet hebt ingelegd, om een pot van 4 te winnen.',
   'That discount is the entire reason a calling range exists at all. On top of it you **close the action**: nobody can raise behind you, so there is no risk of calling and then facing a squeeze.':
@@ -3862,8 +3862,8 @@ export const NL = {
   'You need': 'Je hebt nodig',
   'From the big blind': 'Vanuit de big blind',
   'From any other seat': 'Vanuit elke andere stoel',
-  'Eleven points of discount, and it is the whole story. Against a cutoff open the big blind defends 90 hands: 23 of them three-bet and 67 just call. From every other seat there is no calling range at all in these charts — it is three-bet or fold.':
-    'Elf punten korting, en dat is het hele verhaal. Tegen een open van de cutoff verdedigt de big blind 90 handen: 23 daarvan 3-betten en 67 callen gewoon. Vanuit elke andere stoel bestaat er in deze charts helemaal geen callrange — het is 3-betten of folden.',
+  'Eleven points of discount, and it is the whole story for the big blind. Against a cutoff open it defends 90 hands: 23 of them three-bet and 67 just call — a wider call than any other seat gets, because nowhere else is the price this good.':
+    'Elf punten korting, en dat is het hele verhaal voor de big blind. Tegen een open van de cutoff verdedigt hij 90 handen: 23 daarvan 3-betten en 67 callen gewoon — breder dan elke andere stoel callt, want nergens anders is de prijs zo goed.',
   'The cutoff opens to 2.5 big blinds and folds around to you in the big blind. You hold a pair of eights. What is your play?':
     'De cutoff opent naar 2,5 big blinds en het wordt naar jou gefold in de big blind. Je hebt een paar achten. Wat doe je?',
   'Right. Eights flop well enough to be worth 1.5 more at those odds, but they are not a hand that wants a four-bet decision. Take the cheap flop and play it in a small pot.':

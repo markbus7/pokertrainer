@@ -977,9 +977,9 @@ export const WALKTHROUGHS = {
         },
       },
       {
-        title: 'The one seat where calling is right',
+        title: 'Why the big blind calls wider',
         body: [
-          'The last step said raise or fold, and meant it. There is exactly one seat where that rule bends, and it is worth knowing precisely, because it is the seat you sit in more often than any other.',
+          'The last step said raise or fold, and meant it almost everywhere. One seat bends it furthest, and it is worth knowing precisely why, because it is the seat you sit in more often than any other.',
           'In the **big blind** you have already paid. When somebody opens to 2.5 big blinds you are not paying 2.5 to see a flop — you are paying the 1.5 you have not put in yet, to win a pot of 4.',
           'That discount is the entire reason a calling range exists at all. On top of it you **close the action**: nobody can raise behind you, so there is no risk of calling and then facing a squeeze.',
           'So which hands call rather than three-bet? Three-bet the two ends of your range. **For value** with hands that want a bigger pot — tens and better, A-J suited and better, A-Q offsuit and better, K-Q suited. **As a bluff** with hands that need a fold but hold a card he wants: small suited aces, suited kings, the better suited connectors. Your ace blocks half the hands that would beat you.',
@@ -993,7 +993,7 @@ export const WALKTHROUGHS = {
             ['From the big blind', '1.5 bb', '4 bb', '27%'],
             ['From any other seat', '2.5 bb', '4 bb', '38%'],
           ],
-          caption: 'Eleven points of discount, and it is the whole story. Against a cutoff open the big blind defends 90 hands: 23 of them three-bet and 67 just call. From every other seat there is no calling range at all in these charts — it is three-bet or fold.',
+          caption: 'Eleven points of discount, and it is the whole story for the big blind. Against a cutoff open it defends 90 hands: 23 of them three-bet and 67 just call — a wider call than any other seat gets, because nowhere else is the price this good.',
         },
         check: {
           question: 'The cutoff opens to 2.5 big blinds and folds around to you in the big blind. You hold a pair of eights. What is your play?',
