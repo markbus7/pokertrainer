@@ -70,7 +70,7 @@ export const CHECKPOINTS = [
   { key: 'open:BTN', kind: 'open', seat: 'BTN', name: 'Opening from the button' },
   { key: 'open:SB', kind: 'open', seat: 'SB', name: 'Opening from the small blind' },
   { key: 'defend:BB', kind: 'defend', seat: 'BB', name: 'Defending the big blind' },
-  { key: 'threebet', kind: 'threebet', name: 'Three-betting a raise' },
+  { key: 'threebet', kind: 'threebet', name: 'Facing a raise' },
   {
     key: 'exam',
     kind: 'exam',

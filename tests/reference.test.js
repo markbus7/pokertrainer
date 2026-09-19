@@ -68,15 +68,19 @@ describe('reference: the chart it shows is the chart for the spot', () => {
       assert(CHARTS.threeBet[seat], `no three-betting range for ${seat}`);
     }
     assert(CHARTS.threeBet.BB, 'no three-betting range for the big blind');
+    for (const seat of ['CO', 'BTN', 'SB']) {
+      assert(CHARTS.callVsRaise[seat], `no calling range for ${seat} against a raise`);
+    }
   });
 
-  it('says what the colours mean, including what is missing', () => {
+  it('says what the colours mean, and marks a call where one exists', () => {
     const src = read('ui/reference.js');
     assert(/chart-legend/.test(src), 'the grid has no legend');
-    // Outside the big blind there is no call-an-open chart, so an uncoloured
-    // cell is not evidence of a fold. Saying nothing would imply it is.
-    assert(/there is no calling range/.test(src),
-      'the three-betting chart implies every blank cell is a fold');
+    // Outside the big blind there is now a calling range too, so the
+    // facing-a-raise chart's legend has to say so the same way the big
+    // blind's already does — otherwise a blank cell stops meaning fold.
+    assert(/\['value', '3-bet for value'\], \['bluff', '3-bet as a bluff'\], \['in', 'Call'\]/.test(src),
+      'the facing-a-raise chart does not mark its calling range');
   });
 });
 

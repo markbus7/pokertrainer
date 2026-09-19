@@ -37,6 +37,26 @@ describe('range trainer: the questions are the chart and nothing else', () => {
     }
   });
 
+  it('grades every "facing a raise" question straight off the chart, three ways', () => {
+    // Same guarantee as the opening chart, extended to a three-way answer:
+    // the drill and the chart cannot disagree, whichever of the three it
+    // lands on.
+    const rng = makeRng(16);
+    const threebet = CHECKPOINTS.find((c) => c.kind === 'threebet');
+    const seen = new Set();
+    for (let i = 0; i < 300; i++) {
+      const q = rangeQuestion(threebet, rng, new Set());
+      const three = CHARTS.threeBet[q.seat];
+      const call = CHARTS.callVsRaise[q.seat];
+      const expected = three.all.has(q.hand) ? 'Raise' : call.has(q.hand) ? 'Call' : 'Fold';
+      equal(q.answer, expected, `${q.hand} from ${q.seat}`);
+      seen.add(q.answer);
+    }
+    for (const outcome of ['Raise', 'Call', 'Fold']) {
+      assert(seen.has(outcome), `300 questions never once produced ${outcome}`);
+    }
+  });
+
   it('always offers the limp and never rewards it in an unopened pot', () => {
     // Leaving Call off would make the question easier than the table, where
     // the button is right there and calling feels safe.
@@ -120,6 +140,37 @@ describe('range trainer: the support comes off', () => {
     const result = p.noteRangeRun('open:HJ', { right: PASS - 1, asked: ASKED, peeks: 9, stage: 1, pass: PASS });
     assert(!result.passed, 'passed a rung on looked-up answers');
     equal(p.rangeProgress('open:HJ').peeks, 9, 'peeks are not recorded');
+  });
+});
+
+describe('range trainer: facing a raise changed shape, so stale progress resets', () => {
+  it('wipes progress recorded against the old binary raise-or-fold version, once', () => {
+    // "Facing a raise" used to be raise-or-fold; adding a call option makes
+    // it a different question, so a "cleared" badge and a weak-hand window
+    // earned against the old one do not mean anything against the new one.
+    const stale = {
+      ranges: {
+        threebet: { stage: 2, cleared: true, runs: 4, peeks: 0, best: 15, hands: { AKo: '0' } },
+        'open:UTG': { stage: 2, cleared: true, runs: 3, peeks: 0, best: 14, hands: { AA: '0' } },
+      },
+    };
+    const p = new Profile(stale);
+    assert(!p.rangeProgress('threebet').cleared, 'stale progress on the changed checkpoint survived');
+    equal(p.weakRangeHands(['threebet']).length, 0, 'stale weak-hand history on it survived');
+    // Untouched: only the checkpoint whose decision shape actually changed resets.
+    assert(p.rangeProgress('open:UTG').cleared, 'an unrelated checkpoint was reset too');
+    equal(p.weakRangeHands(['open:UTG']).length, 1, 'an unrelated checkpoint lost its weak-hand history');
+  });
+
+  it('does not wipe it again on a later load, including fresh progress earned after the reset', () => {
+    const stale = { ranges: { threebet: { stage: 2, cleared: true, runs: 1, peeks: 0, best: 15 } } };
+    const p = new Profile(stale);
+    p.noteRangeRun('threebet', { right: 13, asked: ASKED, stage: 2, pass: PASS });
+    assert(p.rangeProgress('threebet').cleared, 'the run just played did not clear it');
+    // Reloading from what was just saved must not run the migration again —
+    // it would erase the progress earned one line above.
+    const reloaded = new Profile(p.data);
+    assert(reloaded.rangeProgress('threebet').cleared, 'a second load re-ran the migration and erased fresh progress');
   });
 });
 

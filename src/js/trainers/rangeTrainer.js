@@ -85,26 +85,35 @@ function defendQuestion(rng, asked, forcedHand = null) {
   };
 }
 
-/** Facing a raise outside the blinds: it three-bets or it goes. */
+/** Facing a raise outside the blinds: three-bet, call, or fold. */
 function threeBetQuestion(rng, asked, forcedHand = null) {
   const seat = pick(rng, ['CO', 'BTN', 'SB']);
   const three = CHARTS.threeBet[seat];
-  const hand = forcedHand || drawHand(rng, three.all, asked);
+  const call = CHARTS.callVsRaise[seat];
+  // The edge worth drilling spans both boundaries this decision actually
+  // has — three-bet-or-not and call-or-fold — so it is drawn from
+  // everything that is not a fold, the same way defendQuestion draws from
+  // the whole defending range rather than just the three-betting slice of it.
+  const active = new Set([...three.all, ...call]);
+  const hand = forcedHand || drawHand(rng, active, asked);
   const isThree = three.all.has(hand);
+  const isCall = !isThree && call.has(hand);
   return {
     hand,
     cards: dealFrom(rng, hand),
     seat,
     raiser: 'UTG',
     prompt: t('An early raise comes to you in the {seat}.', { seat: t(seatName(seat)) }),
-    options: [OPEN.raise, OPEN.fold],
-    answer: isThree ? OPEN.raise : OPEN.fold,
+    options: [OPEN.raise, OPEN.call, OPEN.fold],
+    answer: isThree ? OPEN.raise : isCall ? OPEN.call : OPEN.fold,
     why: isThree
       ? t('{hand} is a three-bet from the {seat} — {kind}.', {
         hand, seat: t(seatName(seat)),
         kind: three.value.has(hand) ? t('for value') : t('as a bluff'),
       })
-      : t('{hand} is not in the {seat} three-betting range. Fold it.', { hand, seat: t(seatName(seat)) }),
+      : isCall
+        ? t('{hand} calls from the {seat} — enough to see a flop for the price, not enough to raise.', { hand, seat: t(seatName(seat)) })
+        : t('{hand} does not continue from the {seat} against a raise. Fold it.', { hand, seat: t(seatName(seat)) }),
   };
 }
 
