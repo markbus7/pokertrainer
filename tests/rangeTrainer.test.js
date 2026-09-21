@@ -346,6 +346,46 @@ describe('range trainer: it remembers which hands you actually miss', () => {
     equal(p.weakRangeHands(['open:SB'], 2).length, 2, 'the limit was not respected');
   });
 
+  it('says how many more rights clear a hand, not just the window size', () => {
+    const p = new Profile();
+    // One miss and nothing since: the whole window has to fill with rights.
+    p.recordRangeHand('open:UTG', 'A5o', false);
+    equal(p.weakRangeHands(['open:UTG']).find((r) => r.hand === 'A5o').needed, 5,
+      'a single fresh miss should need a full window of rights');
+
+    // A miss, then four rights already banked toward recovering from it —
+    // one more should be enough to push the miss out of a five-wide window.
+    const p2 = new Profile();
+    p2.recordRangeHand('open:UTG', 'K9o', false);
+    for (let i = 0; i < 4; i++) p2.recordRangeHand('open:UTG', 'K9o', true);
+    equal(p2.weakRangeHands(['open:UTG']).find((r) => r.hand === 'K9o').needed, 1,
+      'four rights already banked since the miss should leave one to go');
+  });
+
+  it('needed is exact: that many more rights and not one fewer actually clears it', () => {
+    const p = new Profile();
+    p.recordRangeHand('open:UTG', 'Q8o', false);
+    const needed = p.weakRangeHands(['open:UTG']).find((r) => r.hand === 'Q8o').needed;
+    for (let i = 0; i < needed - 1; i++) p.recordRangeHand('open:UTG', 'Q8o', true);
+    assert(p.weakRangeHands(['open:UTG']).some((r) => r.hand === 'Q8o'),
+      'one right short of needed already cleared the hand');
+    p.recordRangeHand('open:UTG', 'Q8o', true);
+    assert(!p.weakRangeHands(['open:UTG']).some((r) => r.hand === 'Q8o'),
+      'the exact number of rights needed did not clear the hand');
+  });
+
+  it('recent is the window in order, as booleans rather than the stored characters', () => {
+    const p = new Profile();
+    p.recordRangeHand('open:UTG', 'J8o', false);
+    p.recordRangeHand('open:UTG', 'J8o', true);
+    p.recordRangeHand('open:UTG', 'J8o', false);
+    const row = p.weakRangeHands(['open:UTG']).find((r) => r.hand === 'J8o');
+    equal(row.recent.length, 3);
+    equal(row.recent[0], false, 'the first attempt should read as wrong');
+    equal(row.recent[1], true, 'the second attempt should read as right');
+    equal(row.recent[2], false, 'the third attempt should read as wrong');
+  });
+
   it('a miss survives the run finishing, not just the question being answered', () => {
     // The screen calls recordRangeHand once per question, then noteRangeRun
     // once at the end of the whole rung. noteRangeRun used to rebuild the

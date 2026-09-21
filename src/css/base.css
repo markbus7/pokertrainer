@@ -1923,6 +1923,22 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
 .pip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border-bright); }
 .pip-dot.lit { background: var(--accent); }
 
+.weak-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  width: 100%;
+  padding: var(--s-3) var(--s-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.weak-hand { font-weight: 650; min-width: 4ch; }
+.weak-marks { display: flex; gap: 3px; flex: 0 0 auto; }
+.mark-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
+.mark-dot.ok { background: var(--green); }
+
 /* ---- a run ---------------------------------------------------------- */
 
 .run-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s-3); }

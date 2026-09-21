@@ -3822,6 +3822,10 @@ export const NL = {
   'None of these are still on the list. Come back once there are more.':
     'Geen hiervan staat nog op de lijst. Kom terug zodra er meer zijn.',
   'From your weak hands': 'Uit je zwakke handen',
+  'Worst first. Get one right, unaided, and its count ticks down; miss it again and it resets.':
+    'Ergste eerst. Krijg hem zonder hulp goed en de teller telt af; mis hem nog een keer en hij springt terug.',
+  '{n} more right and it comes off this list.':
+    'Nog {n}x goed en hij verdwijnt van deze lijst.',
 
   // ---- the reference at the table -------------------------------------
   'Open the reference': 'Spiekbriefje openen',

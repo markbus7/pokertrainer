@@ -552,6 +552,14 @@ export class Profile {
    * does. Ties go to whichever has fewer attempts recorded, so a hand seen
    * once and missed once outranks one seen five times and missed once at the
    * same share — the fresher miss is the one still worth confirming.
+   *
+   * `needed` is how many more unaided rights, in a row, clear the hand from
+   * this list — not always the window size: a hand already a few rights
+   * into recovering from its last miss needs fewer, and the count is exact
+   * because it is read off the same window recordRangeHand writes, not
+   * re-derived from the rounded wrongShare above it. `recent` is that same
+   * window, oldest first, as booleans rather than the '0'/'1' string it is
+   * stored as — the shape of the miss, not just its share.
    */
   weakRangeHands(checkpointKeys, limit = 15) {
     const rows = [];
@@ -560,7 +568,15 @@ export class Profile {
       for (const [hand, recent] of Object.entries(hands)) {
         const wrong = [...recent].filter((c) => c === '0').length;
         if (!wrong) continue;
-        rows.push({ checkpointKey: key, hand, wrongShare: wrong / recent.length, attempts: recent.length });
+        const streak = recent.length - 1 - recent.lastIndexOf('0');
+        rows.push({
+          checkpointKey: key,
+          hand,
+          wrongShare: wrong / recent.length,
+          attempts: recent.length,
+          needed: RANGE_HAND_WINDOW - streak,
+          recent: [...recent].map((c) => c === '1'),
+        });
       }
     }
     rows.sort((a, b) => b.wrongShare - a.wrongShare || a.attempts - b.attempts);
