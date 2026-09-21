@@ -378,9 +378,14 @@ export function renderRangeWeak(ctx) {
   }
 
   const state = {
-    index: 0, right: 0,
+    started: false, index: 0, right: 0,
     checkpoint: null, question: null, answered: null, peeked: false, showChart: false, done: false,
   };
+
+  function start() {
+    state.started = true;
+    nextQuestion();
+  }
 
   function nextQuestion() {
     const row = pool[state.index];
@@ -420,8 +425,31 @@ export function renderRangeWeak(ctx) {
   }
 
   function draw() {
+    if (!state.started) return mount(root, browse());
     if (state.done) return mount(root, summary());
     mount(root, running());
+  }
+
+  function weakRow(row) {
+    return el('div.weak-row',
+      el('span.weak-hand', row.hand),
+      el('div.rung-body',
+        !scopeKey ? el('span.rung-note', t(checkpointFor(row.checkpointKey).name)) : null,
+        el('span.rung-note', t('{n} more right and it comes off this list.', { n: row.needed })),
+      ),
+      el('span.weak-marks', row.recent.map((ok) => el(`span.mark-dot${ok ? '.ok' : ''}`))),
+    );
+  }
+
+  function browse() {
+    return el('div.panel',
+      el('div.panel-title', el('h3', icon('charts', { size: 18 }), t('Your weak hands'))),
+      chips(),
+      el('p.muted', t('Worst first. Get one right, unaided, and its count ticks down; miss it again and '
+        + 'it resets.')),
+      el('div.rungs', pool.map(weakRow)),
+      el('button.btn.primary', { style: { marginTop: 'var(--s-3)' }, onclick: start }, t('Practise them')),
+    );
   }
 
   function chips() {
@@ -517,6 +545,6 @@ export function renderRangeWeak(ctx) {
     );
   }
 
-  nextQuestion();
+  draw();
   return root;
 }
