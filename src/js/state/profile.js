@@ -453,10 +453,10 @@ export class Profile {
    * reads what is already there rather than tracking anything new.
    */
   rangeCoverage(key, pool) {
-    if (!pool.length) return { seen: 0, total: 0, complete: true };
+    if (!pool.length) return { seen: 0, unseen: 0, total: 0, complete: true };
     const hands = (this.ranges[key] || {}).hands || {};
     const seen = pool.filter((h) => h in hands).length;
-    return { seen, total: pool.length, complete: seen === pool.length };
+    return { seen, unseen: pool.length - seen, total: pool.length, complete: seen === pool.length };
   }
 
   /**

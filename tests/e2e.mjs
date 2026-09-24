@@ -1405,6 +1405,76 @@ await step('the range trainer takes the chart away one rung at a time', async ()
   console.log('      8 checkpoints, chart shown then hidden then gone, clock on the last rung');
 });
 
+await step('a checkpoint with every rung passed says what is still missing, and counts it the right way round', async () => {
+  // "0 van 8 in je hoofd, maar ik heb under the gun 3x gedaan — wanneer is
+  // het 1 van de 8?" All three pips lit and nothing on the row said why:
+  // the edge of the range had not all come up yet. Only the summary after a
+  // clock run mentioned it, and it had the number backwards — the hands
+  // already seen, reported as the hands still missing.
+  const seeded = await page.evaluate(async () => {
+    const { edgePoolFor } = await import('/src/js/trainers/rangeTrainer.js');
+    const { CHECKPOINTS } = await import('/src/js/data/rangeLadder.js');
+    const pool = edgePoolFor(CHECKPOINTS.find((c) => c.key === 'open:UTG'));
+    const hands = Object.fromEntries(pool.slice(0, 20).map((h) => [h, '1']));
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    raw.ranges = { 'open:UTG': { stage: 3, cleared: false, runs: 3, peeks: 0, hands } };
+    localStorage.setItem(key, JSON.stringify(raw));
+    return { total: pool.length, seen: 20 };
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#ranges`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  const toGo = seeded.total - seeded.seen;
+  const note = await page.$eval('.rung-row .rung-note', (e) => e.textContent.trim());
+  if (!note.includes(String(toGo))) {
+    throw new Error(`all three rungs passed with ${toGo} edge hands unseen, and the row reads "${note}"`);
+  }
+
+  // Play the clock rung for real, right every time, so the run passes and
+  // the summary has to explain why that still is not "in your head".
+  await page.click('.rung-row');
+  await page.waitForTimeout(400);
+  const RANKS = '23456789TJQKA';
+  for (let i = 0; i < 15; i++) {
+    await page.waitForSelector('.ask-option:not([disabled])', { timeout: 10000 });
+    const [a, b] = await page.$$eval('.hand-row .card', (els) => els.map((e) => ({
+      rank: e.querySelector('.rank').textContent.trim(),
+      suit: e.querySelector('.suit').textContent.trim(),
+    })));
+    const [hi, lo] = RANKS.indexOf(a.rank) >= RANKS.indexOf(b.rank) ? [a, b] : [b, a];
+    const hand = hi.rank === lo.rank ? hi.rank + lo.rank : hi.rank + lo.rank + (a.suit === b.suit ? 's' : 'o');
+    const raise = await page.evaluate(async (h) => {
+      const { CHARTS } = await import('/src/js/data/ranges.js');
+      return CHARTS.rfi.UTG.has(h);
+    }, hand);
+    await page.click(`.ask-option:has-text("${raise ? 'Raise' : 'Fold'}")`);
+    await page.click('button.btn.primary.lg.block');
+  }
+  await page.waitForTimeout(300);
+  const after = await page.evaluate(async () => {
+    const { edgePoolFor } = await import('/src/js/trainers/rangeTrainer.js');
+    const { CHECKPOINTS } = await import('/src/js/data/rangeLadder.js');
+    const pool = edgePoolFor(CHECKPOINTS.find((c) => c.key === 'open:UTG'));
+    const hands = JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).ranges['open:UTG'].hands || {};
+    return { total: pool.length, seen: pool.filter((h) => h in hands).length };
+  });
+  const missing = after.total - after.seen;
+  const summary = (await page.textContent('.panel')).replace(/\s+/g, ' ');
+  if (!summary.includes(`${missing} of ${after.total}`) && !summary.includes(`${missing} van ${after.total}`)) {
+    throw new Error(`${missing} of ${after.total} edge hands are still unseen, and the summary reads "${summary}"`);
+  }
+
+  await page.evaluate(() => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    delete raw.ranges;
+    localStorage.setItem(key, JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  console.log(`      the row said ${toGo} to go; one clock run later the summary said ${missing} of ${after.total}`);
+});
+
 await step('the room you play in is a choice, and it survives a reload', async () => {
   // "Kots groen" — one palette imposed on every screen. The picker is the
   // answer, so it has to do three things here: open, actually repaint, and
