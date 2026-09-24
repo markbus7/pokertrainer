@@ -3754,11 +3754,15 @@ export const NL = {
   'Every position, every spot, no chart. Pass this and you know them.':
     'Elke positie, elke situatie, geen chart. Haal dit en je kent ze.',
 
-  'One question, over and over: what does the chart say to do with this hand, here. Each checkpoint is walked three times — with the chart open, with it behind a button, and then from memory on a clock. The last one is the only one that counts, because it is the one the table asks for.':
-    'Eén vraag, steeds opnieuw: wat zegt de chart dat je met deze hand doet, hier. Elk ijkpunt loop je drie keer — met de chart erbij, met de chart achter een knop, en daarna uit je hoofd op de klok. Alleen die laatste telt echt, want dat is wat de tafel van je vraagt.',
+  'One question, over and over: what does the chart say to do with this hand, here. Each checkpoint is walked three times — with the chart open, with it behind a button, and then from memory on a clock. The last one is the only one that counts, because it is the one the table asks for. A checkpoint is in your head once you pass it and every hand on the edge of its range has come up at least once — fifteen questions are a sample, not the whole boundary.':
+    'Eén vraag, steeds opnieuw: wat zegt de chart dat je met deze hand doet, hier. Elk ijkpunt loop je drie keer — met de chart erbij, met de chart achter een knop, en daarna uit je hoofd op de klok. Alleen die laatste telt echt, want dat is wat de tafel van je vraagt. Een ijkpunt zit in je hoofd zodra je die haalt én elke hand op de grens van de range minstens één keer langs is geweest — vijftien vragen zijn een steekproef, niet de hele grens.',
   '{done} of {total} in your head': '{done} van {total} in je hoofd',
   'In your head.': 'In je hoofd.',
   'Opens once the rest are in your head.': 'Gaat open zodra de rest in je hoofd zit.',
+  'All three rungs passed — {n} edge hands still to come up.':
+    'Alle drie de treden gehaald — nog {n} grenshanden te gaan.',
+  'Every edge hand has come up — one more pass on the clock.':
+    'Alle grenshanden zijn langsgekomen — nog één keer halen op de klok.',
   'Learn the charts until you do not need them': 'Leer de charts tot je ze niet meer nodig hebt',
   'Eight checkpoints. Each one walked with the chart open, then behind a button, then from memory on a clock.':
     'Acht ijkpunten. Elk één keer met de chart erbij, dan achter een knop, dan uit je hoofd op de klok.',
@@ -3798,8 +3802,8 @@ export const NL = {
     'Gehaald, zonder chart en met de klok lopend. Dat is de trede die telt.',
   'Passed. The next run takes some of the help away.':
     'Gehaald. De volgende ronde haalt een stukje hulp weg.',
-  'Passed — but {seen} of {total} edge hands have not come up yet, so it is not in your head yet. Run it again; it steers toward what you have not seen.':
-    'Gehaald — maar {seen} van {total} grenshanden zijn nog niet langsgekomen, dus hij zit nog niet in je hoofd. Doe nog een ronde; hij stuurt nu naar wat je nog niet hebt gezien.',
+  'Passed — but {unseen} of {total} edge hands have not come up yet, so it is not in your head yet. Run it again; it steers toward what you have not seen.':
+    'Gehaald — maar {unseen} van {total} grenshanden zijn nog niet langsgekomen, dus hij zit nog niet in je hoofd. Doe nog een ronde; hij stuurt nu naar wat je nog niet hebt gezien.',
   '{pass} of {asked} passes this rung. Run it again — the hands you missed come back.':
     '{pass} van {asked} haalt deze trede. Doe nog een ronde — de handen die je miste komen terug.',
   'You looked at the chart {n} times. Those answers were not counted, which is what the number is for — it says how much is still on the wall rather than in your head.':

@@ -180,6 +180,9 @@ describe('range trainer: a pass is a sample, and cleared wants the whole boundar
     const coverage = p.rangeCoverage('open:UTG', ['AJo', 'K9s', 'T8s']);
     equal(coverage.seen, 2, 'a right answer did not count as seen');
     equal(coverage.total, 3);
+    // Spelled out rather than left for the screen to subtract: the summary
+    // once filled "{n} have not come up yet" with the seen count instead.
+    equal(coverage.unseen, 1, 'the hands still to come up are not total minus seen');
     assert(!coverage.complete, 'a hand never asked was counted as covered');
   });
 

@@ -55,6 +55,21 @@ export function renderRangeLadder(ctx) {
     const total = checkpoint.only === 'blind' ? 1 : STAGES.length;
     const done = checkpoint.only === 'blind' ? (p.cleared ? 1 : 0) : Math.min(p.stage, total);
     const locked = checkpoint.kind === 'exam' && cleared < CHECKPOINTS.length - 1;
+    const note = () => {
+      if (p.cleared) return t('In your head.');
+      if (locked) return t('Opens once the rest are in your head.');
+      // Every rung passed and still not in your head: the rung name here read
+      // as "still on the clock rung" to a reader looking at three lit pips,
+      // who then had no way to tell that the only thing missing was the part
+      // of the boundary that had not come up yet.
+      if (p.stage >= STAGES.length) {
+        const { unseen } = profile.rangeCoverage(checkpoint.key, edgePoolFor(checkpoint));
+        return unseen
+          ? t('All three rungs passed — {n} edge hands still to come up.', { n: unseen })
+          : t('Every edge hand has come up — one more pass on the clock.');
+      }
+      return t(stageAt(p.stage).name);
+    };
     return el(`button.rung-row${p.cleared ? '.done' : ''}${locked ? '.shut' : ''}`, {
       disabled: locked,
       onclick: () => go('ranges-run', { spot: checkpoint.key }),
@@ -62,11 +77,7 @@ export function renderRangeLadder(ctx) {
       el('span.rung-mark', p.cleared ? icon('check', { size: 16 }) : locked ? icon('lock', { size: 15 }) : String(done)),
       el('span.rung-body',
         el('span.rung-name', t(checkpoint.name)),
-        el('span.rung-note', p.cleared
-          ? t('In your head.')
-          : locked
-            ? t('Opens once the rest are in your head.')
-            : t(stageAt(p.stage).name)),
+        el('span.rung-note', note()),
       ),
       el('span.rung-pips', Array.from({ length: total }, (_, i) =>
         el(`span.pip-dot${i < done ? '.lit' : ''}`))),
@@ -79,7 +90,9 @@ export function renderRangeLadder(ctx) {
       el('p.muted', t('One question, over and over: what does the chart say to do with this hand, here. '
         + 'Each checkpoint is walked three times — with the chart open, with it behind a button, and '
         + 'then from memory on a clock. The last one is the only one that counts, because it is the '
-        + 'one the table asks for.')),
+        + 'one the table asks for. A checkpoint is in your head once you pass it and every hand on the '
+        + 'edge of its range has come up at least once — fifteen questions are a sample, not the whole '
+        + 'boundary.')),
       // The reader's own report said it plainly: "DRILLED WITHOUT READING THE
       // LESSON: Preflop Ranges". The lesson exists and teaches exactly this —
       // step 4 reads the shorthand, step 7 is five numbers instead of a
@@ -231,9 +244,9 @@ export function renderRangeRun(ctx) {
           ? t('Cleared, with no chart and a clock running. That is the one that matters.')
           : stageIndex < 2
             ? t('Passed. The next run takes some of the help away.')
-            : t('Passed — but {seen} of {total} edge hands have not come up yet, so it is not in '
+            : t('Passed — but {unseen} of {total} edge hands have not come up yet, so it is not in '
               + 'your head yet. Run it again; it steers toward what you have not seen.',
-            { seen: coverage.seen, total: coverage.total })
+            { unseen: coverage.unseen, total: coverage.total })
         : t('{pass} of {asked} passes this rung. Run it again — the hands you missed come back.',
           { pass: PASS, asked: ASKED })),
       state.peeks
