@@ -133,6 +133,19 @@
   --sky-2: #1b2c46;
   --sky-orb: #ece6d4;
   --stars: 0.85;
+
+  /* Ink for the accents and the verdicts when they are printed on paper:
+     the room's own gold and greens are lamp colours, made for a dark
+     ground, and they wash out on a page. */
+  --ink-rgb: 35, 28, 20;
+  --ink-accent: #634610;
+  --ink-accent-rgb: 99, 70, 16;
+  --ink-green: #175a2f;
+  --ink-green-rgb: 23, 90, 47;
+  --ink-red: #8f1f1f;
+  --ink-red-rgb: 143, 31, 31;
+  --ink-blue: #1b4a80;
+  --ink-blue-rgb: 27, 74, 128;
 }
 
 /* ------------------------------------------------------------------
@@ -226,6 +239,19 @@
   --sky-2: #2a4638;
   --sky-orb: #dcd8b2;
   --stars: 0.35;
+
+  /* Ink for the accents and the verdicts when they are printed on paper:
+     the room's own gold and greens are lamp colours, made for a dark
+     ground, and they wash out on a page. */
+  --ink-rgb: 31, 27, 18;
+  --ink-accent: #634610;
+  --ink-accent-rgb: 99, 70, 16;
+  --ink-green: #175a2f;
+  --ink-green-rgb: 23, 90, 47;
+  --ink-red: #8f1f1f;
+  --ink-red-rgb: 143, 31, 31;
+  --ink-blue: #1b4a80;
+  --ink-blue-rgb: 27, 74, 128;
 }
 
 /* ------------------------------------------------------------------
@@ -320,6 +346,19 @@
   --sky-2: #a8533a;
   --sky-orb: #f3a15a;
   --stars: 0.2;
+
+  /* Ink for the accents and the verdicts when they are printed on paper:
+     the room's own gold and greens are lamp colours, made for a dark
+     ground, and they wash out on a page. */
+  --ink-rgb: 42, 26, 18;
+  --ink-accent: #634610;
+  --ink-accent-rgb: 99, 70, 16;
+  --ink-green: #175a2f;
+  --ink-green-rgb: 23, 90, 47;
+  --ink-red: #8f1f1f;
+  --ink-red-rgb: 143, 31, 31;
+  --ink-blue: #1b4a80;
+  --ink-blue-rgb: 27, 74, 128;
 }
 
 /* ------------------------------------------------------------------
@@ -422,6 +461,19 @@
   --sky-2: #f1e9d6;
   --sky-orb: #f5d272;
   --stars: 0;
+
+  /* Ink for the accents and the verdicts when they are printed on paper:
+     the room's own gold and greens are lamp colours, made for a dark
+     ground, and they wash out on a page. */
+  --ink-rgb: 31, 26, 19;
+  --ink-accent: #634610;
+  --ink-accent-rgb: 99, 70, 16;
+  --ink-green: #175a2f;
+  --ink-green-rgb: 23, 90, 47;
+  --ink-red: #8f1f1f;
+  --ink-red-rgb: 143, 31, 31;
+  --ink-blue: #1b4a80;
+  --ink-blue-rgb: 27, 74, 128;
 }
 
 /* ------------------------------------------------------------------

@@ -196,6 +196,28 @@ const PEOPLE = {
       + '<path d="M44 29l6-3 6 3-6 3z" fill="#d4ae4f"/>',
   },
 
+  /* ---- the teacher ---- */
+  silas: {
+    skin: SKIN.light,
+    ground: '#556250',
+    body: shoulders('#35333c')
+      + '<path d="M42 69L50 84L58 69Z" fill="#efe9dc"/>'
+      + '<path d="M40 70L50 79L60 70L57 67L50 72L43 67Z" fill="#b0302a"/>'
+      + '<path d="M47 76l3 9 3-9z" fill="#962723"/><circle cx="50" cy="76.5" r="2.6" fill="#b0302a"/>'
+      + '<circle cx="38" cy="88" r="1.3" fill="#c9a24a"/><circle cx="38" cy="95" r="1.3" fill="#c9a24a"/>'
+      + '<path d="M38 88q7 3 12 1" stroke="#c9a24a" stroke-width=".8" fill="none"/>',
+    hair: '<path d="M33 50C31 42 33 37 36 36L38 48Z" fill="#e2ddd4"/><path d="M67 50C69 42 67 37 64 36L62 48Z" fill="#e2ddd4"/>',
+    face: { mouth: 'smile', brow: '#e8e4dc' },
+    front: '<path d="M40 53.5C44 50 48 51 50 52.6C52 51 56 50 60 53.5C61 59 56.5 59.5 54 57.6C52.4 56.4 51 56 50 56C49 56 47.6 56.4 46 57.6C43.5 59.5 39 59 40 53.5Z" fill="#e4dfd6"/>'
+      + '<circle cx="43.5" cy="46" r="4.3" fill="#fff" fill-opacity=".14" stroke="#b9a15a" stroke-width="1.1"/>'
+      + '<circle cx="56.5" cy="46" r="4.3" fill="#fff" fill-opacity=".14" stroke="#b9a15a" stroke-width="1.1"/>'
+      + '<path d="M47.8 46h4.4M39.2 45.4l-4.6-1M60.8 45.4l4.6-1" stroke="#b9a15a" stroke-width="1"/>'
+      + '<path d="M34.5 34C34.5 18 65.5 18 65.5 34Z" fill="#2c2825"/>'
+      + '<path d="M34.6 30.4h30.8v3.6H34.6z" fill="#181513"/>'
+      + '<path d="M27 35C33 31.2 67 31.2 73 35C67 38.4 33 38.4 27 35Z" fill="#231f1c"/>'
+      + '<path d="M40 24q6-4 13-3" stroke="#46403a" stroke-width="1.2" fill="none"/>',
+  },
+
   /* ---- the regulars, keyed by the style they play ---- */
   rock: {
     skin: SKIN.tan,

@@ -19,6 +19,10 @@ import { renderVisual } from './visuals.js';
 import { moduleMeta, WALKTHROUGHS } from '../data/curriculum.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
 import * as audio from '../audio/engine.js';
+import { silasSays, silasVerdict, xpPop, stamp, svgNode } from './place.js';
+import { portraitSvg } from './portraits.js';
+import { MENTOR } from '../data/characters.js';
+import { MODULE_META } from '../data/curriculum.js';
 
 /**
  * Builds one hands-on exercise. A generator can decline a deal, so this
@@ -65,12 +69,13 @@ export function renderWalkthrough(ctx, params) {
   }
 
   const { profile, go } = ctx;
-  const state = { index: 0, chosen: null, practice: null, correctCount: 0, answered: new Set() };
+  const state = { index: 0, chosen: null, practice: null, correctCount: 0, answered: new Set(), verdictLine: null };
+  const chapterNo = MODULE_META.findIndex((m) => m.id === meta.id) + 1;
 
-  const header = el('div.panel');
-  const body = el('div.panel');
+  const header = el('div.panel.book-bar');
+  const body = el('div.panel.page.paper.lesson-page');
   const footer = el('div.row');
-  const root = el('div.screen', header, body, footer);
+  const root = el('div.screen.lesson', header, body, footer);
 
   const totalSteps = walkthrough.steps.length;
 
@@ -79,6 +84,7 @@ export function renderWalkthrough(ctx, params) {
     const step = walkthrough.steps[state.index];
     state.chosen = optionKey;
     const isCorrect = optionKey === step.check.answer;
+    state.verdictLine = optionKey === IDK ? null : silasVerdict(isCorrect);
     audio.sfx(isCorrect ? 'right' : 'wrong');
     // Checks were counted for the end-of-lesson summary and then thrown
     // away. They are cheap evidence of whether the step landed.
@@ -89,6 +95,7 @@ export function renderWalkthrough(ctx, params) {
       state.correctCount++;
       const before = profile.level;
       profile.addXp(10);
+      xpPop(10);
       if (profile.level > before) {
         audio.sfx('fanfare');
         toast({
@@ -123,6 +130,8 @@ export function renderWalkthrough(ctx, params) {
     const firstTime = profile.markWalkthroughComplete(meta.id);
     if (firstTime) profile.addXp(25);
 
+    if (firstTime) { audio.sfx('fanfare'); xpPop(25); }
+
     mount(header,
       el('div.row',
         el('span.module-glyph.lg', icon(meta.icon, { size: 24 })),
@@ -134,19 +143,19 @@ export function renderWalkthrough(ctx, params) {
     );
 
     mount(body,
+      el('div.result-head', stamp(t('Chapter read'), 'good')),
       el('h3', 'The whole thing, in five lines'),
       el('ul.lesson-points', walkthrough.recap.map((point) => el('li', el('span', richText(point))))),
-      el('div.notice', { style: { marginTop: '16px' } },
-        state.correctCount === totalSteps
-          ? 'You answered every check correctly. Go and drill it — the drills use randomly generated spots, so they will test whether it really stuck.'
-          : 'Some of those checks took a second attempt, which is exactly what they are for. The drills will give you unlimited fresh spots to practise on.',
-      ),
+      silasSays(t(state.correctCount === totalSteps
+        ? 'You answered every check correctly. Go and drill it — the drills use randomly generated spots, so they will test whether it really stuck.'
+        : 'Some of those checks took a second attempt, which is exactly what they are for. The drills will give you unlimited fresh spots to practise on.'),
+      { typed: false, size: 56, className: 'lesson-close' }),
     );
 
     mount(footer,
       el('button.btn.primary.lg', { onclick: () => go('drill', { module: meta.id }) }, `Drill ${meta.name}`),
       el('button.btn.ghost', { onclick: () => { state.index = 0; state.chosen = null; state.practice = null; draw(); } }, 'Read it again'),
-      el('button.btn.ghost', { onclick: () => go('home') }, 'Back to the river'),
+      el('button.btn.ghost', { onclick: () => go('train') }, 'Back to the school'),
     );
     return null;
   }
@@ -160,7 +169,7 @@ export function renderWalkthrough(ctx, params) {
         el('div.row',
           el('span.module-glyph', icon(meta.icon, { size: 20 })),
           el('div',
-            el('div', { style: { fontWeight: '650' } }, meta.name),
+            el('div.book-title', t('Chapter {n}', { n: chapterNo }), ' · ', t(meta.name)),
             el('div.faint', t('Step {n} of {total}', { n: stepNumber, total: totalSteps })),
           ),
         ),
@@ -176,8 +185,10 @@ export function renderWalkthrough(ctx, params) {
           el('button.btn.sm.ghost', { onclick: () => go('learn', { module: meta.id }) }, 'Exit lesson'),
         ),
       ),
-      el('div.bar', { style: { marginTop: '12px' } },
-        el('span', { style: { width: `${(stepNumber / totalSteps) * 100}%` } })),
+      // A ribbon of page markers rather than a bar: you can see how many
+      // pages there are, which you have turned, and which you are on.
+      el('div.page-marks', { 'aria-hidden': 'true' },
+        walkthrough.steps.map((_, i) => el(`span.page-mark${i < state.index ? '.done' : i === state.index ? '.now' : ''}`))),
     );
 
     const check = step.check;
@@ -194,9 +205,10 @@ export function renderWalkthrough(ctx, params) {
 
     mount(body,
       state.index === 0 && walkthrough.intro
-        ? el('div.notice', { style: { marginBottom: '18px' } }, walkthrough.intro)
+        ? silasSays(t(walkthrough.intro), { typed: false, size: 56, className: 'lesson-intro' })
         : null,
 
+      el('div.page-kicker', t('Step {n} of {total}', { n: stepNumber, total: totalSteps })),
       el('h2', step.title),
       el('div.lesson-body', step.body.map((paragraph) => el('p', richText(paragraph)))),
       step.visual ? renderVisual(step.visual) : null,
@@ -224,9 +236,10 @@ export function renderWalkthrough(ctx, params) {
           )
         : null,
 
-      check ? el('div', { style: { marginTop: '22px', paddingTop: '18px', borderTop: '1px solid var(--border)' } },
-        el('div.row', { style: { marginBottom: '10px' } },
-          el('span.badge.gold', 'Check yourself'),
+      check ? el('div.check-block',
+        el('div.check-head',
+          svgNode(portraitSvg('silas', { size: 40 }), 'silas-face'),
+          el('span.check-label', t(MENTOR.asks)),
         ),
         el('div.question', richText(check.question)),
         el('div.options',
@@ -242,6 +255,7 @@ export function renderWalkthrough(ctx, params) {
         ),
         answered
           ? el(`div.feedback.${skipped ? 'skip' : isCorrect ? 'correct' : 'wrong'}`,
+              state.verdictLine ? el('div.silas-line', el('span', state.verdictLine)) : null,
               el('div.verdict', skipped
                 ? t("You said you didn't know — here it is.")
                 : isCorrect ? '✓ That is right' : '✗ Not quite'),

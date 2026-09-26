@@ -150,6 +150,8 @@ describe('theme: everything that carries words stays readable', () => {
       ['brass-hi', 'wood-2'], ['brass-hi', 'wood-3'], ['on-brass', 'brass'],
       ['map-ink', 'map-land'], ['map-ink', 'map-land-2'], ['map-ink', 'map-water'],
       ['map-ink-dim', 'map-land'], ['map-ink', 'sky-1'],
+      ['ink-accent', 'paper'], ['ink-accent', 'paper-2'], ['ink-green', 'paper'], ['ink-green', 'paper-2'],
+      ['ink-red', 'paper'], ['ink-red', 'paper-2'], ['ink-blue', 'paper'], ['ink-blue', 'paper-2'],
     ];
     const failures = [];
     for (const theme of Object.keys(PALETTES)) {

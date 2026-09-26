@@ -141,6 +141,41 @@ export const BOSSES = {
 
 export const BOSS_KEYS = Object.keys(BOSSES);
 
+/**
+ * The teacher.
+ *
+ * Silas piloted steamboats on this river for forty years, and a pilot is
+ * the right teacher for this game: a pilot learns the river by heart — every
+ * bend, every snag, in the dark with no chart — which is exactly what the
+ * range trainer asks of the charts. He runs the card school, keeps the pilot
+ * house, and stands at your shoulder at the practice table.
+ *
+ * His lines are short on purpose. He introduces, points, and says right or
+ * wrong; the explanations themselves stay the lesson's own words, so the
+ * voice never gets between the reader and what is being taught.
+ */
+export const MENTOR = {
+  key: 'silas',
+  name: 'Silas Ward',
+  short: 'Silas',
+  title: 'Old river pilot',
+  school: 'Forty years at the wheel and thirty at the tables. Sit down — we start where you are.',
+  // What he says about the chapter he points you at, by why nextUp chose it.
+  next: {
+    untouched: 'You have not opened {module} yet. That is the quickest ground you will ever gain.',
+    thin: '{module} again. A few more answers and I will know whether you really have it.',
+    lesson: 'Read the {module} chapter before you drill it. Two minutes of reading beats ten questions of guessing.',
+    fresh: 'Everything is in your head. {module} is the coldest — warm it up.',
+    weakest: '{module} is where you leak the most. That is where we work today.',
+  },
+  pilot: 'A pilot knows the river by heart: every bend and every snag, at night, with no chart. The charts are the same. First by daylight with the chart on the table, then at dusk with it in the drawer, then at night with nothing but what you remember.',
+  shoals: 'These are your shoals — the hands you keep running aground on. Sound them until they are charted, and they come off this list on their own.',
+  right: ['That is it.', 'Good. Again.', 'Right, and no hesitation.', 'Clean.', 'Just so.'],
+  wrong: ['Not quite. Look again.', 'No — here is the catch.', 'Easy mistake. Read why.', 'Careful. This one bites.'],
+  asks: 'Silas asks',
+  table: 'Silas, at your shoulder',
+};
+
 export const bossFor = (key) => BOSSES[key] || null;
 
 /**

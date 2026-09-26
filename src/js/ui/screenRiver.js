@@ -21,14 +21,10 @@ import { bossFor, boatFor } from '../data/characters.js';
 import { nextUp, moduleMeta } from '../data/curriculum.js';
 import { MAP, mapSvg, stopPoint, boatSvg } from './riverArt.js';
 import { portraitSvg } from './portraits.js';
+import { svgNode } from './place.js';
 import * as audio from '../audio/engine.js';
 
-/** Build a node from a trusted SVG string drawn by riverArt/portraits. */
-export function svgNode(markup, className = '') {
-  const wrap = el(`span${className ? `.${className}` : ''}`);
-  wrap.innerHTML = markup;
-  return wrap;
-}
+export { svgNode };
 
 /** Everything the map and the side panel need to know about where you are. */
 export function riverState(profile) {
