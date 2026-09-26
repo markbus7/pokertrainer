@@ -181,7 +181,7 @@ const emptyProfile = () => ({
   // sync: pick Dutch and Daylight on the iPad and the iPhone matches,
   // without setting either twice.
   settings: {
-    sound: true, coach: true, fourColour: false, autoMuck: true,
+    sound: true, music: true, coach: true, fourColour: false, autoMuck: true,
     lang: 'en', theme: DEFAULT_THEME,
   },
 });

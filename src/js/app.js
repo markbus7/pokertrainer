@@ -21,9 +21,10 @@ import { renderTable } from './ui/screenTable.js';
 import { renderReview } from './ui/screenReview.js';
 import { renderStats, renderCharts, renderGlossary } from './ui/screenStats.js';
 import { renderLevels } from './ui/screenLevels.js';
+import * as audio from './audio/engine.js';
 
 const ROUTES = {
-  home: { render: renderCareer, tab: 'home', title: 'Career' },
+  home: { render: renderCareer, tab: 'home', title: 'Career', music: 'river' },
   train: { render: renderHome, tab: 'train', title: 'Training' },
   learn: { render: renderLearn, tab: 'train', title: 'Lesson' },
   walkthrough: { render: renderWalkthrough, tab: 'train', title: 'Guided lesson' },
@@ -34,7 +35,7 @@ const ROUTES = {
   gauntlet: { render: renderGauntletIntro, tab: 'gauntlet', title: 'Gauntlet' },
   lab: { render: renderLabIntro, tab: 'lab', title: 'The Lab' },
   'lab-run': { render: renderLab, tab: 'lab', title: 'The Lab' },
-  play: { render: renderTable, tab: 'play', title: 'Table' },
+  play: { render: renderTable, tab: 'play', title: 'Table', music: 'table' },
   review: { render: renderReview, tab: 'review', title: 'Hand review' },
   charts: { render: renderCharts, tab: 'charts', title: 'Charts' },
   glossary: { render: renderGlossary, tab: 'glossary', title: 'Glossary' },
@@ -113,6 +114,9 @@ function render() {
 
   mount($('#screen'), screen);
   drawTopbar(def.tab);
+  // The river has a tune, a table has a piano in the corner, and a lesson is
+  // quiet: music under reading is noise, whatever it is.
+  audio.setMusic(def.music || null);
   document.title = `${t(def.title)} · Poker Trainer`;
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 }
@@ -280,12 +284,28 @@ function announceUpdateIfBehind() {
 
 window.addEventListener('hashchange', render);
 
+/**
+ * Sound. The switches live in settings so they travel with the cloud sync;
+ * the engine is told whenever they change. Browsers only let audio start
+ * from something the reader did, so the first tap or key unlocks it — and
+ * every later one too, which is what brings it back after the phone rang.
+ */
+const applySound = () => audio.configure({
+  sfx: profile.settings.sound !== false,
+  music: profile.settings.music !== false,
+});
+applySound();
+for (const type of ['pointerdown', 'keydown']) {
+  document.addEventListener(type, () => audio.unlock(), { capture: true, passive: true });
+}
+
 document.addEventListener('keydown', (e) => {
   if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
   if (currentCtx && typeof currentCtx.onKey === 'function') currentCtx.onKey(e);
 });
 
 profile.onChange(() => {
+  applySound();
   drawTopbar(ROUTES[parseHash().route].tab);
   cloudSync.scheduleAutoPush(profile, (result) => {
     if (!result.ok && result.reason !== 'not-connected') {
@@ -338,6 +358,8 @@ reconcileWithCloud();
 announceUpdateIfBehind();
 
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState !== 'visible') return;
+  // A tab in the background should not keep a piano going.
+  if (document.visibilityState !== 'visible') { audio.pause(); return; }
+  audio.resume();
   reconcileWithCloud();
 });
