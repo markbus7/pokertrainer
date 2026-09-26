@@ -149,7 +149,7 @@ describe('theme: everything that carries words stays readable', () => {
       ['on-wood', 'wood-1'], ['on-wood', 'wood-2'], ['on-wood', 'wood-3'],
       ['brass-hi', 'wood-2'], ['brass-hi', 'wood-3'], ['on-brass', 'brass'],
       ['map-ink', 'map-land'], ['map-ink', 'map-land-2'], ['map-ink', 'map-water'],
-      ['map-ink-dim', 'map-land'],
+      ['map-ink-dim', 'map-land'], ['map-ink', 'sky-1'],
     ];
     const failures = [];
     for (const theme of Object.keys(PALETTES)) {

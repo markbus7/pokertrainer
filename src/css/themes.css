@@ -127,6 +127,12 @@
   --map-ink-dim: #93a3b8;
   --map-glow: #f2b23c;
   --map-mark: #ff7b84;
+
+  /* The sky over a stop: a moon, and every star out. */
+  --sky-1: #070b14;
+  --sky-2: #1b2c46;
+  --sky-orb: #ece6d4;
+  --stars: 0.85;
 }
 
 /* ------------------------------------------------------------------
@@ -214,6 +220,12 @@
   --map-ink-dim: #a8a48c;
   --map-glow: #d9b44a;
   --map-mark: #f2717a;
+
+  /* The sky over a stop: a pale moon through the damp. */
+  --sky-1: #0a1612;
+  --sky-2: #2a4638;
+  --sky-orb: #dcd8b2;
+  --stars: 0.35;
 }
 
 /* ------------------------------------------------------------------
@@ -302,6 +314,12 @@
   --map-ink-dim: #bfa391;
   --map-glow: #f0a256;
   --map-mark: #f4767b;
+
+  /* The sky over a stop: the sun going down red. */
+  --sky-1: #231327;
+  --sky-2: #a8533a;
+  --sky-orb: #f3a15a;
+  --stars: 0.2;
 }
 
 /* ------------------------------------------------------------------
@@ -398,6 +416,12 @@
   --map-ink-dim: #5f5140;
   --map-glow: #b8431f;
   --map-mark: #bd2a30;
+
+  /* The sky over a stop: high sun, no stars. */
+  --sky-1: #bcd8e3;
+  --sky-2: #f1e9d6;
+  --sky-orb: #f5d272;
+  --stars: 0;
 }
 
 /* ------------------------------------------------------------------

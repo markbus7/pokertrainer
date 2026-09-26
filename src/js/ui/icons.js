@@ -50,6 +50,16 @@ export const ICON_PATHS = {
   ladder: 'M7 2v20M17 2v20M7 7h10M7 12h10M7 17h10',
   clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3.5 2',
 
+  /* --- what each boss leaves behind when you take their table ----- */
+  'k-lantern': 'M10 5V3h4v2M8 8l1-3h6l1 3zM8 8h8l-1 11H9zM12 11v5M7 19h10',
+  'k-teapot': 'M6 11h10v5a4 4 0 0 1-4 4h-2a4 4 0 0 1-4-4zM16 12h2a2 2 0 0 1 0 4h-2M6 12L3 9.5M9 11V9h4v2M11 9V7',
+  'k-bell': 'M12 3v2M7 17v-6a5 5 0 0 1 10 0v6l2 2H5zM10 21h4',
+  'k-ledger': 'M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM9 3v18M12 8h4M12 11h4',
+  'k-cap': 'M4 14c0-4 3.6-7 8-7s8 3 8 7zM3 14h18v2.5H3zM10 10h4',
+  'k-watch': 'M12 7a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM12 3v4M10 3h4M12 11v3.5l2.5 1.5',
+  'k-coin': 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 6.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zM12 9.5v5',
+  'k-pennant': 'M5 21V3M5 4l14 4-14 4',
+
   /* --- one per training module, drawn for the thing it teaches ---- */
   'm-hand-rankings': 'M7 4h10v16H7zM10 8h4M10 12h4M10 16h4',
   'm-pot-odds': 'M12 3v18M7 8h7a2.5 2.5 0 0 1 0 5H9a2.5 2.5 0 0 0 0 5h8',

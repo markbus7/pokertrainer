@@ -8,7 +8,8 @@
  * reason to remember the stake as a place rather than as a number.
  *
  * `read` and `beat` are the teaching half: how this person plays, and what
- * that should change about how you play. They are written for the character
+ * that should change about how you play. `lesson` is the module that teaches
+ * the counter, which the stop offers before you sit down with them. They are written for the character
  * rather than borrowed from the style's generic text, because "he calls with
  * any piece of the board" is wrong about Ma Tilly in a way a reader notices.
  * Where the generic counter already says it exactly, it is reused word for
@@ -22,6 +23,7 @@ export const BOSSES = {
     short: 'Wade',
     title: 'Dockhand',
     plays: 'station',
+    lesson: 'exploit',
     hello: 'Pull up a crate. I don\'t fold, friend — I came to see cards.',
     read: 'Calls with any piece of the board and almost never raises.',
     beat: 'Never bluff him. Value bet thin, three streets, and size up — he will pay.',
@@ -36,6 +38,7 @@ export const BOSSES = {
     short: 'Tilly',
     title: 'Keeps the tavern',
     plays: 'station',
+    lesson: 'bluffing',
     hello: 'Tea\'s free, the chairs creak, and I\'ll call anything once, dearie.',
     read: 'Pays off everything. Folding is not something she does.',
     beat: 'Bluffing her is throwing money in the river. Bet your made hands, and bet them big.',
@@ -50,6 +53,7 @@ export const BOSSES = {
     short: 'Hollis',
     title: 'Ferryman',
     plays: 'rock',
+    lesson: 'position',
     hello: 'Nine thousand crossings. I have played maybe twelve hands. Sit.',
     read: 'Folds nearly everything. When he finally bets, he has it.',
     beat: 'Steal his blinds relentlessly, and fold the moment he raises you.',
@@ -64,6 +68,7 @@ export const BOSSES = {
     short: 'Evangeline',
     title: 'Cotton broker',
     plays: 'tag',
+    lesson: 'cbet',
     hello: 'I trade for a living. I know what a price is. Do you?',
     read: 'Few hands, played hard. She continues with real equity and barrels the boards that suit her.',
     beat: 'Give her credit on scary boards, but attack when she checks twice — she gives up.',
@@ -78,6 +83,7 @@ export const BOSSES = {
     short: 'Rourke',
     title: 'Master of the Belle',
     plays: 'lag',
+    lesson: 'mdf',
     hello: 'My boat, my rules. And my rule is: I raise.',
     read: 'Raises constantly. His bets are far stronger than his hands.',
     beat: 'Widen your calling range and let him bluff into you. Trap with strong hands.',
@@ -92,6 +98,7 @@ export const BOSSES = {
     short: 'Ashby',
     title: 'Mathematician',
     plays: 'pro',
+    lesson: 'preflop',
     hello: 'I have studied this game for thirty years. Let us see what you have learned.',
     read: 'Balanced and patient. He plays the charts you are learning, and plays them well.',
     beat: 'Play your own solid game. Grind small edges and avoid marginal spots out of position.',
@@ -106,6 +113,7 @@ export const BOSSES = {
     short: 'Delacroix',
     title: 'Gambler',
     plays: 'maniac',
+    lesson: 'pot-odds',
     hello: 'Money is for spending, friend. Somebody else\'s, preferably.',
     read: 'Enormous bets with nothing at all, over and over.',
     beat: 'Tighten up, stop bluffing, and wait to snap him off with a real hand.',
@@ -120,6 +128,7 @@ export const BOSSES = {
     short: 'Commodore',
     title: 'Owns half the river',
     plays: 'pro',
+    lesson: 'spr',
     hello: 'Everybody on this river works for me eventually. Sit down.',
     read: 'Plays the charts, watches how you play, and gives nothing away.',
     beat: 'Play your own solid game. Grind small edges and avoid marginal spots out of position.',

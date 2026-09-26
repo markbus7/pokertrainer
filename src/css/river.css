@@ -624,3 +624,452 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
   .ledger.entering, .ledger-scrim { animation: none; }
   .switch-knob { transition: none; }
 }
+
+/* ==================================================================== *
+ * The river map
+ *
+ * Drawn in SVG from shapes that only say what they are made of; this is
+ * where they get painted, from the map tokens of the room's hour.
+ * ==================================================================== */
+
+.river-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+.river-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  position: sticky;
+  top: 80px;
+}
+.river-side .panel + .panel { margin-top: 0; }
+.river-chart { width: 100%; max-width: 560px; margin: 0 auto; }
+@media (max-width: 900px) {
+  .river-layout { grid-template-columns: 1fr; }
+  /* One column: where you are, then the river, then your boat. The side
+     panel dissolves so its cards can take their places around the map. */
+  .river-side { display: contents; }
+  .here-card { order: 1; }
+  .river-chart { order: 2; }
+  .boat-card { order: 3; }
+  .river-side .study-line { order: 4; }
+}
+
+.cartouche { text-align: center; padding: 0 0 var(--s-3); }
+.cartouche h2 {
+  justify-content: center;
+  margin: 0;
+  font-family: var(--font-sign);
+  font-weight: 400;
+  font-size: clamp(28px, 7vw, 40px);
+  color: var(--text);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.cartouche-sub { font-family: var(--font-print); font-style: italic; color: var(--text-dim); }
+
+.river-map {
+  position: relative;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-bright);
+  box-shadow: var(--shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  outline: 1px solid var(--border);
+  outline-offset: 4px;
+}
+.map-art { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+
+.map-art .land { fill: var(--map-land); }
+.map-art .field { fill: var(--map-land-2); opacity: 0.8; }
+.map-art .furrow { fill: none; stroke: var(--map-land-3); stroke-width: 1; opacity: 0.7; }
+.map-art .river, .map-art .sea { fill: var(--map-water); }
+.map-art .bank { fill: none; stroke: var(--map-land-2); stroke-width: 2.6; stroke-linejoin: round; }
+.map-art .current { fill: none; stroke: var(--map-water-2); stroke-width: 1.2; stroke-dasharray: 2 10; opacity: 0.55; }
+.map-art .ripple, .boat-art .ripple, .map-art .sea-waves {
+  fill: none; stroke: var(--map-water-2); stroke-width: 1.2; stroke-linecap: round; opacity: 0.75;
+}
+.map-art .reeds { fill: none; stroke: var(--map-land-3); stroke-width: 1.1; stroke-linecap: round; }
+.map-art .tree-shade { fill: rgba(0, 0, 0, 0.22); }
+.map-art .tree-trunk { fill: none; stroke: var(--map-ink-dim); stroke-width: 1; }
+.map-art .tree-crown { fill: var(--map-land-2); stroke: var(--map-ink-dim); stroke-width: 0.8; }
+.map-art .route {
+  fill: none; stroke: var(--map-glow); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 0.1 7;
+}
+.map-art .route-ahead {
+  fill: none; stroke: var(--map-ink-dim); stroke-width: 1.5; stroke-linecap: round; stroke-dasharray: 0.1 8; opacity: 0.6;
+}
+.map-art .jetty { fill: none; stroke: var(--map-ink-dim); stroke-width: 5; stroke-dasharray: 1.3 1.7; }
+
+.compass-ring { fill: none; stroke: var(--map-ink-dim); stroke-width: 0.9; }
+.compass-star { fill: var(--map-ink); }
+.compass-star.dim { fill: var(--map-ink-dim); }
+.compass-n { fill: var(--map-ink); font-family: var(--font-sign); font-size: 12px; text-anchor: middle; }
+
+/* The drawings: walls, roofs, lit windows and flags, all in ink outline. */
+.landmark-art, .boat-art { overflow: visible; }
+.map-art .ink, .landmark-art .ink, .boat-art .ink {
+  fill: none;
+  stroke: var(--map-ink);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.map-art .wall, .landmark-art .wall { fill: var(--map-land-2); }
+.map-art .roof, .landmark-art .roof { fill: var(--map-land-3); }
+.map-art .glow, .landmark-art .glow, .boat-art .glow { fill: var(--map-glow); }
+.map-art .mark, .landmark-art .mark, .boat-art .mark { fill: var(--map-mark); }
+.map-art .shallows, .landmark-art .shallows, .boat-art .water { fill: var(--map-water); }
+.map-art .ground, .landmark-art .ground { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.2; }
+.map-art .smoke, .landmark-art .smoke, .boat-art .smoke {
+  fill: none; stroke: var(--map-ink-dim); stroke-width: 1.2; stroke-linecap: round; opacity: 0.8;
+}
+
+.landmark { cursor: pointer; transition: opacity 200ms, filter 200ms; }
+.landmark:hover { filter: brightness(1.2); }
+.landmark.shut { opacity: 0.42; }
+.here-glow { fill: var(--map-glow); opacity: 0.1; animation: here-glow 2.8s ease-in-out infinite; }
+.here-ring {
+  fill: none;
+  stroke: var(--map-glow);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 5;
+  animation: here-ring 14s linear infinite;
+}
+@keyframes here-glow { 0%, 100% { opacity: 0.06; } 50% { opacity: 0.18; } }
+@keyframes here-ring { to { stroke-dashoffset: -200; } }
+
+/* Your boat, in brass so it is the one thing on the water you look for. */
+.you .hull { fill: var(--brass); }
+.you .sail { fill: var(--paper); }
+.you .deck { fill: var(--paper-2); }
+.you .ink { stroke: var(--map-ink); }
+.bob {
+  transform-box: fill-box;
+  transform-origin: 50% 80%;
+  animation: bob 3.4s ease-in-out infinite;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-1.6px) rotate(2deg); }
+}
+
+/* Name plates: paper tags pinned under each stop. */
+.map-stop {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  min-width: 112px;
+  max-width: 46%;
+  padding: 5px 10px 6px;
+  border-radius: 6px;
+  background:
+    var(--grain-paper),
+    radial-gradient(ellipse at 50% 40%, var(--paper) 55%, var(--paper-2) 100%);
+  background-size: 180px 180px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--ink);
+  border: 1px solid var(--ink-rule);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 120ms, box-shadow 120ms;
+}
+.map-stop:hover { transform: translateX(-50%) translateY(-2px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45); }
+.map-stop:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.map-name { font-family: var(--font-sign); font-size: 18px; line-height: 1.1; }
+.map-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  font-size: var(--t-xs);
+  color: var(--ink-dim);
+}
+.map-stake { font-family: var(--mono); font-weight: 600; color: var(--ink); }
+.map-keepsake { color: var(--brass-lo); }
+.map-stop.is-here {
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 55%, var(--brass-lo) 100%);
+  border-color: var(--brass-lo);
+  color: var(--on-brass);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.map-stop.is-here .map-meta, .map-stop.is-here .map-stake { color: var(--on-brass); }
+.map-stop.far { opacity: 0.82; }
+.map-stop.far .map-name { color: var(--ink-dim); }
+
+/* ---- the side of the map: where you are, your boat ------------------ */
+
+.here-kicker {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+.here-name {
+  margin: 4px 0 2px;
+  font-family: var(--font-sign);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.1;
+}
+.here-where { font-family: var(--font-print); font-style: italic; color: var(--text-dim); }
+.here-facts {
+  display: flex;
+  margin: var(--s-3) 0 var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-sunken);
+}
+.here-facts .fact { flex: 1; display: flex; flex-direction: column; padding: 6px 10px; border-left: 1px solid var(--border); }
+.here-facts .fact:first-child { border-left: 0; }
+.fact .k { font-size: var(--t-xs); color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+.fact .v { font-family: var(--mono); font-weight: 600; font-size: var(--t-sm); color: var(--gold); white-space: nowrap; }
+.here-boss { display: flex; gap: var(--s-3); align-items: flex-start; }
+.here-portrait { flex: none; line-height: 0; }
+.here-boss-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+.here-boss-title { font-weight: 400; font-style: italic; color: var(--text-dim); }
+.here-boss .said { margin: 4px 0 0; color: var(--text-dim); font-style: italic; font-size: var(--t-base); }
+.here-actions { display: flex; gap: var(--s-2); flex-wrap: wrap; margin-top: var(--s-4); }
+.here-actions .btn { flex: 1 1 auto; }
+
+.boat-head { display: flex; gap: var(--s-3); align-items: center; }
+.boat-pic { flex: none; line-height: 0; }
+.boat-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+.keepsakes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-top: var(--s-3); }
+.keepsake {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px dashed var(--border-bright);
+  color: var(--text-faint);
+  opacity: 0.55;
+}
+.keepsake.have {
+  opacity: 1;
+  border: 1px solid var(--brass-lo);
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 60%, var(--brass-lo));
+  color: var(--on-brass);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- the prologue ---------------------------------------------------- */
+
+.prologue {
+  max-width: 640px;
+  margin: 0 auto var(--s-5);
+  padding: var(--s-5) var(--s-6);
+  border-radius: 4px;
+  text-align: center;
+}
+.prologue-year { font-size: 44px; color: var(--ink); margin-bottom: var(--s-2); }
+.prologue .said { color: var(--ink); }
+.prologue .btn { margin-top: var(--s-2); }
+@media (max-width: 700px) { .prologue { padding: var(--s-4); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .bob, .here-glow, .here-ring { animation: none; }
+}
+
+/* ---- portraits: a cameo in a brass rim --------------------------------- */
+
+.portrait { display: block; border-radius: 50%; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45); }
+.portrait-rim { fill: none; stroke: var(--brass); stroke-width: 2.6; }
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ==================================================================== *
+ * A stop: the scene, the boss, the table
+ * ==================================================================== */
+
+.stop-screen { display: flex; flex-direction: column; gap: var(--s-4); }
+
+.scene {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-bright);
+  box-shadow: var(--shadow);
+  min-height: 200px;
+}
+.scene-art-wrap { display: block; line-height: 0; }
+.scene-art { display: block; width: 100%; height: clamp(200px, 36vw, 320px); }
+.scene-art .sky-top { stop-color: var(--sky-1); }
+.scene-art .sky-low { stop-color: var(--sky-2); }
+.scene-art .star { fill: var(--map-ink); opacity: var(--stars); }
+.scene-art .orb { fill: var(--sky-orb); }
+.scene-art .far-bank { fill: var(--map-land); }
+.scene-art .far-tree { fill: var(--map-land-3); }
+.scene-art .scene-water { fill: var(--map-water); }
+.scene-art .scene-ripple { fill: none; stroke: var(--map-water-2); stroke-width: 1.2; stroke-linecap: round; opacity: 0.8; }
+.scene-art .ink {
+  fill: none;
+  stroke: var(--map-ink);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  /* The scene is scaled to the screen; the pen is not. */
+  vector-effect: non-scaling-stroke;
+}
+.scene-art .wall { fill: var(--map-land-2); }
+.scene-art .roof { fill: var(--map-land-3); }
+.scene-art .glow { fill: var(--map-glow); }
+.scene-art .mark { fill: var(--map-mark); }
+.scene-art .shallows { fill: var(--map-water); }
+.scene-art .ground { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.scene-art .smoke { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.4; stroke-linecap: round; opacity: 0.8; vector-effect: non-scaling-stroke; }
+.scene-art .scene-ripple { vector-effect: non-scaling-stroke; }
+
+/* Arriving: the boat comes in from off the left edge and settles. */
+.scene-boat.arriving { animation: arrive 1.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes arrive {
+  from { transform: translateX(-460px); }
+  to { transform: none; }
+}
+
+.scene-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: var(--s-4) var(--s-5);
+  color: var(--map-ink);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.scene-where { font-family: var(--font-print); font-style: italic; font-size: var(--t-base); }
+.scene-title h1 {
+  margin: 2px 0 6px;
+  font-family: var(--font-sign);
+  font-weight: 400;
+  font-size: clamp(30px, 7vw, 48px);
+  line-height: 1.05;
+}
+.scene-stake {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: var(--t-sm);
+  text-shadow: none;
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass) 60%, var(--brass-lo));
+  color: var(--on-brass);
+  border: 1px solid var(--brass-lo);
+}
+
+/* The boss: a cameo and a name plate, with what they say beside them. */
+.boss {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+.boss-figure { display: flex; flex-direction: column; align-items: center; gap: var(--s-2); }
+.boss-portrait { line-height: 0; }
+.boss-plate {
+  text-align: center;
+  padding: 6px 14px 7px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  color: var(--on-brass);
+  border: 1px solid var(--brass-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+.boss-name { font-size: 20px; }
+.boss-title { font-family: var(--font-print); font-style: italic; font-size: var(--t-sm); }
+
+.boss-talk { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
+.bubble {
+  position: relative;
+  padding: var(--s-4) var(--s-5);
+  border-radius: 14px;
+}
+.bubble::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 30px;
+  width: 16px;
+  height: 16px;
+  background: var(--paper);
+  border-left: 1px solid var(--ink-rule);
+  border-bottom: 1px solid var(--ink-rule);
+  transform: rotate(45deg);
+}
+.bubble .said { margin: 0; color: var(--ink); font-size: var(--t-lg); line-height: 1.4; }
+.typed { position: relative; display: block; cursor: pointer; }
+.typed-ghost { color: transparent; }
+.typed-shown { position: absolute; inset: 0; }
+
+.boss-notes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.note {
+  padding: var(--s-3) var(--s-4);
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--brass-lo);
+}
+.note-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-md);
+  margin-bottom: 4px;
+}
+.note-head .icon { color: var(--gold); }
+.note p { margin: 0; color: var(--text-dim); }
+
+.stop-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap: var(--s-4); align-items: start; }
+.stop-grid > :only-child { grid-column: 1 / -1; }
+.stop-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; }
+.stop-actions .btn, .river-nav .btn, .here-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.stop-actions > p { flex-basis: 100%; margin: 0 0 var(--s-2); }
+.stop-actions.shut { flex-direction: column; align-items: stretch; }
+.stop-actions.shut .bar { margin: var(--s-2) 0; }
+.stop-need { display: flex; align-items: center; gap: var(--s-2); font-weight: 600; }
+.stop-need .icon { color: var(--text-faint); }
+
+.keepsake-block { display: flex; align-items: center; gap: var(--s-4); }
+.keepsake.big { width: 58px; flex: none; }
+
+.river-nav { display: flex; justify-content: space-between; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+
+@media (max-width: 760px) {
+  .boss { grid-template-columns: 1fr; gap: var(--s-3); }
+  .boss-figure { flex-direction: row; justify-content: flex-start; gap: var(--s-3); }
+  .boss-figure .portrait { width: 96px; height: 96px; }
+  .boss-plate { text-align: left; }
+  .bubble::before { left: 34px; top: -9px; border-bottom: 0; border-top: 1px solid var(--ink-rule); }
+  .boss-notes { grid-template-columns: 1fr; }
+  .stop-grid { grid-template-columns: 1fr; }
+  .scene-title { padding: var(--s-3) var(--s-4); }
+  .river-nav .btn { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-boat.arriving { animation: none; }
+}

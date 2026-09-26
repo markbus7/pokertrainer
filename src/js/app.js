@@ -13,7 +13,8 @@
 
 import { el, mount, $, toast, fmt } from './ui/dom.js';
 import { icon } from './ui/icons.js';
-import { renderCareer } from './ui/screenCareer.js';
+import { renderRiver } from './ui/screenRiver.js';
+import { renderStop } from './ui/screenStop.js';
 import { renderRangeLadder, renderRangeRun, renderRangeWeak } from './ui/screenRangeTrainer.js';
 import { Profile } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
@@ -39,7 +40,8 @@ import * as audio from './audio/engine.js';
  * there is always a way out.
  */
 const ROUTES = {
-  home: { render: renderCareer, dock: 'home', title: 'The river', music: 'river' },
+  home: { render: renderRiver, dock: 'home', title: 'The river', music: 'river' },
+  stop: { render: renderStop, dock: 'home', title: 'The river', music: 'river' },
   train: { render: renderHome, dock: 'train', title: 'Lessons' },
   learn: { render: renderLearn, dock: 'train', title: 'Lesson' },
   walkthrough: { render: renderWalkthrough, dock: 'train', title: 'Guided lesson', focus: true },
