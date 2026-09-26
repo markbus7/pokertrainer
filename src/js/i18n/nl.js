@@ -3897,4 +3897,152 @@ export const NL = {
   'The clock ran out. At the table it does too.': 'De klok liep af. Aan tafel gebeurt dat ook.',
   "You said you didn't know. At the table that is a fold, not a guess. It is {air} air. Now play it.":
     'Je zei dat je het niet wist. Aan tafel is dat een fold, geen gok. Het is {air} air. Speel het nu.',
+
+  // ---- the Long River: its stops -----------------------------------------
+  'Mud Landing': 'Modderkade',
+  'A crate table on the landing': 'Een kistentafel op de aanlegsteiger',
+  'Lantern light, river mud, and a dockhand who has never folded anything in his life.':
+    'Lantaarnlicht, riviermodder en een havenarbeider die in zijn hele leven nog nooit iets heeft gefold.',
+  'Fisher\'s Rest': 'Vissersrust',
+  'A tavern on stilts over the shallows': 'Een herberg op palen boven het ondiepe water',
+  'Nobody folds here either. The tea is free and the chairs complain.':
+    'Hier foldt ook niemand. De thee is gratis en de stoelen kraken.',
+  'The Ferry': 'De Veerpont',
+  'One table bolted to a ferry deck': 'Eén tafel vastgeschroefd op het dek van een veerpont',
+  'The first table where somebody sits and waits for a hand.':
+    'De eerste tafel waar iemand rustig zit te wachten op een hand.',
+  'Cotton Row': 'Katoenrij',
+  'Upstairs at the cotton exchange': 'Boven in de katoenbeurs',
+  'Traders who know what a price is. Position stops being a word.':
+    'Handelaren die weten wat een prijs is. Positie is hier geen woord meer.',
+  'The Belle': 'De Belle',
+  'A paddle steamer\'s saloon': 'De salon van een raderstoomboot',
+  'The Grand Hotel': 'Het Grand Hotel',
+  'The quiet parlour on the riverfront': 'De stille salon aan de kade',
+  'The Gilded Barge': 'De Vergulde Aak',
+  'No name on the hull': 'Geen naam op de romp',
+  'Delta Crown': 'Deltakroon',
+  'The Commodore\'s flagship, at the delta': 'Het vlaggenschip van de Commodore, in de delta',
+  'The last table on the river. Nobody here is going to give you anything.':
+    'De laatste tafel op de rivier. Niemand hier geeft je iets cadeau.',
+
+  // ---- the Long River: its people ----------------------------------------
+  'Wade Barlow': 'Wade Barlow',
+  'Dockhand': 'Havenarbeider',
+  'Pull up a crate. I don\'t fold, friend — I came to see cards.':
+    'Pak een kist. Ik fold niet, vriend — ik kom voor de kaarten.',
+  'Calls with any piece of the board and almost never raises.':
+    'Callt met elk stukje van het bord en raiset bijna nooit.',
+  'Told you. Never fold a hand that might get there.': 'Zei ik toch. Nooit een hand weggooien die er nog kan komen.',
+  'River\'s been good to me tonight.': 'De rivier is me goedgezind vanavond.',
+  'Shoot. I had a piece of that board.': 'Verdorie. Ik had een stukje van dat bord.',
+  'Called it anyway. Would again.': 'Toch gecalld. Zou het zo weer doen.',
+  'Well, shoot. Take the lantern — you\'ll need it downriver.':
+    'Nou ja, verdorie. Neem de lantaarn maar — die heb je stroomafwaarts nodig.',
+  'Wade\'s lantern': 'De lantaarn van Wade',
+
+  'Ma Tilly': 'Ma Tilly',
+  'Keeps the tavern': 'Houdt de herberg',
+  'Tea\'s free, the chairs creak, and I\'ll call anything once, dearie.':
+    'De thee is gratis, de stoelen kraken, en ik call alles één keer, lieverd.',
+  'Pays off everything. Folding is not something she does.':
+    'Betaalt alles uit. Folden is niet iets wat zij doet.',
+  'Bluffing her is throwing money in the river. Bet your made hands, and bet them big.':
+    'Haar bluffen is geld in de rivier gooien. Bet je gemaakte handen, en bet ze groot.',
+  'Ooh, look at that. Pass the sugar.': 'Oeh, kijk eens aan. Geef de suiker even door.',
+  'Patience, dearie. The river always comes.': 'Geduld, lieverd. De river komt altijd.',
+  'Well, I had to see it, didn\'t I?': 'Nou, ik moest het toch zien?',
+  'Mind the chairs when you gloat.': 'Pas op de stoelen als je gaat opscheppen.',
+  'You\'ve a head on you. Take the old teapot — it has brought luck to worse players.':
+    'Jij hebt hersens. Neem de oude theepot maar — die heeft slechtere spelers ook geluk gebracht.',
+  'Tilly\'s teapot': 'De theepot van Tilly',
+
+  'Hollis Crane': 'Hollis Crane',
+  'Ferryman': 'Veerman',
+  'Nine thousand crossings. I have played maybe twelve hands. Sit.':
+    'Negenduizend overtochten. Ik heb misschien twaalf handen gespeeld. Ga zitten.',
+  'Folds nearly everything. When he finally bets, he has it.':
+    'Foldt bijna alles. Als hij eindelijk bet, heeft hij het.',
+  'Waited all night for that one.': 'De hele avond op gewacht.',
+  'When I bet, I have it. Everybody knows that.': 'Als ik bet, heb ik het. Dat weet iedereen.',
+  'Hm. Should have kept waiting.': 'Hm. Had moeten blijven wachten.',
+  'Hm.': 'Hm.',
+  'You stole my blinds till I had nothing left. Here — the ferry bell. Ring it when you land.':
+    'Je stal mijn blinds tot ik niets meer had. Hier — de veerbel. Luid hem als je aanlegt.',
+  'The ferry bell': 'De veerbel',
+
+  'Evangeline Marsh': 'Evangeline Marsh',
+  'Cotton broker': 'Katoenmakelaar',
+  'I trade for a living. I know what a price is. Do you?':
+    'Ik handel voor de kost. Ik weet wat een prijs is. Jij ook?',
+  'Few hands, played hard. She continues with real equity and barrels the boards that suit her.':
+    'Weinig handen, hard gespeeld. Ze gaat door met echte equity en blijft betten op borden die haar liggen.',
+  'Priced in, darling.': 'Al ingeprijsd, schat.',
+  'A good bet is only ever a good price.': 'Een goede bet is altijd gewoon een goede prijs.',
+  'Noted.': 'Genoteerd.',
+  'I shall remember that price.': 'Die prijs onthoud ik.',
+  'You read the market better than I did tonight. Keep my ledger — the numbers in it are honest.':
+    'Jij las de markt vanavond beter dan ik. Hou mijn grootboek — de cijfers erin zijn eerlijk.',
+  'Evangeline\'s ledger': 'Het grootboek van Evangeline',
+
+  'Captain Rourke': 'Kapitein Rourke',
+  'Master of the Belle': 'Kapitein van de Belle',
+  'My boat, my rules. And my rule is: I raise.': 'Mijn boot, mijn regels. En mijn regel is: ik raise.',
+  'Raises constantly. His bets are far stronger than his hands.':
+    'Raiset aan de lopende band. Zijn bets zijn veel sterker dan zijn handen.',
+  'Full steam, never look back!': 'Volle kracht vooruit, nooit omkijken!',
+  'Fold, fold, fold — that is why you are a passenger.': 'Fold, fold, fold — daarom ben jij passagier.',
+  'Lucky! You will not catch me like that twice.': 'Geluk! Zo pak je me geen tweede keer.',
+  'Bah. Stoke the boilers.': 'Bah. Stook de ketels op.',
+  'You called me down like you owned the river. Take the cap — Captain.':
+    'Je callde me door alsof de rivier van jou was. Neem de pet maar — Kapitein.',
+  'Rourke\'s cap': 'De pet van Rourke',
+
+  'Professor Ashby': 'Professor Ashby',
+  'Mathematician': 'Wiskundige',
+  'I have studied this game for thirty years. Let us see what you have learned.':
+    'Ik bestudeer dit spel al dertig jaar. Laten we eens zien wat jij geleerd hebt.',
+  'Play your own solid game. Grind small edges and avoid marginal spots out of position.':
+    'Speel je eigen degelijke spel. Pak de kleine voordelen en vermijd twijfelgevallen uit positie.',
+  'Balanced and patient. He plays the charts you are learning, and plays them well.':
+    'Gebalanceerd en geduldig. Hij speelt de charts die jij aan het leren bent, en hij speelt ze goed.',
+  'The arithmetic was on my side.': 'De rekensom stond aan mijn kant.',
+  'A small edge, repeated, is a fortune.': 'Een klein voordeel, vaak herhaald, is een fortuin.',
+  'Well played. Genuinely.': 'Goed gespeeld. Echt waar.',
+  'A fine decision.': 'Een prima beslissing.',
+  'You played sounder than I did, and I know no higher compliment. Keep my watch — and better time than I did.':
+    'Jij speelde degelijker dan ik, en een hoger compliment ken ik niet. Hou mijn horloge — en hou de tijd beter bij dan ik.',
+  'Ashby\'s pocket watch': 'Het zakhorloge van Ashby',
+
+  'Lucky Delacroix': 'Lucky Delacroix',
+  'Gambler': 'Gokker',
+  'Money is for spending, friend. Somebody else\'s, preferably.':
+    'Geld is om uit te geven, vriend. Het liefst dat van een ander.',
+  'Luck is a lady, and she likes me!': 'Het geluk is een dame, en ze mag mij!',
+  'All in! Why ever not?': 'All-in! Waarom ook niet?',
+  'Easy come, easy go!': 'Zo gewonnen, zo geronnen!',
+  'Ah. You actually had it.': 'Ah. Je had het echt.',
+  'You waited, and I went broke watching you do it. Take my lucky coin — it has done nothing for me.':
+    'Jij wachtte, en ik ging failliet terwijl ik ernaar keek. Neem mijn gelukmunt maar — mij heeft hij niets gebracht.',
+  'The lucky coin': 'De gelukmunt',
+
+  'The Commodore': 'De Commodore',
+  'Owns half the river': 'Bezit de halve rivier',
+  'Everybody on this river works for me eventually. Sit down.':
+    'Iedereen op deze rivier werkt uiteindelijk voor mij. Ga zitten.',
+  'Plays the charts, watches how you play, and gives nothing away.':
+    'Speelt de charts, let op hoe jij speelt, en geeft niets prijs.',
+  'The river provides. For me.': 'De rivier zorgt voor je. Voor mij, in elk geval.',
+  'You are learning. Slowly.': 'Je leert het. Langzaam.',
+  'Enjoy it. It will not last.': 'Geniet ervan. Het duurt niet lang.',
+  'Hm. Interesting.': 'Hm. Interessant.',
+  'The boat is yours. The river too, I suppose. Hoist my pennant — you have earned it.':
+    'De boot is van jou. De rivier ook, denk ik. Hijs mijn wimpel — je hebt hem verdiend.',
+  'The Commodore\'s pennant': 'De wimpel van de Commodore',
+
+  'A borrowed rowboat': 'Een geleende roeiboot',
+  'A sailing skiff': 'Een zeilbootje',
+  'A steam launch': 'Een stoomsloep',
+  'A sternwheeler': 'Een hekwieler',
+  'The Commodore\'s flagship': 'Het vlaggenschip van de Commodore',
 };

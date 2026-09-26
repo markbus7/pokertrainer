@@ -6,6 +6,7 @@ const modules = [
   './adapt.test.js',
   './icons.test.js',
   './career.test.js',
+  './river.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',

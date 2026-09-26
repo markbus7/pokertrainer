@@ -1,81 +1,101 @@
 /**
- * The rooms you play your way through.
+ * The stops on the Long River.
  *
  * The app was a grid of training modules with a score attached, and the
  * reader's verdict was that it was not a game. It was not: a course with a
  * progress bar has no world in it, nowhere to be and nobody to beat.
  *
- * So the stakes ladder stops being an abstract list of blinds and becomes
- * eight rooms. Each has a buy-in you pay out of your own money, a regular who
- * sits there every night, and a bankroll at which the next room will let you
- * in. The climb is cash, the way it is at a real table and the way it is in
- * the games this borrows from: you move up when you can afford to, and you
- * move back down when you cannot.
+ * So the stakes ladder is a river, and every rung of it is a stop: a landing,
+ * a tavern, a ferry, a steamer's saloon, down to the Commodore's flagship at
+ * the delta. Each has a buy-in you pay out of your own money, somebody who
+ * owns its table, and a bankroll at which the next stop downriver will have
+ * you. The climb is cash, the way it is at a real table and the way it is in
+ * the games this borrows from: you move on when you can afford to, and you
+ * move back upriver when you cannot.
  *
- * The NL labels stay on every room. The point of all this is to play online
- * profitably, and a reader who learns "the back room of the Anchor" without
- * learning "NL10" has learned a story instead of a stake.
+ * The NL labels stay on every stop. The point of all this is to play online
+ * profitably, and a reader who learns "the Ferry" without learning "NL10" has
+ * learned a story instead of a stake.
+ *
+ * `resident` is the style the stop's boss plays (a key into the bot
+ * profiles), `boss` is who they are, and `landmark` is what the map draws.
  */
 
 import { STAKES } from '../state/stats.js';
 
-/** One room per rung of the real stakes ladder. */
+/** One stop per rung of the real stakes ladder, upriver to down. */
 const ROOMS = [
   {
     key: 'nl2',
-    name: 'The Kitchen Table',
-    where: 'Somebody\'s back room',
+    name: 'Mud Landing',
+    where: 'A crate table on the landing',
     resident: 'station',
-    colour: 'A friendly game with terrible players and a bowl of crisps.',
+    boss: 'wade',
+    landmark: 'landing',
+    colour: 'Lantern light, river mud, and a dockhand who has never folded anything in his life.',
   },
   {
     key: 'nl5',
-    name: 'The Anchor',
-    where: 'A pub back room',
+    name: 'Fisher\'s Rest',
+    where: 'A tavern on stilts over the shallows',
     resident: 'station',
-    colour: 'Nobody folds here. That is the whole strategy and it still works.',
+    boss: 'tilly',
+    landmark: 'tavern',
+    colour: 'Nobody folds here either. The tea is free and the chairs complain.',
   },
   {
     key: 'nl10',
-    name: 'The Boat Club',
-    where: 'Riverside, members only',
+    name: 'The Ferry',
+    where: 'One table bolted to a ferry deck',
     resident: 'rock',
-    colour: 'The first room with someone who has read a book.',
+    boss: 'hollis',
+    landmark: 'ferry',
+    colour: 'The first table where somebody sits and waits for a hand.',
   },
   {
     key: 'nl25',
-    name: 'The Card Room',
-    where: 'Above a betting shop',
+    name: 'Cotton Row',
+    where: 'Upstairs at the cotton exchange',
     resident: 'tag',
-    colour: 'Regulars with notes on you. Position stops being a word.',
+    boss: 'evangeline',
+    landmark: 'exchange',
+    colour: 'Traders who know what a price is. Position stops being a word.',
   },
   {
     key: 'nl50',
-    name: 'The Continental',
-    where: 'Hotel basement',
+    name: 'The Belle',
+    where: 'A paddle steamer\'s saloon',
     resident: 'lag',
+    boss: 'rourke',
+    landmark: 'steamer',
     colour: 'Loud, fast, and expensive if you play back without a hand.',
   },
   {
     key: 'nl100',
-    name: 'The Ivory Room',
-    where: 'Members\' club, city side',
+    name: 'The Grand Hotel',
+    where: 'The quiet parlour on the riverfront',
     resident: 'pro',
+    boss: 'ashby',
+    landmark: 'hotel',
     colour: 'Quiet. Everybody here studies as hard as you do.',
   },
   {
     key: 'nl200',
-    name: 'The Vault',
-    where: 'No sign on the door',
+    name: 'The Gilded Barge',
+    where: 'No name on the hull',
     resident: 'maniac',
+    boss: 'delacroix',
+    landmark: 'barge',
     colour: 'Somebody at this table is gambling with money that is not theirs.',
   },
   {
     key: 'nl500',
-    name: 'The Long Room',
-    where: 'Invitation only',
+    name: 'Delta Crown',
+    where: 'The Commodore\'s flagship, at the delta',
     resident: 'pro',
-    colour: 'The last door. Nobody here is going to give you anything.',
+    boss: 'commodore',
+    landmark: 'flagship',
+    colour: 'The last table on the river. Nobody here is going to give you anything.',
   },
 ];
 
