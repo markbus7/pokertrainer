@@ -275,6 +275,41 @@ export const LANDMARKS = {
     <circle class="glow" cx="15" cy="-21.6" r="2.2"/>
     <circle class="glow" cx="30" cy="-19.5" r="2.2"/>`,
 
+  // Not stops: the places you study. Drawn in the same hand so the school
+  // and the pilot house sit on the same river as the tables.
+  school: () => `
+    <path class="ground" d="M-42 18h84"/>
+    <path class="wall ink" d="M-30 18V-5h48v23z"/>
+    <path class="roof ink" d="M-34 -4L-6 -23L22 -4z"/>
+    <path class="wall ink" d="M-11 -18v-12h10v12"/>
+    <path class="roof ink" d="M-13.5 -30L-6 -41L1.5 -30z"/>
+    <circle class="glow ink" cx="-6" cy="-24" r="2.4"/>
+    <rect class="glow" x="-25" y="-1" width="7" height="8"/>
+    <rect class="glow" x="6" y="-1" width="7" height="8"/>
+    <path class="ink" d="M-25 3h7M6 3h7"/>
+    <path class="roof ink" d="M-10 18v-13h8v13z"/>
+    <path class="ink" d="M-13 18h14"/>
+    <path class="ink" d="M26 18V-22"/>
+    <path class="mark ink" d="M26 -22l12 3.5-12 3.5z"/>
+    <path class="ink" d="M-42 11h9M-42 15h9M-40 18v-9M-35 18v-9M30 11h12M30 15h12M33 18v-9M39 18v-9"/>`,
+
+  pilothouse: () => `
+    <path class="roof ink" d="M-44 12h88l-9 9h-70z"/>
+    <path class="wall ink" d="M-36 12V2h72v10z"/>
+    ${windowsRow(-32, 5, 9, 7.8)}
+    <path class="wall ink" d="M-26 2V-6h52v8z"/>
+    <path class="roof ink" d="M-30 -6v-24h5v24zM-21 -6v-24h5v24z"/>
+    <path class="ink" d="M-32 -30h9M-23 -30h9"/>
+    <path class="smoke" d="M-27.5 -33c-4-4 4-6 0-10M-18.5 -33c-4-4 4-6 0-10"/>
+    <path class="wall ink" d="M-2 -6v-20h26v20z"/>
+    <path class="roof ink" d="M-5 -26h32l-4 -6h-24z"/>
+    <rect class="glow" x="1" y="-23" width="9" height="11"/>
+    <rect class="glow" x="12" y="-23" width="9" height="11"/>
+    <circle class="ink" cx="11" cy="-14" r="5.2"/>
+    <path class="ink" d="M5 -14h12M11 -20v12M6.8 -18.2l8.4 8.4M15.2 -18.2l-8.4 8.4"/>
+    <path class="ink" d="M36 2V-18"/>
+    <path class="mark ink" d="M36 -18l10 3-10 3z"/>`,
+
   flagship: () => `
     <path class="roof ink" d="M-44 8h88l-11 12h-66z"/>
     <path class="wall ink" d="M-35 8V-2h68v10z"/>
@@ -334,6 +369,41 @@ export function boatSvg(key, { width = 120 } = {}) {
   return `<svg class="boat-art" viewBox="-34 -36 68 50" width="${width}" aria-hidden="true">`
     + `<path class="water" d="M-34 6h68v8h-68z"/><path class="ripple" d="M-28 9q3 -2.5 6 0t6 0M12 11q3 -2.5 6 0t6 0"/>`
     + `<g class="you">${art}</g></svg>`;
+}
+
+/**
+ * A place, drawn as a scene: sky in the room's hour, the far bank, the water,
+ * and the landmark standing on it, with your boat tied up if you are there.
+ * Drawn 600 wide and cropped to the screen, so a phone sees the middle and a
+ * wide screen the whole reach.
+ */
+export function sceneSvg({ id, landmark, orbLeft = false, boat = null, arriving = false, scale = 1.7 }) {
+  const stars = Array.from({ length: 40 }, (_, i) => {
+    const x = (i * 149 + 37) % 600;
+    const y = (i * 53 + 11) % 74 + 4;
+    return `<circle class="star" cx="${x}" cy="${y}" r="${i % 5 === 0 ? 1.3 : 0.8}"/>`;
+  }).join('');
+  const trees = Array.from({ length: 16 }, (_, i) => {
+    const x = (i * 83 + 12) % 600;
+    const y = 104 + ((i * 7) % 6) + (x > 250 && x < 350 ? 40 : 0);
+    return y > 120 ? '' : `<circle class="far-tree" cx="${x}" cy="${y}" r="${4 + (i % 3)}"/>`;
+  }).join('');
+  const boatArt = boat
+    ? `<g class="scene-boat${arriving ? ' arriving' : ''}"><g transform="translate(400 146) scale(1.6)"><g class="bob"><g class="you">${(BOAT_ART[boat] || BOAT_ART.rowboat)()}</g></g></g></g>`
+    : '';
+  return `<svg class="scene-art" viewBox="0 0 600 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs><linearGradient id="sky-${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" class="sky-top"/><stop offset="1" class="sky-low"/></linearGradient></defs>
+    <rect width="600" height="132" fill="url(#sky-${id})"/>
+    <g class="stars">${stars}</g>
+    <circle class="orb" cx="${orbLeft ? 190 : 430}" cy="42" r="14"/>
+    <path class="far-bank" d="M0 116C50 104 90 112 140 106S230 96 280 104S380 112 430 102S530 108 600 104V134H0Z"/>
+    ${trees}
+    <rect class="scene-water" x="0" y="128" width="600" height="42"/>
+    <path class="scene-ripple" d="M40 146q6-4 12 0t12 0M150 158q6-4 12 0t12 0M250 150q6-4 12 0t12 0M470 162q6-4 12 0t12 0M90 164q6-4 12 0t12 0M530 148q6-4 12 0t12 0"/>
+    <g class="scene-landmark" transform="translate(292 114) scale(${scale})">${(LANDMARKS[landmark] || LANDMARKS.landing)()}</g>
+    ${boatArt}
+  </svg>`;
 }
 
 /** A landmark drawn on its own, for the scene at a stop. */

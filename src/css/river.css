@@ -111,8 +111,39 @@ h2 { font-size: var(--t-lg); }
 }
 .panel .panel { outline: none; }
 
-/* Paper: where a person speaks to you, and the ledger's pages. Light in
-   every room, so it takes its own ink rather than the room's. */
+/* Paper: where a person speaks to you, the ledger's pages, the lessons.
+   Light in every room, so everything printed on it takes the book's ink
+   rather than the room's. The room's tokens are re-pointed here instead of
+   restyling each component: a drill option, a badge or a progress bar
+   dropped onto a page reads correctly without knowing it is on one. */
+.paper {
+  --text: var(--ink);
+  --text-dim: var(--ink-dim);
+  --text-faint: var(--ink-dim);
+  --text-rgb: var(--ink-rgb);
+  --border: var(--ink-rule);
+  --border-bright: var(--ink-rule);
+  --bg-card: var(--paper);
+  --bg-raised: var(--paper);
+  --bg-sunken: var(--paper-2);
+  --bg-hover: var(--paper-2);
+  --accent: var(--ink-accent);
+  --accent-hi: var(--ink-accent);
+  --accent-dim: var(--brass-lo);
+  --accent-line: var(--ink-rule);
+  --accent-rgb: var(--ink-accent-rgb);
+  --gold: var(--ink-accent);
+  --gold-dim: var(--brass-lo);
+  --brass-line: var(--ink-rule);
+  --green: var(--ink-green);
+  --green-rgb: var(--ink-green-rgb);
+  --red: var(--ink-red);
+  --red-rgb: var(--ink-red-rgb);
+  --blue: var(--ink-blue);
+  --blue-rgb: var(--ink-blue-rgb);
+  --hairline: rgba(0, 0, 0, 0.06);
+  --hairline-strong: rgba(0, 0, 0, 0.14);
+}
 .paper {
   background:
     var(--grain-paper),
@@ -1064,7 +1095,7 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
   .boss-figure { flex-direction: row; justify-content: flex-start; gap: var(--s-3); }
   .boss-figure .portrait { width: 96px; height: 96px; }
   .boss-plate { text-align: left; }
-  .bubble::before { left: 34px; top: -9px; border-bottom: 0; border-top: 1px solid var(--ink-rule); }
+  .boss-talk .bubble::before { left: 34px; top: -9px; border-bottom: 0; border-top: 1px solid var(--ink-rule); }
   .boss-notes { grid-template-columns: 1fr; }
   .stop-grid { grid-template-columns: 1fr; }
   .scene-title { padding: var(--s-3) var(--s-4); }
@@ -1228,3 +1259,761 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
 @media (prefers-reduced-motion: reduce) {
   .seat-speech { animation: none; }
 }
+
+/* ==================================================================== *
+ * Somebody talking: a cameo and a paper bubble
+ * ==================================================================== */
+
+.says { display: flex; gap: var(--s-4); align-items: flex-start; }
+.says-face { flex: none; line-height: 0; }
+.says .bubble { flex: 1; min-width: 0; padding: var(--s-3) var(--s-5) var(--s-4); }
+.says-name {
+  font-family: var(--font-sign);
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--ink-accent);
+  margin-bottom: 2px;
+}
+.says .said { margin: 0; color: var(--ink); font-size: var(--t-lg); line-height: 1.45; }
+@media (max-width: 700px) {
+  .says { gap: var(--s-3); }
+  .says-face .portrait { width: 56px; height: 56px; }
+  .says .bubble { padding: var(--s-3) var(--s-4); }
+  .says .said { font-size: var(--t-md); }
+  .says .bubble::before { top: 18px; }
+}
+
+/* ==================================================================== *
+ * Silas's card school
+ * ==================================================================== */
+
+.school { display: flex; flex-direction: column; gap: var(--s-4); }
+
+.mentor-card { display: flex; flex-direction: column; gap: var(--s-3); }
+.mentor-plan { padding-left: calc(72px + var(--s-4)); display: flex; flex-direction: column; gap: var(--s-2); }
+.mentor-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+@media (max-width: 700px) { .mentor-plan { padding-left: 0; } }
+
+.school-floor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  gap: var(--s-5);
+  align-items: start;
+}
+.school-rail { display: flex; flex-direction: column; gap: var(--s-3); }
+.school-rail > .panel + .panel { margin-top: 0; }
+@media (max-width: 900px) {
+  .school-floor { grid-template-columns: 1fr; }
+}
+
+/* ---- the course: a towpath of medallions ------------------------------ */
+
+.course-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-3); }
+.course-head h2 { margin: 0; font-family: var(--font-sign); font-weight: 400; font-size: 30px; }
+
+.trail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+/* The path itself, running through the middle of every medallion. */
+.trail::before {
+  content: '';
+  position: absolute;
+  left: 35px;
+  top: 36px;
+  bottom: 36px;
+  border-left: 3px dashed var(--brass-lo);
+  opacity: 0.8;
+}
+.trail-stop { position: relative; }
+
+.trail .module-tile {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-4);
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.trail .module-tile:hover:not(:disabled) { transform: translateX(3px); background: none; }
+.trail .module-tile:disabled, .trail .module-tile.locked { cursor: default; opacity: 1; }
+.trail .module-tile:focus-visible { outline: 2px solid var(--brass); outline-offset: 4px; border-radius: 10px; }
+
+.medallion {
+  position: relative;
+  flex: none;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  color: var(--on-brass);
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.2), inset 0 0 0 6px rgba(255, 255, 255, 0.2), 0 4px 10px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+.medallion-face {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.07);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.medallion-num {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 5px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--wood-2);
+  color: var(--on-wood);
+  border: 1px solid var(--brass-lo);
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: 12px;
+}
+.trail-stop.locked .medallion {
+  background: radial-gradient(circle at 35% 30%, var(--bg-hover), var(--bg-sunken) 75%);
+  color: var(--text-faint);
+  box-shadow: inset 0 0 0 2px var(--border-bright), 0 3px 8px rgba(0, 0, 0, 0.45);
+}
+.trail-stop.tier-mastered .medallion {
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.2), inset 0 0 0 6px rgba(255, 255, 255, 0.25),
+    0 0 0 3px var(--brass-hi), 0 0 18px rgba(255, 255, 255, 0.18), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.trail-stop.is-next .medallion { animation: medallion-call 2.4s ease-in-out infinite; }
+@keyframes medallion-call {
+  0%, 100% { box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.2), inset 0 0 0 6px rgba(255, 255, 255, 0.2), 0 0 0 0 rgba(255, 255, 255, 0.35), 0 4px 10px rgba(0, 0, 0, 0.5); }
+  50% { box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.2), inset 0 0 0 6px rgba(255, 255, 255, 0.2), 0 0 0 10px rgba(255, 255, 255, 0), 0 4px 10px rgba(0, 0, 0, 0.5); }
+}
+
+.chapter-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--s-3) var(--s-4);
+  border-radius: 6px;
+  transition: box-shadow 140ms;
+}
+.chapter-top { display: flex; justify-content: space-between; align-items: center; gap: var(--s-2); }
+.chapter-kicker { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--ink-dim); }
+.stars { display: inline-flex; gap: 2px; font-size: 15px; line-height: 1; }
+.star { color: rgba(0, 0, 0, 0.16); }
+.star.lit { color: var(--brass); text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
+.chapter-card .name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-lg); line-height: 1.2; color: var(--ink); }
+.chapter-card .tagline { font-family: var(--font-print); font-style: italic; color: var(--ink-dim); }
+.chapter-card .mastery { font-size: var(--t-xs); color: var(--ink-dim); }
+.chapter-card .mastery.goal { color: var(--ink); }
+.chapter-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0; }
+.chapter-badges:empty { display: none; }
+.chapter-card .bar { display: block; height: 5px; margin-top: 4px; }
+.trail-stop.locked .chapter-card { opacity: 0.62; }
+.trail-stop.is-next .chapter-card { box-shadow: 0 0 0 2px var(--brass), 0 8px 18px rgba(0, 0, 0, 0.45); }
+.trail .module-tile:hover:not(:disabled) .chapter-card { box-shadow: 0 0 0 1px var(--brass-lo), 0 8px 18px rgba(0, 0, 0, 0.4); }
+.trail-stop.is-next .module-tile:hover .chapter-card { box-shadow: 0 0 0 2px var(--brass), 0 8px 18px rgba(0, 0, 0, 0.45); }
+
+@media (max-width: 700px) {
+  .trail::before { left: 27px; }
+  .medallion { width: 54px; height: 54px; }
+  .medallion-face { width: 36px; height: 36px; }
+  .medallion-face .icon { width: 20px; height: 20px; }
+  .trail .module-tile { gap: var(--s-3); }
+  .chapter-card .name { font-size: var(--t-md); }
+}
+
+/* ---- your papers --------------------------------------------------------- */
+
+.certificate { padding: var(--s-4) var(--s-4) var(--s-3); border-radius: 4px; outline: 1px solid var(--ink-rule); outline-offset: -6px; }
+.cert-kicker {
+  text-align: center;
+  font-family: var(--font-print);
+  font-style: italic;
+  color: var(--ink-dim);
+  border-bottom: 1px solid var(--ink-rule);
+  padding-bottom: 6px;
+  margin-bottom: var(--s-3);
+  letter-spacing: 0.04em;
+}
+.cert-body { display: flex; align-items: center; gap: var(--s-3); }
+.seal {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 55%), var(--ink-red);
+  box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.2), inset 0 0 0 5px rgba(255, 255, 255, 0.15), 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+.cert-rank { font-family: var(--font-sign); font-size: 24px; line-height: 1.1; color: var(--ink); }
+.cert-xp { margin-left: auto; text-align: right; }
+.cert-xp .mono { font-size: var(--t-lg); font-weight: 700; color: var(--ink); }
+.cert-blurb { margin: var(--s-2) 0; font-family: var(--font-print); font-style: italic; color: var(--ink-dim); }
+.cert-foot { margin-top: 4px; }
+
+.record { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.record .stat { border-radius: 3px; }
+
+/* Notes Silas pinned up: what is due, and hands to look at again. */
+.note-card { position: relative; border-radius: 4px; padding: var(--s-4); outline: none; }
+.note-card h3 { font-family: var(--font-print); }
+.note-card.pinned::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+.note-card.urgent { border-left: 4px solid var(--ink-red); }
+.note-card .spread { align-items: flex-start; }
+
+/* Doors out of the school: signboards on the wall. */
+.school-rail .door {
+  border: 1px solid var(--brass-lo);
+  border-radius: 8px;
+  padding: var(--s-3);
+  margin-bottom: 6px;
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 60%, var(--wood-3) 100%);
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--on-wood);
+  box-shadow: var(--press);
+}
+.school-rail .door:hover { padding-left: var(--s-3); color: var(--brass-hi); }
+.school-rail .door .door-sub { color: var(--on-wood); opacity: 0.8; }
+.school-rail .door .door-arrow { color: var(--brass-hi); }
+.school-rail .door .module-glyph {
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  color: var(--on-brass);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.school-rail .doors { display: flex; flex-direction: column; }
+.pilot-door { margin-bottom: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .trail-stop.is-next .medallion { animation: none; }
+}
+
+/* ==================================================================== *
+ * The book: chapter pages, lessons and tests on paper
+ * ==================================================================== */
+
+/* A page lying on the desk: paper, a gutter shadow down the spine side,
+   and a real drop shadow under it. */
+.page.paper {
+  position: relative;
+  border-radius: 3px 6px 6px 3px;
+  padding: var(--s-6) var(--s-6) var(--s-5);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.1), transparent 28px),
+    var(--grain-paper),
+    radial-gradient(ellipse at 50% 35%, var(--paper) 60%, var(--paper-2) 100%);
+  background-size: auto, 180px 180px, auto;
+  background-blend-mode: normal, multiply, normal;
+  border: 1px solid var(--ink-rule);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset, 0 18px 36px rgba(0, 0, 0, 0.45);
+  outline: none;
+}
+.page.paper h2, .page.paper h3 { color: var(--ink); font-family: var(--font-print); }
+.page.paper h2 { font-size: 28px; line-height: 1.2; }
+.page.paper .panel-title { border-bottom-color: var(--ink-rule); }
+.page.paper .panel-title::after { background: var(--ink-accent); }
+@media (max-width: 700px) { .page.paper { padding: var(--s-5) var(--s-4) var(--s-4); } }
+
+/* The lesson text is set like a book: the printed serif, a size you can
+   read for twenty minutes, and a drop cap to open each step. */
+.page.paper .lesson-body p {
+  font-family: var(--font-print);
+  font-size: 18px;
+  line-height: 1.62;
+  color: var(--ink);
+}
+.page.paper .lesson-body > p:first-child::first-letter {
+  float: left;
+  font-family: var(--font-sign);
+  font-size: 3.3em;
+  line-height: 0.9;
+  margin: 6px 8px 0 0;
+  color: var(--ink-accent);
+}
+.page-kicker {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-dim);
+  margin-bottom: 2px;
+}
+.lesson-intro, .lesson-close { margin: 0 0 var(--s-5); }
+.lesson-close { margin-top: var(--s-5); }
+.lesson-intro .bubble, .lesson-close .bubble { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); }
+
+/* The bar above a lesson or a test: a wooden bookmark strip. */
+.book-bar {
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 60%, var(--wood-3) 100%);
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--on-wood);
+  border: 1px solid var(--brass-lo);
+  outline: none;
+  padding: var(--s-3) var(--s-4);
+}
+.book-bar .faint, .book-bar .muted { color: var(--on-wood); opacity: 0.8; }
+.book-bar h1 { color: var(--on-wood); }
+.book-bar .module-glyph {
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  color: var(--on-brass);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.book-bar .btn.ghost { color: var(--on-wood); border-color: rgba(255, 255, 255, 0.25); }
+.book-bar .badge { background: rgba(0, 0, 0, 0.3); color: var(--on-wood); border-color: rgba(255, 255, 255, 0.2); }
+.book-title { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+
+.page-marks { display: flex; gap: 4px; margin-top: var(--s-3); }
+.page-mark {
+  flex: 1;
+  height: 7px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+.page-mark.done { background: var(--brass); box-shadow: none; }
+.page-mark.now { background: var(--brass-hi); box-shadow: 0 0 8px rgba(255, 255, 255, 0.35); }
+
+/* Silas asks. The question gets his face and his name, not a badge. */
+.check-block { margin-top: var(--s-5); padding-top: var(--s-4); border-top: 1px dashed var(--ink-rule); }
+.check-head { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); }
+.silas-face { line-height: 0; flex: none; }
+.check-label { font-family: var(--font-sign); font-size: 18px; color: var(--ink-accent); }
+.page.paper .question { font-family: var(--font-print); font-size: var(--t-lg); color: var(--ink); }
+.silas-line {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-print);
+  font-style: italic;
+  font-size: var(--t-md);
+  margin-bottom: var(--s-2);
+}
+
+/* Options on paper are cards laid on the page. */
+.page.paper .option {
+  background: var(--paper);
+  border: 1px solid var(--ink-rule);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+}
+.page.paper .option:hover:not(:disabled) { background: var(--paper-2); border-color: var(--brass-lo); }
+.page.paper .option .key { background: var(--paper-2); color: var(--ink); border-color: var(--ink-rule); }
+
+/* ---- a chapter's title page ------------------------------------------ */
+
+.chapter { display: flex; flex-direction: column; gap: var(--s-4); }
+.chapter .panel + .panel { margin-top: 0; }
+.chapter-title-row { display: flex; align-items: center; gap: var(--s-4); position: relative; }
+.chapter-title-row h1 { margin: 2px 0 2px; font-family: var(--font-sign); font-weight: 400; font-size: clamp(30px, 6vw, 44px); color: var(--ink); }
+.chapter-title-row .tagline { font-family: var(--font-print); font-style: italic; color: var(--ink-dim); font-size: var(--t-md); }
+.chapter-title-row .stamp { position: absolute; right: 0; top: 0; }
+.chapter-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-5); }
+.page.paper .lesson-points li { font-family: var(--font-print); font-size: var(--t-md); color: var(--ink); }
+
+/* The three rungs to Mastered, as seals on the page. */
+.seals .rung {
+  background: var(--paper);
+  border: 1px solid var(--ink-rule);
+  border-radius: 6px;
+}
+.seals .rung-here { border-color: var(--brass-lo); box-shadow: 0 0 0 2px rgba(var(--ink-accent-rgb), 0.25); }
+
+/* ---- the test ------------------------------------------------------------ */
+
+.test { display: flex; flex-direction: column; gap: var(--s-3); }
+.test .panel + .panel { margin-top: 0; }
+
+.lanterns { display: flex; gap: 4px; margin-top: var(--s-3); flex-wrap: wrap; }
+.lantern { line-height: 0; }
+.lantern-art { display: block; line-height: 0; }
+.lantern svg { display: block; }
+.lantern .l-ring { fill: none; stroke: rgba(255, 255, 255, 0.35); stroke-width: 1.5; }
+.lantern .l-cap, .lantern .l-base { fill: rgba(0, 0, 0, 0.55); stroke: rgba(255, 255, 255, 0.25); stroke-width: 0.8; }
+.lantern .l-glass { fill: rgba(0, 0, 0, 0.35); stroke: rgba(255, 255, 255, 0.25); stroke-width: 0.8; }
+.lantern .l-flame { fill: rgba(255, 255, 255, 0.08); }
+.lantern.now .l-glass { stroke: var(--brass-hi); }
+.lantern.lit .l-glass { fill: var(--brass-hi); }
+.lantern.lit .l-flame { fill: var(--on-brass); opacity: 0.55; }
+.lantern.lit .l-cap, .lantern.lit .l-base { fill: var(--brass-lo); }
+.lantern.lit { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.35)); }
+.lantern.burnt .l-glass { fill: var(--ink-red); }
+.lantern.burnt .l-flame { fill: rgba(0, 0, 0, 0.45); }
+
+.result-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); margin-bottom: var(--s-4); }
+.stars.big { font-size: 42px; gap: 6px; }
+.test-page .stat { background: var(--paper-2); border-color: var(--ink-rule); }
+.test-page .stat .value { color: var(--ink-accent); }
+
+/* A rubber stamp, struck at an angle. */
+.stamp {
+  display: inline-block;
+  padding: 6px 14px 5px;
+  font-family: var(--font-sign);
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 3px double currentColor;
+  border-radius: 6px;
+  transform: rotate(-6deg);
+  opacity: 0.88;
+  animation: stamp-in 380ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+.stamp.good { color: var(--ink-green); }
+.stamp.soft { color: var(--ink-accent); }
+@keyframes stamp-in { from { opacity: 0; transform: rotate(-6deg) scale(1.8); } to { opacity: 0.88; transform: rotate(-6deg) scale(1); } }
+
+/* XP, flying up to the rank on the rail. */
+.xp-pop {
+  position: fixed;
+  z-index: 180;
+  transform: translate(-50%, 0);
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-sm);
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass) 60%, var(--brass-lo));
+  color: var(--on-brass);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  animation: xp-rise 1.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes xp-rise {
+  0% { opacity: 0; transform: translate(-50%, 18px) scale(0.8); }
+  18% { opacity: 1; transform: translate(-50%, 0) scale(1.08); }
+  70% { opacity: 1; transform: translate(-50%, -14px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -30px) scale(0.9); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp, .xp-pop { animation: none; }
+  .xp-pop { display: none; }
+}
+
+/* ==================================================================== *
+ * The pilot house
+ * ==================================================================== */
+
+.pilot { display: flex; flex-direction: column; gap: var(--s-4); }
+.pilot .panel + .panel { margin-top: 0; }
+.logbook h2.sign { margin: 0; font-family: var(--font-sign); font-weight: 400; font-size: 28px; color: var(--ink); }
+.logbook .rung-row {
+  background: var(--paper);
+  border: 1px solid var(--ink-rule);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+}
+.logbook .rung-row:hover:not(:disabled) { background: var(--paper-2); border-color: var(--brass-lo); }
+.logbook .rung-row .rung-mark {
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  color: var(--on-brass);
+  border: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-print);
+  font-weight: 700;
+}
+.logbook .rung-row.done .rung-mark { background: var(--ink-green); color: var(--paper); }
+.logbook .rung-row.shut .rung-mark { background: var(--paper-2); color: var(--ink-dim); box-shadow: none; }
+.logbook .rung-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); color: var(--ink); }
+
+/* The hours a reach has been run in: sun, dusk, moon. */
+.hour-pip {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.05);
+}
+.hour-pip.lit { color: var(--on-brass); background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 60%, var(--brass-lo)); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+.rung-pips { gap: 4px; }
+.hour-key { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); margin: 0 0 var(--s-4); font-size: var(--t-xs); color: var(--ink-dim); }
+.hour-key-item { display: inline-flex; align-items: center; gap: 6px; }
+.hour-key-item .icon { color: var(--ink-accent); }
+
+.shoals-note .panel-title h3 { color: var(--ink); }
+.shoals-intro { margin: var(--s-2) 0 var(--s-4); }
+
+/* ---- a run, lit by its hour ----------------------------------------- */
+
+/* Night and dusk: the room's colours give way to the river's. Everything
+   inside takes the night palette, the same way paper takes its ink. */
+.nightfall {
+  --text: var(--night-ink);
+  --text-dim: var(--night-ink-dim);
+  --text-faint: var(--night-ink-dim);
+  --text-rgb: var(--night-ink-rgb);
+  --border: var(--night-border);
+  --border-bright: var(--night-border);
+  --bg-card: var(--night-card);
+  --bg-raised: var(--night-card);
+  --bg-sunken: var(--night-1);
+  --bg-hover: var(--night-hover);
+  --accent: var(--night-accent);
+  --accent-hi: var(--night-accent);
+  --accent-dim: var(--brass-lo);
+  --accent-rgb: var(--night-accent-rgb);
+  --gold: var(--night-accent);
+  --gold-dim: var(--brass-lo);
+  --green: var(--night-green);
+  --green-rgb: var(--night-green-rgb);
+  --red: var(--night-red);
+  --red-rgb: var(--night-red-rgb);
+  --blue: var(--night-blue);
+  --blue-rgb: var(--night-blue-rgb);
+  --hairline: rgba(255, 255, 255, 0.06);
+  --hairline-strong: rgba(255, 255, 255, 0.16);
+  color: var(--text);
+  border-color: var(--night-border);
+  outline-color: rgba(255, 255, 255, 0.08);
+}
+.run-panel.stage-peek {
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 115%, var(--dusk-2) 0%, transparent 70%),
+    linear-gradient(180deg, var(--dusk-1) 0%, var(--night-2) 100%);
+}
+.run-panel.stage-blind {
+  background:
+    radial-gradient(circle at 50% 58%, rgba(var(--night-accent-rgb), 0.16) 0%, transparent 38%),
+    radial-gradient(1px 1px at 18px 24px, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1px 1px at 92px 60px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 150px 18px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 210px 84px, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 60px 110px, rgba(255, 255, 255, 0.5), transparent),
+    linear-gradient(180deg, var(--night-1) 0%, var(--night-2) 100%);
+  background-size: auto, 240px 140px, 240px 140px, 240px 140px, 240px 140px, 240px 140px, auto;
+}
+.run-panel.stage-chart .run-where, .run-panel.stage-chart .run-count { color: var(--ink); }
+.run-hour { display: inline-flex; align-items: center; gap: 6px; }
+.run-panel .run-where { font-family: var(--font-print); font-weight: 700; font-size: var(--t-lg); }
+.nightfall .ask-option { background: var(--night-card); border-color: var(--night-border); color: var(--night-ink); }
+.nightfall .ask-option:hover:not(:disabled) { background: var(--night-hover); border-color: var(--night-accent); }
+.nightfall .verdict-box { background: rgba(0, 0, 0, 0.35); }
+.run-panel .verdict-box .silas-line { color: var(--text); }
+.by-heart {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: var(--s-2) 0;
+  font-family: var(--font-sign);
+  font-size: 22px;
+}
+.by-heart .seal { width: 48px; height: 48px; color: var(--paper); }
+
+/* The watch that runs at night: a brass case, a sweeping hand. */
+.pocket-watch {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  margin: 8px 0 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, var(--paper) 0%, var(--paper-2) 75%);
+  border: 3px solid var(--brass);
+  box-shadow: 0 0 0 1px var(--brass-lo), 0 3px 10px rgba(0, 0, 0, 0.55);
+}
+.pocket-watch::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 10px;
+  height: 7px;
+  margin-left: -5px;
+  border-radius: 3px 3px 1px 1px;
+  background: var(--brass);
+}
+.pocket-watch::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.watch-hand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 17px;
+  margin: -17px 0 0 -1px;
+  background: var(--ink-red);
+  border-radius: 1px;
+  transform-origin: 50% 100%;
+  animation: sweep linear forwards;
+}
+@keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.run-panel .clock-bar { height: 4px; }
+.nightfall .clock-bar > span { background: var(--night-accent); box-shadow: 0 0 8px rgba(var(--night-accent-rgb), 0.8); }
+
+@media (prefers-reduced-motion: reduce) {
+  .watch-hand { animation: none; }
+}
+.run-panel .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* ==================================================================== *
+ * The saloon: the table, the lamp over it, the wall behind it
+ * ==================================================================== */
+
+.saloon-stage {
+  position: relative;
+  padding: 34px 18px 18px;
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse 58% 62% at 50% 40%, rgba(var(--night-accent-rgb), 0.2), transparent 72%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0 2px, transparent 2px 72px),
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-2), var(--wood-3));
+  background-size: auto, auto, 400px 120px, auto;
+  background-blend-mode: normal, normal, multiply, normal;
+  border: 1px solid var(--brass-lo);
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.6), var(--shadow);
+}
+.saloon-lamp { position: absolute; top: 0; left: 50%; transform: translateX(-50%); line-height: 0; z-index: 2; pointer-events: none; }
+.lamp-art { width: 120px; height: auto; overflow: visible; }
+.lamp-cord { stroke: var(--brass-lo); stroke-width: 2; }
+.lamp-shade { fill: var(--brass); stroke: var(--brass-lo); stroke-width: 1.2; }
+.lamp-rim { stroke: var(--brass-hi); stroke-width: 2.4; stroke-linecap: round; }
+.lamp-bulb { fill: var(--night-accent); filter: drop-shadow(0 0 8px rgba(var(--night-accent-rgb), 0.9)); }
+@media (max-width: 700px) {
+  .saloon-stage { padding: 26px 8px 10px; border-radius: 10px; }
+  .lamp-art { width: 90px; }
+}
+
+/* A wooden rail around the cloth, with a brass line where they meet: the
+   cloth and the wood are backgrounds clipped to the padding and the border,
+   so the rail keeps its grain all the way round the curve. */
+.felt {
+  border-color: transparent;
+  background:
+    radial-gradient(ellipse at 50% 42%, var(--felt-1) 0%, var(--felt-3) 72%) padding-box,
+    var(--wood-grain) border-box,
+    linear-gradient(180deg, var(--wood-1), var(--wood-3)) border-box;
+  background-size: auto, 400px 120px, auto;
+  background-blend-mode: normal, multiply, normal;
+}
+
+/* Seat plates are small wooden plaques with a brass edge. */
+.seat-plate {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.78));
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.seat.hero .seat-plate { border-color: var(--brass); }
+
+/* Chips, seen from the side and stacked. */
+.chip-stack { display: inline-flex; flex-direction: column-reverse; align-items: center; margin-right: 5px; vertical-align: middle; }
+.chip-disc {
+  display: block;
+  width: 15px;
+  height: 5px;
+  margin-top: -1px;
+  border-radius: 50% / 45%;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+}
+.chip-stack.red .chip-disc { background: repeating-linear-gradient(90deg, #b8322b 0 3px, #f3ead6 3px 5px); }
+.chip-stack.blue .chip-disc { background: repeating-linear-gradient(90deg, #2a5ea8 0 3px, #f3ead6 3px 5px); }
+.chip-stack.green .chip-disc { background: repeating-linear-gradient(90deg, #2d7a4a 0 3px, #f3ead6 3px 5px); }
+.chip-stack.black .chip-disc { background: repeating-linear-gradient(90deg, #1b1b1f 0 3px, #d9b44a 3px 5px); }
+.seat-bet { display: inline-flex; align-items: center; }
+.pot-chip .chip-stack { margin-right: 2px; }
+
+/* Cards from an 1890 deck: ivory stock, the printed serif for the index,
+   and a back with a brass medallion on a wine lattice. */
+.card {
+  background: radial-gradient(ellipse at 50% 28%, var(--card-stock) 0%, var(--card-stock-2) 100%);
+  color: #1d1812;
+  border: 1px solid #d6c59f;
+  font-family: 'Old Standard TT', Georgia, serif;
+  font-weight: 700;
+}
+.card .rank { font-family: 'Old Standard TT', Georgia, serif; }
+.card.red { color: #b3232b; }
+.card.blue { color: #1d4f9a; }
+.card.green { color: #1f6b3e; }
+.card.back {
+  background:
+    radial-gradient(circle at 50% 50%, var(--card-brass) 0 16%, var(--card-brass-lo) 17% 19%, transparent 20%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.09) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(-45deg, var(--card-back-1) 0 4px, var(--card-back-2) 4px 8px);
+  border: 2px solid var(--card-stock-2);
+  box-shadow: 0 0 0 1px var(--card-brass-lo), 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* The tray the buttons sit in: wood, with the actions as plates. */
+.saloon .action-bar {
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 60%, var(--wood-3) 100%);
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  border: 1px solid var(--brass-lo);
+  color: var(--on-wood);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), var(--shadow-sm);
+}
+.saloon .action-bar .faint, .saloon .action-bar .muted { color: var(--on-wood); opacity: 0.85; }
+.saloon .action-bar h3 { color: var(--on-wood); }
+.action-buttons .btn { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); letter-spacing: 0.02em; }
+.saloon .action-buttons .btn:not(.primary):not(.danger) {
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+  color: var(--ink);
+  border-color: var(--ink-rule);
+}
+.saloon .action-buttons .btn.danger {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.25)), var(--ink-red);
+  color: var(--paper);
+  border-color: rgba(0, 0, 0, 0.45);
+}
+
+/* Silas's notebook beside the table. */
+.coach.paper { border-radius: 6px; }
+.coach-head { display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-3); }
+.coach-who { display: flex; flex-direction: column; line-height: 1.2; }
+.coach-name { font-family: var(--font-sign); font-weight: 400; font-size: 20px; color: var(--ink); }
+.coach-role { font-family: var(--font-print); font-style: italic; font-size: var(--t-sm); color: var(--ink-dim); font-weight: 400; }
+.coach.paper .verdict-box { background: var(--paper-2); }
+.coach.paper .coach-metric { border-bottom-color: var(--ink-rule); }

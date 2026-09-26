@@ -14,6 +14,19 @@ import { el, fmt } from './dom.js';
 import { cardEl, cardRow, hiddenCards } from './cardView.js';
 import { portraitSvg } from './portraits.js';
 
+/**
+ * A few chips, stacked: one for a blind, up to five for a big bet, so the
+ * size of a bet is something you see before you read the number beside it.
+ * `bb` is the big blind the stack is measured against.
+ */
+export function chipStack(amount, bb = 2, { max = 5 } = {}) {
+  const inBlinds = amount / (bb || 1);
+  const n = Math.max(1, Math.min(max, Math.ceil(Math.log2(inBlinds + 1))));
+  const tone = inBlinds >= 40 ? 'black' : inBlinds >= 10 ? 'green' : inBlinds >= 3 ? 'blue' : 'red';
+  return el(`span.chip-stack.${tone}`, { 'aria-hidden': 'true' },
+    Array.from({ length: n }, () => el('span.chip-disc')));
+}
+
 /** A seat's face, from a trusted SVG string drawn by portraits.js. */
 function face(key) {
   const node = el('span.seat-face', { 'aria-hidden': 'true' });
@@ -45,6 +58,7 @@ export function renderFelt(state) {
     players, heroSeat, seatCount, button, board, pot, street,
     actingId = null, reveal = false, fourColour = false,
     potLabel = 'pot', boardPlaceholder = 'waiting for the flop',
+    bigBlind = 2,
   } = state;
 
   const seats = players.map((p) => {
@@ -74,7 +88,7 @@ export function renderFelt(state) {
         el('div.seat-stack', p.sittingOut ? 'sitting out' : fmt.chips(p.stack)),
         el('div.seat-pos', p.position),
       ),
-      p.committed > 0 ? el('div.seat-bet', '🪙', fmt.chips(p.committed)) : null,
+      p.committed > 0 ? el('div.seat-bet', chipStack(p.committed, bigBlind), fmt.chips(p.committed)) : null,
       p.seat === button ? el('div.table-marker.dealer', 'D') : null,
       p.position === 'SB' ? el('div.table-marker.blind.sb', 'SB') : null,
       p.position === 'BB' ? el('div.table-marker.blind.bb', 'BB') : null,
@@ -90,7 +104,7 @@ export function renderFelt(state) {
           ? board.map((c) => cardEl(c, { size: 'lg', fourColour, dealt: true }))
           : el('span.faint', boardPlaceholder),
       ),
-      el('div.pot-chip', el('span.label', potLabel), fmt.chips(pot)),
+      el('div.pot-chip', pot > 0 ? chipStack(pot, bigBlind, { max: 6 }) : null, el('span.label', potLabel), fmt.chips(pot)),
     ),
   );
 }

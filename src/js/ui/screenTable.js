@@ -41,10 +41,19 @@ import { SessionStats, leakReport, stakeFor, bankrollAdvice, SAMPLE } from '../s
 import { HandRecorder, keepHand } from '../state/handHistory.js';
 import { checkAchievements } from '../state/achievements.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
-import { bossFor } from '../data/characters.js';
+import { bossFor, MENTOR } from '../data/characters.js';
+import { svgNode } from './place.js';
+import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
 
 const BOT_DELAY = 620;
+
+/** The lamp over the table: a brass shade on a cord, and the light it throws. */
+const LAMP = '<svg class="lamp-art" viewBox="0 0 140 46" aria-hidden="true">'
+  + '<path class="lamp-cord" d="M70 0v11"/>'
+  + '<path class="lamp-shade" d="M46 11h48l17 21H29z"/>'
+  + '<path class="lamp-rim" d="M29 32h82"/>'
+  + '<ellipse class="lamp-bulb" cx="70" cy="36" rx="11" ry="4.5"/></svg>';
 /**
  * How many hands a lesson table will deal looking for the reader's own spot.
  * Measured over twelve fresh sessions per lesson, every one finds its spot;
@@ -252,7 +261,9 @@ export function renderTable(ctx, params = {}) {
   const hero = table.player(HERO_ID);
   const feltHost = el('div');
   const actionHost = el('div');
-  const coachHost = el('div.coach');
+  // Silas's notebook, beside the table: paper, so everything he writes in it
+  // takes the book's ink.
+  const coachHost = el('div.coach.paper');
   const lessonNoteHost = el('div');
   const root = el('div.screen',
     el('div.spread.table-head', { style: { marginBottom: '14px' } },
@@ -263,8 +274,9 @@ export function renderTable(ctx, params = {}) {
           el('span.table-owner', t('{name}\'s table', { name: boss.short })),
         )
         : el('div.row',
-          el('h1', { style: { margin: 0 } }, lessonMeta ? t(lessonMeta.name) : VARIANTS[variantKey].name),
-          el('span.badge.gold', lesson ? t('Lesson table') : VARIANTS[variantKey].short),
+          el('h1.sign.table-place', { style: { margin: 0 } }, lessonMeta ? t(lessonMeta.name) : t('Silas\'s practice table')),
+          el('span.scene-stake', lesson ? t('Lesson table') : VARIANTS[variantKey].short),
+          lesson ? null : el('span.table-owner', t('No money on it — just hands.')),
         ),
       el('div.row',
         !grind && !lesson ? variantSwitcher(variantKey, go) : null,
@@ -279,8 +291,11 @@ export function renderTable(ctx, params = {}) {
     // that stops on the flop is not the game — saying so is the difference
     // between a simplification and a lie.
     lesson ? lessonNoteHost : null,
-    el('div.table-wrap.with-coach', el('div', feltHost, actionHost), coachHost),
+    el('div.table-wrap.with-coach',
+      el('div', el('div.saloon-stage', svgNode(LAMP, 'saloon-lamp'), feltHost), actionHost),
+      coachHost),
   );
+  root.classList.add('saloon');
 
   ctx.onLeave = () => {
     session.cancelled = true;
@@ -858,6 +873,7 @@ export function renderTable(ctx, params = {}) {
       reveal: table.handOver && !!table.result && table.result.reason === 'showdown',
       fourColour: profile.settings.fourColour,
       potLabel: table.handOver ? 'final pot' : 'pot',
+      bigBlind,
     }));
   }
 
@@ -1017,7 +1033,7 @@ export function renderTable(ctx, params = {}) {
     const actor = table.actor;
     if (!actor || !actor.isHero) {
       return mount(actionHost, el('div.action-bar',
-        el('div.muted', actor ? `${actor.name} is thinking…` : 'Dealing…'),
+        el('div.muted', actor ? t('{name} is thinking…', { name: actor.name }) : 'Dealing…'),
       ));
     }
 
@@ -1207,7 +1223,15 @@ export function renderTable(ctx, params = {}) {
       .filter(Boolean);
 
     mount(coachHost,
-      el('h3', icon('coach', { size: 18 }), t('Coach')),
+      // The coach is Silas: the same teacher as the school and the pilot
+      // house, standing at your shoulder. His name and face, not a label.
+      el('h3.coach-head',
+        svgNode(portraitSvg(MENTOR.key, { size: 44 }), 'silas-face'),
+        el('span.coach-who',
+          el('span.coach-name', MENTOR.short),
+          el('span.coach-role', t(MENTOR.table)),
+        ),
+      ),
       adjusted.length
         ? el('div.notice', { style: { marginBottom: '10px' } },
           el('div', { style: { fontWeight: '600' } }, t('They have noticed how you play')),

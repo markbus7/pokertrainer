@@ -19,6 +19,8 @@ import { IDK, dontKnowButton } from './dontKnow.js';
 import { CHARTS } from '../data/ranges.js';
 import { handKey } from '../core/cards.js';
 import * as audio from '../audio/engine.js';
+import { silasSays, silasVerdict, lanterns, xpPop, stamp, svgNode } from './place.js';
+import { portraitSvg } from './portraits.js';
 
 /** The lesson page for a module, with the drill entry point. */
 /** What the guided lesson actually is, in one line, so the name is not a riddle. */
@@ -55,7 +57,7 @@ function masteryLadder(profile, moduleId, go) {
   const plan = tierPlan(profile, moduleId);
   const here = masteryTier(profile, moduleId);
 
-  return el('div.panel',
+  return el('div.panel.page.paper.seals',
     el('div.panel-title', el('h2', t('Your way to Mastered'))),
     el('div.faint', { style: { marginBottom: '14px' } },
       t('Only your most recent answers count, so a rough start does not follow you around. '
@@ -113,48 +115,61 @@ function masteryLadder(profile, moduleId, go) {
   );
 }
 
+/** Where a module sits in the course: its chapter number. */
+const chapterOf = (id) => MODULE_META.findIndex((m) => m.id === id) + 1;
+
+/** A module's medallion, as the course draws it. */
+function medallion(meta) {
+  return el('span.medallion', { 'aria-hidden': 'true' },
+    el('span.medallion-face', icon(meta.icon, { size: 26 })),
+    el('span.medallion-num', String(chapterOf(meta.id))),
+  );
+}
+
 export function renderLearn(ctx, params) {
   const meta = moduleMeta(params.module);
   if (!meta) return el('div.empty', 'Unknown module.');
   const { profile, go } = ctx;
   const stats = profile.drillStats(meta.id);
   const acc = profile.accuracy(meta.id);
+  const done = profile.hasCompletedWalkthrough(meta.id);
 
-  return el('div.screen',
-    el('div.panel',
-      el('div.spread',
-        el('div.row',
-          el('span.module-glyph.lg', icon(meta.icon, { size: 28 })),
-          el('div',
-            el('h1', { style: { margin: 0 } }, meta.name),
-            el('div.muted', meta.tagline),
-          ),
+  return el('div.screen.chapter',
+    /* ---- the chapter's title page ---- */
+    el('div.panel.page.paper.chapter-head',
+      el('div.chapter-title-row',
+        medallion(meta),
+        el('div',
+          el('div.chapter-kicker', t('Chapter {n}', { n: chapterOf(meta.id) })),
+          el('h1.sign', meta.name),
+          el('div.tagline', meta.tagline),
         ),
-        el('div.row',
-          // The requirement calls this "the guided lesson", so the button
-          // that is it says the same words. It used to say "Teach me this"
-          // while the page above it already showed a summary and key points
-          // — so a reader who had read the page, and was then told to finish
-          // a guided lesson, had no way to tell which of those was meant.
-          el('button.btn.primary.lg', { onclick: () => go('walkthrough', { module: meta.id }) },
-            profile.hasCompletedWalkthrough(meta.id) ? 'Do the guided lesson again' : 'Start the guided lesson'),
-          el('button.btn.lg.ghost', { onclick: () => go('drill', { module: meta.id }) }, 'Skip to drills'),
-        ),
-        walkthroughShape(meta.id),
-        // When the lesson is the only thing left, say so beside the button
-        // that does it. Otherwise the two buttons look equally optional and
-        // the reader drills a module that is already past both numbers.
-        lessonIsTheBlocker(profile, meta.id)
-          ? el('div.notice', { style: { marginTop: '12px' } },
-            t('One pass through the guided lesson is the only thing left before {tier}. '
-              + 'More drilling cannot move it: the answers are already there.',
-            { tier: t(tierByKey('mastered').name) }))
-          : null,
+        done ? stamp(t('✓ Lesson done'), 'good') : null,
       ),
+      el('div.chapter-actions',
+        // The requirement calls this "the guided lesson", so the button
+        // that is it says the same words. It used to say "Teach me this"
+        // while the page above it already showed a summary and key points
+        // — so a reader who had read the page, and was then told to finish
+        // a guided lesson, had no way to tell which of those was meant.
+        el('button.btn.primary.lg.plank', { onclick: () => go('walkthrough', { module: meta.id }) },
+          done ? 'Do the guided lesson again' : 'Start the guided lesson'),
+        el('button.btn.lg.ghost', { onclick: () => go('drill', { module: meta.id }) }, 'Skip to drills'),
+      ),
+      walkthroughShape(meta.id),
+      // When the lesson is the only thing left, say so beside the button
+      // that does it. Otherwise the two buttons look equally optional and
+      // the reader drills a module that is already past both numbers.
+      lessonIsTheBlocker(profile, meta.id)
+        ? el('div.notice', { style: { marginTop: '12px' } },
+          t('One pass through the guided lesson is the only thing left before {tier}. '
+            + 'More drilling cannot move it: the answers are already there.',
+          { tier: t(tierByKey('mastered').name) }))
+        : null,
       stats.attempts
         ? el('div.row', { style: { marginTop: '14px' } },
-            el('span.badge', `${stats.attempts} attempts`),
-            el('span.badge', `${stats.correct} correct`),
+            el('span.badge', t('{n} attempts', { n: stats.attempts })),
+            el('span.badge', t('{n} correct', { n: stats.correct })),
             // Below the evidence bar there is no percentage to show, and a
             // blank where a score should be tells the reader nothing about
             // why. Say what is missing instead.
@@ -166,22 +181,20 @@ export function renderLearn(ctx, params) {
           )
         : null,
     ),
-    masteryLadder(profile, meta.id, go),
-    el('div.panel',
-      el('div.spread',
-        el('h3', { style: { margin: 0 } }, 'Why this matters'),
-        profile.hasCompletedWalkthrough(meta.id) ? el('span.badge.green', '✓ Lesson done') : null,
-      ),
-      el('p.muted', meta.lesson.summary),
-      el('h3', { style: { marginTop: '18px' } }, 'The key points'),
+
+    /* ---- why it matters, in Silas's words, and what to carry away ---- */
+    el('div.panel.mentor-card', silasSays(t(meta.lesson.summary), { typed: false })),
+    el('div.panel.page.paper',
+      el('h3', 'The key points'),
       el('ul.lesson-points', meta.lesson.points.map((point) => el('li', el('span', point)))),
     ),
+    masteryLadder(profile, meta.id, go),
     el('div.row',
       el('button.btn.primary', { onclick: () => go('walkthrough', { module: meta.id }) },
-        profile.hasCompletedWalkthrough(meta.id) ? 'Do the guided lesson again' : 'Start the guided lesson'),
+        done ? 'Do the guided lesson again' : 'Start the guided lesson'),
       el('button.btn.ghost', { onclick: () => go('drill', { module: meta.id }) },
         t('Drill {module}', { module: t(meta.name) })),
-      el('button.btn.ghost', { onclick: () => go('home') }, 'Back'),
+      el('button.btn.ghost', { onclick: () => go('train') }, 'Back to the school'),
     ),
   );
 }
@@ -217,16 +230,19 @@ export function renderDrill(ctx, params) {
     xpEarned: 0,
     question: null,
     locked: false,
+    // Right or wrong, per question, for the lanterns along the top.
+    results: [],
+    verdictLine: null,
   };
 
   const sessionLength = gauntlet ? queue.length : SESSION_LENGTH;
   const bounded = gauntlet || !endless;
   const sessionOver = () => bounded && state.answered >= sessionLength;
 
-  const header = el('div.panel');
-  const body = el('div.panel');
+  const header = el('div.panel.book-bar');
+  const body = el('div.panel.page.paper.test-page');
   const footer = el('div.row');
-  const root = el('div.screen', header, body, footer);
+  const root = el('div.screen.test', header, body, footer);
 
   const nextQuestion = () => {
     if (sessionOver()) return finish();
@@ -262,9 +278,13 @@ export function renderDrill(ctx, params) {
     }
     const goal = gauntlet ? null : nextTierGoal(profile, meta.id);
 
+    // Three stars for a clean sheet, two for a pass, one for most of it.
+    const stars = state.answered && state.correct === state.answered ? 3
+      : passed ? 2 : pct >= 0.6 ? 1 : 0;
+    if (passed) audio.sfx('fanfare');
+
     mount(header,
       el('div.row',
-        el('span', { style: { fontSize: 'var(--t-xl)' } }, passed ? '✅' : '📘'),
         el('div',
           el('h1', { style: { margin: 0 } }, gauntlet ? 'Gauntlet complete' : passed ? 'Session passed' : 'Session complete'),
           el('div.muted', t('{correct} of {answered} correct — {pct}',
@@ -272,9 +292,16 @@ export function renderDrill(ctx, params) {
             + (bounded ? t(' · pass mark was {pass}', { pass: gauntlet ? 8 : PASS_MARK }) : '')),
         ),
       ),
+      bounded ? lanterns(state.results, sessionLength) : null,
     );
 
     mount(body,
+      el('div.result-head',
+        el('div.stars.big', { 'aria-label': t('{n} of 3 stars', { n: stars }) },
+          [0, 1, 2].map((k) => el(`span.star${k < stars ? '.lit' : ''}`, '★'))),
+        stamp(passed ? t('Passed') : t('Keep at it'), passed ? 'good' : 'soft'),
+      ),
+      silasSays(t(verdictText(pct, gauntlet)), { typed: false, size: 60 }),
       el('div.grid.cols-3',
         el('div.stat', el('div.label', 'Score'), el('div.value', `${state.correct}/${state.answered}`)),
         el('div.stat', el('div.label', 'Accuracy'), el(`div.value.${pct >= 0.8 ? 'good' : pct < 0.5 ? 'bad' : ''}`, fmt.pct(pct))),
@@ -312,7 +339,6 @@ export function renderDrill(ctx, params) {
                 { module: t(meta.name) }))
           : null,
 
-      el('p.muted', { style: { marginTop: '16px' } }, verdictText(pct, gauntlet)),
     );
 
     mount(footer,
@@ -321,7 +347,7 @@ export function renderDrill(ctx, params) {
       !gauntlet
         ? el('button.btn.ghost', { onclick: () => go('drill', { module: params.module, endless: '1' }) }, 'Endless practice')
         : null,
-      el('button.btn.ghost', { onclick: () => go('home') }, 'Back to the river'),
+      el('button.btn.ghost', { onclick: () => go('train') }, 'Back to the school'),
     );
     return null;
   };
@@ -373,6 +399,9 @@ export function renderDrill(ctx, params) {
     const q = state.question;
     const wasCorrect = key === q.answer;
     audio.sfx(wasCorrect ? 'right' : 'wrong');
+    state.results.push(wasCorrect);
+    // Silas's word on it, chosen once so a redraw does not change his mind.
+    state.verdictLine = key === IDK ? null : silasVerdict(wasCorrect);
 
     if (wasCorrect) {
       state.correct++;
@@ -382,6 +411,7 @@ export function renderDrill(ctx, params) {
       state.xpEarned += gained;
       const before = profile.level;
       profile.addXp(gained);
+      xpPop(gained);
       if (profile.level > before) {
         audio.sfx('fanfare');
         toast({
@@ -425,10 +455,7 @@ export function renderDrill(ctx, params) {
           el('span.badge', `${state.correct}/${state.answered}`),
         ),
       ),
-      bounded
-        ? el('div.bar', { style: { marginTop: '12px' } },
-            el('span', { style: { width: `${(Math.min(state.answered, sessionLength) / sessionLength) * 100}%` } }))
-        : null,
+      bounded ? lanterns(state.results, sessionLength) : null,
     );
 
     const options = el('div.options',
@@ -461,6 +488,9 @@ export function renderDrill(ctx, params) {
       chosen === null ? null : el(`div.feedback.${
         chosen === IDK ? 'skip' : chosen === q.answer ? 'correct' : 'wrong'
       }`,
+        state.verdictLine
+          ? el('div.silas-line', svgNode(portraitSvg('silas', { size: 36 }), 'silas-face'), el('span', state.verdictLine))
+          : null,
         el('div.verdict', chosen === IDK
           ? t("You said you didn't know — here it is.")
           : chosen === q.answer

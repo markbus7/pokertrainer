@@ -1,6 +1,6 @@
 import { describe, it, assert, equal } from './harness.js';
 import { VENUES } from '../src/js/data/venues.js';
-import { BOSSES, BOSS_KEYS, bossFor, boatFor, BOATS, FLAGSHIP } from '../src/js/data/characters.js';
+import { BOSSES, BOSS_KEYS, bossFor, boatFor, BOATS, FLAGSHIP, MENTOR } from '../src/js/data/characters.js';
 import { PROFILES } from '../src/js/engine/bots.js';
 import { NL } from '../src/js/i18n/nl.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
@@ -64,6 +64,20 @@ describe('the river: every stop has somebody to beat', () => {
   it('has a face for everybody who can sit at a table', () => {
     for (const key of BOSS_KEYS) assert(PORTRAIT_KEYS.includes(key), `${key} has no portrait`);
     for (const key of Object.keys(PROFILES)) assert(PORTRAIT_KEYS.includes(key), `the ${key} regular has no portrait`);
+    assert(PORTRAIT_KEYS.includes(MENTOR.key), 'Silas has no face');
+  });
+
+  it('draws the places you study as well as the places you play', () => {
+    for (const key of ['school', 'pilothouse']) assert(LANDMARKS[key], `nothing is drawn for the ${key}`);
+  });
+
+  it('gives Silas a word for every reason he can point you at a chapter', () => {
+    // nextUp() gives one of these reasons; a reason with no line would put
+    // an empty bubble at the top of the school.
+    for (const reason of ['untouched', 'thin', 'lesson', 'fresh', 'weakest']) {
+      assert(MENTOR.next[reason] && MENTOR.next[reason].includes('{module}'), `Silas has nothing to say for "${reason}"`);
+    }
+    assert(MENTOR.right.length >= 3 && MENTOR.wrong.length >= 3, 'Silas repeats himself within a run');
   });
 });
 
@@ -165,6 +179,8 @@ describe('the river: it speaks Dutch too', () => {
       [b.name, b.title, b.hello, b.read, b.beat, b.beaten, b.keepsake.name, ...b.brag, ...b.sore].forEach(need);
     }
     for (const boat of [...BOATS, FLAGSHIP]) need(boat.name);
+    [MENTOR.title, MENTOR.school, MENTOR.pilot, MENTOR.shoals, MENTOR.asks, MENTOR.table,
+      ...Object.values(MENTOR.next), ...MENTOR.right, ...MENTOR.wrong].forEach(need);
     assert(!missing.length, `no Dutch for:\n      ${missing.join('\n      ')}`);
   });
 });

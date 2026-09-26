@@ -150,6 +150,8 @@ describe('theme: everything that carries words stays readable', () => {
       ['brass-hi', 'wood-2'], ['brass-hi', 'wood-3'], ['on-brass', 'brass'],
       ['map-ink', 'map-land'], ['map-ink', 'map-land-2'], ['map-ink', 'map-water'],
       ['map-ink-dim', 'map-land'], ['map-ink', 'sky-1'],
+      ['ink-accent', 'paper'], ['ink-accent', 'paper-2'], ['ink-green', 'paper'], ['ink-green', 'paper-2'],
+      ['ink-red', 'paper'], ['ink-red', 'paper-2'], ['ink-blue', 'paper'], ['ink-blue', 'paper-2'],
     ];
     const failures = [];
     for (const theme of Object.keys(PALETTES)) {
@@ -174,6 +176,25 @@ describe('theme: everything that carries words stays readable', () => {
         assert(apart, `${a} and ${b} have near-identical grounds (${av} / ${bv})`);
       }
     }
+  });
+});
+
+describe('theme: night in the pilot house reads in every room', () => {
+  it('keeps the night palette readable, whichever room is picked', () => {
+    // Constants, not per-room tokens: night is dark in the Daylight room too.
+    const root = {};
+    for (const block of themeCss.matchAll(/:root\s*\{([^}]*)\}/g)) {
+      for (const [, name, value] of block[1].matchAll(/--([\w-]+):\s*([^;]+);/g)) root[name] = value.trim();
+    }
+    const failures = [];
+    for (const ink of ['night-ink', 'night-ink-dim', 'night-accent', 'night-green', 'night-red', 'night-blue']) {
+      for (const ground of ['night-card', 'night-1', 'night-2', 'dusk-1']) {
+        assert(root[ink] && root[ground], `--${ink} or --${ground} is missing`);
+        const ratio = contrast(root[ink], root[ground]);
+        if (ratio < READABLE) failures.push(`--${ink} on --${ground}: ${ratio.toFixed(2)}:1`);
+      }
+    }
+    assert(!failures.length, `below the ${READABLE}:1 readable floor:\n      ${failures.join('\n      ')}`);
   });
 });
 

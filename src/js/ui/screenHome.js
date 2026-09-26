@@ -1,4 +1,17 @@
-/** Dashboard: where you are, what to do next. */
+/**
+ * Silas's card school: where the lessons live.
+ *
+ * It was a dashboard — a rank panel, a stack of cards and a grid of tiles —
+ * and it looked like one after the rest of the app became a river. So it is
+ * a place now. The school stands on the bank in the room's hour, Silas says
+ * which chapter is next and why, and the twelve modules are a course walked
+ * from the first chapter to the last: a trail of medallions that fill with
+ * stars as each one moves from learning to solid to mastered.
+ *
+ * Everything it knew stays: why this chapter, what is still missing on each,
+ * the reviews that have come due, the hands worth another look. Only where
+ * it is said changed.
+ */
 
 import { el, fmt } from './dom.js';
 import { icon } from './icons.js';
@@ -10,6 +23,8 @@ import { RANKS, requirementRows } from '../state/profile.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { handSummary } from '../state/handHistory.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
+import { MENTOR } from '../data/characters.js';
+import { sceneBanner, silasSays } from './place.js';
 
 const RANGE_KEYS = CHECKPOINTS.map((c) => c.key);
 
@@ -31,142 +46,123 @@ function nextRankHint(profile, next) {
 
 export function renderHome(ctx) {
   const { profile, go } = ctx;
-  const rank = profile.rank;
-  const next = profile.nextRank;
   const plan = nextUp(profile);
   const recommended = plan.module;
+  const cleared = profile.rangesCleared(RANGE_KEYS);
 
+  return el('div.screen.school',
+    sceneBanner({
+      id: 'school',
+      landmark: 'school',
+      kicker: t('On the bluff above the landing'),
+      title: t('Silas\'s Card School'),
+    }),
+
+    /* ---- Silas, and the one chapter most worth studying now ---- */
+    el('div.panel.mentor-card',
+      silasSays(t(MENTOR.next[plan.reason] || MENTOR.next.weakest, { module: t(recommended.name) })),
+      el('div.mentor-plan',
+        // Naming a module without saying why leaves the reader to guess.
+        el('div.faint', whyThisOne(plan)),
+        el('div.mentor-actions',
+          el('button.btn.primary.lg.plank', { onclick: () => go('learn', { module: recommended.id }) },
+            t('Study {module}', { module: t(recommended.name) })),
+          el('span.faint', describeProgress(profile, recommended.id)),
+        ),
+      ),
+    ),
+
+    el('div.school-floor',
+      /* ---- the course itself ---- */
+      el('section.course',
+        el('div.course-head',
+          el('h2.sign', t('The course')),
+          el('span.faint', t('{n} of {total} unlocked', {
+            n: MODULE_META.filter((m) => m.unlockLevel <= profile.level).length,
+            total: MODULE_META.length,
+          })),
+        ),
+        el('ol.trail',
+          MODULE_META.map((meta, i) => chapter(meta, i, profile, go, recommended.id)),
+        ),
+      ),
+
+      /* ---- what you carry: your papers, your record, Silas's notes ---- */
+      el('aside.school-rail',
+        certificate(profile),
+        el('button.door.pilot-door', { onclick: () => go('ranges') },
+          el('span.module-glyph', icon('grid', { size: 18 })),
+          el('span.door-text',
+            el('span.door-title', t('The pilot house')),
+            el('span.door-sub', cleared
+              ? t('{done} of {total} in your head', { done: cleared, total: RANGE_KEYS.length })
+              : t('Learn the charts until you do not need them')),
+          ),
+          icon('arrowRight', { size: 16, className: 'door-arrow' }),
+        ),
+        duePanel(profile, go),
+        mistakesPanel(go),
+        record(profile),
+        el('nav.doors',
+          doorway('lab', 'The Lab', 'Type the equity, size the bet.', () => go('lab')),
+          doorway('review', 'Hand review', 'Replay what you misplayed.', () => go('review')),
+          doorway('cards', 'Practice table', 'Play hands with Silas at your shoulder.', () => go('play')),
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Your papers: the rank, written up like a certificate with the seal of the
+ * level you hold, and what the next one still asks for.
+ */
+function certificate(profile) {
+  const rank = profile.rank;
+  const next = profile.nextRank;
+  return el('div.certificate.paper',
+    el('div.cert-kicker', t('Certificate of standing')),
+    el('div.cert-body',
+      el('span.seal', { 'aria-hidden': 'true' }, rank.emoji),
+      el('div',
+        el('div.cert-rank', t(rank.name)),
+        el('div.faint', t('Level {level} of {total}', { level: rank.level, total: RANKS.length })),
+      ),
+      el('div.cert-xp',
+        el('div.mono', fmt.chips(profile.xp)),
+        el('div.faint', 'total XP'),
+      ),
+    ),
+    el('p.cert-blurb', t(rank.blurb)),
+    el('div.bar', el('span', { style: { width: `${Math.round(profile.progress * 100)}%` } })),
+    el('div.spread.cert-foot',
+      // Not "XP to next rank": ranks ask for lessons and drilled skills too,
+      // so this names the requirement that is actually furthest behind.
+      el('div.faint', next ? nextRankHint(profile, next) : t('Maximum rank reached — you have mastered the curriculum.')),
+      el('div.faint', next ? `${fmt.chips(profile.xp)} / ${fmt.chips(next.xp)}` : ''),
+    ),
+  );
+}
+
+/** The record: the four numbers, written into the ledger rather than struck. */
+function record(profile) {
   const totals = Object.values(profile.data.drills).reduce(
     (acc, d) => ({ attempts: acc.attempts + d.attempts, correct: acc.correct + d.correct }),
     { attempts: 0, correct: 0 },
   );
-  // The same bar the module tiles use. Without it the headline number
-  // reported 100% off a single answer, while the tile right beneath it
-  // correctly refused to show anything.
+  // The same bar the chapters use. Without it the headline number reported
+  // 100% off a single answer, while the chapter right beside it correctly
+  // refused to show anything.
   const accuracy = totals.attempts >= EVIDENCE_BAR ? totals.correct / totals.attempts : null;
-
-  return el('div.screen.home-floor',
-    /* ---- rank header ---- */
-    el('div.panel',
-      el('div.spread',
-        el('div.row',
-          el('div.rank-emblem', rank.emoji),
-          el('div',
-            el('div.faint', t('Level {level} of {total}', { level: rank.level, total: RANKS.length })),
-            el('h1', { style: { margin: '2px 0 4px' } }, rank.name),
-            el('div.muted', { style: { maxWidth: '460px' } }, rank.blurb),
-          ),
-        ),
-        el('div', { style: { textAlign: 'right' } },
-          el('div.mono', { style: { fontSize: 'var(--t-xl)', fontWeight: '700' } }, fmt.chips(profile.xp)),
-          el('div.faint', 'total XP'),
-        ),
-      ),
-      el('div', { style: { marginTop: '16px' } },
-        el('div.bar', el('span', { style: { width: `${Math.round(profile.progress * 100)}%` } })),
-        el('div.spread', { style: { marginTop: '6px' } },
-          // Not "XP to next rank" any more: XP stopped being the only gate when
-          // ranks gained requirements, so this read "-2,000 XP to Grinder" for
-          // anyone whose XP had run ahead of their skills. Name the requirement
-          // that is actually furthest behind instead.
-          el('div.faint', next ? nextRankHint(profile, next) : t('Maximum rank reached — you have mastered the curriculum.')),
-          el('div.faint', next ? `${fmt.chips(profile.xp)} / ${fmt.chips(next.xp)}` : ''),
-        ),
-      ),
-    ),
-
-    /* ---- next step: the one module most worth studying now ---- */
-    // Career (the home tab) is the front door: a room, a bankroll, a seat
-    // that costs real chips. This panel used to also claim that job with its
-    // own "Play a hand" button — the exact same bare go('play') the Play tab
-    // already offers — which left two buttons on two screens doing the same
-    // thing. Its actual, distinct job was always to point at the one module
-    // worth studying next; the copy already said so, it was just sitting
-    // behind the secondary button.
-    el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
-      el('div.panel-title', el('h3', icon(recommended.icon, { size: 18 }), t('Up next'))),
-      el('div.spread',
-        el('div.row',
-          el('div', { style: { fontSize: 'var(--t-xl)' } }, '🃏'),
-          el('div',
-            el('div', { style: { fontWeight: '650' } },
-              t('Every decision counts toward a skill. {weakest} is the one to work on.',
-                { weakest: t(recommended.name) })),
-            // Naming a module without saying why leaves the reader to guess,
-            // and the module grid below shows two things reading "Learning".
-            el('div.faint', whyThisOne(plan)),
-          ),
-        ),
-        el('button.btn.primary.lg', { onclick: () => go('learn', { module: recommended.id }) },
-          t('Study {module}', { module: t(recommended.name) })),
-      ),
-      el('div.row', { style: { marginTop: '12px', flexWrap: 'wrap' } },
-        el('span.faint', t('Rather just play?')),
-        el('button.btn.sm.ghost', { onclick: () => go('play') }, t('Play a hand')),
-        el('span.faint', describeProgress(profile, recommended.id)),
-      ),
-    ),
-
-    // The chart ladder. It sits above the module grid because knowing your
-    // ranges cold is the thing that frees attention for everything below it:
-    // you cannot think about sizing while you are still deciding whether to
-    // play the hand at all.
-    el('div.panel',
-      el('div.panel-title', el('h3', icon('charts', { size: 18 }), t('Range trainer'))),
-      el('div.spread',
-        el('div',
-          el('div', { style: { fontWeight: '650' } }, t('Learn the charts until you do not need them')),
-          el('div.faint', t('Eight checkpoints. Each one walked with the chart open, then behind a '
-            + 'button, then from memory on a clock.')),
-        ),
-        el('button.btn.primary', { onclick: () => go('ranges') },
-          profile.rangesCleared(RANGE_KEYS)
-            ? t('{done} of {total} in your head', { done: profile.rangesCleared(RANGE_KEYS), total: RANGE_KEYS.length })
-            : t('Start')),
-      ),
-    ),
-
-    duePanel(profile, go),
-    mistakesPanel(go),
-
-    /* ---- the floor: a narrow rail beside the work ---- */
-    el('div.floor',
-      el('aside.rail',
-        // Struck plaques, stacked like a column of chips rather than laid out
-        // as four equal boxes in a row.
-        el('div.plaques',
-          statTile('Hands played', fmt.chips(profile.data.handsPlayed)),
-          statTile('Drill accuracy',
-            accuracy === null ? '—' : fmt.pct(accuracy),
-            accuracy === null
-              ? t('{n} more before this is a score', { n: EVIDENCE_BAR - totals.attempts })
-              : t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
-          statTile('Achievements', `${profile.data.achievements.length} / ${ACHIEVEMENTS.length}`),
-          statTile('Lifetime', fmt.bb(profile.data.lifetimeProfitBb), 'across all sessions'),
-        ),
-        // The other rooms, as a list of doors rather than three cards in a
-        // row. They are ways out of here, not the thing you came for.
-        el('nav.doors',
-          doorway('lab', 'The Lab', 'Type the equity, size the bet.', () => go('lab')),
-          doorway('review', 'Hand review', 'Replay what you misplayed.', () => go('review')),
-        ),
-      ),
-      /* ---- the work itself ---- */
-      el('div.work',
-        el('div.panel',
-          el('div.panel-title',
-            el('h2', t('Training modules')),
-            el('span.faint', t('{n} of {total} unlocked', {
-              n: MODULE_META.filter((m) => m.unlockLevel <= profile.level).length,
-              total: MODULE_META.length,
-            })),
-          ),
-          el('div.module-grid',
-            MODULE_META.map((meta) => moduleTile(meta, profile, go, recommended.id)),
-          ),
-        ),
-      ),
-    ),
+  return el('div.record',
+    statTile('Hands played', fmt.chips(profile.data.handsPlayed)),
+    statTile('Drill accuracy',
+      accuracy === null ? '—' : fmt.pct(accuracy),
+      accuracy === null
+        ? t('{n} more before this is a score', { n: EVIDENCE_BAR - totals.attempts })
+        : t('{correct} of {attempts}', { correct: totals.correct, attempts: totals.attempts })),
+    statTile('Achievements', `${profile.data.achievements.length} / ${ACHIEVEMENTS.length}`),
+    statTile('Lifetime', fmt.bb(profile.data.lifetimeProfitBb), 'across all sessions'),
   );
 }
 
@@ -185,7 +181,7 @@ function duePanel(profile, go) {
       .map((m) => ({ m, label: nextReviewLabel(profile, m.id) }))
       .filter((x) => x.label !== 'not started')
       .sort((a, b) => a.label.localeCompare(b.label))[0];
-    return el('div.panel',
+    return el('div.panel.note-card.paper',
       el('div.spread',
         el('div',
           el('h3', { style: { margin: 0 } }, icon('check', { size: 18 }), t('Nothing due for review')),
@@ -200,7 +196,7 @@ function duePanel(profile, go) {
   }
 
   const metaFor = (id) => MODULE_META.find((m) => m.id === id);
-  return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
+  return el('div.panel.note-card.paper.pinned',
     el('div.spread',
       el('div',
         el('h3', { style: { margin: 0 } }, icon('clock', { size: 18 }), t('{n} ready for review', { n: due.length })),
@@ -229,7 +225,7 @@ function mistakesPanel(go) {
   if (summary.mistakes) parts.push(t('{n} with a mistake in', { n: summary.mistakes }));
   if (summary.coolers) parts.push(t('{n} you lost through no fault of yours', { n: summary.coolers }));
 
-  return el('div.panel', { style: { borderColor: 'var(--red)' } },
+  return el('div.panel.note-card.paper.pinned.urgent',
     el('div.spread',
       el('div',
         el('h3', { style: { margin: 0 } }, icon('review', { size: 18 }), t('{n} hands worth another look', { n: summary.total })),
@@ -309,51 +305,62 @@ function statTile(label, value, sub = '') {
   );
 }
 
-function moduleTile(meta, profile, go, recommendedId) {
+/** Stars for a tier: none to start, one learning, two solid, three mastered. */
+const STARS = { untouched: 0, learning: 1, solid: 2, mastered: 3 };
+
+function chapter(meta, index, profile, go, recommendedId) {
   const locked = meta.unlockLevel > profile.level;
-  // The banner above names one module; without a marker here the reader has
-  // to match a name against twelve tiles, several of which read "Learning".
+  // Silas names one chapter; without a marker on the trail the reader has
+  // to match a name against twelve, several of which read "Learning".
   const isNext = !locked && meta.id === recommendedId;
   const stats = profile.drillStats(meta.id);
-  const acc = profile.accuracy(meta.id);
   const tier = locked ? 'untouched' : masteryTier(profile, meta.id);
   const tierInfo = tierByKey(tier);
   const goal = locked ? null : nextTierGoal(profile, meta.id);
+  const stars = STARS[tier] || 0;
 
-  return el(`button.module-tile${locked ? '.locked' : ''}${isNext ? '.next-up' : ''}`, {
-    disabled: locked,
-    onclick: () => !locked && go('learn', { module: meta.id }),
-  },
-    el('div.spread',
-      el('span.module-glyph', icon(meta.icon, { size: 20 })),
-      el('div.row', { style: { gap: '6px' } },
-        isNext ? el('span.badge.next-badge', t('DO THIS NEXT')) : null,
-        locked
-          ? el('span.badge', t('Level {level}', { level: meta.unlockLevel }))
-          : tier !== 'untouched'
-            ? el(`span.badge${tierInfo.tone ? `.${tierInfo.tone}` : ''}`, tierInfo.icon, ' ', t(tierInfo.name))
-            : null,
+  return el(`li.trail-stop${locked ? '.locked' : ''}${isNext ? '.is-next' : ''}.tier-${tier}`,
+    el(`button.module-tile${locked ? '.locked' : ''}${isNext ? '.next-up' : ''}`, {
+      disabled: locked,
+      onclick: () => !locked && go('learn', { module: meta.id }),
+    },
+      el('span.medallion', { 'aria-hidden': 'true' },
+        el('span.medallion-face', locked ? icon('lock', { size: 22 }) : icon(meta.icon, { size: 24 })),
+        el('span.medallion-num', String(index + 1)),
+      ),
+      el('span.chapter-card.paper',
+        el('span.chapter-top',
+          el('span.chapter-kicker', t('Chapter {n}', { n: index + 1 })),
+          el('span.stars', { 'aria-label': t(tierInfo.name) },
+            [0, 1, 2].map((k) => el(`span.star${k < stars ? '.lit' : ''}`, '★'))),
+        ),
+        el('span.name', meta.name),
+        el('span.tagline', meta.tagline),
+        el('span.chapter-badges',
+          isNext ? el('span.badge.next-badge', t('DO THIS NEXT')) : null,
+          locked
+            ? el('span.badge', t('Level {level}', { level: meta.unlockLevel }))
+            : tier !== 'untouched'
+              ? el(`span.badge${tierInfo.tone ? `.${tierInfo.tone}` : ''}`, tierInfo.icon, ' ', t(tierInfo.name))
+              : null,
+        ),
+        el('span.mastery', locked
+          ? t('Unlocks at {rank}', { rank: t(RANKS[meta.unlockLevel - 1].name) })
+          : scoreLine(profile, meta.id)),
+        // What is still missing, not what the target is. A tile that reads
+        // "90%" next to "Solid at 15 questions at 75%" looks like a hand
+        // already met: the count is the half that is short.
+        !locked && goal
+          ? el('span.mastery.goal',
+              t('{tier}: {missing}', {
+                tier: t(goal.name),
+                missing: goal.missing.map((m) => t(m)).join(t(' and ')),
+              }))
+          : null,
+        !locked && stats.attempts
+          ? el('span.bar', el('span', { style: { width: `${Math.round((goal ? goal.progress : 1) * 100)}%` } }))
+          : null,
       ),
     ),
-    el('div.name', meta.name),
-    el('div.tagline', meta.tagline),
-    el('div.mastery', locked
-      ? t('Unlocks at {rank}', { rank: t(RANKS[meta.unlockLevel - 1].name) })
-      : scoreLine(profile, meta.id)),
-    // What is still missing, not what the target is. A tile that reads
-    // "90%" next to "Solid at 15 questions at 75%" looks like a hand already
-    // met: the count is the half that is short, and it was left for the
-    // reader to work out by subtracting one number on the tile from another.
-    !locked && goal
-      ? el('div.mastery', { style: { color: 'var(--text-faint)' } },
-          t('{tier}: {missing}', {
-            tier: t(goal.name),
-            missing: goal.missing.map((m) => t(m)).join(t(' and ')),
-          }))
-      : null,
-    !locked && stats.attempts
-      ? el('div.bar', { style: { height: '5px' } },
-          el('span', { style: { width: `${Math.round((goal ? goal.progress : 1) * 100)}%` } }))
-      : null,
   );
 }

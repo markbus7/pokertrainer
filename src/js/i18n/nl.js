@@ -4112,4 +4112,92 @@ export const NL = {
   'Downriver: {place}': 'Stroomafwaarts: {place}',
   'The map': 'De kaart',
   '{name}\'s table': 'De tafel van {name}',
+
+  // ---- the Long River: Silas, the school, the pilot house, the saloon -------
+  'Silas Ward': 'Silas Ward',
+  'Old river pilot': 'Oude rivierloods',
+  'Forty years at the wheel and thirty at the tables. Sit down — we start where you are.':
+    'Veertig jaar aan het roer en dertig aan de tafels. Ga zitten — we beginnen waar jij staat.',
+  'You have not opened {module} yet. That is the quickest ground you will ever gain.':
+    'Je hebt {module} nog niet opengeslagen. Sneller terrein win je nergens.',
+  '{module} again. A few more answers and I will know whether you really have it.':
+    'Weer {module}. Nog een paar antwoorden en dan weet ik of je het echt kunt.',
+  'Read the {module} chapter before you drill it. Two minutes of reading beats ten questions of guessing.':
+    'Lees het hoofdstuk {module} voordat je het drilt. Twee minuten lezen is beter dan tien vragen gokken.',
+  'Everything is in your head. {module} is the coldest — warm it up.':
+    'Alles zit in je hoofd. {module} is het koudst — warm het op.',
+  '{module} is where you leak the most. That is where we work today.':
+    'Bij {module} lek je het meest. Daar werken we vandaag aan.',
+  'A pilot knows the river by heart: every bend and every snag, at night, with no chart. The charts are the same. First by daylight with the chart on the table, then at dusk with it in the drawer, then at night with nothing but what you remember.':
+    'Een loods kent de rivier uit zijn hoofd: elke bocht en elk wrak, \'s nachts, zonder kaart. Met de charts is het net zo. Eerst bij daglicht met de chart op tafel, dan in de schemering met hem in de la, dan \'s nachts met niets dan wat je onthouden hebt.',
+  'These are your shoals — the hands you keep running aground on. Sound them until they are charted, and they come off this list on their own.':
+    'Dit zijn je ondiepten — de handen waarop je steeds vastloopt. Peil ze tot ze in kaart staan, dan verdwijnen ze vanzelf van deze lijst.',
+  'That is it.': 'Dat is het.',
+  'Good. Again.': 'Goed. Nog eens.',
+  'Right, and no hesitation.': 'Goed, en zonder aarzelen.',
+  'Clean.': 'Netjes.',
+  'Just so.': 'Precies zo.',
+  'Not quite. Look again.': 'Niet helemaal. Kijk nog eens.',
+  'No — here is the catch.': 'Nee — hier zit de adder.',
+  'Easy mistake. Read why.': 'Makkelijke fout. Lees waarom.',
+  'Careful. This one bites.': 'Voorzichtig. Deze bijt.',
+  'Silas asks': 'Silas vraagt',
+  'At your shoulder': 'Naast je aan tafel',
+
+  'On the bluff above the landing': 'Op de heuvel boven de kade',
+  'Silas\'s Card School': 'De kaartschool van Silas',
+  'The course': 'De leergang',
+  'The pilot house': 'Het loodshuis',
+  'Certificate of standing': 'Bewijs van rang',
+  'Chapter {n}': 'Hoofdstuk {n}',
+  'Your way to Mastered': 'Jouw weg naar Mastered',
+  '✓ Passed': '✓ Gehaald',
+  'Ahead': 'Nog te gaan',
+  'Nothing to earn — this is where you stand from your first answer.':
+    'Niets te verdienen — hier sta je vanaf je eerste antwoord.',
+  'The answers are already there — only the lesson is left.':
+    'De antwoorden zijn er al — alleen de les is nog over.',
+  'One more right answer gets you to {tier}.': 'Nog één goed antwoord en je bent {tier}.',
+  '{n} right answers in a row would get you to {tier}.': '{n} goede antwoorden op rij en je bent {tier}.',
+  '✓ Lesson done': '✓ Les gedaan',
+  '{n} of 3 stars': '{n} van 3 sterren',
+  'Passed': 'Gehaald',
+  'Keep at it': 'Hou vol',
+  'Chapter read': 'Hoofdstuk gelezen',
+  'Back to the school': 'Terug naar de school',
+  'Practice table': 'Oefentafel',
+  'Play hands with Silas at your shoulder.': 'Speel handen met Silas naast je.',
+  '{done} of {total}': '{done} van {total}',
+  'Up on the texas deck': 'Boven op het texasdek',
+  'The Pilot House': 'Het Loodshuis',
+  'The river by heart': 'De rivier uit je hoofd',
+  'Your shoals': 'Je ondiepten',
+  'Silas\'s practice table': 'De oefentafel van Silas',
+  'No money on it — just hands.': 'Er staat geen geld op — alleen handen.',
+
+  // ---- the chapter pages and the table: words that were never translated ----
+  '1 more right answer': 'nog 1 goed antwoord',
+  '{n} right answers in a row': '{n} goede antwoorden op rij',
+  '{need} of your last {window} answers right': '{need} van je laatste {window} antwoorden goed',
+  '{n} answered so far — the window fills as you go': '{n} beantwoord tot nu toe — het venster vult zich gaandeweg',
+  'Finish the guided lesson': 'Maak de begeleide les af',
+  'Skip to drills': 'Direct naar de drills',
+  'The key points': 'De kernpunten',
+  'Only your most recent answers count, so a rough start does not follow you around. Every rung is reachable from wherever you are standing.':
+    'Alleen je recentste antwoorden tellen, dus een moeizame start blijft niet aan je hangen. Elke trede is bereikbaar vanaf waar je nu staat.',
+  '{n} attempts': '{n} pogingen',
+  '{n} correct': '{n} goed',
+  'Deal me in': 'Deel mij in',
+  'Deal next hand': 'Deel de volgende hand',
+  'Win rate': 'Winrate',
+  'Endless practice': 'Eindeloos oefenen',
+  'Session passed': 'Sessie gehaald',
+  'Gauntlet complete': 'Gauntlet voltooid',
+  'Score': 'Score',
+  'XP earned': 'Verdiende XP',
+  'The whole thing, in five lines': 'Het geheel, in vijf regels',
+  '{name} is thinking…': '{name} denkt na…',
+  'Dealing…': 'Er wordt gedeeld…',
+  'Check it against the method': 'Controleer het met de methode',
+  'Check it against the chart': 'Controleer het met de chart',
 };
