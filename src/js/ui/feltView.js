@@ -12,6 +12,14 @@
 
 import { el, fmt } from './dom.js';
 import { cardEl, cardRow, hiddenCards } from './cardView.js';
+import { portraitSvg } from './portraits.js';
+
+/** A seat's face, from a trusted SVG string drawn by portraits.js. */
+function face(key) {
+  const node = el('span.seat-face', { 'aria-hidden': 'true' });
+  node.innerHTML = portraitSvg(key, { size: 40 });
+  return node;
+}
 
 /**
  * @param {object} state
@@ -27,6 +35,10 @@ import { cardEl, cardRow, hiddenCards } from './cardView.js';
  * @param {boolean} [state.fourColour]
  * @param {string} [state.potLabel]
  * @param {string} [state.boardPlaceholder]
+ *
+ * Each player may also carry `portrait` (whose face to draw on the plate),
+ * `boss` (the person who owns this table) and `speech` (a line they are
+ * saying right now, shown in a bubble by their seat).
  */
 export function renderFelt(state) {
   const {
@@ -40,8 +52,9 @@ export function renderFelt(state) {
     const isActing = p.id === actingId;
     const showCards = p.isHero || (reveal && !p.folded);
 
-    return el(`div.seat${p.isHero ? '.hero' : ''}${p.folded ? '.folded' : ''}${isActing ? '.acting' : ''}${p.wonPot ? '.winner' : ''}`,
+    return el(`div.seat${p.isHero ? '.hero' : ''}${p.folded ? '.folded' : ''}${isActing ? '.acting' : ''}${p.wonPot ? '.winner' : ''}${p.boss ? '.boss' : ''}`,
       { dataset: { slot: String(slot) } },
+      p.speech ? el('div.seat-speech', p.speech) : null,
       p.lastAction ? el(`div.seat-action.${actionTone(p.lastAction)}`, p.lastAction) : null,
       // A folded seat collapses its card area entirely, so the "Fold" tag
       // stays pinned to the name plate instead of floating in empty space.
@@ -52,7 +65,8 @@ export function renderFelt(state) {
               ? cardRow(p.hole, { size: p.isHero ? 'lg' : '', fourColour, dealt: true })
               : hiddenCards(p.hole.length))
           : el('div.seat-cards'),
-      el('div.seat-plate',
+      el(`div.seat-plate${p.portrait ? '.has-face' : ''}`,
+        p.portrait ? face(p.portrait) : null,
         el('div.seat-name',
           !p.isHero && p.tag ? el('span.style-tag', p.tag) : null,
           p.name,

@@ -4,18 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Poker Trainer — learn Texas Hold'em, Omaha and Short Deck from beginner to winning player. Drills, a real table with AI opponents, and a coach that checks every decision.">
-  <meta name="theme-color" content="#0b0f14">
+  <meta name="theme-color" content="#0a0e15">
   <title>Poker Trainer</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%230d3b28'/><text y='74' x='50' font-size='72' text-anchor='middle' fill='%23e3b23c'>%E2%99%A0</text></svg>">
-  <!-- The interface names its typeface and then never fetched it, so every
-       screen rendered in whatever system-ui happened to be. IBM Plex is the
-       choice on purpose: this is a screen full of equities, pot sizes and
-       percentages, and Plex Mono's figures line up in a column the way a
-       price ladder should. Swapped rather than blocking, so a slow tablet
-       still paints. -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <!-- Fonts travel with the app (src/fonts), so it looks the same offline
+       and nothing is fetched from a third party on every open. Rye is
+       preloaded because the first thing on screen is a river of place names
+       in it; the rest arrive with the stylesheet. -->
+  <link rel="preload" href="src/fonts/rye-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="src/css/fonts.css">
   <!-- The theme has to be on <html> before the first paint, not after the
        module graph has loaded, or every reload flashes the default palette
        and then corrects itself. Reading storage directly duplicates a little
@@ -34,6 +31,7 @@
   <link rel="stylesheet" href="src/css/themes.css">
   <link rel="stylesheet" href="src/css/base.css">
   <link rel="stylesheet" href="src/css/table.css">
+  <link rel="stylesheet" href="src/css/river.css">
 </head>
 <body>
   <div id="app">
@@ -41,7 +39,9 @@
     <main id="screen">
       <div class="empty">Loading…</div>
     </main>
+    <nav class="dock" id="dock" aria-label="Places"></nav>
   </div>
+  <div id="ledger-host"></div>
   <div id="toasts"></div>
 
   <noscript>

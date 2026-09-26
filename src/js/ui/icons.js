@@ -24,6 +24,12 @@ export const ICON_PATHS = {
   charts: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
   glossary: 'M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4zM8 8h7M8 12h7',
   progress: 'M4 20h16M6 20V9M12 20V4M18 20v-8',
+  river: 'M9 2c-3.5 4.5 9.5 5.5 6 10.5S5.5 17 9 22M4 6.5c1.2.6 2.3.6 3.4 0M16.8 18c1.2.6 2.3.6 3.4 0',
+  grid: 'M4 4h16v16H4zM4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16',
+  ledger: 'M12 6.5C10 5 7 4.5 4 5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5v14',
+  speaker: 'M4 9h4l5-4v14l-5-4H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12',
+  note: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
+  anchor: 'M12 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM12 8v13M8 11h8M4 14c0 4 3.5 7 8 7s8-3 8-7M4 14l-1.5 2M20 14l1.5 2',
 
   /* --- states and objects ---------------------------------------- */
   coach: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM15.5 8.5l-2 5-5 2 2-5 5-2z',
@@ -43,6 +49,16 @@ export const ICON_PATHS = {
   arrowLeft: 'M20 12H5M11 18l-6-6 6-6',
   ladder: 'M7 2v20M17 2v20M7 7h10M7 12h10M7 17h10',
   clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3.5 2',
+
+  /* --- what each boss leaves behind when you take their table ----- */
+  'k-lantern': 'M10 5V3h4v2M8 8l1-3h6l1 3zM8 8h8l-1 11H9zM12 11v5M7 19h10',
+  'k-teapot': 'M6 11h10v5a4 4 0 0 1-4 4h-2a4 4 0 0 1-4-4zM16 12h2a2 2 0 0 1 0 4h-2M6 12L3 9.5M9 11V9h4v2M11 9V7',
+  'k-bell': 'M12 3v2M7 17v-6a5 5 0 0 1 10 0v6l2 2H5zM10 21h4',
+  'k-ledger': 'M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM9 3v18M12 8h4M12 11h4',
+  'k-cap': 'M4 14c0-4 3.6-7 8-7s8 3 8 7zM3 14h18v2.5H3zM10 10h4',
+  'k-watch': 'M12 7a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM12 3v4M10 3h4M12 11v3.5l2.5 1.5',
+  'k-coin': 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 6.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zM12 9.5v5',
+  'k-pennant': 'M5 21V3M5 4l14 4-14 4',
 
   /* --- one per training module, drawn for the thing it teaches ---- */
   'm-hand-rankings': 'M7 4h10v16H7zM10 8h4M10 12h4M10 16h4',

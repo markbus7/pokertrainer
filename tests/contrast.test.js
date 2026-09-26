@@ -140,6 +140,27 @@ describe('theme: everything that carries words stays readable', () => {
     }
   });
 
+  it('keeps the river\'s own materials readable: paper, wood, brass and the map', () => {
+    // What a boss says is printed on paper, the rail is wood with brass let
+    // into it, and every stop's name is lettered straight onto the map. Each
+    // pairing is one the screens actually use.
+    const pairs = [
+      ['ink', 'paper'], ['ink', 'paper-2'], ['ink-dim', 'paper'], ['ink-dim', 'paper-2'],
+      ['on-wood', 'wood-1'], ['on-wood', 'wood-2'], ['on-wood', 'wood-3'],
+      ['brass-hi', 'wood-2'], ['brass-hi', 'wood-3'], ['on-brass', 'brass'],
+      ['map-ink', 'map-land'], ['map-ink', 'map-land-2'], ['map-ink', 'map-water'],
+      ['map-ink-dim', 'map-land'], ['map-ink', 'sky-1'],
+    ];
+    const failures = [];
+    for (const theme of Object.keys(PALETTES)) {
+      for (const [ink, ground] of pairs) {
+        const ratio = contrast(hex(theme, ink), hex(theme, ground));
+        if (ratio < READABLE) failures.push(`${theme}: --${ink} on --${ground}: ${ratio.toFixed(2)}:1`);
+      }
+    }
+    assert(!failures.length, `below the ${READABLE}:1 readable floor:\n      ${failures.join('\n      ')}`);
+  });
+
   it('makes the rooms actually different, not one palette four times', () => {
     // Two rooms that differ only in a shade are a settings entry, not a
     // choice. Grounds have to be visibly apart from each other.
@@ -163,7 +184,7 @@ describe('theme: colour lives in themes.css and nowhere else', () => {
     // make daylight paint white text onto a white card.
     const exempt = /felt|card|pot-chip|seat-plate|seat-action|spot-hole|replay-dot|range-cell|chip|watermark|dealer-button|table-marker/i;
     const offenders = [];
-    for (const file of ['base.css', 'table.css']) {
+    for (const file of ['base.css', 'table.css', 'river.css']) {
       const text = readFileSync(new URL(`../src/css/${file}`, import.meta.url), 'utf8');
       let selector = '';
       for (const line of text.split('\n')) {
@@ -192,7 +213,7 @@ describe('theme: the cloth keeps its own ink', () => {
     const roomInk = /var\(--(text|text-dim|text-faint|gold|accent)\)/;
     const offenders = [];
     let selector = '';
-    const css = ['base.css', 'table.css']
+    const css = ['base.css', 'table.css', 'river.css']
       .map((f) => readFileSync(new URL(`../src/css/${f}`, import.meta.url), 'utf8'))
       .join('\n');
     for (const line of css.split('\n')) {

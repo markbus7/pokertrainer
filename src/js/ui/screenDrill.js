@@ -18,6 +18,7 @@ import { boundarySheet, priceSheet, rangeGridFor } from './reference.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
 import { CHARTS } from '../data/ranges.js';
 import { handKey } from '../core/cards.js';
+import * as audio from '../audio/engine.js';
 
 /** The lesson page for a module, with the drill entry point. */
 /** What the guided lesson actually is, in one line, so the name is not a riddle. */
@@ -251,6 +252,7 @@ export function renderDrill(ctx, params) {
     const tierAfter = gauntlet ? null : masteryTier(profile, meta.id);
     const promoted = tierBefore ? promotion(tierBefore, tierAfter) : null;
     if (promoted) {
+      audio.sfx('bell');
       toast({
         icon: '🎓',
         title: `${t(meta.name)}: ${t(promoted.name)}`,
@@ -319,7 +321,7 @@ export function renderDrill(ctx, params) {
       !gauntlet
         ? el('button.btn.ghost', { onclick: () => go('drill', { module: params.module, endless: '1' }) }, 'Endless practice')
         : null,
-      el('button.btn.ghost', { onclick: () => go('home') }, 'Back to dashboard'),
+      el('button.btn.ghost', { onclick: () => go('home') }, 'Back to the river'),
     );
     return null;
   };
@@ -370,6 +372,7 @@ export function renderDrill(ctx, params) {
     state.answered++;
     const q = state.question;
     const wasCorrect = key === q.answer;
+    audio.sfx(wasCorrect ? 'right' : 'wrong');
 
     if (wasCorrect) {
       state.correct++;
@@ -380,6 +383,7 @@ export function renderDrill(ctx, params) {
       const before = profile.level;
       profile.addXp(gained);
       if (profile.level > before) {
+        audio.sfx('fanfare');
         toast({
           icon: profile.rank.emoji,
           title: t('Level {n} — {rank}', { n: profile.level, rank: t(profile.rank.name) }),

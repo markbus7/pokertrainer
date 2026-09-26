@@ -19,6 +19,7 @@ import {
 } from './mastery.js';
 import { MODULE_META } from '../data/curriculum.js';
 import { DEFAULT_THEME } from '../data/themes.js';
+import { STAKES } from './stats.js';
 
 const STORAGE_KEY = 'poker-trainer.profile.v1';
 
@@ -181,7 +182,7 @@ const emptyProfile = () => ({
   // sync: pick Dutch and Daylight on the iPad and the iPhone matches,
   // without setting either twice.
   settings: {
-    sound: true, coach: true, fourColour: false, autoMuck: true,
+    sound: true, music: true, coach: true, fourColour: false, autoMuck: true,
     lang: 'en', theme: DEFAULT_THEME,
   },
 });
@@ -400,11 +401,19 @@ export class Profile {
     return this.data.career;
   }
 
-  /** Sit down in a room. Records the furthest door that has opened. */
-  enterVenue(key, index, bestIndex) {
+  /**
+   * Tie up at a stop. Records the furthest one reached, which only ever
+   * moves downriver: heading back up to a cheaper table does not undo the
+   * climb. Worked out here from the stakes' own order rather than trusted to
+   * the caller, since the screen that once did it passed the stop you were
+   * leaving instead of the furthest one, and a trip upriver quietly lowered
+   * the mark (and would have taken the boat with it).
+   */
+  enterVenue(key) {
     const c = this.career;
+    const order = (k) => STAKES.findIndex((s) => s.key === k);
     c.venue = key;
-    if (index >= bestIndex) c.best = key;
+    if (order(key) > order(c.best)) c.best = key;
     this.save();
     return c;
   }

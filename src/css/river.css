@@ -1,0 +1,1230 @@
+/* ============================================================
+   The Long River — the game's own look
+   ============================================================
+ *
+ * Loaded last, so it wins. base.css and table.css are the instrument panel
+ * — how a drill, a range grid or a price ladder is laid out — and they are
+ * left to do that. This file is what makes it a place: the printed type of
+ * 1890, paper you are spoken to on, a wooden rail with brass let into it,
+ * buttons that go down when pressed, and the river itself.
+ *
+ * Same rule as everywhere: no colour literals. The materials (paper, wood,
+ * brass) and the map's hour of the day are tokens in themes.css, so every
+ * room paints them in its own light. Black and white appear only as rgba
+ * finishes — shadows, lit edges, grain.
+ */
+
+:root {
+  --font-sign: 'Rye', 'Old Standard TT', Georgia, serif;
+  --font-print: 'Old Standard TT', Georgia, 'Times New Roman', serif;
+  /* Headings across the app move from the sans to the printed serif. */
+  --font-display: var(--font-print);
+
+  /* Grain, drawn rather than shipped: fractal noise pushed into the alpha
+     channel only, so it darkens whatever it lies on and carries no colour of
+     its own. Two tunings — fine and even for paper, stretched sideways for
+     the grain of a plank. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+  --wood-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='120'%3E%3Cfilter id='w' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006 .19' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.1 -.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
+
+  --press: 0 3px 0 rgba(0, 0, 0, 0.45);
+  --press-down: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* ------------------------------------------------------------------ *
+ * Ground
+ * ------------------------------------------------------------------ */
+
+body {
+  background:
+    var(--grain),
+    radial-gradient(1200px 700px at 15% -10%, var(--wash-1) 0%, transparent 55%),
+    radial-gradient(900px 600px at 90% 0%, var(--wash-2) 0%, transparent 50%),
+    var(--bg);
+  background-size: 180px 180px, auto, auto, auto;
+  background-attachment: fixed;
+  /* The grain is a whisper: at full strength it is sandpaper. */
+  background-blend-mode: soft-light, normal, normal, normal;
+}
+
+/* ------------------------------------------------------------------ *
+ * Type: the printed word
+ * ------------------------------------------------------------------ */
+
+h1, h2 {
+  font-family: var(--font-print);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+h1 { font-size: var(--t-xl); }
+h2 { font-size: var(--t-lg); }
+
+/* Rye is signage: a name on a board, a title over a scene. It fills in
+   below about 18px, so nothing smaller is ever set in it. */
+.sign {
+  font-family: var(--font-sign);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+/* What somebody says, and anything written in their voice. */
+.said {
+  font-family: var(--font-print);
+  font-size: var(--t-md);
+  line-height: 1.5;
+}
+.said em, .aside-said { font-style: italic; }
+
+/* A printer's rule with a flourish in the middle: how a section ends. */
+.fleuron {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--text-faint);
+  font-family: var(--font-print);
+  margin: var(--s-4) 0;
+}
+.fleuron::before, .fleuron::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
+}
+
+/* ------------------------------------------------------------------ *
+ * Surfaces
+ * ------------------------------------------------------------------ */
+
+/* A panel is a printed card: a second rule set just inside the edge, the
+   way a notice or a ticket was framed. Cheap — an outline, no images. */
+.panel {
+  background:
+    var(--grain),
+    linear-gradient(155deg, var(--hairline), transparent 42%),
+    var(--bg-card);
+  background-size: 180px 180px, auto, auto;
+  background-blend-mode: soft-light, normal, normal;
+  outline: 1px solid var(--hairline-strong);
+  outline-offset: -6px;
+}
+.panel .panel { outline: none; }
+
+/* Paper: where a person speaks to you, and the ledger's pages. Light in
+   every room, so it takes its own ink rather than the room's. */
+.paper {
+  background:
+    var(--grain-paper),
+    radial-gradient(ellipse at 50% 40%, var(--paper) 55%, var(--paper-2) 100%);
+  background-size: 180px 180px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--ink);
+  border: 1px solid var(--ink-rule);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset, var(--shadow-sm);
+}
+.paper .muted, .paper .faint { color: var(--ink-dim); }
+
+/* Wood: the rail, the signboards, the dock. */
+.wood {
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 55%, var(--wood-3) 100%);
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--on-wood);
+}
+
+/* Brass: a plate, a rivet, a coin. */
+.brass {
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 48%, var(--brass) 78%, var(--brass-lo) 100%);
+  color: var(--on-brass);
+  border: 1px solid var(--brass-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* ------------------------------------------------------------------ *
+ * Buttons you can feel
+ *
+ * A button in a game goes down when you press it. The shadow under it is
+ * its depth; pressing takes the depth away and moves the face down by the
+ * same amount, so the button appears to sink rather than to flicker.
+ * ------------------------------------------------------------------ */
+
+.btn {
+  box-shadow: var(--press);
+  transition: transform 70ms, box-shadow 70ms, background 140ms, border-color 140ms, opacity 140ms;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: var(--press-down);
+}
+.btn.ghost { box-shadow: none; }
+.btn.ghost:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+
+/* The one thing to press is a brass plate in every room. */
+.btn.primary {
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 48%, var(--brass) 80%, var(--brass-lo) 100%);
+  border-color: var(--brass-lo);
+  color: var(--on-brass);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), var(--press), 0 8px 18px -10px rgba(0, 0, 0, 0.8);
+}
+.btn.primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass-hi) 30%, var(--brass) 85%, var(--brass-lo) 100%);
+}
+.btn.primary:active:not(:disabled) {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), var(--press-down);
+}
+
+/* A big call to action, lettered like a sign. */
+.btn.plank {
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-md);
+  letter-spacing: 0.04em;
+  padding: 12px 26px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Toasts: a note passed across the table
+ * ------------------------------------------------------------------ */
+
+.toast {
+  background:
+    var(--grain-paper),
+    radial-gradient(ellipse at 50% 40%, var(--paper) 55%, var(--paper-2) 100%);
+  background-size: 180px 180px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--ink);
+  border: 1px solid var(--ink-rule);
+}
+.toast .desc, .toast .toast-desc, .toast .faint, .toast .muted { color: var(--ink-dim); }
+.toast .title, .toast strong { font-family: var(--font-print); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn:active:not(:disabled) { transition: none; transform: none; }
+}
+
+/* ==================================================================== *
+ * The rail
+ *
+ * A plank across the top of the screen with brass let into it: the crest,
+ * the purse, the rank, and the ledger. Opaque on purpose — the old rail was
+ * frosted glass, which is a website's material, and a blur on the ancestor
+ * of anything fixed-position would also trap the dock inside it.
+ * ==================================================================== */
+
+#topbar.topbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--s-3);
+  row-gap: 0;
+  padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 58%, var(--wood-3) 100%);
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--on-wood);
+  border-bottom: 2px solid var(--brass-lo);
+  box-shadow: inset 0 -1px 0 var(--brass), 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+#topbar > * { order: 0; margin-left: 0; }
+
+.crest {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-right: auto;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+.crest-disc {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 19px;
+  line-height: 1;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  color: var(--on-brass);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.18), inset 0 0 0 4px rgba(255, 255, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.5);
+  flex: none;
+}
+.crest-name {
+  font-family: var(--font-sign);
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* The purse: a recess in the plank with a coin and the figure in it. */
+.purse {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 5px 12px 5px 6px;
+  min-height: 40px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--brass-hi);
+  font: inherit;
+  cursor: pointer;
+}
+.coin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  box-shadow: inset 0 0 0 2px var(--brass-lo), inset 0 0 0 4px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.6);
+  flex: none;
+}
+.purse-amount {
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-md);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+#topbar .rank-chip {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--on-wood);
+  min-height: 40px;
+}
+#topbar .rank-chip:hover { border-color: var(--brass-lo); }
+#topbar .rank-chip .xp { color: var(--on-wood); opacity: 0.78; }
+
+.ledger-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-base);
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 48%, var(--brass) 80%, var(--brass-lo) 100%);
+  color: var(--on-brass);
+  border: 1px solid var(--brass-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), var(--press);
+}
+.ledger-button:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), var(--press-down); }
+
+@media (max-width: 640px) {
+  .crest-name, .ledger-button-label { display: none; }
+  #topbar.topbar { gap: var(--s-2); }
+  .ledger-button { padding: 0 10px; min-width: 44px; justify-content: center; }
+}
+@media (max-width: 400px) {
+  #topbar .rank-chip .meta { display: none; }
+  #topbar .rank-chip { padding: 4px 8px; }
+}
+@media (pointer: coarse) {
+  .purse, #topbar .rank-chip, .ledger-button { min-height: 44px; }
+}
+
+/* ==================================================================== *
+ * The dock
+ *
+ * The four places a player goes most, on a plank along the bottom where a
+ * thumb already is. Screens you are in the middle of hide it — a hand, a
+ * run on the clock, a lesson — the way a game clears its bar for a match.
+ * ==================================================================== */
+
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 55;
+  display: flex;
+  justify-content: center;
+  padding: 0 max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  pointer-events: none;
+}
+.dock-plank {
+  pointer-events: auto;
+  display: flex;
+  gap: 2px;
+  width: min(560px, 100%);
+  padding: 6px;
+  border-radius: 16px;
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 58%, var(--wood-3) 100%);
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  border: 1px solid var(--brass-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 14px 32px rgba(0, 0, 0, 0.6);
+}
+.dock-item {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 2px 5px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: var(--on-wood);
+  font: inherit;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 140ms, transform 70ms;
+}
+.dock-item:hover { background: rgba(255, 255, 255, 0.06); }
+.dock-item:active { transform: translateY(1px); }
+.dock-item.active {
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 50%, var(--brass-lo) 100%);
+  border-color: var(--brass-lo);
+  color: var(--on-brass);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+.dock-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+main { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+#toasts { bottom: calc(96px + env(safe-area-inset-bottom)); }
+body.focus .dock { display: none; }
+body.focus main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
+body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
+
+/* ==================================================================== *
+ * The ledger
+ *
+ * Everything the dock does not hold, and the switches, written on paper in
+ * a book that opens over the screen. Opening it does not leave where you
+ * were, so a quick look at the charts or a switch of the music costs nothing.
+ * ==================================================================== */
+
+#ledger-host { position: relative; z-index: 150; }
+
+.ledger-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  animation: scrim-in 200ms ease both;
+}
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+.ledger {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 92vw);
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  border: 0;
+  border-left: 6px solid var(--wood-2);
+  box-shadow: inset 8px 0 14px -10px rgba(0, 0, 0, 0.5), -18px 0 40px rgba(0, 0, 0, 0.5);
+}
+.ledger.entering { animation: ledger-in 260ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes ledger-in { from { transform: translateX(100%); } to { transform: none; } }
+
+.ledger-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-4) var(--s-3) var(--s-5);
+  border-bottom: 3px double var(--ink-rule);
+}
+.ledger-head h2 {
+  margin: 0;
+  font-family: var(--font-sign);
+  font-weight: 400;
+  font-size: 30px;
+  color: var(--ink);
+}
+.ledger-close {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: none;
+  border: 1px solid var(--ink-rule);
+  color: var(--ink);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ledger-close:hover { background: rgba(0, 0, 0, 0.06); }
+
+.ledger-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-2) var(--s-4) calc(var(--s-6) + env(safe-area-inset-bottom)) var(--s-4);
+}
+.ledger-section { margin-top: var(--s-4); }
+.ledger-title {
+  display: block;
+  margin: 0 0 var(--s-1);
+  padding: 0 var(--s-2) var(--s-1);
+  font-family: var(--font-print);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--t-base);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ink-dim);
+  border-bottom: 1px solid var(--ink-rule);
+}
+
+.ledger-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--s-2);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.ledger-item:hover { background: rgba(0, 0, 0, 0.05); }
+.ledger-item.active { background: rgba(0, 0, 0, 0.07); box-shadow: inset 3px 0 0 var(--brass-lo); }
+.ledger-item .icon { color: var(--brass-lo); flex: none; }
+.ledger-text { display: flex; flex-direction: column; min-width: 0; }
+.ledger-label {
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-md);
+  line-height: 1.2;
+}
+.ledger-note { font-size: var(--t-xs); color: var(--ink-dim); line-height: 1.35; }
+
+/* Settings, on paper: every control takes the book's ink, not the room's. */
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  min-height: 52px;
+  padding: var(--s-2);
+}
+.setting-label { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+
+.ledger .lang-switch { background: rgba(0, 0, 0, 0.06); border-color: var(--ink-rule); }
+.ledger .lang-chip { color: var(--ink-dim); }
+.ledger .lang-chip:hover { color: var(--ink); }
+.ledger .lang-chip.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+
+/* The look picker lies open in the page rather than floating over it. */
+.ledger .theme-switch { display: contents; }
+.ledger .theme-button {
+  gap: var(--s-2);
+  padding: 4px 12px 4px 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--ink-rule);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+}
+.ledger .theme-button[aria-expanded='true'] { border-color: var(--brass-lo); }
+.ledger .theme-panel {
+  position: static;
+  flex-basis: 100%;
+  width: 100%;
+  padding: var(--s-1) 0 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+.ledger .theme-option { color: var(--ink-dim); min-height: 52px; }
+.ledger .theme-option:hover { background: rgba(0, 0, 0, 0.05); color: var(--ink); }
+.ledger .theme-option.active { background: rgba(0, 0, 0, 0.07); border-color: var(--brass-lo); color: var(--ink); }
+.ledger .theme-name { color: var(--ink); font-family: var(--font-print); font-weight: 700; }
+.ledger .theme-blurb { color: var(--ink-dim); }
+
+/* A switch: a brass knob in a slot. */
+.switch {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--s-2);
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.switch:hover { background: rgba(0, 0, 0, 0.05); }
+.switch .icon { color: var(--brass-lo); flex: none; }
+.switch-label { flex: 1; font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+.switch-track {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  flex: none;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+  transition: background 160ms;
+}
+.switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 60%, var(--brass-lo));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  transition: transform 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.switch.on .switch-track { background: var(--brass-lo); }
+.switch.on .switch-knob { transform: translateX(20px); }
+
+.ledger .version-chip {
+  margin: var(--s-3) var(--s-2) 0;
+  color: var(--ink-dim);
+  border-color: var(--ink-rule);
+  background: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ledger.entering, .ledger-scrim { animation: none; }
+  .switch-knob { transition: none; }
+}
+
+/* ==================================================================== *
+ * The river map
+ *
+ * Drawn in SVG from shapes that only say what they are made of; this is
+ * where they get painted, from the map tokens of the room's hour.
+ * ==================================================================== */
+
+.river-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+.river-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  position: sticky;
+  top: 80px;
+}
+.river-side .panel + .panel { margin-top: 0; }
+.river-chart { width: 100%; max-width: 560px; margin: 0 auto; }
+@media (max-width: 900px) {
+  .river-layout { grid-template-columns: 1fr; }
+  /* One column: where you are, then the river, then your boat. The side
+     panel dissolves so its cards can take their places around the map. */
+  .river-side { display: contents; }
+  .here-card { order: 1; }
+  .river-chart { order: 2; }
+  .boat-card { order: 3; }
+  .river-side .study-line { order: 4; }
+}
+
+.cartouche { text-align: center; padding: 0 0 var(--s-3); }
+.cartouche h2 {
+  justify-content: center;
+  margin: 0;
+  font-family: var(--font-sign);
+  font-weight: 400;
+  font-size: clamp(28px, 7vw, 40px);
+  color: var(--text);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.cartouche-sub { font-family: var(--font-print); font-style: italic; color: var(--text-dim); }
+
+.river-map {
+  position: relative;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-bright);
+  box-shadow: var(--shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  outline: 1px solid var(--border);
+  outline-offset: 4px;
+}
+.map-art { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+
+.map-art .land { fill: var(--map-land); }
+.map-art .field { fill: var(--map-land-2); opacity: 0.8; }
+.map-art .furrow { fill: none; stroke: var(--map-land-3); stroke-width: 1; opacity: 0.7; }
+.map-art .river, .map-art .sea { fill: var(--map-water); }
+.map-art .bank { fill: none; stroke: var(--map-land-2); stroke-width: 2.6; stroke-linejoin: round; }
+.map-art .current { fill: none; stroke: var(--map-water-2); stroke-width: 1.2; stroke-dasharray: 2 10; opacity: 0.55; }
+.map-art .ripple, .boat-art .ripple, .map-art .sea-waves {
+  fill: none; stroke: var(--map-water-2); stroke-width: 1.2; stroke-linecap: round; opacity: 0.75;
+}
+.map-art .reeds { fill: none; stroke: var(--map-land-3); stroke-width: 1.1; stroke-linecap: round; }
+.map-art .tree-shade { fill: rgba(0, 0, 0, 0.22); }
+.map-art .tree-trunk { fill: none; stroke: var(--map-ink-dim); stroke-width: 1; }
+.map-art .tree-crown { fill: var(--map-land-2); stroke: var(--map-ink-dim); stroke-width: 0.8; }
+.map-art .route {
+  fill: none; stroke: var(--map-glow); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 0.1 7;
+}
+.map-art .route-ahead {
+  fill: none; stroke: var(--map-ink-dim); stroke-width: 1.5; stroke-linecap: round; stroke-dasharray: 0.1 8; opacity: 0.6;
+}
+.map-art .jetty { fill: none; stroke: var(--map-ink-dim); stroke-width: 5; stroke-dasharray: 1.3 1.7; }
+
+.compass-ring { fill: none; stroke: var(--map-ink-dim); stroke-width: 0.9; }
+.compass-star { fill: var(--map-ink); }
+.compass-star.dim { fill: var(--map-ink-dim); }
+.compass-n { fill: var(--map-ink); font-family: var(--font-sign); font-size: 12px; text-anchor: middle; }
+
+/* The drawings: walls, roofs, lit windows and flags, all in ink outline. */
+.landmark-art, .boat-art { overflow: visible; }
+.map-art .ink, .landmark-art .ink, .boat-art .ink {
+  fill: none;
+  stroke: var(--map-ink);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.map-art .wall, .landmark-art .wall { fill: var(--map-land-2); }
+.map-art .roof, .landmark-art .roof { fill: var(--map-land-3); }
+.map-art .glow, .landmark-art .glow, .boat-art .glow { fill: var(--map-glow); }
+.map-art .mark, .landmark-art .mark, .boat-art .mark { fill: var(--map-mark); }
+.map-art .shallows, .landmark-art .shallows, .boat-art .water { fill: var(--map-water); }
+.map-art .ground, .landmark-art .ground { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.2; }
+.map-art .smoke, .landmark-art .smoke, .boat-art .smoke {
+  fill: none; stroke: var(--map-ink-dim); stroke-width: 1.2; stroke-linecap: round; opacity: 0.8;
+}
+
+.landmark { cursor: pointer; transition: opacity 200ms, filter 200ms; }
+.landmark:hover { filter: brightness(1.2); }
+.landmark.shut { opacity: 0.42; }
+.here-glow { fill: var(--map-glow); opacity: 0.1; animation: here-glow 2.8s ease-in-out infinite; }
+.here-ring {
+  fill: none;
+  stroke: var(--map-glow);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 5;
+  animation: here-ring 14s linear infinite;
+}
+@keyframes here-glow { 0%, 100% { opacity: 0.06; } 50% { opacity: 0.18; } }
+@keyframes here-ring { to { stroke-dashoffset: -200; } }
+
+/* Your boat, in brass so it is the one thing on the water you look for. */
+.you .hull { fill: var(--brass); }
+.you .sail { fill: var(--paper); }
+.you .deck { fill: var(--paper-2); }
+.you .ink { stroke: var(--map-ink); }
+.bob {
+  transform-box: fill-box;
+  transform-origin: 50% 80%;
+  animation: bob 3.4s ease-in-out infinite;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-1.6px) rotate(2deg); }
+}
+
+/* Name plates: paper tags pinned under each stop. */
+.map-stop {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  min-width: 112px;
+  max-width: 46%;
+  padding: 5px 10px 6px;
+  border-radius: 6px;
+  background:
+    var(--grain-paper),
+    radial-gradient(ellipse at 50% 40%, var(--paper) 55%, var(--paper-2) 100%);
+  background-size: 180px 180px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--ink);
+  border: 1px solid var(--ink-rule);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 120ms, box-shadow 120ms;
+}
+.map-stop:hover { transform: translateX(-50%) translateY(-2px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45); }
+.map-stop:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.map-name { font-family: var(--font-sign); font-size: 18px; line-height: 1.1; }
+.map-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  font-size: var(--t-xs);
+  color: var(--ink-dim);
+}
+.map-stake { font-family: var(--mono); font-weight: 600; color: var(--ink); }
+.map-keepsake { color: var(--brass-lo); }
+.map-stop.is-here {
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 55%, var(--brass-lo) 100%);
+  border-color: var(--brass-lo);
+  color: var(--on-brass);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.map-stop.is-here .map-meta, .map-stop.is-here .map-stake { color: var(--on-brass); }
+.map-stop.far { opacity: 0.82; }
+.map-stop.far .map-name { color: var(--ink-dim); }
+
+/* ---- the side of the map: where you are, your boat ------------------ */
+
+.here-kicker {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+.here-name {
+  margin: 4px 0 2px;
+  font-family: var(--font-sign);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.1;
+}
+.here-where { font-family: var(--font-print); font-style: italic; color: var(--text-dim); }
+.here-facts {
+  display: flex;
+  margin: var(--s-3) 0 var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-sunken);
+}
+.here-facts .fact { flex: 1; display: flex; flex-direction: column; padding: 6px 10px; border-left: 1px solid var(--border); }
+.here-facts .fact:first-child { border-left: 0; }
+.fact .k { font-size: var(--t-xs); color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+.fact .v { font-family: var(--mono); font-weight: 600; font-size: var(--t-sm); color: var(--gold); white-space: nowrap; }
+.here-boss { display: flex; gap: var(--s-3); align-items: flex-start; }
+.here-portrait { flex: none; line-height: 0; }
+.here-boss-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+.here-boss-title { font-weight: 400; font-style: italic; color: var(--text-dim); }
+.here-boss .said { margin: 4px 0 0; color: var(--text-dim); font-style: italic; font-size: var(--t-base); }
+.here-actions { display: flex; gap: var(--s-2); flex-wrap: wrap; margin-top: var(--s-4); }
+.here-actions .btn { flex: 1 1 auto; }
+
+.boat-head { display: flex; gap: var(--s-3); align-items: center; }
+.boat-pic { flex: none; line-height: 0; }
+.boat-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+.keepsakes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-top: var(--s-3); }
+.keepsake {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px dashed var(--border-bright);
+  color: var(--text-faint);
+  opacity: 0.55;
+}
+.keepsake.have {
+  opacity: 1;
+  border: 1px solid var(--brass-lo);
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 60%, var(--brass-lo));
+  color: var(--on-brass);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- the prologue ---------------------------------------------------- */
+
+.prologue {
+  max-width: 640px;
+  margin: 0 auto var(--s-5);
+  padding: var(--s-5) var(--s-6);
+  border-radius: 4px;
+  text-align: center;
+}
+.prologue-year { font-size: 44px; color: var(--ink); margin-bottom: var(--s-2); }
+.prologue .said { color: var(--ink); }
+.prologue .btn { margin-top: var(--s-2); }
+@media (max-width: 700px) { .prologue { padding: var(--s-4); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .bob, .here-glow, .here-ring { animation: none; }
+}
+
+/* ---- portraits: a cameo in a brass rim --------------------------------- */
+
+.portrait { display: block; border-radius: 50%; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45); }
+.portrait-rim { fill: none; stroke: var(--brass); stroke-width: 2.6; }
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ==================================================================== *
+ * A stop: the scene, the boss, the table
+ * ==================================================================== */
+
+.stop-screen { display: flex; flex-direction: column; gap: var(--s-4); }
+
+.scene {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-bright);
+  box-shadow: var(--shadow);
+  min-height: 200px;
+}
+.scene-art-wrap { display: block; line-height: 0; }
+.scene-art { display: block; width: 100%; height: clamp(200px, 36vw, 320px); }
+.scene-art .sky-top { stop-color: var(--sky-1); }
+.scene-art .sky-low { stop-color: var(--sky-2); }
+.scene-art .star { fill: var(--map-ink); opacity: var(--stars); }
+.scene-art .orb { fill: var(--sky-orb); }
+.scene-art .far-bank { fill: var(--map-land); }
+.scene-art .far-tree { fill: var(--map-land-3); }
+.scene-art .scene-water { fill: var(--map-water); }
+.scene-art .scene-ripple { fill: none; stroke: var(--map-water-2); stroke-width: 1.2; stroke-linecap: round; opacity: 0.8; }
+.scene-art .ink {
+  fill: none;
+  stroke: var(--map-ink);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  /* The scene is scaled to the screen; the pen is not. */
+  vector-effect: non-scaling-stroke;
+}
+.scene-art .wall { fill: var(--map-land-2); }
+.scene-art .roof { fill: var(--map-land-3); }
+.scene-art .glow { fill: var(--map-glow); }
+.scene-art .mark { fill: var(--map-mark); }
+.scene-art .shallows { fill: var(--map-water); }
+.scene-art .ground { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.scene-art .smoke { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.4; stroke-linecap: round; opacity: 0.8; vector-effect: non-scaling-stroke; }
+.scene-art .scene-ripple { vector-effect: non-scaling-stroke; }
+
+/* Arriving: the boat comes in from off the left edge and settles. */
+.scene-boat.arriving { animation: arrive 1.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes arrive {
+  from { transform: translateX(-460px); }
+  to { transform: none; }
+}
+
+.scene-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: var(--s-4) var(--s-5);
+  color: var(--map-ink);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.scene-where { font-family: var(--font-print); font-style: italic; font-size: var(--t-base); }
+.scene-title h1 {
+  margin: 2px 0 6px;
+  font-family: var(--font-sign);
+  font-weight: 400;
+  font-size: clamp(30px, 7vw, 48px);
+  line-height: 1.05;
+}
+.scene-stake {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: var(--t-sm);
+  text-shadow: none;
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass) 60%, var(--brass-lo));
+  color: var(--on-brass);
+  border: 1px solid var(--brass-lo);
+}
+
+/* The boss: a cameo and a name plate, with what they say beside them. */
+.boss {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+.boss-figure { display: flex; flex-direction: column; align-items: center; gap: var(--s-2); }
+.boss-portrait { line-height: 0; }
+.boss-plate {
+  text-align: center;
+  padding: 6px 14px 7px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  color: var(--on-brass);
+  border: 1px solid var(--brass-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+.boss-name { font-size: 20px; }
+.boss-title { font-family: var(--font-print); font-style: italic; font-size: var(--t-sm); }
+
+.boss-talk { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
+.bubble {
+  position: relative;
+  padding: var(--s-4) var(--s-5);
+  border-radius: 14px;
+}
+.bubble::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 30px;
+  width: 16px;
+  height: 16px;
+  background: var(--paper);
+  border-left: 1px solid var(--ink-rule);
+  border-bottom: 1px solid var(--ink-rule);
+  transform: rotate(45deg);
+}
+.bubble .said { margin: 0; color: var(--ink); font-size: var(--t-lg); line-height: 1.4; }
+.typed { position: relative; display: block; cursor: pointer; }
+.typed-ghost { color: transparent; }
+.typed-shown { position: absolute; inset: 0; }
+
+.boss-notes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.note {
+  padding: var(--s-3) var(--s-4);
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--brass-lo);
+}
+.note-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-md);
+  margin-bottom: 4px;
+}
+.note-head .icon { color: var(--gold); }
+.note p { margin: 0; color: var(--text-dim); }
+
+.stop-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap: var(--s-4); align-items: start; }
+.stop-grid > :only-child { grid-column: 1 / -1; }
+.stop-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; }
+.stop-actions .btn, .river-nav .btn, .here-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.stop-actions > p { flex-basis: 100%; margin: 0 0 var(--s-2); }
+.stop-actions.shut { flex-direction: column; align-items: stretch; }
+.stop-actions.shut .bar { margin: var(--s-2) 0; }
+.stop-need { display: flex; align-items: center; gap: var(--s-2); font-weight: 600; }
+.stop-need .icon { color: var(--text-faint); }
+
+.keepsake-block { display: flex; align-items: center; gap: var(--s-4); }
+.keepsake.big { width: 58px; flex: none; }
+
+.river-nav { display: flex; justify-content: space-between; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+
+@media (max-width: 760px) {
+  .boss { grid-template-columns: 1fr; gap: var(--s-3); }
+  .boss-figure { flex-direction: row; justify-content: flex-start; gap: var(--s-3); }
+  .boss-figure .portrait { width: 96px; height: 96px; }
+  .boss-plate { text-align: left; }
+  .bubble::before { left: 34px; top: -9px; border-bottom: 0; border-top: 1px solid var(--ink-rule); }
+  .boss-notes { grid-template-columns: 1fr; }
+  .stop-grid { grid-template-columns: 1fr; }
+  .scene-title { padding: var(--s-3) var(--s-4); }
+  .river-nav .btn { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-boat.arriving { animation: none; }
+}
+
+/* ---- the moment a table is taken -------------------------------------- */
+
+.took-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: grid;
+  place-items: center;
+  padding: var(--s-4);
+  background: rgba(0, 0, 0, 0.64);
+  animation: scrim-in 240ms ease both;
+}
+.took {
+  position: relative;
+  width: min(440px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: var(--s-5) var(--s-5) var(--s-5);
+  border-radius: 6px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  animation: took-in 520ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.took::before {
+  /* Rays behind the keepsake, turning slowly: brass light, not a sticker. */
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 360px;
+  height: 360px;
+  margin: -180px 0 0 -180px;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.34) 0deg 8deg, transparent 8deg 20deg);
+  border-radius: 50%;
+  mask: radial-gradient(circle, black 20%, transparent 68%);
+  -webkit-mask: radial-gradient(circle, black 20%, transparent 68%);
+  animation: rays 24s linear infinite;
+  pointer-events: none;
+}
+.took > * { position: relative; }
+.took-kicker {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-dim);
+}
+.took h2 { justify-content: center; margin: 0; font-family: var(--font-sign); font-weight: 400; font-size: 34px; color: var(--ink); }
+.took-portrait { line-height: 0; margin: var(--s-2) 0; }
+.took .said { margin: 0 0 var(--s-2); color: var(--ink); font-style: italic; }
+.took-keepsake {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  animation: keepsake-in 700ms 400ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.took-keepsake .boat-name { color: var(--ink); }
+@keyframes took-in { from { opacity: 0; transform: translateY(24px) scale(0.92); } to { opacity: 1; transform: none; } }
+@keyframes keepsake-in { from { opacity: 0; transform: scale(0.3) rotate(-30deg); } to { opacity: 1; transform: none; } }
+@keyframes rays { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .took, .took-keepsake, .took::before, .took-scrim { animation: none; }
+}
+
+/* ==================================================================== *
+ * The table on the river
+ * ==================================================================== */
+
+.table-place { font-family: var(--font-sign); font-weight: 400; font-size: clamp(24px, 5vw, 32px); }
+.table-owner { font-family: var(--font-print); font-style: italic; color: var(--text-dim); }
+
+/* A brass line between the wooden rail and the cloth. */
+.felt {
+  box-shadow:
+    inset 0 0 0 2px var(--brass-lo),
+    inset 0 0 90px rgba(0, 0, 0, 0.55),
+    0 0 0 2px rgba(0, 0, 0, 0.5),
+    0 18px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Faces on the plates: a cameo pinned to the plate's left edge, so the
+   plate keeps its height and the table its layout. */
+.seat-plate.has-face { position: relative; padding-left: 38px; }
+.seat-face {
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  line-height: 0;
+}
+.seat-face .portrait { width: 44px; height: 44px; }
+.seat.boss .seat-plate { border-color: var(--brass); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 0 14px rgba(0, 0, 0, 0.35); }
+.seat.boss .seat-face .portrait-rim { stroke-width: 4; }
+.seat.acting .seat-face .portrait { box-shadow: 0 0 0 3px var(--on-felt-accent), 0 0 16px rgba(0, 0, 0, 0.5); }
+
+/* What they say: a paper bubble over their seat. */
+.seat-speech {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: max-content;
+  max-width: 220px;
+  padding: 7px 11px;
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ink-rule);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  font-family: var(--font-print);
+  font-style: italic;
+  font-size: var(--t-sm);
+  line-height: 1.35;
+  text-align: center;
+  animation: speech-in 260ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  pointer-events: none;
+}
+.seat-speech::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  background: var(--paper);
+  border-right: 1px solid var(--ink-rule);
+  border-bottom: 1px solid var(--ink-rule);
+  transform: rotate(45deg);
+}
+/* Seats along the top of the felt speak downwards, into the table. */
+.seat[data-slot="2"] .seat-speech,
+.seat[data-slot="3"] .seat-speech,
+.seat[data-slot="4"] .seat-speech { bottom: auto; top: calc(100% + 10px); }
+.seat[data-slot="2"] .seat-speech::after,
+.seat[data-slot="3"] .seat-speech::after,
+.seat[data-slot="4"] .seat-speech::after { bottom: auto; top: -6px; transform: rotate(225deg); }
+@keyframes speech-in { from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.9); } to { opacity: 1; transform: translateX(-50%); } }
+
+@media (max-width: 700px) {
+  .seat-plate.has-face { padding-left: 24px; }
+  .seat-face { left: -10px; width: 30px; height: 30px; }
+  .seat-face .portrait { width: 30px; height: 30px; }
+  .seat-speech { max-width: 150px; font-size: var(--t-xs); padding: 5px 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seat-speech { animation: none; }
+}
