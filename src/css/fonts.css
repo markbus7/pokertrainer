@@ -1,0 +1,109 @@
+/* ============================================================
+   Type, carried with the app
+   ============================================================
+ *
+ * Served from the app's own folder rather than a font service: it works
+ * offline, it cannot be blocked by a network the reader happens to be on,
+ * and it does not tell a third party every time a lesson is opened. All four
+ * families are under the SIL Open Font License; the licences sit beside the
+ * files.
+ *
+ * Three voices, each with one job:
+ *   Rye            — the river's signage. Place names, a boss's name plate,
+ *                    the title over a scene. Display only, never below 18px:
+ *                    it is a woodcut letter and it fills in when small.
+ *   Old Standard   — the printed word of 1890. What people say, headings
+ *                    inside a screen, the menu. Readable at body sizes, which
+ *                    Rye is not.
+ *   IBM Plex       — the instrument panel. Lessons, buttons, and every
+ *                    number: its figures line up in a column the way a price
+ *                    ladder has to.
+ */
+
+@font-face {
+  font-family: 'Rye';
+  src: url('../fonts/rye-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Old Standard TT';
+  src: url('../fonts/old-standard-tt-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Old Standard TT';
+  src: url('../fonts/old-standard-tt-latin-400-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Old Standard TT';
+  src: url('../fonts/old-standard-tt-latin-700-normal.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('../fonts/ibm-plex-sans-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('../fonts/ibm-plex-sans-latin-400-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('../fonts/ibm-plex-sans-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('../fonts/ibm-plex-sans-latin-600-normal.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('../fonts/ibm-plex-sans-latin-700-normal.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../fonts/ibm-plex-mono-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}

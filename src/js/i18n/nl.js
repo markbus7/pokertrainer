@@ -3711,18 +3711,18 @@ export const NL = {
   // Room names are translated rather than kept: these are furniture, not
   // poker terms, and "Daglicht" tells a Dutch reader what it is at a glance
   // where "Daylight" makes them stop and parse.
-  'Midnight': 'Middernacht',
-  'Card room': 'Speelzaal',
-  'Mahogany': 'Mahonie',
+  'Night': 'Nacht',
+  'Bayou': 'Bayou',
+  'Dusk': 'Schemering',
   'Daylight': 'Daglicht',
-  'Ink blue and one warm lamp. What the screen looks like at 2am.':
-    'Inktblauw met één warme lamp. Hoe je scherm er om 2 uur \'s nachts uitziet.',
-  'Black with a green cast and brass edges. The original.':
-    'Zwart met een groene zweem en messing randen. De originele.',
-  'Oxblood, old wood and copper. The warmest room on the list.':
-    'Ossenbloed, oud hout en koper. De warmste zaal van de lijst.',
-  'Paper and ink. For playing in a lit room without the glare.':
-    'Papier en inkt. Om te spelen in een verlichte kamer, zonder de felheid.',
+  'Black water, a moon on it, and one lamp lit in the salon.':
+    'Zwart water, de maan erop, en één lamp aan in de salon.',
+  'Green banks, still water and brass fittings. The original cloth.':
+    'Groene oevers, stil water en messing beslag. Het originele laken.',
+  'Oxblood, mahogany and copper — the hour the tables fill.':
+    'Ossenbloed, mahonie en koper — het uur waarop de tafels vollopen.',
+  'The river by day, drawn like a pilot\'s chart. For a lit room.':
+    'De rivier bij daglicht, getekend als een loodsenkaart. Voor een verlichte kamer.',
   'Show my leaks': 'Laat mijn lekken zien',
   'Folded to you in the {seat}.': 'Naar jou gefold in de {seat}.',
   'The {seat} raises and it is on you in the big blind.':

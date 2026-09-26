@@ -1,5 +1,9 @@
 /**
- * The rooms you can play in.
+ * The hours of the river — the four looks the app can wear.
+ *
+ * Each one is a time of day on the Long River, so the map changes with it:
+ * the same banks by moonlight, in the bayou green, at dusk and by day. The
+ * keys are the ones the app shipped with, so a reader's choice carries over.
  *
  * "Kots groen" was the verdict on the single palette this replaces, and the
  * fix is not a nicer green. One person picking one colour for another
@@ -21,26 +25,26 @@
 export const THEMES = [
   {
     key: 'midnight',
-    name: 'Midnight',
-    blurb: 'Ink blue and one warm lamp. What the screen looks like at 2am.',
+    name: 'Night',
+    blurb: 'Black water, a moon on it, and one lamp lit in the salon.',
     swatch: { bg: '#0a0e15', accent: '#f2b23c', felt: '#1e5c82' },
   },
   {
     key: 'felt',
-    name: 'Card room',
-    blurb: 'Black with a green cast and brass edges. The original.',
+    name: 'Bayou',
+    blurb: 'Green banks, still water and brass fittings. The original cloth.',
     swatch: { bg: '#080d0a', accent: '#d9b44a', felt: '#24714f' },
   },
   {
     key: 'mahogany',
-    name: 'Mahogany',
-    blurb: 'Oxblood, old wood and copper. The warmest room on the list.',
+    name: 'Dusk',
+    blurb: 'Oxblood, mahogany and copper — the hour the tables fill.',
     swatch: { bg: '#120b0b', accent: '#e08b4c', felt: '#82303c' },
   },
   {
     key: 'daylight',
     name: 'Daylight',
-    blurb: 'Paper and ink. For playing in a lit room without the glare.',
+    blurb: 'The river by day, drawn like a pilot\'s chart. For a lit room.',
     swatch: { bg: '#efebe1', accent: '#1c6b45', felt: '#23724e' },
   },
 ];

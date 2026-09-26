@@ -1,0 +1,626 @@
+/* ============================================================
+   The Long River — the game's own look
+   ============================================================
+ *
+ * Loaded last, so it wins. base.css and table.css are the instrument panel
+ * — how a drill, a range grid or a price ladder is laid out — and they are
+ * left to do that. This file is what makes it a place: the printed type of
+ * 1890, paper you are spoken to on, a wooden rail with brass let into it,
+ * buttons that go down when pressed, and the river itself.
+ *
+ * Same rule as everywhere: no colour literals. The materials (paper, wood,
+ * brass) and the map's hour of the day are tokens in themes.css, so every
+ * room paints them in its own light. Black and white appear only as rgba
+ * finishes — shadows, lit edges, grain.
+ */
+
+:root {
+  --font-sign: 'Rye', 'Old Standard TT', Georgia, serif;
+  --font-print: 'Old Standard TT', Georgia, 'Times New Roman', serif;
+  /* Headings across the app move from the sans to the printed serif. */
+  --font-display: var(--font-print);
+
+  /* Grain, drawn rather than shipped: fractal noise pushed into the alpha
+     channel only, so it darkens whatever it lies on and carries no colour of
+     its own. Two tunings — fine and even for paper, stretched sideways for
+     the grain of a plank. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+  --wood-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='120'%3E%3Cfilter id='w' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006 .19' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.1 -.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
+
+  --press: 0 3px 0 rgba(0, 0, 0, 0.45);
+  --press-down: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* ------------------------------------------------------------------ *
+ * Ground
+ * ------------------------------------------------------------------ */
+
+body {
+  background:
+    var(--grain),
+    radial-gradient(1200px 700px at 15% -10%, var(--wash-1) 0%, transparent 55%),
+    radial-gradient(900px 600px at 90% 0%, var(--wash-2) 0%, transparent 50%),
+    var(--bg);
+  background-size: 180px 180px, auto, auto, auto;
+  background-attachment: fixed;
+  /* The grain is a whisper: at full strength it is sandpaper. */
+  background-blend-mode: soft-light, normal, normal, normal;
+}
+
+/* ------------------------------------------------------------------ *
+ * Type: the printed word
+ * ------------------------------------------------------------------ */
+
+h1, h2 {
+  font-family: var(--font-print);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+h1 { font-size: var(--t-xl); }
+h2 { font-size: var(--t-lg); }
+
+/* Rye is signage: a name on a board, a title over a scene. It fills in
+   below about 18px, so nothing smaller is ever set in it. */
+.sign {
+  font-family: var(--font-sign);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+/* What somebody says, and anything written in their voice. */
+.said {
+  font-family: var(--font-print);
+  font-size: var(--t-md);
+  line-height: 1.5;
+}
+.said em, .aside-said { font-style: italic; }
+
+/* A printer's rule with a flourish in the middle: how a section ends. */
+.fleuron {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--text-faint);
+  font-family: var(--font-print);
+  margin: var(--s-4) 0;
+}
+.fleuron::before, .fleuron::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
+}
+
+/* ------------------------------------------------------------------ *
+ * Surfaces
+ * ------------------------------------------------------------------ */
+
+/* A panel is a printed card: a second rule set just inside the edge, the
+   way a notice or a ticket was framed. Cheap — an outline, no images. */
+.panel {
+  background:
+    var(--grain),
+    linear-gradient(155deg, var(--hairline), transparent 42%),
+    var(--bg-card);
+  background-size: 180px 180px, auto, auto;
+  background-blend-mode: soft-light, normal, normal;
+  outline: 1px solid var(--hairline-strong);
+  outline-offset: -6px;
+}
+.panel .panel { outline: none; }
+
+/* Paper: where a person speaks to you, and the ledger's pages. Light in
+   every room, so it takes its own ink rather than the room's. */
+.paper {
+  background:
+    var(--grain-paper),
+    radial-gradient(ellipse at 50% 40%, var(--paper) 55%, var(--paper-2) 100%);
+  background-size: 180px 180px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--ink);
+  border: 1px solid var(--ink-rule);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset, var(--shadow-sm);
+}
+.paper .muted, .paper .faint { color: var(--ink-dim); }
+
+/* Wood: the rail, the signboards, the dock. */
+.wood {
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 55%, var(--wood-3) 100%);
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--on-wood);
+}
+
+/* Brass: a plate, a rivet, a coin. */
+.brass {
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 48%, var(--brass) 78%, var(--brass-lo) 100%);
+  color: var(--on-brass);
+  border: 1px solid var(--brass-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* ------------------------------------------------------------------ *
+ * Buttons you can feel
+ *
+ * A button in a game goes down when you press it. The shadow under it is
+ * its depth; pressing takes the depth away and moves the face down by the
+ * same amount, so the button appears to sink rather than to flicker.
+ * ------------------------------------------------------------------ */
+
+.btn {
+  box-shadow: var(--press);
+  transition: transform 70ms, box-shadow 70ms, background 140ms, border-color 140ms, opacity 140ms;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: var(--press-down);
+}
+.btn.ghost { box-shadow: none; }
+.btn.ghost:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+
+/* The one thing to press is a brass plate in every room. */
+.btn.primary {
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 48%, var(--brass) 80%, var(--brass-lo) 100%);
+  border-color: var(--brass-lo);
+  color: var(--on-brass);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), var(--press), 0 8px 18px -10px rgba(0, 0, 0, 0.8);
+}
+.btn.primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass-hi) 30%, var(--brass) 85%, var(--brass-lo) 100%);
+}
+.btn.primary:active:not(:disabled) {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), var(--press-down);
+}
+
+/* A big call to action, lettered like a sign. */
+.btn.plank {
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-md);
+  letter-spacing: 0.04em;
+  padding: 12px 26px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Toasts: a note passed across the table
+ * ------------------------------------------------------------------ */
+
+.toast {
+  background:
+    var(--grain-paper),
+    radial-gradient(ellipse at 50% 40%, var(--paper) 55%, var(--paper-2) 100%);
+  background-size: 180px 180px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--ink);
+  border: 1px solid var(--ink-rule);
+}
+.toast .desc, .toast .toast-desc, .toast .faint, .toast .muted { color: var(--ink-dim); }
+.toast .title, .toast strong { font-family: var(--font-print); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn:active:not(:disabled) { transition: none; transform: none; }
+}
+
+/* ==================================================================== *
+ * The rail
+ *
+ * A plank across the top of the screen with brass let into it: the crest,
+ * the purse, the rank, and the ledger. Opaque on purpose — the old rail was
+ * frosted glass, which is a website's material, and a blur on the ancestor
+ * of anything fixed-position would also trap the dock inside it.
+ * ==================================================================== */
+
+#topbar.topbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--s-3);
+  row-gap: 0;
+  padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 58%, var(--wood-3) 100%);
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--on-wood);
+  border-bottom: 2px solid var(--brass-lo);
+  box-shadow: inset 0 -1px 0 var(--brass), 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+#topbar > * { order: 0; margin-left: 0; }
+
+.crest {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-right: auto;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+.crest-disc {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 19px;
+  line-height: 1;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  color: var(--on-brass);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.18), inset 0 0 0 4px rgba(255, 255, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.5);
+  flex: none;
+}
+.crest-name {
+  font-family: var(--font-sign);
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* The purse: a recess in the plank with a coin and the figure in it. */
+.purse {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 5px 12px 5px 6px;
+  min-height: 40px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--brass-hi);
+  font: inherit;
+  cursor: pointer;
+}
+.coin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  box-shadow: inset 0 0 0 2px var(--brass-lo), inset 0 0 0 4px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.6);
+  flex: none;
+}
+.purse-amount {
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-md);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+#topbar .rank-chip {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--on-wood);
+  min-height: 40px;
+}
+#topbar .rank-chip:hover { border-color: var(--brass-lo); }
+#topbar .rank-chip .xp { color: var(--on-wood); opacity: 0.78; }
+
+.ledger-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-base);
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 48%, var(--brass) 80%, var(--brass-lo) 100%);
+  color: var(--on-brass);
+  border: 1px solid var(--brass-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), var(--press);
+}
+.ledger-button:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), var(--press-down); }
+
+@media (max-width: 640px) {
+  .crest-name, .ledger-button-label { display: none; }
+  #topbar.topbar { gap: var(--s-2); }
+  .ledger-button { padding: 0 10px; min-width: 44px; justify-content: center; }
+}
+@media (max-width: 400px) {
+  #topbar .rank-chip .meta { display: none; }
+  #topbar .rank-chip { padding: 4px 8px; }
+}
+@media (pointer: coarse) {
+  .purse, #topbar .rank-chip, .ledger-button { min-height: 44px; }
+}
+
+/* ==================================================================== *
+ * The dock
+ *
+ * The four places a player goes most, on a plank along the bottom where a
+ * thumb already is. Screens you are in the middle of hide it — a hand, a
+ * run on the clock, a lesson — the way a game clears its bar for a match.
+ * ==================================================================== */
+
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 55;
+  display: flex;
+  justify-content: center;
+  padding: 0 max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  pointer-events: none;
+}
+.dock-plank {
+  pointer-events: auto;
+  display: flex;
+  gap: 2px;
+  width: min(560px, 100%);
+  padding: 6px;
+  border-radius: 16px;
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 58%, var(--wood-3) 100%);
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  border: 1px solid var(--brass-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 14px 32px rgba(0, 0, 0, 0.6);
+}
+.dock-item {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 2px 5px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: var(--on-wood);
+  font: inherit;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 140ms, transform 70ms;
+}
+.dock-item:hover { background: rgba(255, 255, 255, 0.06); }
+.dock-item:active { transform: translateY(1px); }
+.dock-item.active {
+  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 50%, var(--brass-lo) 100%);
+  border-color: var(--brass-lo);
+  color: var(--on-brass);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+.dock-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+main { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+#toasts { bottom: calc(96px + env(safe-area-inset-bottom)); }
+body.focus .dock { display: none; }
+body.focus main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
+body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
+
+/* ==================================================================== *
+ * The ledger
+ *
+ * Everything the dock does not hold, and the switches, written on paper in
+ * a book that opens over the screen. Opening it does not leave where you
+ * were, so a quick look at the charts or a switch of the music costs nothing.
+ * ==================================================================== */
+
+#ledger-host { position: relative; z-index: 150; }
+
+.ledger-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  animation: scrim-in 200ms ease both;
+}
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+.ledger {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 92vw);
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  border: 0;
+  border-left: 6px solid var(--wood-2);
+  box-shadow: inset 8px 0 14px -10px rgba(0, 0, 0, 0.5), -18px 0 40px rgba(0, 0, 0, 0.5);
+}
+.ledger.entering { animation: ledger-in 260ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes ledger-in { from { transform: translateX(100%); } to { transform: none; } }
+
+.ledger-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-4) var(--s-3) var(--s-5);
+  border-bottom: 3px double var(--ink-rule);
+}
+.ledger-head h2 {
+  margin: 0;
+  font-family: var(--font-sign);
+  font-weight: 400;
+  font-size: 30px;
+  color: var(--ink);
+}
+.ledger-close {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: none;
+  border: 1px solid var(--ink-rule);
+  color: var(--ink);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ledger-close:hover { background: rgba(0, 0, 0, 0.06); }
+
+.ledger-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-2) var(--s-4) calc(var(--s-6) + env(safe-area-inset-bottom)) var(--s-4);
+}
+.ledger-section { margin-top: var(--s-4); }
+.ledger-title {
+  display: block;
+  margin: 0 0 var(--s-1);
+  padding: 0 var(--s-2) var(--s-1);
+  font-family: var(--font-print);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--t-base);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ink-dim);
+  border-bottom: 1px solid var(--ink-rule);
+}
+
+.ledger-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--s-2);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.ledger-item:hover { background: rgba(0, 0, 0, 0.05); }
+.ledger-item.active { background: rgba(0, 0, 0, 0.07); box-shadow: inset 3px 0 0 var(--brass-lo); }
+.ledger-item .icon { color: var(--brass-lo); flex: none; }
+.ledger-text { display: flex; flex-direction: column; min-width: 0; }
+.ledger-label {
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-md);
+  line-height: 1.2;
+}
+.ledger-note { font-size: var(--t-xs); color: var(--ink-dim); line-height: 1.35; }
+
+/* Settings, on paper: every control takes the book's ink, not the room's. */
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  min-height: 52px;
+  padding: var(--s-2);
+}
+.setting-label { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+
+.ledger .lang-switch { background: rgba(0, 0, 0, 0.06); border-color: var(--ink-rule); }
+.ledger .lang-chip { color: var(--ink-dim); }
+.ledger .lang-chip:hover { color: var(--ink); }
+.ledger .lang-chip.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+
+/* The look picker lies open in the page rather than floating over it. */
+.ledger .theme-switch { display: contents; }
+.ledger .theme-button {
+  gap: var(--s-2);
+  padding: 4px 12px 4px 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--ink-rule);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+}
+.ledger .theme-button[aria-expanded='true'] { border-color: var(--brass-lo); }
+.ledger .theme-panel {
+  position: static;
+  flex-basis: 100%;
+  width: 100%;
+  padding: var(--s-1) 0 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+.ledger .theme-option { color: var(--ink-dim); min-height: 52px; }
+.ledger .theme-option:hover { background: rgba(0, 0, 0, 0.05); color: var(--ink); }
+.ledger .theme-option.active { background: rgba(0, 0, 0, 0.07); border-color: var(--brass-lo); color: var(--ink); }
+.ledger .theme-name { color: var(--ink); font-family: var(--font-print); font-weight: 700; }
+.ledger .theme-blurb { color: var(--ink-dim); }
+
+/* A switch: a brass knob in a slot. */
+.switch {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--s-2);
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.switch:hover { background: rgba(0, 0, 0, 0.05); }
+.switch .icon { color: var(--brass-lo); flex: none; }
+.switch-label { flex: 1; font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+.switch-track {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  flex: none;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+  transition: background 160ms;
+}
+.switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 60%, var(--brass-lo));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  transition: transform 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.switch.on .switch-track { background: var(--brass-lo); }
+.switch.on .switch-knob { transform: translateX(20px); }
+
+.ledger .version-chip {
+  margin: var(--s-3) var(--s-2) 0;
+  color: var(--ink-dim);
+  border-color: var(--ink-rule);
+  background: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ledger.entering, .ledger-scrim { animation: none; }
+  .switch-knob { transition: none; }
+}

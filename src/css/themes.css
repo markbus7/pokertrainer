@@ -1,6 +1,11 @@
 /* ============================================================
-   Poker Trainer — the four rooms
+   Poker Trainer — the four hours of the river
    ============================================================
+ *
+ * The keys are still the room names the app shipped with (midnight, felt,
+ * mahogany, daylight), so a reader's saved choice carries over; what they
+ * are called on screen is Night, Bayou, Dusk and Daylight, because each is
+ * now an hour on the Long River and the map is drawn in its light.
  *
  * The reader's verdict on the single palette this replaces was "kots groen",
  * and they were right twice over. Once because a green cast on every surface
@@ -28,7 +33,7 @@
  */
 
 /* ------------------------------------------------------------------
- * MIDNIGHT — the default.
+ * NIGHT (midnight) — the default.
  * Ink blue-black, one warm lamp. What the screen looks like at 2am when
  * the only light in the room is the one you are playing under. Cold ground,
  * warm accent: the contrast is the whole character.
@@ -93,10 +98,39 @@
   --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.45);
   --inset: inset 0 1px 2px rgba(0, 0, 0, 0.7);
   --drop: 0 10px 30px rgba(0, 0, 0, 0.6);
+
+  /* The river's materials. Paper is what people speak on and the ledger is
+     written on, so it stays light in every room — dimmed in the dark ones so
+     it does not glare. Wood is the rail and the signboards; brass is metal,
+     the same metal whichever room it is fitted in. */
+  --paper: #e8dfca;
+  --paper-2: #d6caae;
+  --ink: #231c14;
+  --ink-dim: #594b39;
+  --ink-rule: #b9a984;
+  --wood-1: #4a3726;
+  --wood-2: #34261a;
+  --wood-3: #1d150e;
+  --on-wood: #f3e6cc;
+  --brass: #c9a24a;
+  --brass-hi: #efd68f;
+  --brass-lo: #7a5c20;
+  --on-brass: #26190a;
+
+  /* The map. Each room is an hour on the river. Night: a dark shore, black water, and the moon laid across it in a line. */
+  --map-land: #18222f;
+  --map-land-2: #1f2c3c;
+  --map-land-3: #111923;
+  --map-water: #0b1624;
+  --map-water-2: #2f5378;
+  --map-ink: #d6dfeb;
+  --map-ink-dim: #93a3b8;
+  --map-glow: #f2b23c;
+  --map-mark: #ff7b84;
 }
 
 /* ------------------------------------------------------------------
- * FELT — the card room, kept because some people liked it.
+ * BAYOU (felt) — the card room, kept because some people liked it.
  * Black with a green cast, brass rather than yellow. This is the palette the
  * app shipped with; it stays on the list, it just stops being compulsory.
  * ------------------------------------------------------------------ */
@@ -151,10 +185,39 @@
   --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.5);
   --inset: inset 0 1px 2px rgba(0, 0, 0, 0.7);
   --drop: 0 10px 30px rgba(0, 0, 0, 0.6);
+
+  /* The river's materials. Paper is what people speak on and the ledger is
+     written on, so it stays light in every room — dimmed in the dark ones so
+     it does not glare. Wood is the rail and the signboards; brass is metal,
+     the same metal whichever room it is fitted in. */
+  --paper: #e6dfc8;
+  --paper-2: #d3c9a9;
+  --ink: #1f1b12;
+  --ink-dim: #544a35;
+  --ink-rule: #b5a67f;
+  --wood-1: #45321f;
+  --wood-2: #2f2215;
+  --wood-3: #1a120a;
+  --on-wood: #f4ead2;
+  --brass: #c9a24a;
+  --brass-hi: #efd68f;
+  --brass-lo: #7a5c20;
+  --on-brass: #26190a;
+
+  /* The map. Each room is an hour on the river. Bayou: green banks and still green water. */
+  --map-land: #16261b;
+  --map-land-2: #1d3224;
+  --map-land-3: #0e1a12;
+  --map-water: #0b1916;
+  --map-water-2: #2c5a4a;
+  --map-ink: #e9e2cc;
+  --map-ink-dim: #a8a48c;
+  --map-glow: #d9b44a;
+  --map-mark: #f2717a;
 }
 
 /* ------------------------------------------------------------------
- * MAHOGANY — the members' club.
+ * DUSK (mahogany) — the members' club.
  * Oxblood and old wood, copper instead of gold. The warmest room on the
  * list, and the one that looks least like software.
  * ------------------------------------------------------------------ */
@@ -210,10 +273,39 @@
   --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.5);
   --inset: inset 0 1px 2px rgba(0, 0, 0, 0.7);
   --drop: 0 10px 30px rgba(0, 0, 0, 0.6);
+
+  /* The river's materials. Paper is what people speak on and the ledger is
+     written on, so it stays light in every room — dimmed in the dark ones so
+     it does not glare. Wood is the rail and the signboards; brass is metal,
+     the same metal whichever room it is fitted in. */
+  --paper: #ecdcc6;
+  --paper-2: #dbc6a8;
+  --ink: #2a1a12;
+  --ink-dim: #5e4434;
+  --ink-rule: #bf9f80;
+  --wood-1: #5c2c22;
+  --wood-2: #3f1c16;
+  --wood-3: #230e0b;
+  --on-wood: #f7e7d6;
+  --brass: #c9a24a;
+  --brass-hi: #efd68f;
+  --brass-lo: #7a5c20;
+  --on-brass: #26190a;
+
+  /* The map. Each room is an hour on the river. Dusk: the banks gone dark and the last of the sun lying red on the water. */
+  --map-land: #29191b;
+  --map-land-2: #362124;
+  --map-land-3: #1b1012;
+  --map-water: #1a1320;
+  --map-water-2: #8c4a3c;
+  --map-ink: #f4dfcc;
+  --map-ink-dim: #bfa391;
+  --map-glow: #f0a256;
+  --map-mark: #f4767b;
 }
 
 /* ------------------------------------------------------------------
- * DAYLIGHT — paper and ink.
+ * DAYLIGHT — paper and ink, a pilot's chart.
  * The only light room, and the reason the list has four entries rather than
  * three: this is played on an iPad, often in a lit room, and every other
  * option asks the screen to be the brightest thing in front of you. Ground
@@ -277,6 +369,35 @@
   --shadow-sm: 0 1px 4px rgba(60, 52, 35, 0.14);
   --inset: inset 0 1px 2px rgba(60, 52, 35, 0.16);
   --drop: 0 6px 18px rgba(60, 52, 35, 0.1);
+
+  /* The river's materials. Paper is what people speak on and the ledger is
+     written on, so it stays light in every room — dimmed in the dark ones so
+     it does not glare. Wood is the rail and the signboards; brass is metal,
+     the same metal whichever room it is fitted in. */
+  --paper: #fffaf0;
+  --paper-2: #efe6d2;
+  --ink: #1f1a13;
+  --ink-dim: #5a4f3f;
+  --ink-rule: #cdbf9f;
+  --wood-1: #8c6641;
+  --wood-2: #6e4d2e;
+  --wood-3: #4b331d;
+  --on-wood: #fff6e4;
+  --brass: #c9a24a;
+  --brass-hi: #efd68f;
+  --brass-lo: #7a5c20;
+  --on-brass: #26190a;
+
+  /* The map. Each room is an hour on the river. Daylight: a pilot's chart — paper banks, pale water, ink. */
+  --map-land: #e9dfc2;
+  --map-land-2: #dccf9f;
+  --map-land-3: #c9b98a;
+  --map-water: #a9c9d6;
+  --map-water-2: #e3f0f4;
+  --map-ink: #2a2118;
+  --map-ink-dim: #5f5140;
+  --map-glow: #b8431f;
+  --map-mark: #bd2a30;
 }
 
 /* ------------------------------------------------------------------

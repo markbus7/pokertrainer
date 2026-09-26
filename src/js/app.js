@@ -1,6 +1,14 @@
 /**
- * Application shell: routing, the top bar, and the screen lifecycle.
- * Routes live in the URL hash, so the back button and a refresh both work.
+ * Application shell: routing, the rail, the dock and the ledger, and the
+ * screen lifecycle. Routes live in the URL hash, so the back button and a
+ * refresh both work.
+ *
+ * The shell used to be a website's: a brand, nine tabs and a row of chips.
+ * It is a game's now. The rail across the top holds what a player checks
+ * between hands — the purse and the rank — and nothing else; a dock at the
+ * bottom has the four places you go most (the river, the lessons, the range
+ * trainer and a free table); everything else, and the switches, are in the
+ * ledger, which opens over the screen rather than replacing it.
  */
 
 import { el, mount, $, toast, fmt } from './ui/dom.js';
@@ -23,36 +31,70 @@ import { renderStats, renderCharts, renderGlossary } from './ui/screenStats.js';
 import { renderLevels } from './ui/screenLevels.js';
 import * as audio from './audio/engine.js';
 
+/**
+ * `dock` is which dock button lights up; `music` is the track a screen
+ * plays ('river', 'table', or none); `focus` screens are the ones you are in
+ * the middle of — a hand, a run on the clock, a lesson — and they hide the
+ * dock so the work gets the whole screen. The rail and its ledger stay, so
+ * there is always a way out.
+ */
 const ROUTES = {
-  home: { render: renderCareer, tab: 'home', title: 'Career', music: 'river' },
-  train: { render: renderHome, tab: 'train', title: 'Training' },
-  learn: { render: renderLearn, tab: 'train', title: 'Lesson' },
-  walkthrough: { render: renderWalkthrough, tab: 'train', title: 'Guided lesson' },
-  drill: { render: renderDrill, tab: 'train', title: 'Drill' },
-  ranges: { render: renderRangeLadder, tab: 'train', title: 'Range trainer' },
-  'ranges-run': { render: renderRangeRun, tab: 'train', title: 'Range trainer' },
-  'ranges-weak': { render: renderRangeWeak, tab: 'train', title: 'Weak hands' },
-  gauntlet: { render: renderGauntletIntro, tab: 'gauntlet', title: 'Gauntlet' },
-  lab: { render: renderLabIntro, tab: 'lab', title: 'The Lab' },
-  'lab-run': { render: renderLab, tab: 'lab', title: 'The Lab' },
-  play: { render: renderTable, tab: 'play', title: 'Table', music: 'table' },
-  review: { render: renderReview, tab: 'review', title: 'Hand review' },
-  charts: { render: renderCharts, tab: 'charts', title: 'Charts' },
-  glossary: { render: renderGlossary, tab: 'glossary', title: 'Glossary' },
-  stats: { render: renderStats, tab: 'stats', title: 'Progress' },
-  levels: { render: renderLevels, tab: 'stats', title: 'Ranks' },
+  home: { render: renderCareer, dock: 'home', title: 'The river', music: 'river' },
+  train: { render: renderHome, dock: 'train', title: 'Lessons' },
+  learn: { render: renderLearn, dock: 'train', title: 'Lesson' },
+  walkthrough: { render: renderWalkthrough, dock: 'train', title: 'Guided lesson', focus: true },
+  drill: { render: renderDrill, dock: 'train', title: 'Drill', focus: true },
+  ranges: { render: renderRangeLadder, dock: 'ranges', title: 'Range trainer' },
+  'ranges-run': { render: renderRangeRun, dock: 'ranges', title: 'Range trainer', focus: true },
+  'ranges-weak': { render: renderRangeWeak, dock: 'ranges', title: 'Weak hands' },
+  gauntlet: { render: renderGauntletIntro, dock: 'ledger', title: 'Gauntlet' },
+  lab: { render: renderLabIntro, dock: 'ledger', title: 'The Lab' },
+  'lab-run': { render: renderLab, dock: 'ledger', title: 'The Lab', focus: true },
+  play: { render: renderTable, dock: 'play', title: 'Table', music: 'table', focus: true },
+  review: { render: renderReview, dock: 'ledger', title: 'Hand review' },
+  charts: { render: renderCharts, dock: 'ledger', title: 'Charts' },
+  glossary: { render: renderGlossary, dock: 'ledger', title: 'Glossary' },
+  stats: { render: renderStats, dock: 'ledger', title: 'Progress' },
+  levels: { render: renderLevels, dock: 'ledger', title: 'Ranks' },
 };
 
-const TABS = [
-  { route: 'home', label: 'Career', icon: 'ladder' },
-  { route: 'train', label: 'Train', icon: 'train' },
-  { route: 'play', label: 'Play', icon: 'play' },
-  { route: 'lab', label: 'Lab', icon: 'lab' },
-  { route: 'gauntlet', label: 'Gauntlet', icon: 'gauntlet' },
-  { route: 'review', label: 'Review', icon: 'review' },
-  { route: 'charts', label: 'Charts', icon: 'charts' },
-  { route: 'glossary', label: 'Glossary', icon: 'glossary' },
-  { route: 'stats', label: 'Progress', icon: 'progress' },
+/** The four places you go most, and the ledger for the rest. */
+const DOCK = [
+  { key: 'home', route: 'home', label: 'River', icon: 'river' },
+  { key: 'train', route: 'train', label: 'Lessons', icon: 'book' },
+  { key: 'ranges', route: 'ranges', label: 'Ranges', icon: 'grid' },
+  { key: 'play', route: 'play', label: 'Play', icon: 'cards' },
+  { key: 'ledger', label: 'Ledger', icon: 'ledger' },
+];
+
+/** Everything, in the order a player looks for it. */
+const LEDGER = [
+  {
+    title: 'Study',
+    items: [
+      { route: 'train', label: 'Lessons', icon: 'book', note: 'Read it, then drill it' },
+      { route: 'ranges', label: 'Range trainer', icon: 'grid', note: 'Learn the charts until you do not need them' },
+      { route: 'lab', label: 'The Lab', icon: 'lab', note: 'Set up a spot and test your read' },
+      { route: 'gauntlet', label: 'Gauntlet', icon: 'gauntlet', note: 'Every module mixed, against the clock' },
+    ],
+  },
+  {
+    title: 'Play',
+    items: [
+      { route: 'home', label: 'The river', icon: 'river', note: 'Eight tables down to the delta' },
+      { route: 'play', label: 'Free table', icon: 'cards', note: 'Six-handed, with no bankroll at stake' },
+    ],
+  },
+  {
+    title: 'Records',
+    items: [
+      { route: 'review', label: 'Hand review', icon: 'review' },
+      { route: 'charts', label: 'Charts', icon: 'charts' },
+      { route: 'glossary', label: 'Glossary', icon: 'glossary' },
+      { route: 'stats', label: 'Progress', icon: 'progress' },
+      { route: 'levels', label: 'Ranks', icon: 'ladder' },
+    ],
+  },
 ];
 
 const profile = Profile.load();
@@ -65,8 +107,9 @@ setLang(profile.settings.lang || 'en');
 applyTheme(isTheme(profile.settings.theme) ? profile.settings.theme : DEFAULT_THEME);
 const rng = makeRng();
 let currentCtx = null;
-// Survives the topbar redraw that picking a theme causes.
+// Both survive the redraw that picking a theme or a language causes.
 let pickerOpen = false;
+let ledgerOpen = false;
 
 function parseHash() {
   const raw = location.hash.replace(/^#/, '');
@@ -86,6 +129,7 @@ function go(route, params = {}) {
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
   const next = `#${route}${query ? `?${query}` : ''}`;
+  ledgerOpen = false;
   if (location.hash === next) render();
   else location.hash = next;
 }
@@ -108,12 +152,14 @@ function render() {
       el('h2', 'Something went wrong'),
       el('p.muted', 'That screen failed to load. The error is in the console.'),
       el('pre.mono', { style: { whiteSpace: 'pre-wrap', color: 'var(--red)', fontSize: 'var(--t-sm)' } }, String(err && err.message)),
-      el('button.btn', { onclick: () => go('home') }, 'Back to dashboard'),
+      el('button.btn', { onclick: () => go('home') }, 'Back to the river'),
     );
   }
 
   mount($('#screen'), screen);
-  drawTopbar(def.tab);
+  document.body.classList.toggle('focus', !!def.focus);
+  document.body.dataset.route = route;
+  drawShell();
   // The river has a tune, a table has a piano in the corner, and a lesson is
   // quiet: music under reading is noise, whatever it is.
   audio.setMusic(def.music || null);
@@ -190,7 +236,7 @@ function themePicker() {
     'aria-expanded': 'false',
     title: 'Pick how the app looks',
     onclick: (e) => { e.stopPropagation(); togglePicker(); },
-  }, themeSwatch(themeFor(current)));
+  }, themeSwatch(themeFor(current)), el('span.theme-current', t(themeFor(current).name)));
 
   function togglePicker() {
     const show = panel.hidden;
@@ -215,22 +261,73 @@ function themePicker() {
   return el('div.theme-switch', { onclick: (e) => e.stopPropagation() }, button, panel);
 }
 
-function drawTopbar(activeTab) {
+/* ------------------------------------------------------------------ *
+ * The rail: purse, rank, ledger
+ * ------------------------------------------------------------------ */
+
+// What the purse reads right now, and what it is rolling towards. Kept out
+// here because the rail is redrawn on every save, and a count that restarted
+// at each redraw would never finish.
+let purseShown = null;
+let purseTarget = null;
+let purseRaf = 0;
+const stillMotion = () => typeof matchMedia === 'function'
+  && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * The bankroll, on the rail at all times. It is the score on the river —
+ * what every seat is paid from and what opens the next stop — so it is the
+ * one number a player should never have to go looking for. When it changes
+ * it counts to the new figure rather than jumping, and coins land when it
+ * goes up: cashing out should feel like cashing out.
+ */
+function purse() {
+  const amount = profile.data.bankroll;
+  const figure = el('span.purse-amount', fmt.money(purseShown ?? amount));
+  const node = el('button.purse', {
+    onclick: () => go('home'),
+    title: 'Your bankroll. Every seat on the river is paid out of it.',
+  }, el('span.coin', { 'aria-hidden': 'true' }), figure);
+
+  if (purseShown === null || stillMotion()) {
+    purseShown = amount;
+    purseTarget = amount;
+    figure.textContent = fmt.money(amount);
+  } else if (purseShown !== amount) {
+    if (purseTarget !== amount && amount > purseShown) audio.sfx('chips');
+    purseTarget = amount;
+    rollPurse(figure, purseShown, amount);
+  }
+  return node;
+}
+
+function rollPurse(figure, from, to) {
+  cancelAnimationFrame(purseRaf);
+  const start = performance.now();
+  const duration = Math.min(1400, 500 + Math.abs(to - from) * 4);
+  const tick = (now) => {
+    const k = Math.min(1, (now - start) / duration);
+    purseShown = from + (to - from) * (1 - (1 - k) ** 3);
+    if (k >= 1) purseShown = to;
+    figure.textContent = fmt.money(purseShown);
+    if (k < 1) purseRaf = requestAnimationFrame(tick);
+  };
+  purseRaf = requestAnimationFrame(tick);
+}
+
+function drawHud() {
   const rank = profile.rank;
   const next = profile.nextRank;
   mount($('#topbar'),
-    el('div.brand', el('span.pip', '♠'), 'Poker Trainer',
-      el('button.version-chip', {
-        onclick: () => go('stats'),
-        title: 'Which build you are running — click for details and an update check',
-      }, `v${VERSION}`)),
-    el('nav.tabs', TABS.map((tab) => el(`button.tab${tab.route === activeTab ? '.active' : ''}`, {
-      onclick: () => go(tab.route),
-      title: t(tab.label),
-      'aria-label': t(tab.label),
-    }, icon(tab.icon, { size: 17 }), el('span', t(tab.label))))),
-    themePicker(),
-    languageToggle(),
+    el('button.crest', {
+      onclick: () => go('home'),
+      title: 'Back to the river',
+      'aria-label': 'Back to the river',
+    },
+      el('span.crest-disc', { 'aria-hidden': 'true' }, '♠'),
+      el('span.crest-name', 'Poker Trainer'),
+    ),
+    purse(),
     el('button.rank-chip', {
       onclick: () => go('levels'),
       title: `${rank.blurb} — click to see what the next rank asks for`,
@@ -241,7 +338,129 @@ function drawTopbar(activeTab) {
         el('span.xp', next ? `${fmt.chips(profile.xp)} / ${fmt.chips(next.xp)} XP` : `${fmt.chips(profile.xp)} XP`),
       ),
     ),
+    el('button.ledger-button', {
+      onclick: () => toggleLedger(!ledgerOpen),
+      title: 'Everything else, and the settings',
+      'aria-haspopup': 'dialog',
+      'aria-expanded': ledgerOpen ? 'true' : 'false',
+    }, icon('ledger', { size: 20 }), el('span.ledger-button-label', 'Ledger')),
   );
+}
+
+/* ------------------------------------------------------------------ *
+ * The dock
+ * ------------------------------------------------------------------ */
+
+function drawDock(active) {
+  mount($('#dock'),
+    el('div.dock-plank', DOCK.map((d) => el(`button.dock-item${d.key === active ? '.active' : ''}`, {
+      onclick: () => {
+        audio.sfx('click');
+        if (d.route) go(d.route);
+        else toggleLedger(true);
+      },
+      'aria-current': d.key === active && d.route ? 'page' : null,
+    }, icon(d.icon, { size: 22 }), el('span.dock-label', t(d.label))))),
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * The ledger
+ * ------------------------------------------------------------------ */
+
+/**
+ * The switches for sound. Separate on purpose, like the engine: the effects
+ * say what happened at the table, the music is atmosphere, and somebody
+ * studying on a train wants the one and not the other.
+ */
+function soundSwitch(key, label, iconName) {
+  const on = profile.settings[key] !== false;
+  return el(`button.switch${on ? '.on' : ''}`, {
+    role: 'switch',
+    'aria-checked': on ? 'true' : 'false',
+    onclick: () => {
+      profile.updateSettings({ [key]: !on });
+      if (key === 'sound' && !on) audio.sfx('click');
+    },
+  },
+    icon(iconName, { size: 18 }),
+    el('span.switch-label', t(label)),
+    el('span.switch-track', { 'aria-hidden': 'true' }, el('span.switch-knob')),
+  );
+}
+
+function ledgerItem(item, activeRoute) {
+  const here = item.route === activeRoute;
+  return el(`button.ledger-item${here ? '.active' : ''}`, {
+    onclick: () => { audio.sfx('click'); ledgerOpen = false; go(item.route); },
+    'aria-current': here ? 'page' : null,
+  },
+    icon(item.icon, { size: 20 }),
+    el('span.ledger-text',
+      el('span.ledger-label', t(item.label)),
+      item.note ? el('span.ledger-note', t(item.note)) : null,
+    ),
+  );
+}
+
+let ledgerLastFocus = null;
+
+function toggleLedger(open) {
+  if (open === ledgerOpen) return;
+  ledgerOpen = open;
+  audio.sfx(open ? 'page' : 'click');
+  if (open) ledgerLastFocus = document.activeElement;
+  drawHud();
+  drawLedger({ entering: open });
+  if (open) {
+    const close = $('.ledger-close');
+    if (close) close.focus({ preventScroll: true });
+  } else if (ledgerLastFocus && document.contains(ledgerLastFocus)) {
+    ledgerLastFocus.focus({ preventScroll: true });
+  }
+}
+
+function drawLedger({ entering = false } = {}) {
+  const host = $('#ledger-host');
+  if (!ledgerOpen) { mount(host); return; }
+  const { route } = parseHash();
+  mount(host,
+    el('div.ledger-scrim', { onclick: () => toggleLedger(false) }),
+    el(`aside.ledger.paper${entering ? '.entering' : ''}`, {
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-label': 'Ledger',
+    },
+      el('header.ledger-head',
+        el('h2.sign', t('Ledger')),
+        el('button.ledger-close', { onclick: () => toggleLedger(false), 'aria-label': 'Close' }, '×'),
+      ),
+      el('div.ledger-body',
+        LEDGER.map((section) => el('section.ledger-section',
+          el('h3.ledger-title', t(section.title)),
+          section.items.map((item) => ledgerItem(item, route)),
+        )),
+        el('section.ledger-section.ledger-settings',
+          el('h3.ledger-title', t('Settings')),
+          el('div.setting', el('span.setting-label', t('Language')), languageToggle()),
+          el('div.setting', el('span.setting-label', t('Look')), themePicker()),
+          soundSwitch('sound', 'Sound effects', 'speaker'),
+          soundSwitch('music', 'Music', 'note'),
+          el('button.version-chip', {
+            onclick: () => { ledgerOpen = false; go('stats'); },
+            title: 'Which build you are running — click for details and an update check',
+          }, `v${VERSION}`),
+        ),
+      ),
+    ),
+  );
+}
+
+function drawShell() {
+  const def = ROUTES[parseHash().route];
+  drawHud();
+  drawDock(def.dock);
+  drawLedger();
 }
 
 /**
@@ -282,7 +501,7 @@ function announceUpdateIfBehind() {
   });
 }
 
-window.addEventListener('hashchange', render);
+window.addEventListener('hashchange', () => { ledgerOpen = false; render(); });
 
 /**
  * Sound. The switches live in settings so they travel with the cloud sync;
@@ -300,13 +519,17 @@ for (const type of ['pointerdown', 'keydown']) {
 }
 
 document.addEventListener('keydown', (e) => {
+  if (ledgerOpen) {
+    if (e.key === 'Escape') toggleLedger(false);
+    return;
+  }
   if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
   if (currentCtx && typeof currentCtx.onKey === 'function') currentCtx.onKey(e);
 });
 
 profile.onChange(() => {
   applySound();
-  drawTopbar(ROUTES[parseHash().route].tab);
+  drawShell();
   cloudSync.scheduleAutoPush(profile, (result) => {
     if (!result.ok && result.reason !== 'not-connected') {
       toast({ icon: '⚠️', title: 'Sync paused', desc: result.message || 'Could not reach GitHub. Your progress is still saved on this device.' });

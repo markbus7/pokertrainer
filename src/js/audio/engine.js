@@ -364,6 +364,11 @@ const RECIPES = {
   click(out, t) {
     tone(out, t, { f: 1500, peak: 0.05, decay: 0.012 });
   },
+  page(out, t) {
+    // A page turned: the sweep of paper through air, then the edge settling.
+    hiss(out, t, { peak: 0.09, attack: 0.03, decay: 0.12, f: 1200, to: 3800, q: 0.6 });
+    hiss(out, t + 0.1, { peak: 0.05, attack: 0.01, decay: 0.08, type: 'highpass', f: 2500, q: 0.5 });
+  },
   bell(out, t) {
     bellTone(out, t, 587.33, 0.16);
     bellTone(out, t + 0.45, 587.33, 0.12);
