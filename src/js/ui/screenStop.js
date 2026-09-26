@@ -140,8 +140,11 @@ function tableBlock(venue, state, profile, go) {
       el('button.btn.primary.plank.lg', {
         onclick: () => {
           audio.sfx('whistle');
+          const from = state.here.index;
           profile.enterVenue(venue.key);
-          go('stop', { at: venue.key, arrived: 1 });
+          // The trip itself happens on the map: the boat steams down (or
+          // back up) the river from here to there, then ties up.
+          go('home', { sail: `${from}-${venue.index}` });
         },
       }, down ? t('Steam down to {place}', { place: t(venue.name) }) : t('Head back up to {place}', { place: t(venue.name) })),
       study,

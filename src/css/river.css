@@ -1095,7 +1095,7 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
   .boss-figure { flex-direction: row; justify-content: flex-start; gap: var(--s-3); }
   .boss-figure .portrait { width: 96px; height: 96px; }
   .boss-plate { text-align: left; }
-  .bubble::before { left: 34px; top: -9px; border-bottom: 0; border-top: 1px solid var(--ink-rule); }
+  .boss-talk .bubble::before { left: 34px; top: -9px; border-bottom: 0; border-top: 1px solid var(--ink-rule); }
   .boss-notes { grid-template-columns: 1fr; }
   .stop-grid { grid-template-columns: 1fr; }
   .scene-title { padding: var(--s-3) var(--s-4); }
@@ -1730,3 +1730,290 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
   .stamp, .xp-pop { animation: none; }
   .xp-pop { display: none; }
 }
+
+/* ==================================================================== *
+ * The pilot house
+ * ==================================================================== */
+
+.pilot { display: flex; flex-direction: column; gap: var(--s-4); }
+.pilot .panel + .panel { margin-top: 0; }
+.logbook h2.sign { margin: 0; font-family: var(--font-sign); font-weight: 400; font-size: 28px; color: var(--ink); }
+.logbook .rung-row {
+  background: var(--paper);
+  border: 1px solid var(--ink-rule);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+}
+.logbook .rung-row:hover:not(:disabled) { background: var(--paper-2); border-color: var(--brass-lo); }
+.logbook .rung-row .rung-mark {
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  color: var(--on-brass);
+  border: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-print);
+  font-weight: 700;
+}
+.logbook .rung-row.done .rung-mark { background: var(--ink-green); color: var(--paper); }
+.logbook .rung-row.shut .rung-mark { background: var(--paper-2); color: var(--ink-dim); box-shadow: none; }
+.logbook .rung-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); color: var(--ink); }
+
+/* The hours a reach has been run in: sun, dusk, moon. */
+.hour-pip {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.05);
+}
+.hour-pip.lit { color: var(--on-brass); background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 60%, var(--brass-lo)); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+.rung-pips { gap: 4px; }
+.hour-key { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); margin: 0 0 var(--s-4); font-size: var(--t-xs); color: var(--ink-dim); }
+.hour-key-item { display: inline-flex; align-items: center; gap: 6px; }
+.hour-key-item .icon { color: var(--ink-accent); }
+
+.shoals-note .panel-title h3 { color: var(--ink); }
+.shoals-intro { margin: var(--s-2) 0 var(--s-4); }
+
+/* ---- a run, lit by its hour ----------------------------------------- */
+
+/* Night and dusk: the room's colours give way to the river's. Everything
+   inside takes the night palette, the same way paper takes its ink. */
+.nightfall {
+  --text: var(--night-ink);
+  --text-dim: var(--night-ink-dim);
+  --text-faint: var(--night-ink-dim);
+  --text-rgb: var(--night-ink-rgb);
+  --border: var(--night-border);
+  --border-bright: var(--night-border);
+  --bg-card: var(--night-card);
+  --bg-raised: var(--night-card);
+  --bg-sunken: var(--night-1);
+  --bg-hover: var(--night-hover);
+  --accent: var(--night-accent);
+  --accent-hi: var(--night-accent);
+  --accent-dim: var(--brass-lo);
+  --accent-rgb: var(--night-accent-rgb);
+  --gold: var(--night-accent);
+  --gold-dim: var(--brass-lo);
+  --green: var(--night-green);
+  --green-rgb: var(--night-green-rgb);
+  --red: var(--night-red);
+  --red-rgb: var(--night-red-rgb);
+  --blue: var(--night-blue);
+  --blue-rgb: var(--night-blue-rgb);
+  --hairline: rgba(255, 255, 255, 0.06);
+  --hairline-strong: rgba(255, 255, 255, 0.16);
+  color: var(--text);
+  border-color: var(--night-border);
+  outline-color: rgba(255, 255, 255, 0.08);
+}
+.run-panel.stage-peek {
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 115%, var(--dusk-2) 0%, transparent 70%),
+    linear-gradient(180deg, var(--dusk-1) 0%, var(--night-2) 100%);
+}
+.run-panel.stage-blind {
+  background:
+    radial-gradient(circle at 50% 58%, rgba(var(--night-accent-rgb), 0.16) 0%, transparent 38%),
+    radial-gradient(1px 1px at 18px 24px, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1px 1px at 92px 60px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 150px 18px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 210px 84px, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 60px 110px, rgba(255, 255, 255, 0.5), transparent),
+    linear-gradient(180deg, var(--night-1) 0%, var(--night-2) 100%);
+  background-size: auto, 240px 140px, 240px 140px, 240px 140px, 240px 140px, 240px 140px, auto;
+}
+.run-panel.stage-chart .run-where, .run-panel.stage-chart .run-count { color: var(--ink); }
+.run-hour { display: inline-flex; align-items: center; gap: 6px; }
+.run-panel .run-where { font-family: var(--font-print); font-weight: 700; font-size: var(--t-lg); }
+.nightfall .ask-option { background: var(--night-card); border-color: var(--night-border); color: var(--night-ink); }
+.nightfall .ask-option:hover:not(:disabled) { background: var(--night-hover); border-color: var(--night-accent); }
+.nightfall .verdict-box { background: rgba(0, 0, 0, 0.35); }
+.run-panel .verdict-box .silas-line { color: var(--text); }
+.by-heart {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: var(--s-2) 0;
+  font-family: var(--font-sign);
+  font-size: 22px;
+}
+.by-heart .seal { width: 48px; height: 48px; color: var(--paper); }
+
+/* The watch that runs at night: a brass case, a sweeping hand. */
+.pocket-watch {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  margin: 8px 0 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, var(--paper) 0%, var(--paper-2) 75%);
+  border: 3px solid var(--brass);
+  box-shadow: 0 0 0 1px var(--brass-lo), 0 3px 10px rgba(0, 0, 0, 0.55);
+}
+.pocket-watch::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 10px;
+  height: 7px;
+  margin-left: -5px;
+  border-radius: 3px 3px 1px 1px;
+  background: var(--brass);
+}
+.pocket-watch::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.watch-hand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 17px;
+  margin: -17px 0 0 -1px;
+  background: var(--ink-red);
+  border-radius: 1px;
+  transform-origin: 50% 100%;
+  animation: sweep linear forwards;
+}
+@keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.run-panel .clock-bar { height: 4px; }
+.nightfall .clock-bar > span { background: var(--night-accent); box-shadow: 0 0 8px rgba(var(--night-accent-rgb), 0.8); }
+
+@media (prefers-reduced-motion: reduce) {
+  .watch-hand { animation: none; }
+}
+.run-panel .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* ==================================================================== *
+ * The saloon: the table, the lamp over it, the wall behind it
+ * ==================================================================== */
+
+.saloon-stage {
+  position: relative;
+  padding: 34px 18px 18px;
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse 58% 62% at 50% 40%, rgba(var(--night-accent-rgb), 0.2), transparent 72%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0 2px, transparent 2px 72px),
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-2), var(--wood-3));
+  background-size: auto, auto, 400px 120px, auto;
+  background-blend-mode: normal, normal, multiply, normal;
+  border: 1px solid var(--brass-lo);
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.6), var(--shadow);
+}
+.saloon-lamp { position: absolute; top: 0; left: 50%; transform: translateX(-50%); line-height: 0; z-index: 2; pointer-events: none; }
+.lamp-art { width: 120px; height: auto; overflow: visible; }
+.lamp-cord { stroke: var(--brass-lo); stroke-width: 2; }
+.lamp-shade { fill: var(--brass); stroke: var(--brass-lo); stroke-width: 1.2; }
+.lamp-rim { stroke: var(--brass-hi); stroke-width: 2.4; stroke-linecap: round; }
+.lamp-bulb { fill: var(--night-accent); filter: drop-shadow(0 0 8px rgba(var(--night-accent-rgb), 0.9)); }
+@media (max-width: 700px) {
+  .saloon-stage { padding: 26px 8px 10px; border-radius: 10px; }
+  .lamp-art { width: 90px; }
+}
+
+/* A wooden rail around the cloth, with a brass line where they meet: the
+   cloth and the wood are backgrounds clipped to the padding and the border,
+   so the rail keeps its grain all the way round the curve. */
+.felt {
+  border-color: transparent;
+  background:
+    radial-gradient(ellipse at 50% 42%, var(--felt-1) 0%, var(--felt-3) 72%) padding-box,
+    var(--wood-grain) border-box,
+    linear-gradient(180deg, var(--wood-1), var(--wood-3)) border-box;
+  background-size: auto, 400px 120px, auto;
+  background-blend-mode: normal, multiply, normal;
+}
+
+/* Seat plates are small wooden plaques with a brass edge. */
+.seat-plate {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.78));
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.seat.hero .seat-plate { border-color: var(--brass); }
+
+/* Chips, seen from the side and stacked. */
+.chip-stack { display: inline-flex; flex-direction: column-reverse; align-items: center; margin-right: 5px; vertical-align: middle; }
+.chip-disc {
+  display: block;
+  width: 15px;
+  height: 5px;
+  margin-top: -1px;
+  border-radius: 50% / 45%;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+}
+.chip-stack.red .chip-disc { background: repeating-linear-gradient(90deg, #b8322b 0 3px, #f3ead6 3px 5px); }
+.chip-stack.blue .chip-disc { background: repeating-linear-gradient(90deg, #2a5ea8 0 3px, #f3ead6 3px 5px); }
+.chip-stack.green .chip-disc { background: repeating-linear-gradient(90deg, #2d7a4a 0 3px, #f3ead6 3px 5px); }
+.chip-stack.black .chip-disc { background: repeating-linear-gradient(90deg, #1b1b1f 0 3px, #d9b44a 3px 5px); }
+.seat-bet { display: inline-flex; align-items: center; }
+.pot-chip .chip-stack { margin-right: 2px; }
+
+/* Cards from an 1890 deck: ivory stock, the printed serif for the index,
+   and a back with a brass medallion on a wine lattice. */
+.card {
+  background: radial-gradient(ellipse at 50% 28%, var(--card-stock) 0%, var(--card-stock-2) 100%);
+  color: #1d1812;
+  border: 1px solid #d6c59f;
+  font-family: 'Old Standard TT', Georgia, serif;
+  font-weight: 700;
+}
+.card .rank { font-family: 'Old Standard TT', Georgia, serif; }
+.card.red { color: #b3232b; }
+.card.blue { color: #1d4f9a; }
+.card.green { color: #1f6b3e; }
+.card.back {
+  background:
+    radial-gradient(circle at 50% 50%, var(--card-brass) 0 16%, var(--card-brass-lo) 17% 19%, transparent 20%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.09) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(-45deg, var(--card-back-1) 0 4px, var(--card-back-2) 4px 8px);
+  border: 2px solid var(--card-stock-2);
+  box-shadow: 0 0 0 1px var(--card-brass-lo), 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* The tray the buttons sit in: wood, with the actions as plates. */
+.saloon .action-bar {
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 60%, var(--wood-3) 100%);
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  border: 1px solid var(--brass-lo);
+  color: var(--on-wood);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), var(--shadow-sm);
+}
+.saloon .action-bar .faint, .saloon .action-bar .muted { color: var(--on-wood); opacity: 0.85; }
+.saloon .action-bar h3 { color: var(--on-wood); }
+.action-buttons .btn { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); letter-spacing: 0.02em; }
+.saloon .action-buttons .btn:not(.primary):not(.danger) {
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+  color: var(--ink);
+  border-color: var(--ink-rule);
+}
+.saloon .action-buttons .btn.danger {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.25)), var(--ink-red);
+  color: var(--paper);
+  border-color: rgba(0, 0, 0, 0.45);
+}
+
+/* Silas's notebook beside the table. */
+.coach.paper { border-radius: 6px; }
+.coach-head { display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-3); }
+.coach-who { display: flex; flex-direction: column; line-height: 1.2; }
+.coach-name { font-family: var(--font-sign); font-weight: 400; font-size: 20px; color: var(--ink); }
+.coach-role { font-family: var(--font-print); font-style: italic; font-size: var(--t-sm); color: var(--ink-dim); font-weight: 400; }
+.coach.paper .verdict-box { background: var(--paper-2); }
+.coach.paper .coach-metric { border-bottom-color: var(--ink-rule); }

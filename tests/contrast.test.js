@@ -179,6 +179,25 @@ describe('theme: everything that carries words stays readable', () => {
   });
 });
 
+describe('theme: night in the pilot house reads in every room', () => {
+  it('keeps the night palette readable, whichever room is picked', () => {
+    // Constants, not per-room tokens: night is dark in the Daylight room too.
+    const root = {};
+    for (const block of themeCss.matchAll(/:root\s*\{([^}]*)\}/g)) {
+      for (const [, name, value] of block[1].matchAll(/--([\w-]+):\s*([^;]+);/g)) root[name] = value.trim();
+    }
+    const failures = [];
+    for (const ink of ['night-ink', 'night-ink-dim', 'night-accent', 'night-green', 'night-red', 'night-blue']) {
+      for (const ground of ['night-card', 'night-1', 'night-2', 'dusk-1']) {
+        assert(root[ink] && root[ground], `--${ink} or --${ground} is missing`);
+        const ratio = contrast(root[ink], root[ground]);
+        if (ratio < READABLE) failures.push(`--${ink} on --${ground}: ${ratio.toFixed(2)}:1`);
+      }
+    }
+    assert(!failures.length, `below the ${READABLE}:1 readable floor:\n      ${failures.join('\n      ')}`);
+  });
+});
+
 describe('theme: colour lives in themes.css and nowhere else', () => {
   it('leaves no colour literal in a component stylesheet', () => {
     // The exemptions are the felt and a playing card: dark cloth and a white

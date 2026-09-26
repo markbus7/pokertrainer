@@ -488,6 +488,43 @@
  * Constant on purpose, and outside the [data-theme] blocks: a token that
  * differs per room is a token a room can get wrong.
  * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------
+ * Night on the river, whichever room you are in.
+ *
+ * The pilot house runs its hardest rung at night and its middle one at
+ * dusk, and those are hours of the story, not of the room: night is dark in
+ * the Daylight room too. So they are constants, like the felt's ink.
+ * ------------------------------------------------------------------ */
+:root {
+  --night-1: #060a13;
+  --night-2: #16263f;
+  --dusk-1: #1e1226;
+  --dusk-2: #7a3a33;
+  --night-card: #121c2e;
+  --night-hover: #1b2840;
+  --night-border: #2d4062;
+  --night-ink: #eef2f8;
+  --night-ink-rgb: 238, 242, 248;
+  --night-ink-dim: #b9c4d6;
+  --night-accent: #f2c14e;
+  --night-accent-rgb: 242, 193, 78;
+  --night-green: #5fd49a;
+  --night-green-rgb: 95, 212, 154;
+  --night-red: #ff8a8f;
+  --night-red-rgb: 255, 138, 143;
+  --night-blue: #86bdf2;
+  --night-blue-rgb: 134, 189, 242;
+
+  /* The deck: ivory stock and a wine-and-brass back, the same deck in
+     every room, like the felt. */
+  --card-stock: #fffdf6;
+  --card-stock-2: #f1e7d2;
+  --card-back-1: #6e1d24;
+  --card-back-2: #57161c;
+  --card-brass: #d9b44a;
+  --card-brass-lo: #8a6a2a;
+}
+
 :root {
   --on-felt: #f2f5f9;
   --on-felt-dim: rgba(242, 245, 249, 0.7);

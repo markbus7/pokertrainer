@@ -1636,10 +1636,15 @@ await step('the boat goes back upriver without losing how far it got', async () 
   await page.goto(`${BASE}/#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
   await page.click('.stop-actions .btn.primary');
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(300);
+  // The trip is made on the map: the boat is seen steaming there first.
+  if (!await page.$('.river-map .your-boat.sailing')) throw new Error('the boat never set off on the map');
   const career = await page.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).career);
   if (career.venue !== 'nl5') throw new Error(`travelled to ${career.venue}`);
   if (career.best !== 'nl10') throw new Error(`the furthest stop dropped to ${career.best}`);
+  await page.waitForFunction(() => /stop\?at=nl5/.test(location.hash), null, { timeout: 8000 })
+    .catch(() => { throw new Error('the boat never tied up at Fisher\'s Rest'); });
+  await page.waitForTimeout(200);
   if (!await page.$('.scene-boat.arriving')) throw new Error('the boat did not arrive');
   // Put it back for the steps that follow.
   await page.evaluate(() => {
@@ -2122,7 +2127,8 @@ await step('no screen is half in English when the app is in Dutch', async () => 
   // reached t(). Randomly dealt content differs between renders anyway, so
   // what this actually measures is the fixed chrome of every screen.
   const routes = [
-    '#home', '#stop?at=nl10', '#stop?at=nl50', '#lab-run', '#review', '#charts?chart=BTN', '#glossary', '#stats',
+    '#home', '#stop?at=nl10', '#stop?at=nl50', '#train', '#learn?module=pot-odds',
+    '#lab-run', '#review', '#charts?chart=BTN', '#glossary', '#stats',
     '#levels', '#gauntlet', '#drill?module=outs', '#walkthrough?module=pot-odds',
     '#ranges', '#ranges-run', '#ranges-weak',
   ];

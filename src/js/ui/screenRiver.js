@@ -19,7 +19,7 @@ import { t } from '../i18n/index.js';
 import { VENUES, venueFor, roomYouCanAfford } from '../data/venues.js';
 import { bossFor, boatFor } from '../data/characters.js';
 import { nextUp, moduleMeta } from '../data/curriculum.js';
-import { MAP, mapSvg, stopPoint, boatSvg } from './riverArt.js';
+import { MAP, mapSvg, stopPoint, boatSvg, riverGeometry } from './riverArt.js';
 import { portraitSvg } from './portraits.js';
 import { svgNode } from './place.js';
 import * as audio from '../audio/engine.js';
@@ -184,6 +184,56 @@ function prologue(state, profile, rerender) {
   );
 }
 
+/**
+ * The boat, steaming from one stop to another down the middle of the river,
+ * with the page following it. Then it ties up at the stop.
+ */
+function sail(chart, fromIndex, toIndex, onArrive) {
+  const boat = chart.querySelector('.your-boat');
+  const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!boat || still || fromIndex === toIndex) return onArrive();
+  const { center, xAt } = riverGeometry();
+  const a = stopPoint(fromIndex);
+  const b = stopPoint(toIndex);
+  const y0 = a.y + 8;
+  const y1 = b.y + 8;
+  const between = center.filter(([, y]) => y > Math.min(y0, y1) && y < Math.max(y0, y1));
+  if (y1 < y0) between.reverse();
+  const path = [[xAt(y0) + a.side * 6, y0], ...between, [xAt(y1) + b.side * 6, y1]];
+  const lengths = [0];
+  for (let i = 1; i < path.length; i++) {
+    lengths.push(lengths[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
+  }
+  const total = lengths[lengths.length - 1] || 1;
+  const at = (d) => {
+    let i = 1;
+    while (i < lengths.length - 1 && lengths[i] < d) i++;
+    const span = lengths[i] - lengths[i - 1] || 1;
+    const k = (d - lengths[i - 1]) / span;
+    return [path[i - 1][0] + (path[i][0] - path[i - 1][0]) * k, path[i - 1][1] + (path[i][1] - path[i - 1][1]) * k];
+  };
+  const duration = Math.min(4200, 1400 + Math.abs(toIndex - fromIndex) * 750);
+  const start = performance.now();
+  boat.classList.add('sailing');
+  // Put it where it is leaving from before anything is painted.
+  boat.setAttribute('transform', `translate(${path[0][0].toFixed(1)} ${path[0][1].toFixed(1)})`);
+  const frame = (now) => {
+    if (!boat.isConnected) return;
+    const k = Math.min(1, (now - start) / duration);
+    const eased = k < 0.5 ? 2 * k * k : 1 - ((-2 * k + 2) ** 2) / 2;
+    const [x, y] = at(eased * total);
+    boat.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+    // Keep the boat in view, easing after it rather than snapping.
+    const r = boat.getBoundingClientRect();
+    const off = r.top + r.height / 2 - window.innerHeight / 2;
+    if (Math.abs(off) > 40) window.scrollTo(0, window.scrollY + off * 0.12);
+    if (k < 1) requestAnimationFrame(frame);
+    else setTimeout(onArrive, 250);
+  };
+  requestAnimationFrame(frame);
+  return null;
+}
+
 export function renderRiver(ctx) {
   const { profile, go } = ctx;
   const state = riverState(profile);
@@ -208,6 +258,23 @@ export function renderRiver(ctx) {
       ),
     ),
   );
+  // A trip in progress: the stop screen sent us here to watch the boat go.
+  const trip = /^(\d+)-(\d+)$/.exec(ctx.params.sail || '');
+  if (trip) {
+    const from = Number(trip[1]);
+    const to = Number(trip[2]);
+    // The trip is taken once; the back button should not replay it.
+    history.replaceState(null, '', '#home');
+    requestAnimationFrame(() => {
+      const plate = map.querySelector(`.map-stop[data-key="${VENUES[from] ? VENUES[from].key : ''}"]`);
+      if (plate && typeof plate.scrollIntoView === 'function') {
+        plate.scrollIntoView({ block: 'center', behavior: 'instant' in window ? 'instant' : 'auto' });
+      }
+      sail(map, from, to, () => go('stop', { at: VENUES[to].key, arrived: 1 }));
+    });
+    return screen;
+  }
+
   // Bring your own stop into view once the page has laid out, the way a map
   // opens on where you are rather than on the top-left corner.
   requestAnimationFrame(() => {

@@ -168,8 +168,8 @@ export function renderLearn(ctx, params) {
         : null,
       stats.attempts
         ? el('div.row', { style: { marginTop: '14px' } },
-            el('span.badge', `${stats.attempts} attempts`),
-            el('span.badge', `${stats.correct} correct`),
+            el('span.badge', t('{n} attempts', { n: stats.attempts })),
+            el('span.badge', t('{n} correct', { n: stats.correct })),
             // Below the evidence bar there is no percentage to show, and a
             // blank where a score should be tells the reader nothing about
             // why. Say what is missing instead.

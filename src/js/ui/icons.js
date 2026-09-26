@@ -50,6 +50,11 @@ export const ICON_PATHS = {
   ladder: 'M7 2v20M17 2v20M7 7h10M7 12h10M7 17h10',
   clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3.5 2',
 
+  /* --- the hours a reach is run in, in the pilot house --------------- */
+  sun: 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 1.5V4M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8',
+  dusk: 'M5 15a7 7 0 0 1 14 0M2 15h20M5 19h14M8 22h8M12 4v3M5.6 7.6l1.8 1.8M18.4 7.6l-1.8 1.8',
+  moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
+
   /* --- what each boss leaves behind when you take their table ----- */
   'k-lantern': 'M10 5V3h4v2M8 8l1-3h6l1 3zM8 8h8l-1 11H9zM12 11v5M7 19h10',
   'k-teapot': 'M6 11h10v5a4 4 0 0 1-4 4h-2a4 4 0 0 1-4-4zM16 12h2a2 2 0 0 1 0 4h-2M6 12L3 9.5M9 11V9h4v2M11 9V7',

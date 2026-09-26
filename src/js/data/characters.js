@@ -173,7 +173,7 @@ export const MENTOR = {
   right: ['That is it.', 'Good. Again.', 'Right, and no hesitation.', 'Clean.', 'Just so.'],
   wrong: ['Not quite. Look again.', 'No — here is the catch.', 'Easy mistake. Read why.', 'Careful. This one bites.'],
   asks: 'Silas asks',
-  table: 'Silas, at your shoulder',
+  table: 'At your shoulder',
 };
 
 export const bossFor = (key) => BOSSES[key] || null;

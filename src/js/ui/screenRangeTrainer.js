@@ -26,6 +26,22 @@ import { cardRow } from './cardView.js';
 import { copyButton } from './copySpot.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
 import * as audio from '../audio/engine.js';
+import { MENTOR } from '../data/characters.js';
+import { sceneBanner, silasSays, silasVerdict, svgNode } from './place.js';
+import { portraitSvg } from './portraits.js';
+
+/**
+ * The pilot house.
+ *
+ * A river pilot learned the river by heart — every bend and every snag, so
+ * that he could take a boat down it at night with no chart at all. That is
+ * this trainer exactly, so it is drawn as one: each checkpoint is a reach of
+ * the river, and its three rungs are the hours it is run in. By daylight the
+ * chart is on the table; at dusk it is in the drawer; at night there is only
+ * what you remember, and a watch running.
+ */
+const HOURS = { chart: 'sun', peek: 'dusk', blind: 'moon' };
+const hourIcon = (stage, size = 16) => icon(HOURS[stage.key] || 'sun', { size });
 
 // The exam mixes all three question kinds under one checkpoint key, so a
 // hand missed there has no single chart to practise it back against —
@@ -71,6 +87,9 @@ export function renderRangeLadder(ctx) {
       }
       return t(stageAt(p.stage).name);
     };
+    // The hours this reach has been run in: the sun, dusk and the moon,
+    // lit as each rung is passed. The exam is only ever run at night.
+    const hours = checkpoint.only === 'blind' ? [STAGES[2]] : STAGES;
     return el(`button.rung-row${p.cleared ? '.done' : ''}${locked ? '.shut' : ''}`, {
       disabled: locked,
       onclick: () => go('ranges-run', { spot: checkpoint.key }),
@@ -80,20 +99,30 @@ export function renderRangeLadder(ctx) {
         el('span.rung-name', t(checkpoint.name)),
         el('span.rung-note', note()),
       ),
-      el('span.rung-pips', Array.from({ length: total }, (_, i) =>
-        el(`span.pip-dot${i < done ? '.lit' : ''}`))),
+      el('span.rung-pips', { 'aria-label': t('{done} of {total}', { done, total }) },
+        hours.map((stage, i) => el(`span.hour-pip${i < done ? '.lit' : ''}`, { title: t(stage.name) }, hourIcon(stage, 15)))),
     );
   };
 
-  return el('div.screen',
-    el('div.panel',
-      el('div.panel-title', el('h3', icon('charts', { size: 18 }), t('Range trainer'))),
+  return el('div.screen.pilot',
+    sceneBanner({
+      id: 'pilothouse',
+      landmark: 'pilothouse',
+      kicker: t('Up on the texas deck'),
+      title: t('The Pilot House'),
+    }),
+    el('div.panel.mentor-card', silasSays(t(MENTOR.pilot), { typed: false })),
+    el('div.panel.page.paper.logbook',
+      el('div.panel-title', el('h2.sign', t('The river by heart'))),
       el('p.muted', t('One question, over and over: what does the chart say to do with this hand, here. '
         + 'Each checkpoint is walked three times — with the chart open, with it behind a button, and '
         + 'then from memory on a clock. The last one is the only one that counts, because it is the '
         + 'one the table asks for. A checkpoint is in your head once you pass it and every hand on the '
         + 'edge of its range has come up at least once — fifteen questions are a sample, not the whole '
         + 'boundary.')),
+      el('div.hour-key',
+        STAGES.map((stage) => el('span.hour-key-item', hourIcon(stage, 16), t(stage.name))),
+      ),
       // The reader's own report said it plainly: "DRILLED WITHOUT READING THE
       // LESSON: Preflop Ranges". The lesson exists and teaches exactly this —
       // step 4 reads the shorthand, step 7 is five numbers instead of a
@@ -124,8 +153,8 @@ export function renderRangeLadder(ctx) {
     // missed unaided is not a weak spot, and a button that opens onto an
     // empty screen is worse than no button.
     weakCount
-      ? el('div.panel',
-        el('div.panel-title', el('h3', icon('charts', { size: 18 }), t('Your weak hands'))),
+      ? el('div.panel.note-card.paper.pinned.urgent.shoals-note',
+        el('div.panel-title', el('h3', icon('warn', { size: 18 }), t('Your shoals'))),
         el('p.muted', t('{n} hands you have missed outside an open chart, across every checkpoint. '
           + 'Run them again, mixed together or one seat at a time.', { n: weakCount })),
         el('button.btn.primary', { onclick: () => go('ranges-weak') }, t('Practise them')),
@@ -193,7 +222,10 @@ export function renderRangeRun(ctx) {
     const correct = choice === state.question.answer;
     audio.sfx(correct ? 'right' : 'wrong');
     // A peeked answer is not credited. Neither is one the clock took.
-    state.answered = { choice, correct, credited: correct && !state.peeked };
+    state.answered = {
+      choice, correct, credited: correct && !state.peeked,
+      line: choice === IDK ? null : silasVerdict(correct),
+    };
     if (state.answered.credited) state.right++;
     if (state.peeked) state.peeks++;
     // Weak-hand memory only means something for an unaided attempt: reading
@@ -239,9 +271,12 @@ export function renderRangeRun(ctx) {
 
   function summary(result, coverage) {
     const passed = state.right >= PASS;
-    return el('div.panel',
-      el('div.panel-title', el('h3', t(checkpoint.name))),
+    return el(`div.panel.run-panel.stage-${stage.key}${stage.showsChart ? '.paper' : '.nightfall'}`,
+      el('div.panel-title', el('h3', hourIcon(stage, 18), t(checkpoint.name))),
       el('div.run-score', `${state.right} / ${ASKED}`),
+      result && result.cleared
+        ? el('div.by-heart', el('span.seal', { 'aria-hidden': 'true' }, icon('moon', { size: 26 })), t('In your head.'))
+        : null,
       el('p', passed
         ? result && result.cleared
           ? t('Cleared, with no chart and a clock running. That is the one that matters.')
@@ -267,12 +302,17 @@ export function renderRangeRun(ctx) {
   function running() {
     const q = state.question;
     const a = state.answered;
-    return el('div.panel',
+    return el(`div.panel.run-panel.stage-${stage.key}${stage.showsChart ? '.paper' : '.nightfall'}`,
       el('div.run-head',
         el('div',
           el('div.run-where', t(checkpoint.name)),
-          el('div.faint', t(stage.name)),
+          el('div.faint.run-hour', hourIcon(stage, 15), t(stage.name)),
         ),
+        // At night a watch runs; by day there is only the count.
+        stage.seconds && !a
+          ? el('div.pocket-watch', { 'aria-hidden': 'true' },
+            el('span.watch-hand', { style: { animationDuration: `${stage.seconds}s` } }))
+          : null,
         el('div.run-count', `${state.index + 1} / ${ASKED}`),
       ),
       stage.seconds && !a ? el('div.clock-bar', el('span', {
@@ -312,6 +352,7 @@ export function renderRangeRun(ctx) {
       a
         ? el('div',
           el('div.verdict-box' + (a.choice === IDK ? '.skip' : a.correct ? '.good' : '.bad'),
+            a.line ? el('div.silas-line', svgNode(portraitSvg('silas', { size: 32 }), 'silas-face'), el('span', a.line)) : null,
             el('strong', a.choice === IDK
               ? t("You said you didn't know — here it is.")
               : a.correct ? (a.credited ? t('Right') : t('Right — but you looked')) : t('Not that one')),
@@ -378,8 +419,8 @@ export function renderRangeWeak(ctx) {
   const root = el('div.screen');
 
   function empty() {
-    return el('div.panel',
-      el('div.panel-title', el('h3', icon('charts', { size: 18 }), t('Your weak hands'))),
+    return el('div.panel.page.paper.logbook',
+      el('div.panel-title', el('h2.sign', t('Your shoals'))),
       el('p.muted', scopeKey
         ? t('Nothing missed here yet — that is a good sign, not a bug.')
         : t('Nothing missed yet. Play a rung on the ladder without the chart open, and the hands you '
@@ -420,7 +461,10 @@ export function renderRangeWeak(ctx) {
     if (state.answered) return;
     const correct = choice === state.question.answer;
     audio.sfx(correct ? 'right' : 'wrong');
-    state.answered = { choice, correct, credited: correct && !state.peeked };
+    state.answered = {
+      choice, correct, credited: correct && !state.peeked,
+      line: choice === IDK ? null : silasVerdict(correct),
+    };
     if (state.answered.credited) state.right++;
     // Feed the result straight back into the same tracker the ladder writes
     // to. Improve on a hand here and it works its own way off this list;
@@ -459,8 +503,9 @@ export function renderRangeWeak(ctx) {
   }
 
   function browse() {
-    return el('div.panel',
-      el('div.panel-title', el('h3', icon('charts', { size: 18 }), t('Your weak hands'))),
+    return el('div.panel.page.paper.logbook',
+      el('div.panel-title', el('h2.sign', t('Your shoals'))),
+      silasSays(t(MENTOR.shoals), { typed: false, size: 56, className: 'shoals-intro' }),
       chips(),
       el('p.muted', t('Worst first. Get one right, unaided, and its count ticks down; miss it again and '
         + 'it resets.')),
@@ -483,8 +528,8 @@ export function renderRangeWeak(ctx) {
 
   function summary() {
     const stillWeak = profile.weakRangeHands(sessionKeys, 999).length;
-    return el('div.panel',
-      el('div.panel-title', el('h3', t('Your weak hands'))),
+    return el('div.panel.run-panel.nightfall.stage-peek',
+      el('div.panel-title', el('h3', t('Your shoals'))),
       el('div.run-score', `${state.right} / ${pool.length}`),
       el('p', stillWeak
         ? t('{n} of these are still on the list — run it again and they come back.', { n: stillWeak })
@@ -500,7 +545,7 @@ export function renderRangeWeak(ctx) {
   function running() {
     const q = state.question;
     const a = state.answered;
-    return el('div.panel',
+    return el('div.panel.run-panel.nightfall.stage-peek',
       chips(),
       el('div.run-head',
         el('div',
@@ -535,6 +580,7 @@ export function renderRangeWeak(ctx) {
       a
         ? el('div',
           el('div.verdict-box' + (a.choice === IDK ? '.skip' : a.correct ? '.good' : '.bad'),
+            a.line ? el('div.silas-line', svgNode(portraitSvg('silas', { size: 32 }), 'silas-face'), el('span', a.line)) : null,
             el('strong', a.choice === IDK
               ? t("You said you didn't know — here it is.")
               : a.correct ? (a.credited ? t('Right') : t('Right — but you looked')) : t('Not that one')),
