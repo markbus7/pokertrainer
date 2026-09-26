@@ -1073,3 +1073,158 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
 @media (prefers-reduced-motion: reduce) {
   .scene-boat.arriving { animation: none; }
 }
+
+/* ---- the moment a table is taken -------------------------------------- */
+
+.took-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: grid;
+  place-items: center;
+  padding: var(--s-4);
+  background: rgba(0, 0, 0, 0.64);
+  animation: scrim-in 240ms ease both;
+}
+.took {
+  position: relative;
+  width: min(440px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: var(--s-5) var(--s-5) var(--s-5);
+  border-radius: 6px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  animation: took-in 520ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.took::before {
+  /* Rays behind the keepsake, turning slowly: brass light, not a sticker. */
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 360px;
+  height: 360px;
+  margin: -180px 0 0 -180px;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.34) 0deg 8deg, transparent 8deg 20deg);
+  border-radius: 50%;
+  mask: radial-gradient(circle, black 20%, transparent 68%);
+  -webkit-mask: radial-gradient(circle, black 20%, transparent 68%);
+  animation: rays 24s linear infinite;
+  pointer-events: none;
+}
+.took > * { position: relative; }
+.took-kicker {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-dim);
+}
+.took h2 { justify-content: center; margin: 0; font-family: var(--font-sign); font-weight: 400; font-size: 34px; color: var(--ink); }
+.took-portrait { line-height: 0; margin: var(--s-2) 0; }
+.took .said { margin: 0 0 var(--s-2); color: var(--ink); font-style: italic; }
+.took-keepsake {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  animation: keepsake-in 700ms 400ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.took-keepsake .boat-name { color: var(--ink); }
+@keyframes took-in { from { opacity: 0; transform: translateY(24px) scale(0.92); } to { opacity: 1; transform: none; } }
+@keyframes keepsake-in { from { opacity: 0; transform: scale(0.3) rotate(-30deg); } to { opacity: 1; transform: none; } }
+@keyframes rays { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .took, .took-keepsake, .took::before, .took-scrim { animation: none; }
+}
+
+/* ==================================================================== *
+ * The table on the river
+ * ==================================================================== */
+
+.table-place { font-family: var(--font-sign); font-weight: 400; font-size: clamp(24px, 5vw, 32px); }
+.table-owner { font-family: var(--font-print); font-style: italic; color: var(--text-dim); }
+
+/* A brass line between the wooden rail and the cloth. */
+.felt {
+  box-shadow:
+    inset 0 0 0 2px var(--brass-lo),
+    inset 0 0 90px rgba(0, 0, 0, 0.55),
+    0 0 0 2px rgba(0, 0, 0, 0.5),
+    0 18px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Faces on the plates: a cameo pinned to the plate's left edge, so the
+   plate keeps its height and the table its layout. */
+.seat-plate.has-face { position: relative; padding-left: 38px; }
+.seat-face {
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  line-height: 0;
+}
+.seat-face .portrait { width: 44px; height: 44px; }
+.seat.boss .seat-plate { border-color: var(--brass); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 0 14px rgba(0, 0, 0, 0.35); }
+.seat.boss .seat-face .portrait-rim { stroke-width: 4; }
+.seat.acting .seat-face .portrait { box-shadow: 0 0 0 3px var(--on-felt-accent), 0 0 16px rgba(0, 0, 0, 0.5); }
+
+/* What they say: a paper bubble over their seat. */
+.seat-speech {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: max-content;
+  max-width: 220px;
+  padding: 7px 11px;
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ink-rule);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  font-family: var(--font-print);
+  font-style: italic;
+  font-size: var(--t-sm);
+  line-height: 1.35;
+  text-align: center;
+  animation: speech-in 260ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  pointer-events: none;
+}
+.seat-speech::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  background: var(--paper);
+  border-right: 1px solid var(--ink-rule);
+  border-bottom: 1px solid var(--ink-rule);
+  transform: rotate(45deg);
+}
+/* Seats along the top of the felt speak downwards, into the table. */
+.seat[data-slot="2"] .seat-speech,
+.seat[data-slot="3"] .seat-speech,
+.seat[data-slot="4"] .seat-speech { bottom: auto; top: calc(100% + 10px); }
+.seat[data-slot="2"] .seat-speech::after,
+.seat[data-slot="3"] .seat-speech::after,
+.seat[data-slot="4"] .seat-speech::after { bottom: auto; top: -6px; transform: rotate(225deg); }
+@keyframes speech-in { from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.9); } to { opacity: 1; transform: translateX(-50%); } }
+
+@media (max-width: 700px) {
+  .seat-plate.has-face { padding-left: 24px; }
+  .seat-face { left: -10px; width: 30px; height: 30px; }
+  .seat-face .portrait { width: 30px; height: 30px; }
+  .seat-speech { max-width: 150px; font-size: var(--t-xs); padding: 5px 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seat-speech { animation: none; }
+}

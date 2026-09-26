@@ -88,7 +88,7 @@ export function renderLab(ctx) {
     );
     mount(footer,
       el('button.btn.primary', { onclick: () => go('lab') }, 'Another session'),
-      el('button.btn.ghost', { onclick: () => go('home') }, 'Back to dashboard'),
+      el('button.btn.ghost', { onclick: () => go('home') }, 'Back to the river'),
     );
     return null;
   }

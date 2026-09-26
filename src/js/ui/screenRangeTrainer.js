@@ -25,6 +25,7 @@ import { seatRing } from '../core/seatMap.js';
 import { cardRow } from './cardView.js';
 import { copyButton } from './copySpot.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
+import * as audio from '../audio/engine.js';
 
 // The exam mixes all three question kinds under one checkpoint key, so a
 // hand missed there has no single chart to practise it back against —
@@ -190,6 +191,7 @@ export function renderRangeRun(ctx) {
     if (state.answered) return;
     clearTimeout(state.timer);
     const correct = choice === state.question.answer;
+    audio.sfx(correct ? 'right' : 'wrong');
     // A peeked answer is not credited. Neither is one the clock took.
     state.answered = { choice, correct, credited: correct && !state.peeked };
     if (state.answered.credited) state.right++;
@@ -223,6 +225,7 @@ export function renderRangeRun(ctx) {
       covered: coverage.complete,
     });
     if (result.cleared) {
+      audio.sfx('fanfare');
       toast({ icon: 'check', title: t('{name} is in your head', { name: t(checkpoint.name) }),
         desc: t('No chart, on the clock, and you still knew it.'), duration: 7000 });
     }
@@ -416,6 +419,7 @@ export function renderRangeWeak(ctx) {
   function answer(choice) {
     if (state.answered) return;
     const correct = choice === state.question.answer;
+    audio.sfx(correct ? 'right' : 'wrong');
     state.answered = { choice, correct, credited: correct && !state.peeked };
     if (state.answered.credited) state.right++;
     // Feed the result straight back into the same tracker the ladder writes

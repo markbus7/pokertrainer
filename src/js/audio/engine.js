@@ -333,6 +333,33 @@ const RECIPES = {
   deal(out, t) {
     for (let i = 0; i < 4; i++) RECIPES.card(out, t + i * 0.09);
   },
+  right(out, t) {
+    // A right answer: two bright notes, up a third. Short, so a run of
+    // twelve does not become a tune.
+    tone(out, t, { f: NOTE.C6, peak: 0.1, attack: 0.004, decay: 0.16 });
+    tone(out, t + 0.07, { f: 1318.5, peak: 0.1, attack: 0.004, decay: 0.3 });
+    tone(out, t + 0.07, { f: 2637, peak: 0.02, attack: 0.004, decay: 0.12 });
+  },
+  wrong(out, t) {
+    // A wrong one: a soft, low knock and a note that sags. Information, not a
+    // buzzer — being told off by a game is how people stop studying.
+    knock(out, t, 0.14);
+    const o = ctx.createOscillator();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(220, t + 0.05);
+    o.frequency.exponentialRampToValueAtTime(165, t + 0.4);
+    o.connect(envGain(out, t + 0.05, 0.08, 0.02, 0.38));
+    o.start(t + 0.05);
+    o.stop(t + 0.5);
+  },
+  flop(out, t) {
+    for (let i = 0; i < 3; i++) RECIPES.card(out, t + i * 0.11);
+  },
+  nudge(out, t) {
+    // Your turn: two soft notes, a question rather than an alarm.
+    tone(out, t, { f: NOTE.E5, peak: 0.05, attack: 0.01, decay: 0.25 });
+    tone(out, t + 0.1, { f: NOTE.G5, peak: 0.045, attack: 0.01, decay: 0.3 });
+  },
   chip(out, t) { chip(out, t); },
   chips(out, t) {
     let at = t;

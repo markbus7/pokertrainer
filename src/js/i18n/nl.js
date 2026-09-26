@@ -1124,8 +1124,8 @@ export const NL = {
     'Het getal is geen bijgeloof — het komt rechtstreeks uit de variantie hierboven. Omdat normale downswings tot 20 buy-ins of meer oplopen, betekent een roll van 10 buy-ins dat een volstrekt gewone slechte reeks een eind maakt aan je poker.',
   'This is the trap that catches good players: **the edge is real, but it needs time to show up**, and going broke removes your access to that time.':
     'Dit is de val waar goede spelers in lopen: **het voordeel is echt, maar het heeft tijd nodig om zichtbaar te worden**, en failliet gaan neemt je toegang tot die tijd weg.',
-  'Move down when your roll drops below the threshold. It is not a demotion, it is what keeps you in the game — and Career, this trainer’s own stakes ladder, enforces exactly this.':
-    'Zak een niveau als je roll onder de drempel komt. Het is geen degradatie, het is wat je in het spel houdt — en Career, de eigen stakes-ladder van deze trainer, dwingt precies dit af.',
+  'Move down when your roll drops below the threshold. It is not a demotion, it is what keeps you in the game — and the river, this trainer’s own stakes ladder, enforces exactly this.':
+    'Zak een niveau als je roll onder de drempel komt. Het is geen degradatie, het is wat je in het spel houdt — en de rivier, de eigen stakes-ladder van deze trainer, dwingt precies dit af.',
   'You have $200 and want to play NL25 ($25 buy-ins). Should you?':
     'Je hebt $200 en wilt NL25 spelen (buy-ins van $25). Zou je dat doen?',
   'No — that is only 8 buy-ins, so a normal downswing busts you':
@@ -3109,7 +3109,7 @@ export const NL = {
   'Gone broke {n} times. The house has staked you {money} in total.':
     '{n} keer kapot gegaan. De zaak heeft je in totaal {money} voorgeschoten.',
   'Between sessions: {module}': 'Tussen sessies door: {module}',
-  'You took {room}': 'Je hebt {room} gepakt',
+  'You took {room}': 'Je hebt {room} veroverd',
   'Left with a buy-in of their money, {name} included.':
     'Weggelopen met een buy-in van hun geld, {name} incluis.',
   'Training': 'Training',
@@ -3702,8 +3702,8 @@ export const NL = {
   'No table for that': 'Daar is geen tafel voor',
   'ICM is a tournament idea and this is a cash table, so there is no honest way to play it here. The lesson and its drill still teach it.':
     'ICM hoort bij toernooien en dit is een cashtafel, dus er is geen eerlijke manier om het hier te spelen. De les en de drill leren het wel.',
-  'Which table to sit at is the whole subject, so Career is this lesson — climbing the stakes with a real roll is the exercise.':
-    'Aan welke tafel je gaat zitten is het hele onderwerp, dus Career ís deze les — met een echte roll de limieten opklimmen is de oefening.',
+  'Which table to sit at is the whole subject, so the river is this lesson — climbing the stakes with a real roll is the exercise.':
+    'Aan welke tafel je gaat zitten is het hele onderwerp, dus de rivier ís deze les — met een echte roll de limieten opklimmen is de oefening.',
   'That is not a lesson this game can deal.': 'Dat is geen les die dit spel kan delen.',
   'Back': 'Terug',
 
@@ -4045,4 +4045,71 @@ export const NL = {
   'A steam launch': 'Een stoomsloep',
   'A sternwheeler': 'Een hekwieler',
   'The Commodore\'s flagship': 'Het vlaggenschip van de Commodore',
+
+  // ---- the Long River: the frame around it ---------------------------------
+  'Poker Trainer': 'Poker Trainer',
+  'Ledger': 'Logboek',
+  'Settings': 'Instellingen',
+  'The river': 'De rivier',
+  'River': 'Rivier',
+  'Lessons': 'Lessen',
+  'Ranges': 'Ranges',
+  'Weak hands': 'Zwakke handen',
+  'Study': 'Studie',
+  'Records': 'Archief',
+  'Read it, then drill it': 'Eerst lezen, dan oefenen',
+  'Set up a spot and test your read': 'Zet een situatie neer en test je inschatting',
+  'Every module mixed, against the clock': 'Alle modules door elkaar, tegen de klok',
+  'Eight tables down to the delta': 'Acht tafels tot aan de delta',
+  'Free table': 'Vrije tafel',
+  'Six-handed, with no bankroll at stake': 'Met zes aan tafel, zonder dat je bankroll op het spel staat',
+  'Your bankroll. Every seat on the river is paid out of it.':
+    'Je bankroll. Elke stoel op de rivier wordt ermee betaald.',
+  'Back to the river': 'Terug naar de rivier',
+  'Everything else, and the settings': 'Al het andere, en de instellingen',
+  'Which build you are running — click for details and an update check':
+    'Welke versie je draait — klik voor details en een updatecontrole',
+  'Sync paused': 'Synchronisatie gepauzeerd',
+  'Synced from your other device': 'Bijgewerkt vanaf je andere apparaat',
+  'Sound effects': 'Geluidseffecten',
+  'Music': 'Muziek',
+
+  // ---- the Long River: the map ------------------------------------------
+  'The Long River': 'De Lange Rivier',
+  'Eight tables from Mud Landing to the delta': 'Acht tafels van Modderkade tot aan de delta',
+  'You are here': 'Je bent hier',
+  'Taken': 'Veroverd',
+  'Needs {money}': 'Vraagt {money}',
+  'You are moored at': 'Je ligt aangemeerd bij',
+  'Take a seat — {money}': 'Neem plaats — {money}',
+  'Go ashore': 'Ga aan wal',
+  'Your boat': 'Je boot',
+  '{n} of {total} keepsakes': '{n} van {total} aandenkens',
+  'Take {place} from {name}': 'Verover {place} op {name}',
+  'The Long River runs from Mud Landing down to the delta. At every stop there is a card table, and somebody who owns it. At the end sits the Commodore, who owns most of the rest.':
+    'De Lange Rivier loopt van Modderkade tot aan de delta. Bij elke halte staat een speeltafel, en iemand die er de baas is. Helemaal aan het eind zit de Commodore, die het meeste van de rest bezit.',
+  'You have {money} and a borrowed rowboat. Every seat is paid out of that purse, and a stop further down will only have you once the purse can stand its stakes.':
+    'Je hebt {money} en een geleende roeiboot. Elke stoel betaal je uit die beurs, en een halte verderop laat je pas toe als je beurs die inzetten kan dragen.',
+  'Beat the one who owns a table and they give you something to remember them by. Lose the purse and the house stakes you back in — and writes it down.':
+    'Versla wie de baas is aan een tafel en je krijgt iets om ze aan te herinneren. Raak je je beurs kwijt, dan zet de zaak je weer in het spel — en schrijft het op.',
+  'Cast off': 'Gooi los',
+
+  // ---- the Long River: a stop -------------------------------------------
+  'How {name} plays': 'Hoe {name} speelt',
+  'How to beat {name}': 'Hoe je {name} verslaat',
+  'Study first: {module}': 'Eerst studeren: {module}',
+  'Steam down to {place}': 'Stoom door naar {place}',
+  'Head back up to {place}': 'Vaar terug naar {place}',
+  'This stop takes a purse of {money}. You have {have}.':
+    'Deze halte vraagt een beurs van {money}. Jij hebt {have}.',
+  '{n} seats\' worth, because a bad night at a table should cost you a night, not the river.':
+    '{n} stoelen, omdat een slechte avond aan tafel je een avond hoort te kosten, niet de rivier.',
+  'The table': 'De tafel',
+  'Taken from {name}': 'Veroverd op {name}',
+  'You took the table at': 'Je veroverde de tafel bij',
+  'Hang it in the boat': 'Hang het in de boot',
+  'Upriver: {place}': 'Stroomopwaarts: {place}',
+  'Downriver: {place}': 'Stroomafwaarts: {place}',
+  'The map': 'De kaart',
+  '{name}\'s table': 'De tafel van {name}',
 };

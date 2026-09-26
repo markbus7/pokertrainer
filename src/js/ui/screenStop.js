@@ -87,12 +87,26 @@ function typed(text) {
   return node;
 }
 
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+
+/**
+ * What the boss says when you walk up: hello, or — coming back from their
+ * table — something about how it went. Up on the night, they are sore about
+ * it; down, they let you know.
+ */
+function lineFor(boss, taken, after) {
+  if (after === 'took') return boss.beaten;
+  if (after === 'up') return pick(boss.sore);
+  if (after === 'down') return pick(boss.brag);
+  return taken ? boss.beaten : boss.hello;
+}
+
 /** The boss, in their own words. */
-function bossBlock(venue, state) {
+function bossBlock(venue, state, after) {
   const boss = bossFor(venue.boss);
   const style = getProfile(boss.plays);
   const taken = state.beaten.has(venue.index);
-  const line = taken ? boss.beaten : boss.hello;
+  const line = lineFor(boss, taken, after);
   return el('div.boss',
     el('div.boss-figure',
       svgNode(portraitSvg(boss.key, { size: 132 }), 'boss-portrait'),
@@ -124,7 +138,6 @@ function tableBlock(venue, state, profile, go) {
   const canReach = state.bankroll >= venue.stake.minBankroll;
   const canSit = state.bankroll >= venue.entry;
   const lesson = moduleMeta(boss.lesson);
-  const bestIndex = venueFor(profile.career.best).index;
 
   const facts = el('div.here-facts',
     el('span.fact', el('span.k', t('Stakes')), el('span.v', venue.label)),
@@ -173,7 +186,7 @@ function tableBlock(venue, state, profile, go) {
       el('button.btn.primary.plank.lg', {
         onclick: () => {
           audio.sfx('whistle');
-          profile.enterVenue(venue.key, venue.index, bestIndex);
+          profile.enterVenue(venue.key);
           go('stop', { at: venue.key, arrived: 1 });
         },
       }, down ? t('Steam down to {place}', { place: t(venue.name) }) : t('Head back up to {place}', { place: t(venue.name) })),
@@ -213,6 +226,32 @@ function keepsakeBlock(venue, state) {
   );
 }
 
+/**
+ * The moment a table is taken: the boss's last word, and what they hand
+ * over. Shown once, on the way back from the table, with the brass.
+ */
+function tookIt(venue, close) {
+  const boss = bossFor(venue.boss);
+  return el('div.took-scrim', { onclick: close },
+    el('div.took.paper', {
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-label': t('You took {room}', { room: t(venue.name) }),
+      onclick: (e) => e.stopPropagation(),
+    },
+      el('div.took-kicker', t('You took the table at')),
+      el('h2.sign', t(venue.name)),
+      svgNode(portraitSvg(boss.key, { size: 112 }), 'took-portrait'),
+      el('p.said', `“${t(boss.beaten)}”`),
+      el('div.took-keepsake',
+        el('span.keepsake.have.big', icon(`k-${boss.keepsake.key}`, { size: 34 })),
+        el('div.boat-name', t(boss.keepsake.name)),
+      ),
+      el('button.btn.primary.plank', { onclick: close }, t('Hang it in the boat')),
+    ),
+  );
+}
+
 /** The next stops up and down the river. */
 function neighbours(venue, go) {
   const up = VENUES[venue.index - 1];
@@ -231,19 +270,36 @@ export function renderStop(ctx, params = {}) {
   const venue = venueFor(params.at || profile.career.venue);
   const state = riverState(profile);
   const arrived = params.arrived === '1' && venue.index === state.here.index;
+  const after = ['took', 'up', 'down', 'even'].includes(params.after) ? params.after : null;
 
   if (arrived) {
     // The whistle blew as you cast off; the bell is you tying up.
     setTimeout(() => audio.sfx('bell'), 1400);
   }
 
-  return el('div.screen.stop-screen',
+  const screen = el('div.screen.stop-screen',
     scene(venue, state, arrived),
-    bossBlock(venue, state),
+    bossBlock(venue, state, after),
     el('div.stop-grid',
       tableBlock(venue, state, profile, go),
       keepsakeBlock(venue, state),
     ),
     neighbours(venue, go),
   );
+
+  if (after === 'took') {
+    // Hung off the page rather than the screen, so nothing the screen is
+    // doing (its entrance animation makes a stacking context) can put the
+    // dock or the rail above it.
+    const close = () => {
+      overlay.remove();
+      // Once is the celebration; a reload should not throw it again.
+      history.replaceState(null, '', `#stop?at=${venue.key}`);
+    };
+    const overlay = tookIt(venue, close);
+    document.body.appendChild(overlay);
+    ctx.onLeave = () => overlay.remove();
+    setTimeout(() => audio.sfx('fanfare'), 300);
+  }
+  return screen;
 }

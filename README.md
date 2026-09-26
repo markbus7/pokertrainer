@@ -84,13 +84,25 @@ Six profiles, each statistically distinct and each beatable a different way:
 Learning to *name* the player type in front of you is most of what separates a
 winning player from a losing one, so the trainer makes that explicit.
 
-### 💰 Career
+### 🛶 The Long River
 
-Climb the online stakes ladder from NL2 to NL500 on a simulated bankroll. Each
-stake is a room with a regular who sits there every night. Buy in, play, cash
-out. Bust and you move down. Bankroll rules are enforced the way a serious
-player enforces them — 30 to 50 buy-ins per stake — and the game will tell you
-when you are taking a shot you cannot afford.
+The stakes ladder is a river, around 1890. Eight stops run from Mud Landing
+(NL2) down to the Commodore's flagship at the delta (NL500), and every stop is
+a real stake with somebody who owns its table — a dockhand who never folds, a
+ferryman who only plays aces, a steamboat captain who raises everything. Each
+of them plays one of the six styles above, tells you how they play and how to
+beat them before you sit down, and points you at the lesson that teaches it.
+
+Seats are paid out of a simulated bankroll, and a stop further down only lets
+you in once your purse can stand its stakes — 30 buy-ins, the way a serious
+player manages a roll. Leave a table with a buy-in of its money and its owner
+hands over a keepsake; your boat grows as you get further down the river. Bust
+and the house stakes you back in, and writes it down.
+
+The river is drawn in the hour of the day you pick (night, bayou, dusk or
+daylight), the people have faces, and everything you hear — chips, cards, the
+ship's bell, a steam whistle and a ragtime piano — is synthesised in the
+browser, with separate switches for effects and music in the ledger.
 
 ### 📋 Interactive range charts
 
@@ -134,14 +146,16 @@ The app says so where it matters rather than overclaiming.
 
 ```
 index.html              app shell
-src/css/                design system, table styling
+src/css/                design system, table styling, the river's look
+src/fonts/              Rye, Old Standard TT, IBM Plex (SIL OFL, licences inside)
 src/js/
   core/                 cards, evaluator, equity, odds, seedable RNG
   engine/               table state machine, variants, AI opponents
   data/                 preflop charts, generated hand strengths, curriculum
   state/                progression, session stats, achievements
   trainers/             drill generators, one file per theme
-  ui/                   screens and DOM helpers
+  ui/                   screens and DOM helpers, the map and portraits
+  audio/                synthesised sound effects and the piano's tunes
 tests/                  unit tests + browser end-to-end test
 tools/                  dev server, hand-strength generator
 ```
@@ -158,7 +172,7 @@ node tools/generate-strength.js 60000
 
 ## A note on playing for real money
 
-This trainer teaches the game with simulated money, and Career models the
+This trainer teaches the game with simulated money, and the river models the
 economics honestly — including the parts that are not encouraging:
 
 - A realistic small-stakes win rate is **3–8bb/100**. At NL10 that is a few

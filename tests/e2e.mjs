@@ -794,6 +794,11 @@ await step('a preflop drill has somewhere to look, and a looked-up answer is not
     raw.handsPlayed = 60;
     localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
   });
+  // Reload before the hash change: a hash-only navigation keeps the app's
+  // in-memory profile, which still holds whatever earlier steps recorded
+  // (a table hand graded as a position decision, say) and writes it back
+  // over this fixture on the next save — which read as two attempts for one.
+  await page.reload({ waitUntil: 'domcontentloaded' });
   await page.goto(`${BASE}/#drill?module=position`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(700);
 
@@ -1482,6 +1487,9 @@ await step('the room you play in is a choice, and it survives a reload', async (
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
 
+  // The picker lives in the ledger now, with the other switches.
+  await page.click('.ledger-button');
+  await page.waitForSelector('.ledger .theme-panel', { state: 'attached', timeout: 3000 });
   const closed = await page.evaluate(() => document.querySelector('.theme-panel').hidden);
   if (!closed) throw new Error('the picker starts open');
 
@@ -1523,16 +1531,36 @@ await step('the room you play in is a choice, and it survives a reload', async (
   console.log(`      four rooms offered, daylight repainted ${before} → ${after.bg}, kept across a reload`);
 });
 
-await step('the front door is a room you are standing in', async () => {
+await step('the first visit says where you are and what the game is', async () => {
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
+    delete raw.seenPrologue;
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+  const text = await page.textContent('.prologue').catch(() => '');
+  if (!/1890/.test(text) || !/Commodore/.test(text)) throw new Error(`no prologue on a first visit: ${text.slice(0, 80)}`);
+  await page.click('.prologue .btn.primary');
+  await page.waitForTimeout(400);
+  if (await page.$('.prologue')) throw new Error('casting off did not put the prologue away');
+  const seen = await page.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).seenPrologue);
+  if (!seen) throw new Error('the prologue will come back on every visit');
+});
+
+await step('the front door is the river, with you on it', async () => {
   // The reader's verdict on the whole app: "it is still the same game." It
   // was not a game — a grid of modules with a progress bar has nowhere to be
-  // and nobody to beat. The front door is the building now, and the climb is
-  // money, which is the one poker actually makes you make.
+  // and nobody to beat. The front door is a river of stops now, each a real
+  // stake with somebody who owns it, and the climb is money.
   await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1') || '{}');
     raw.bankroll = 412;
     raw.stakeKey = 'nl10';
+    raw.seenPrologue = true;
     raw.career = { venue: 'nl10', best: 'nl10', busted: 1, staked: 20, beaten: ['nl2'] };
     localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
   });
@@ -1540,36 +1568,86 @@ await step('the front door is a room you are standing in', async () => {
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(600);
 
-  const room = await page.evaluate(() => {
-    const panel = document.querySelector('.room');
-    if (!panel) return null;
-    return {
-      text: panel.textContent.replace(/\s+/g, ' '),
-      rooms: document.querySelectorAll('.room-row').length,
-      shut: document.querySelectorAll('.room-row.shut').length,
-      here: document.querySelectorAll('.room-row.here').length,
-      taken: document.querySelectorAll('.room-beaten').length,
-    };
-  });
-  if (!room) throw new Error('the front door is not a room');
-  if (!/Boat Club/.test(room.text)) throw new Error(`not standing anywhere: ${room.text.slice(0, 110)}`);
-  if (!/NL10/.test(room.text)) throw new Error('the room does not say what stake it really is');
-  if (!/Rocky/.test(room.text)) throw new Error('nobody is sitting in it');
-  if (!/\$412/.test(room.text)) throw new Error('the money is not on screen');
-
-  if (room.rooms !== 8) throw new Error(`${room.rooms} rooms in the building, expected 8`);
-  if (room.here !== 1) throw new Error(`${room.here} rooms marked as where you are`);
-  if (room.shut < 1) throw new Error('every door is open, so the climb costs nothing');
-  if (room.taken !== 1) throw new Error(`${room.taken} rooms marked as taken, expected 1`);
-
-  // The door ahead names its price rather than merely being locked.
-  const door = await page.textContent('.door-panel').catch(() => '');
-  if (!/Card Room/.test(door) || !/338/.test(door)) {
-    throw new Error(`the next door does not say what it costs: ${door.replace(/\s+/g, ' ')}`);
+  const river = await page.evaluate(() => ({
+    stops: document.querySelectorAll('.river-map .map-stop').length,
+    landmarks: document.querySelectorAll('.river-map .landmark').length,
+    here: [...document.querySelectorAll('.map-stop.is-here')].map((n) => n.textContent),
+    shut: document.querySelectorAll('.map-stop.is-shut').length,
+    taken: document.querySelectorAll('.map-stop.taken').length,
+    cotton: document.querySelector('.map-stop[data-key="nl25"]')?.textContent || '',
+    card: document.querySelector('.here-card')?.textContent.replace(/\s+/g, ' ') || '',
+    purse: document.querySelector('.purse')?.textContent || '',
+    boat: !!document.querySelector('.your-boat'),
+  }));
+  if (river.stops !== 8 || river.landmarks !== 8) throw new Error(`${river.stops} stops and ${river.landmarks} landmarks on the river, expected 8`);
+  if (river.here.length !== 1 || !/The Ferry/.test(river.here[0])) throw new Error(`you are at: ${river.here.join(', ') || 'nowhere'}`);
+  if (river.shut < 1) throw new Error('every stop is open, so the climb costs nothing');
+  if (river.taken !== 1) throw new Error(`${river.taken} stops marked as taken, expected 1`);
+  if (!/NL25/.test(river.cotton) || !/\$750/.test(river.cotton)) throw new Error(`the next stops do not say what they take: ${river.cotton}`);
+  if (!/The Ferry/.test(river.card) || !/NL10/.test(river.card) || !/Hollis/.test(river.card)) {
+    throw new Error(`the stop you are at is not described: ${river.card.slice(0, 120)}`);
   }
-
+  if (!/\$412/.test(river.purse)) throw new Error(`the purse is not on the rail: ${river.purse}`);
+  if (!river.boat) throw new Error('your boat is not on the water');
   // And the training did not disappear; it stopped being the front door.
   if (!await page.$('.study-line')) throw new Error('there is no way back to the lessons');
+
+  // A stop you cannot afford yet still tells you who is there and what it takes.
+  await page.click('.map-stop[data-key="nl25"]');
+  await page.waitForTimeout(500);
+  if (!/stop\?at=nl25/.test(page.url())) throw new Error(`tapping Cotton Row went to ${page.url()}`);
+  const shut = (await page.textContent('#screen')).replace(/\s+/g, ' ');
+  if (!/Evangeline/.test(shut)) throw new Error('nobody owns the table at Cotton Row');
+  if (!/\$750/.test(shut) || !await page.$('.stop-actions.shut')) throw new Error('a shut stop does not say what it takes');
+  if (!/Study first/.test(shut)) throw new Error('the stop does not point at the lesson that beats its boss');
+});
+
+await step('a stop seats you across from the one who owns it, and takes the seat out of the purse', async () => {
+  await page.goto(`${BASE}/#stop?at=nl10`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+  const bubble = await page.textContent('.bubble');
+  if (!/crossings/.test(bubble)) throw new Error(`Hollis does not say hello: ${bubble}`);
+  await page.click('.stop-actions .btn.primary');
+  await page.waitForTimeout(800);
+  if (!/play\?mode=grind/.test(page.url())) throw new Error(`taking a seat went to ${page.url()}`);
+  const table = await page.evaluate(() => ({
+    place: document.querySelector('.table-place')?.textContent,
+    boss: document.querySelector('.seat.boss .seat-name')?.textContent || '',
+    faces: document.querySelectorAll('.seat-face').length,
+    speech: document.querySelector('.seat-speech')?.textContent || '',
+    purse: document.querySelector('.purse')?.textContent || '',
+    dock: getComputedStyle(document.querySelector('.dock')).display,
+  }));
+  if (table.place !== 'The Ferry') throw new Error(`the table is at ${table.place}`);
+  if (!/Hollis/.test(table.boss)) throw new Error(`the owner is not at the table: ${table.boss}`);
+  if (table.faces !== 5) throw new Error(`${table.faces} faces at a six-handed table`);
+  if (!/crossings/.test(table.speech)) throw new Error('the owner sat there without a word');
+  if (table.dock !== 'none') throw new Error('the dock is still up in the middle of a hand');
+  await page.waitForTimeout(1500);
+  const purse = await page.textContent('.purse');
+  if (!/\$402/.test(purse)) throw new Error(`the seat was not paid for: ${purse}`);
+
+  await page.click('button:has-text("Cash out")');
+  await page.waitForTimeout(600);
+  if (!/stop\?at=nl10&after=/.test(page.url())) throw new Error(`cashing out went to ${page.url()}`);
+});
+
+await step('the boat goes back upriver without losing how far it got', async () => {
+  await page.goto(`${BASE}/#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  await page.click('.stop-actions .btn.primary');
+  await page.waitForTimeout(600);
+  const career = await page.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).career);
+  if (career.venue !== 'nl5') throw new Error(`travelled to ${career.venue}`);
+  if (career.best !== 'nl10') throw new Error(`the furthest stop dropped to ${career.best}`);
+  if (!await page.$('.scene-boat.arriving')) throw new Error('the boat did not arrive');
+  // Put it back for the steps that follow.
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1'));
+    raw.career.venue = 'nl10';
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
 });
 
 await step('a graded question can be copied out as text', async () => {
@@ -1617,6 +1695,8 @@ await step('jargon explains itself wherever it appears, in both languages', asyn
       // The language lives in the profile settings, so it is switched the way a
       // reader switches it — through the chip in the header.
       const wanted = lang.toUpperCase();
+      await page.click('.ledger-button');
+      await page.waitForTimeout(250);
       const chip = await page.$(`.lang-chip:not(.active):has-text("${wanted}")`);
       if (chip) { await chip.click(); await page.waitForTimeout(400); }
 
@@ -1656,8 +1736,11 @@ await step('jargon explains itself wherever it appears, in both languages', asyn
   } finally {
     await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(300);
+    await page.click('.ledger-button');
+    await page.waitForTimeout(250);
     const back = await page.$('.lang-chip:not(.active):has-text("EN")');
     if (back) { await back.click(); await page.waitForTimeout(300); }
+    await page.keyboard.press('Escape');
   }
 });
 
@@ -1982,14 +2065,19 @@ await step('the language switch turns the whole app Dutch and persists', async (
   await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
 
-  const englishNav = await page.$$eval('.tab', (n) => n.map((x) => x.textContent.trim()));
-  if (!englishNav.includes('Train')) throw new Error(`expected English nav, got ${englishNav}`);
+  const englishNav = await page.$$eval('.dock-item', (n) => n.map((x) => x.textContent.trim()));
+  if (!englishNav.includes('Lessons')) throw new Error(`expected English nav, got ${englishNav}`);
 
+  await page.click('.ledger-button');
+  await page.waitForTimeout(250);
   await page.click('.lang-chip:not(.active)');
   await page.waitForTimeout(400);
 
-  const dutchNav = await page.$$eval('.tab', (n) => n.map((x) => x.textContent.trim()));
-  if (!dutchNav.includes('Leren')) throw new Error(`nav did not switch: ${dutchNav}`);
+  const dutchNav = await page.$$eval('.dock-item', (n) => n.map((x) => x.textContent.trim()));
+  if (!dutchNav.includes('Lessen')) throw new Error(`nav did not switch: ${dutchNav}`);
+  const ledger = await page.textContent('.ledger');
+  if (!/Instellingen/.test(ledger) || !/Muziek/.test(ledger)) throw new Error('the ledger is still English');
+  await page.keyboard.press('Escape');
 
   // A lesson is the real test: it is the largest body of text in the app.
   await page.goto(`${BASE}/#walkthrough?module=pot-odds`, { waitUntil: 'domcontentloaded' });
@@ -2015,12 +2103,15 @@ await step('the language switch turns the whole app Dutch and persists', async (
   // And it survives a reload, because it lives in the profile.
   await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
+  await page.click('.ledger-button');
+  await page.waitForTimeout(250);
   const stillDutch = await page.$eval('.lang-chip.active', (n) => n.textContent);
   if (!/NL/.test(stillDutch)) throw new Error(`language did not persist: ${stillDutch}`);
 
   // Put it back so later steps see the app they expect.
   await page.click('.lang-chip:not(.active)');
   await page.waitForTimeout(300);
+  await page.keyboard.press('Escape');
 });
 
 await step('no screen is half in English when the app is in Dutch', async () => {
@@ -2031,7 +2122,7 @@ await step('no screen is half in English when the app is in Dutch', async () => 
   // reached t(). Randomly dealt content differs between renders anyway, so
   // what this actually measures is the fixed chrome of every screen.
   const routes = [
-    '#home', '#lab-run', '#review', '#charts?chart=BTN', '#glossary', '#stats',
+    '#home', '#stop?at=nl10', '#stop?at=nl50', '#lab-run', '#review', '#charts?chart=BTN', '#glossary', '#stats',
     '#levels', '#gauntlet', '#drill?module=outs', '#walkthrough?module=pot-odds',
     '#ranges', '#ranges-run', '#ranges-weak',
   ];
@@ -2133,7 +2224,7 @@ await step('layout holds up on phone and tablet viewports', async () => {
     ['iPad portrait', 820, 1180],
     ['iPad landscape', 1180, 820],
   ];
-  const routes = ['#home', '#play', '#lab-run', '#review', '#walkthrough?module=pot-odds',
+  const routes = ['#home', '#stop?at=nl10', '#play', '#lab-run', '#review', '#walkthrough?module=pot-odds',
     '#charts?chart=BTN', '#stats',
     // The lesson table adds two panels above the felt and a report below it,
     // and it is the screen this app is now mostly used on.

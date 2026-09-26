@@ -541,16 +541,8 @@ profile.onChange(() => {
 
 render();
 
-if (!profile.data.seenWelcome) {
-  profile.data.seenWelcome = true;
-  profile.save();
-  setTimeout(() => toast({
-    icon: '♠',
-    title: 'Welcome to the table',
-    desc: 'Start with Hand Rankings, then play a few hands. The coach explains every decision.',
-    duration: 7000,
-  }), 500);
-}
+// The first visit is welcomed by the river's prologue on the map, which
+// says where you are and what the game is; the old corner toast said less.
 
 /**
  * Reconcile with the cloud: render local state immediately (fast, works

@@ -18,6 +18,7 @@ import { t } from '../i18n/index.js';
 import { renderVisual } from './visuals.js';
 import { moduleMeta, WALKTHROUGHS } from '../data/curriculum.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
+import * as audio from '../audio/engine.js';
 
 /**
  * Builds one hands-on exercise. A generator can decline a deal, so this
@@ -78,6 +79,7 @@ export function renderWalkthrough(ctx, params) {
     const step = walkthrough.steps[state.index];
     state.chosen = optionKey;
     const isCorrect = optionKey === step.check.answer;
+    audio.sfx(isCorrect ? 'right' : 'wrong');
     // Checks were counted for the end-of-lesson summary and then thrown
     // away. They are cheap evidence of whether the step landed.
     profile.recordPractice(meta.id, 'check', isCorrect);
@@ -88,6 +90,7 @@ export function renderWalkthrough(ctx, params) {
       const before = profile.level;
       profile.addXp(10);
       if (profile.level > before) {
+        audio.sfx('fanfare');
         toast({
           icon: profile.rank.emoji,
           title: t('Level {n} — {rank}', { n: profile.level, rank: t(profile.rank.name) }),
@@ -143,7 +146,7 @@ export function renderWalkthrough(ctx, params) {
     mount(footer,
       el('button.btn.primary.lg', { onclick: () => go('drill', { module: meta.id }) }, `Drill ${meta.name}`),
       el('button.btn.ghost', { onclick: () => { state.index = 0; state.chosen = null; state.practice = null; draw(); } }, 'Read it again'),
-      el('button.btn.ghost', { onclick: () => go('home') }, 'Back to dashboard'),
+      el('button.btn.ghost', { onclick: () => go('home') }, 'Back to the river'),
     );
     return null;
   }

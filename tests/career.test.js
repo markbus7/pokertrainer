@@ -76,16 +76,20 @@ describe('the career: a building, not a grid', () => {
     assert(p.career.beaten.includes('nl5'));
   });
 
-  it('records the furthest door that has opened, and does not lose it', () => {
+  it('records the furthest stop reached, and does not lose it', () => {
     const p = fresh();
-    const boat = venueFor('nl10');
-    p.enterVenue(boat.key, boat.index, 0);
+    p.enterVenue('nl10');
     equal(p.career.best, 'nl10');
-    // Walking back downstairs to a softer game does not undo the climb.
-    const kitchen = venueFor('nl2');
-    p.enterVenue(kitchen.key, kitchen.index, boat.index);
+    // Heading back upriver to a softer game does not undo the climb.
+    p.enterVenue('nl2');
     equal(p.career.venue, 'nl2');
-    equal(p.career.best, 'nl10', 'the best room reached is a high-water mark');
+    equal(p.career.best, 'nl10', 'the furthest stop reached is a high-water mark');
+    // Nor does stepping one stop down from there: the old screen passed the
+    // stop you were leaving as the mark, so nl2 -> nl5 wrote nl5 over nl10.
+    p.enterVenue('nl5');
+    equal(p.career.best, 'nl10', 'a short trip down from upriver lowered the mark');
+    p.enterVenue('nl25');
+    equal(p.career.best, 'nl25');
   });
 
   it('starts you somewhere you can actually afford to sit', () => {

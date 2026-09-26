@@ -1,5 +1,6 @@
 import { describe, it, assert, equal } from './harness.js';
 import { midi, renderTune, TUNES, RIVER_RAG, PARLOUR_VAMP } from '../src/js/audio/tunes.js';
+import { EFFECTS, sfx, unlock, audioState, setMusic, configure } from '../src/js/audio/engine.js';
 
 describe('music: the notes are written down right', () => {
   it('reads note names the way a piano is numbered', () => {
@@ -56,5 +57,33 @@ describe('music: the notes are written down right', () => {
     const { events } = renderTune(PARLOUR_VAMP);
     equal(events.filter((e) => e.part === 'melody').length, 0, 'the table music carries a tune');
     assert(PARLOUR_VAMP.bpm < RIVER_RAG.bpm, 'the table music is not calmer than the river');
+  });
+});
+
+describe('sound: the engine stays quiet until it is allowed to play', () => {
+  it('has every effect the game asks for', () => {
+    // Each of these is played by name from a screen; a typo there is silent,
+    // so the list is pinned here instead.
+    for (const name of ['card', 'shuffle', 'deal', 'flop', 'chip', 'chips', 'allin', 'check', 'fold',
+      'win', 'lose', 'click', 'page', 'nudge', 'right', 'wrong', 'bell', 'whistle', 'fanfare']) {
+      assert(EFFECTS.includes(name), `no effect called ${name}`);
+    }
+  });
+
+  it('does nothing, and says so, where there is no audio at all', () => {
+    // Node has no AudioContext, which is the same situation as a browser
+    // before the first tap: nothing may be created and nothing may throw.
+    equal(unlock(), false);
+    equal(sfx('chips'), false);
+    setMusic('river');
+    configure({ sfx: false, music: true });
+    const st = audioState();
+    equal(st.supported, false);
+    equal(st.unlocked, false);
+    equal(st.context, 'none', 'an AudioContext was made without a gesture');
+    equal(st.wanted, 'river', 'the screen\'s wish for music is remembered for when it can play');
+    equal(st.playing, null);
+    configure({ sfx: true });
+    setMusic(null);
   });
 });

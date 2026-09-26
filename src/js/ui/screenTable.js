@@ -41,6 +41,8 @@ import { SessionStats, leakReport, stakeFor, bankrollAdvice, SAMPLE } from '../s
 import { HandRecorder, keepHand } from '../state/handHistory.js';
 import { checkAchievements } from '../state/achievements.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
+import { bossFor } from '../data/characters.js';
+import * as audio from '../audio/engine.js';
 
 const BOT_DELAY = 620;
 /**
@@ -139,7 +141,7 @@ export function renderTable(ctx, params = {}) {
         ? t('ICM is a tournament idea and this is a cash table, so there is no honest way to '
           + 'play it here. The lesson and its drill still teach it.')
         : meta && params.lesson === 'bankroll'
-          ? t('Which table to sit at is the whole subject, so Career is this '
+          ? t('Which table to sit at is the whole subject, so the river is this '
             + 'lesson — climbing the stakes with a real roll is the exercise.')
           : t('That is not a lesson this game can deal.')),
       el('div.row',
@@ -154,13 +156,17 @@ export function renderTable(ctx, params = {}) {
   const seats = lesson ? lesson.seats : 6;
 
   const opponents = pickOpponents(seats - 1, rng);
-  // In a room, the regular is at the table. A venue whose resident never
-  // turns up is a stake with a story attached, which is what this is meant
-  // to stop being.
-  if (grind) {
-    const room = venueFor(profile.career.venue);
-    if (!opponents.includes(room.resident)) opponents[0] = room.resident;
-  }
+  // At a stop, the person who owns its table is sitting at it. They play the
+  // style the stop was built around — the boss is a face and a voice on one
+  // of the engine's six players, not a seventh — so their seat takes that
+  // style's place and their name.
+  const room = grind ? venueFor(profile.career.venue) : null;
+  const boss = room ? bossFor(room.boss) : null;
+  if (grind && !opponents.includes(room.resident)) opponents[0] = room.resident;
+  const bossIndex = boss ? opponents.indexOf(room.resident) : -1;
+  const bossId = bossIndex >= 0 ? `bot${bossIndex}` : null;
+  // Whose face each seat wears: the boss's own, or the style's regular.
+  const faces = Object.fromEntries(opponents.map((key, i) => [`bot${i}`, i === bossIndex ? boss.key : key]));
   const table = createTable({
     variant: variantKey,
     smallBlind: bigBlind / 2,
@@ -171,7 +177,7 @@ export function renderTable(ctx, params = {}) {
       { id: HERO_ID, name: 'You', stack: startingStack, isHero: true },
       ...opponents.map((key, i) => {
         const p = getProfile(key);
-        return { id: `bot${i}`, name: p.name, stack: startingStack, profile: key };
+        return { id: `bot${i}`, name: i === bossIndex ? boss.short : p.name, stack: startingStack, profile: key };
       }),
     ],
   });
@@ -231,6 +237,13 @@ export function renderTable(ctx, params = {}) {
     // endless table: without a last hand there is no moment where anyone
     // says how it went.
     run: lesson ? startRun(params.lesson) : null,
+    // What somebody at the table is saying, and for how long.
+    speech: null,
+    speechTimer: null,
+    // Cards on the board already announced with a sound.
+    boardHeard: 0,
+    // Hands dealt silently while a lesson looks for its spot make no noise.
+    quiet: false,
   };
   // The same object, not a copy: the opponents read what the reader does.
   table.readerMemory = session.readerMemory;
@@ -242,13 +255,17 @@ export function renderTable(ctx, params = {}) {
   const coachHost = el('div.coach');
   const lessonNoteHost = el('div');
   const root = el('div.screen',
-    el('div.spread', { style: { marginBottom: '14px' } },
-      el('div.row',
-        el('h1', { style: { margin: 0 } }, lessonMeta
-          ? t(lessonMeta.name)
-          : grind ? `${stake.name} — Bankroll Challenge` : VARIANTS[variantKey].name),
-        el('span.badge.gold', lesson ? t('Lesson table') : VARIANTS[variantKey].short),
-      ),
+    el('div.spread.table-head', { style: { marginBottom: '14px' } },
+      grind
+        ? el('div.row',
+          el('h1.sign.table-place', { style: { margin: 0 } }, t(room.name)),
+          el('span.scene-stake', room.label),
+          el('span.table-owner', t('{name}\'s table', { name: boss.short })),
+        )
+        : el('div.row',
+          el('h1', { style: { margin: 0 } }, lessonMeta ? t(lessonMeta.name) : VARIANTS[variantKey].name),
+          el('span.badge.gold', lesson ? t('Lesson table') : VARIANTS[variantKey].short),
+        ),
       el('div.row',
         !grind && !lesson ? variantSwitcher(variantKey, go) : null,
         lesson
@@ -265,7 +282,45 @@ export function renderTable(ctx, params = {}) {
     el('div.table-wrap.with-coach', el('div', feltHost, actionHost), coachHost),
   );
 
-  ctx.onLeave = () => { session.cancelled = true; clearTimeout(session.timer); };
+  ctx.onLeave = () => {
+    session.cancelled = true;
+    clearTimeout(session.timer);
+    clearTimeout(session.speechTimer);
+  };
+
+  /* ---------------- sound and voices ---------------- */
+
+  const sound = (name) => { if (!session.quiet) audio.sfx(name); };
+
+  /** The sound of an action landing: cards thrown away, a knock, chips. */
+  function actionSound(action, player) {
+    if (player && player.allIn && action.type !== 'fold' && action.type !== 'check') return sound('allin');
+    sound({ fold: 'fold', check: 'check', call: 'chip', bet: 'chips', raise: 'chips' }[action.type]);
+  }
+
+  /** New cards on the board get dealt out loud: three at once, or one. */
+  function boardSound() {
+    const n = table.board.length;
+    if (n <= session.boardHeard) return;
+    const fresh = n - session.boardHeard;
+    session.boardHeard = n;
+    sound(fresh >= 3 ? 'flop' : 'card');
+  }
+
+  /** Somebody says something, by their seat, for a few seconds. */
+  function say(id, text, ms = 3800) {
+    if (!id || !text || session.quiet) return;
+    const line = { id, text };
+    session.speech = line;
+    clearTimeout(session.speechTimer);
+    session.speechTimer = setTimeout(() => {
+      if (session.speech !== line) return;
+      session.speech = null;
+      if (!session.cancelled) drawFelt();
+    }, ms);
+  }
+
+  const pick = (list) => list[Math.floor(Math.random() * list.length)];
 
   /* ---------------- flow ---------------- */
 
@@ -301,6 +356,9 @@ export function renderTable(ctx, params = {}) {
     session.namedThisHand = false;
     session.playedByReader = false;
     log(t('— Hand #{n} —', { n: table.handNumber }), true);
+    session.boardHeard = 0;
+    sound('shuffle');
+    setTimeout(() => { if (!session.cancelled) sound('deal'); }, 380);
     draw();
     if (lesson && (lesson.concept || lesson.ask)) return searchForMySpot();
     step();
@@ -349,6 +407,16 @@ export function renderTable(ctx, params = {}) {
   }
 
   function searchForMySpot() {
+    session.quiet = true;
+    try {
+      return searchQuietly();
+    } finally {
+      session.quiet = false;
+      session.boardHeard = table.board.length;
+    }
+  }
+
+  function searchQuietly() {
     for (let dealt = 0; dealt < MAX_SEARCH; dealt++) {
       const { found, snapshot } = playUntilMySpot(table, {
         lesson,
@@ -421,7 +489,10 @@ export function renderTable(ctx, params = {}) {
       if (session.cancelled || table.handOver) return;
       const actor = table.actor;
       if (!actor || !actor.isHero) return;
-      applyHeroAuto(autopilotAction(table, actor, lesson, rng));
+      const auto = autopilotAction(table, actor, lesson, rng);
+      applyHeroAuto(auto);
+      actionSound(auto, actor);
+      boardSound();
       draw();
       step();
     }, Math.round(BOT_DELAY / 2));
@@ -450,6 +521,7 @@ export function renderTable(ctx, params = {}) {
 
       // A new decision is a new chance to work it out yourself.
       session.peeked = false;
+      sound('nudge');
       draw();
       return null;
     }
@@ -467,6 +539,8 @@ export function renderTable(ctx, params = {}) {
       }
       session.recorder.act(table, action);
       log(label);
+      actionSound(action, actor);
+      boardSound();
       draw();
       step();
     }, BOT_DELAY);
@@ -578,6 +652,8 @@ export function renderTable(ctx, params = {}) {
     const label = describeAction(action, table, hero, null);
     session.recorder.act(table, action, snap);
     log(label);
+    actionSound(action, hero);
+    boardSound();
     draw();
     step();
   }
@@ -625,6 +701,20 @@ export function renderTable(ctx, params = {}) {
       profile.save();
     }
 
+    // The river runs out loud if everybody was all in before it was dealt.
+    boardSound();
+    const heroInShowdown = showdown && result.showdown.some((s) => s.id === HERO_ID);
+    if (won) sound('win');
+    else if (heroInShowdown) sound('lose');
+
+    // The owner of the table has something to say about big pots.
+    if (bossId) {
+      const bossWon = (result.payouts[bossId] || 0) > 0;
+      const bossShowed = showdown && result.showdown.some((s) => s.id === bossId);
+      if (bossWon && (bossShowed || potTotal >= bigBlind * 20)) say(bossId, t(pick(boss.brag)));
+      else if (bossShowed && won) say(bossId, t(pick(boss.sore)));
+    }
+
     const heroShow = result.showdown.find((s) => s.id === HERO_ID);
     const events = {
       type: 'hand',
@@ -659,19 +749,14 @@ export function renderTable(ctx, params = {}) {
         desc: `${stats.hands} hands, ${fmt.bb(stats.profitBb)}. ${advice.message}`,
       });
 
-      // You take a room by leaving it with a buy-in of their money. A stake
-      // you merely sat at is a number; a room you beat is somewhere you have
-      // been.
-      const room = venueFor(profile.career.venue);
-      if (cashOut - stake.buyIn >= stake.buyIn && profile.noteResidentBeaten(room.key)) {
-        const regular = getProfile(room.resident);
-        toast({
-          icon: 'check',
-          title: t('You took {room}', { room: t(room.name) }),
-          desc: t('Left with a buy-in of their money, {name} included.', { name: regular.name }),
-          duration: 7000,
-        });
-      }
+      // You take a table by leaving it with a buy-in of its money. A stake
+      // you merely sat at is a number; a table you took is somewhere you
+      // have been, and its owner gives you something to remember it by.
+      const spent = session.buyInsUsed * stake.buyIn;
+      const took = cashOut - stake.buyIn >= stake.buyIn && profile.noteResidentBeaten(room.key);
+      const after = took ? 'took' : cashOut > spent ? 'up' : cashOut < spent ? 'down' : 'even';
+      go('stop', { at: room.key, after });
+      return;
     } else if (stats.hands) {
       profile.recordSession({ hands: stats.hands, profitBb: stats.profitBb, stake: 'practice', endedAt: Date.now() });
     }
@@ -693,6 +778,7 @@ export function renderTable(ctx, params = {}) {
                       profile.setBankroll(profile.data.bankroll - stake.buyIn);
                       hero.stack = startingStack;
                       session.buyInsUsed++;
+                      sound('chips');
                       startHand();
                     },
                   }, t('Rebuy {money}', { money: fmt.money(stake.buyIn) }))
@@ -756,6 +842,9 @@ export function renderTable(ctx, params = {}) {
         isHero: p.isHero,
         tag: !p.isHero && p.profile ? getProfile(p.profile).tag : null,
         wonPot: table.handOver && p.wonThisHand > 0,
+        portrait: faces[p.id] || null,
+        boss: p.id === bossId,
+        speech: session.speech && session.speech.id === p.id ? session.speech.text : null,
       })),
       heroSeat: hero.seat,
       seatCount: table.players.length,
@@ -1272,6 +1361,8 @@ export function renderTable(ctx, params = {}) {
     return null;
   }
 
+  // The owner of the table says hello when you sit down.
+  if (bossId) say(bossId, t(boss.hello), 6500);
   draw();
   return root;
 }
