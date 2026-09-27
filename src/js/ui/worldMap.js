@@ -221,7 +221,7 @@ function labelPaths() {
 
 function labels() {
   return WATER_NAMES.map((n) => `<text class="water-name${n.sea ? ' sea-name' : ''}" font-size="${n.size}">`
-    + `<textPath href="#wm-name-${n.id}" startOffset="50%" text-anchor="middle">${esc(t(n.text).toUpperCase())}</textPath></text>`).join('');
+    + `<textPath href="#wm-name-${n.id}" xlink:href="#wm-name-${n.id}" startOffset="50%" text-anchor="middle">${esc(t(n.text).toUpperCase())}</textPath></text>`).join('');
 }
 
 /* ------------------------------------------------------------------ *
@@ -351,7 +351,10 @@ function scenery() {
   // grove reads as a wood rather than a scatter of dots.
   trees.sort((a, b) => a.y - b.y);
   // Three sizes of tree, each drawn once and stamped where it grows.
-  const treeArt = trees.map(({ x, y, r, kind }) => `<use href="#wm-${kind}-${r < 5.7 ? 's' : r < 6.9 ? 'm' : 'l'}" x="${f1(x)}" y="${f1(y)}"/>`);
+  const treeArt = trees.map(({ x, y, r, kind }) => {
+    const ref = `#wm-${kind}-${r < 5.7 ? 's' : r < 6.9 ? 'm' : 'l'}`;
+    return `<use href="${ref}" xlink:href="${ref}" x="${f1(x)}" y="${f1(y)}"/>`;
+  });
 
   // Cypress in the bayou by the delta: tall, thin, standing in the wet.
   const cypress = [];
@@ -546,25 +549,23 @@ export function worldSvg({ here, best, open, beaten, boat, look = null, landmark
     + '<path class="ink serpent-body" d="M-40 0q10-16 20 0t20 0t20 0"/><path class="ink" d="M20 0q6-12 12-8l-2 4"/></g>';
   const birds = '<path class="birds" d="M820 70q5-5 10 0q5-5 10 0M852 92q4-4 8 0q4-4 8 0M1260 620q4-4 8 0q4-4 8 0M300 300q4-4 8 0q4-4 8 0"/>';
 
-  return `<svg class="map-art world-art" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
+  return `<svg class="map-art world-art" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
     <defs>
       <radialGradient id="wm-vignette" cx="50%" cy="48%" r="72%">
-        <stop class="vignette-clear" offset="62%"/><stop class="vignette-edge" offset="100%"/>
+        <stop offset="62%" stop-color="black" stop-opacity="0"/><stop offset="100%" stop-color="black" stop-opacity="0.3"/>
       </radialGradient>
       ${labelPaths()}
       <g id="wm-water">${water}</g>
-      <linearGradient id="wm-sea" x1="0" y1="0" x2="1" y2="0">
-        <stop class="sea-near" offset="0"/><stop class="sea-far" offset="1"/>
-      </linearGradient>
+
       ${TREE_SYMBOLS}
     </defs>
     <rect class="land" x="0" y="0" width="${W}" height="${H}"/>
     <g class="hills">${sc.hills}</g>
     <g class="fields">${sc.fields}</g>
-    <use class="water-sand" href="#wm-water"/>
-    <use class="water-edge" href="#wm-water"/>
-    <use class="water" href="#wm-water"/>
-    <path class="sea-glow" d="${sea}" fill="url(#wm-sea)"/>
+    <use class="water-sand" href="#wm-water" xlink:href="#wm-water"/>
+    <use class="water-edge" href="#wm-water" xlink:href="#wm-water"/>
+    <use class="water" href="#wm-water" xlink:href="#wm-water"/>
+    ${[36, 76, 124].map((dx) => `<path class="sea-band" d="${line(coast.map(([x, y]) => [x + dx, y]))} L${W + 40} ${H + 40} L${W + 40} -40Z"/>`).join('')}
     ${seaLines}
     ${riverLines}
     <path class="sea-waves" d="M1548 500q8 -5 16 0t16 0M1560 640q8 -5 16 0t16 0M1560 760q8 -5 16 0t16 0M1540 860q8 -5 16 0t16 0M1450 1000q8 -5 16 0t16 0"/>

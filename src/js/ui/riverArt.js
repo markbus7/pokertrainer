@@ -350,6 +350,19 @@ export function boatSvg(look, { width = 120 } = {}) {
 }
 
 /**
+ * A gradient stop's colour, read off the room and written on the stop as
+ * well as left to the stylesheet. Some browsers paint a stop whose colour
+ * only comes from a stylesheet rule as solid black; the attribute is what
+ * they fall back to. Outside a browser there is no room to read, and the
+ * stylesheet alone decides.
+ */
+function skyStop(token) {
+  if (typeof document === 'undefined' || typeof getComputedStyle !== 'function') return '';
+  const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  return /^[#a-z0-9(),.\s%-]+$/i.test(value) ? ` stop-color="${value}"` : '';
+}
+
+/**
  * A place, drawn as a scene: sky in the room's hour, the far bank, the water,
  * and the landmark standing on it, with your boat tied up if you are there.
  * Drawn 600 wide and cropped to the screen, so a phone sees the middle and a
@@ -371,7 +384,7 @@ export function sceneSvg({ id, landmark, orbLeft = false, boat = null, arriving 
     : '';
   return `<svg class="scene-art" viewBox="0 0 600 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs><linearGradient id="sky-${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" class="sky-top"/><stop offset="1" class="sky-low"/></linearGradient></defs>
+      <stop offset="0" class="sky-top"${skyStop('--sky-1')}/><stop offset="1" class="sky-low"${skyStop('--sky-2')}/></linearGradient></defs>
     <rect width="600" height="132" fill="url(#sky-${id})"/>
     <g class="stars">${stars}</g>
     <circle class="orb" cx="${orbLeft ? 190 : 430}" cy="42" r="14"/>

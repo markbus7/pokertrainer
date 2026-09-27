@@ -181,6 +181,24 @@ describe('the river: the chart is drawn where things are', () => {
     assert(!/#[0-9a-f]{6}\b/i.test(svg), 'the chart paints a colour of its own instead of the room\'s');
   });
 
+  it('carries its own colours where a stylesheet cannot be trusted to reach', () => {
+    // On a phone the edge shading painted solid black: its gradient stops
+    // took their colour from stylesheet rules, which that browser did not
+    // apply, and a black stop covers everything drawn before it. Stops say
+    // their colour themselves now, and every reference is written both ways.
+    const svg = worldSvg({
+      here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: VENUES.map((v) => v.landmark),
+    });
+    const stops = svg.match(/<stop[^>]*>/g) || [];
+    assert(stops.length > 0, 'the chart has no gradient to check');
+    for (const stop of stops) {
+      assert(/stop-color="/.test(stop) && /stop-opacity="/.test(stop), `a gradient stop leaves its colour to the stylesheet: ${stop}`);
+    }
+    for (const ref of svg.match(/<(use|textPath)\b[^>]*>/g) || []) {
+      assert(/ xlink:href="#/.test(ref) && / href="#/.test(ref), `a reference is only written one way: ${ref.slice(0, 80)}`);
+    }
+  });
+
   it('letters the waters, in Dutch as well', () => {
     const svg = worldSvg({
       here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: VENUES.map((v) => v.landmark),

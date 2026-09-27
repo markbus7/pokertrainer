@@ -602,31 +602,7 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
  * where they get painted, from the map tokens of the room's hour.
  * ==================================================================== */
 
-.river-layout {
-  display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-  gap: var(--s-5);
-  align-items: start;
-}
-.river-side {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-4);
-  position: sticky;
-  top: 80px;
-}
 .river-side .panel + .panel { margin-top: 0; }
-.river-chart { width: 100%; max-width: 560px; margin: 0 auto; }
-@media (max-width: 900px) {
-  .river-layout { grid-template-columns: 1fr; }
-  /* One column: where you are, then the river, then your boat. The side
-     panel dissolves so its cards can take their places around the map. */
-  .river-side { display: contents; }
-  .here-card { order: 1; }
-  .river-chart { order: 2; }
-  .boat-card { order: 3; }
-  .river-side .study-line { order: 4; }
-}
 
 .cartouche { text-align: center; padding: 0 0 var(--s-3); }
 .cartouche h2 {
@@ -2614,7 +2590,7 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
   max-width: 1320px;
   align-items: start;
 }
-.river-side { display: grid; gap: var(--s-4); align-content: start; }
+.river-side { display: grid; gap: var(--s-4); align-content: start; position: static; }
 @media (min-width: 900px) { .river-below { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
 
 /* Wider than a phone: the chart scrolls sideways, the way a map is dragged. */
@@ -2636,11 +2612,11 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 .world-art .tree-crown { fill: var(--map-tree); }
 .world-art .tree-lit { fill: var(--map-tree-hi); }
 .world-art .cypress { fill: var(--map-tree); stroke: var(--map-tree-hi); stroke-width: 0.8; }
-.world-art .vignette-clear { stop-color: rgba(0, 0, 0, 0); }
-.world-art .vignette-edge { stop-color: rgba(0, 0, 0, 0.3); }
-.world-art .vignette, .world-art .sea-glow { pointer-events: none; }
-.world-art .sea-near { stop-color: var(--map-water-2); stop-opacity: 0.06; }
-.world-art .sea-far { stop-color: var(--map-water-2); stop-opacity: 0.38; }
+/* The open sea lightens toward the horizon in bands rather than through a
+   gradient: a gradient's stops painted from the stylesheet came out solid
+   black on a phone, and blacked out everything drawn beneath them. */
+.world-art .vignette, .world-art .sea-band { pointer-events: none; }
+.world-art .sea-band { fill: var(--map-water-2); fill-opacity: 0.08; }
 
 /* Water, laid down three times: a band of sand, a wet edge, the water. */
 .world-art .water-sand { fill: var(--map-sand); stroke: var(--map-sand); stroke-width: 14; stroke-linejoin: round; }
@@ -2753,8 +2729,8 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 .boat-crew-label { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-faint); }
 .boat-yard-link { margin-left: auto; white-space: nowrap; }
 .crew-strip { display: flex; flex-wrap: wrap; gap: 6px; }
-.berth { display: inline-grid; place-items: center; line-height: 0; border-radius: 50%; }
-.berth.empty { border: 1.5px dashed var(--border-bright); }
+.berth { flex: none; display: inline-grid; place-items: center; padding: 0; line-height: 0; border-radius: 50%; }
+.berth.open { border: 1.5px dashed var(--border-bright); }
 .berth-face svg { display: block; }
 .keepsake-count { margin-top: var(--s-3); }
 .boat-perks { margin-top: 2px; }
