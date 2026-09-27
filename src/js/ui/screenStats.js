@@ -18,6 +18,8 @@ import { CHARTS, POSITION_INFO, rangePercent, RFI, THREE_BET } from '../data/ran
 import { STRENGTH_RANK, HAND_STRENGTH } from '../data/handStrength.js';
 import { allTerms } from '../data/glossary.js';
 import { learningReport } from '../state/learningReport.js';
+import { MENTOR } from '../data/characters.js';
+import { roomSign, silasSays } from './place.js';
 
 export function renderStats(ctx) {
   const { profile, go } = ctx;
@@ -36,8 +38,12 @@ export function renderStats(ctx) {
   let running = 0;
   for (const s of sessions) { running += s.profitBb || 0; curve.push(running); }
 
-  return el('div.screen',
-    el('div.grid.cols-4',
+  // Your cabin: the four numbers on brass plaques by the door, the trophy
+  // shelf, and your papers and logs on the desk. Everything on the desk is a
+  // page, so it is laid out once below rather than restyled panel by panel.
+  const root = el('div.screen.cabin',
+    roomSign({ glyph: 'progress', kicker: t('Below the texas deck'), title: t('Your Cabin') }),
+    el('div.grid.cols-4.cabin-plaques',
       tile('Rank', [profile.rank.emoji, ' ', t(profile.rank.name)],
         t('Level {level} of {total}', { level: profile.level, total: RANKS.length })),
       tile('Total XP', fmt.chips(profile.xp)),
@@ -49,19 +55,7 @@ export function renderStats(ctx) {
       tile('Hands played', fmt.chips(profile.data.handsPlayed)),
     ),
 
-    renderCalibration(profile),
-    renderRetention(profile),
-    renderLearningReport(ctx),
-    renderVersionPanel(),
-    renderSyncPanel(ctx),
-
-    curve.length >= 2
-      ? el('div.panel',
-          el('div.panel-title', el('h3', 'Lifetime results'),
-            el('span.faint', t('{n} sessions', { n: sessions.length }))),
-          sparkline(curve, { color: running >= 0 ? '#3ecf8e' : '#f2555a' }),
-        )
-      : null,
+    trophyShelf(profile),
 
     el('div.panel',
       el('div.panel-title', el('h2', 'Skill mastery')),
@@ -86,24 +80,20 @@ export function renderStats(ctx) {
       ),
     ),
 
-    el('div.panel',
-      el('div.panel-title',
-        el('h2', 'Achievements'),
-        el('span.faint', `${profile.data.achievements.length} of ${ACHIEVEMENTS.length}`),
-      ),
-      el('div.grid.cols-3',
-        ACHIEVEMENTS.map((a) => {
-          const owned = profile.hasAchievement(a.id);
-          return el(`div.achievement${owned ? '' : '.locked'}`,
-            el('span.icon', owned ? a.icon : '🔒'),
-            el('div',
-              el('div.name', a.name),
-              el('div.desc', a.description),
-            ),
-          );
-        }),
-      ),
-    ),
+    renderCalibration(profile),
+    renderRetention(profile),
+
+    curve.length >= 2
+      ? el('div.panel',
+          el('div.panel-title', el('h3', 'Lifetime results'),
+            el('span.faint', t('{n} sessions', { n: sessions.length }))),
+          sparkline(curve, { color: running >= 0 ? 'var(--green)' : 'var(--red)' }),
+        )
+      : null,
+
+    renderLearningReport(ctx),
+    renderSyncPanel(ctx),
+    renderVersionPanel(),
 
     el('div.panel',
       el('div.spread',
@@ -113,13 +103,44 @@ export function renderStats(ctx) {
         ),
         el('button.btn.sm.danger', {
           onclick: () => {
-            if (confirm('Reset all progress? This cannot be undone.')) {
+            if (confirm(t('Reset all progress? This cannot be undone.'))) {
               profile.reset();
               go('home');
             }
           },
         }, 'Reset progress'),
       ),
+    ),
+  );
+  for (const panel of root.querySelectorAll(':scope > .panel:not(.trophy-shelf)')) {
+    panel.classList.add('page', 'paper');
+  }
+  return root;
+}
+
+/**
+ * The trophy shelf: every achievement as a piece on a shelf, the ones you
+ * have not earned standing there as covered shapes, so the shelf shows what
+ * is still to be won as well as what has been.
+ */
+function trophyShelf(profile) {
+  return el('div.panel.trophy-shelf',
+    el('div.panel-title',
+      el('h2', t('The trophy shelf')),
+      el('span.faint', t('{done} of {total}', { done: profile.data.achievements.length, total: ACHIEVEMENTS.length })),
+    ),
+    el('div.trophies',
+      ACHIEVEMENTS.map((a) => {
+        const owned = profile.hasAchievement(a.id);
+        return el(`div.achievement.trophy${owned ? '' : '.locked'}`, { title: t(a.description) },
+          el('span.icon', owned ? a.icon : '🔒'),
+          el('span.trophy-plinth'),
+          el('div',
+            el('div.name', a.name),
+            el('div.desc', a.description),
+          ),
+        );
+      }),
     ),
   );
 }
@@ -613,23 +634,36 @@ export function renderCharts(ctx, params = {}) {
 
   const detail = el('div.faint', { style: { minHeight: '22px' } }, 'Hover a cell for details.');
 
-  return el('div.screen',
-    el('div.panel',
-      el('h1', icon('charts', { size: 22 }), t('Range charts')),
+  // The chart room: the charts laid out by daylight, one drawer per seat.
+  // Learning them well enough to leave them in the drawer is the pilot
+  // house's job, one door along.
+  return el('div.screen.chart-room',
+    roomSign({ glyph: 'charts', kicker: t('Next to the pilot house'), title: t('The Chart Room') }),
+    el('div.panel.mentor-card',
+      silasSays(t(MENTOR.charts), {
+        typed: false,
+        size: 60,
+        after: el('button.btn.sm.ghost.says-go', { onclick: () => ctx.go('ranges') }, t('Up to the pilot house')),
+      }),
+    ),
+    el('div.panel.page.paper.chart-drawers',
+      el('div.page-kicker', t('Range charts')),
       el('p.muted', 'These are the ranges the drills grade you against, and the ranges the "Solid Regular" bot plays. Learn one position at a time — the button and the big blind matter most.'),
-      el('div.row',
+      el('div.chart-drawer-row',
+        el('span.chart-drawer-label', t('Opening')),
         ['UTG', 'HJ', 'CO', 'BTN', 'SB'].map((pos) => el(`button.btn.sm${view === pos ? '.primary' : '.ghost'}`, {
           onclick: () => ctx.go('charts', { chart: pos }),
         }, t('Open {pos}', { pos }))),
       ),
-      el('div.row', { style: { marginTop: '8px' } },
+      el('div.chart-drawer-row',
+        el('span.chart-drawer-label', t('3-betting')),
         ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'].map((pos) => el(`button.btn.sm${view === `3bet:${pos}` ? '.primary' : '.ghost'}`, {
           onclick: () => ctx.go('charts', { chart: `3bet:${pos}` }),
         }, t('3-bet {pos}', { pos }))),
       ),
     ),
 
-    el('div.panel',
+    el('div.panel.page.paper.chart-sheet',
       el('div.panel-title',
         el('h2', isThreeBet
           ? t('3-betting from {seat}', { seat: t(POSITION_INFO[position].name) })
@@ -660,13 +694,13 @@ export function renderCharts(ctx, params = {}) {
       el('div.range-legend', { style: { marginTop: '12px' } },
         isThreeBet
           ? [
-              legend('#2fa06a', 'Value 3-bets'),
-              legend('#b8532f', 'Bluff 3-bets'),
-              legend('#131c26', 'Fold or call'),
+              legend('value', 'Value 3-bets'),
+              legend('bluff', 'Bluff 3-bets'),
+              legend('', 'Fold or call'),
             ]
           : [
-              legend('#e3b23c', 'Raise'),
-              legend('#131c26', 'Fold'),
+              legend('in', 'Raise'),
+              legend('', 'Fold'),
             ],
       ),
 
@@ -682,8 +716,9 @@ export function renderCharts(ctx, params = {}) {
   );
 }
 
-function legend(colour, label) {
-  return el('span', el('span.swatch', { style: { background: colour } }), label);
+/** A key to the shading, drawn with the same swatches the drill's charts use. */
+function legend(kind, label) {
+  return el('span.chart-key', el('span', { class: `chart-swatch ${kind}`.trim() }), t(label));
 }
 
 
@@ -691,21 +726,46 @@ function legend(colour, label) {
  * Glossary
  * ------------------------------------------------------------------ */
 
-/** Every term in one place, for when a word rather than an idea is the blocker. */
+/**
+ * Every term in one place, for when a word rather than an idea is the
+ * blocker. On the river it is the almanac on the shelf: printed, lettered by
+ * initial, and kept where Silas can reach it.
+ */
 export function renderGlossary() {
-  const terms = allTerms();
-  return el('div.screen',
-    el('div.panel',
-      el('h1', icon('book', { size: 22 }), t('Glossary')),
+  // Sorted and lettered by each term as it reads in the current language, so
+  // the headings always match the words printed under them.
+  const terms = allTerms()
+    .map((term) => ({ ...term, shown: t(term.term) }))
+    .sort((a, b) => a.shown.localeCompare(b.shown));
+  const byLetter = [];
+  for (const term of terms) {
+    const letter = term.shown.trim().charAt(0).toUpperCase();
+    const last = byLetter[byLetter.length - 1];
+    if (last && last.letter === letter) last.terms.push(term);
+    else byLetter.push({ letter, terms: [term] });
+  }
+  return el('div.screen.almanac',
+    roomSign({ glyph: 'glossary', kicker: t('On the shelf by the stove'), title: t('The Almanac') }),
+    el('div.panel.mentor-card', silasSays(t(MENTOR.almanac), { typed: false, size: 60 })),
+    el('div.panel.page.paper.almanac-page',
+      el('div.spread',
+        el('div',
+          el('div.page-kicker', t('Glossary')),
+          el('h2', t('Every word the tables use')),
+        ),
+        el('span.badge', t('{n} terms', { n: terms.length })),
+      ),
       el('p.muted', `Every piece of jargon the lessons use, in plain language. Terms appear underlined inside a lesson — tap one there and it explains itself without losing your place.`),
-      el('span.badge', t('{n} terms', { n: terms.length })),
-    ),
-    el('div.panel',
-      terms.map((t) => el('div.glossary-entry',
-        el('div.glossary-term', t.term),
-        el('div.glossary-short', t.short),
-        el('div.glossary-full', t.full),
-      )),
+      el('div.almanac-entries',
+        byLetter.map(({ letter, terms: group }) => el('section.almanac-group',
+          el('div.almanac-letter', letter),
+          group.map((term) => el('div.glossary-entry',
+            el('div.glossary-term', term.term),
+            el('div.glossary-short', term.short),
+            el('div.glossary-full', term.full),
+          )),
+        )),
+      ),
     ),
   );
 }

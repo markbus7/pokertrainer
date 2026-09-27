@@ -281,14 +281,15 @@ export function sparkline(values, { width = 300, height = 90, color = '#3ecf8e' 
 
   const area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   area.setAttribute('d', `${path} L${width},${zeroY} L0,${zeroY} Z`);
-  area.setAttribute('fill', color);
+  // As a style rather than an attribute, so a colour can be a theme token.
+  area.style.fill = color;
   area.setAttribute('opacity', '0.13');
   svg.appendChild(area);
 
   const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   line.setAttribute('d', path);
   line.setAttribute('fill', 'none');
-  line.setAttribute('stroke', color);
+  line.style.stroke = color;
   line.setAttribute('stroke-width', '2');
   line.setAttribute('stroke-linejoin', 'round');
   svg.appendChild(line);

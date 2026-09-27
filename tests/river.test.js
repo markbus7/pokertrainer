@@ -1,6 +1,8 @@
 import { describe, it, assert, equal } from './harness.js';
 import { VENUES } from '../src/js/data/venues.js';
-import { BOSSES, BOSS_KEYS, bossFor, boatFor, BOATS, FLAGSHIP, MENTOR } from '../src/js/data/characters.js';
+import {
+  BOSSES, BOSS_KEYS, bossFor, boatFor, BOATS, FLAGSHIP, MENTOR, ASSAYER, RACE,
+} from '../src/js/data/characters.js';
 import { PROFILES } from '../src/js/engine/bots.js';
 import { NL } from '../src/js/i18n/nl.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
@@ -9,6 +11,7 @@ import { PORTRAIT_KEYS } from '../src/js/ui/portraits.js';
 import { riverState, stopStatus } from '../src/js/ui/screenRiver.js';
 import { Profile } from '../src/js/state/profile.js';
 import { setLang } from '../src/js/i18n/index.js';
+import { raceMargin } from '../src/js/ui/place.js';
 
 describe('the river: every stop has somebody to beat', () => {
   it('puts one boss at every stop, and nobody at two', () => {
@@ -65,10 +68,33 @@ describe('the river: every stop has somebody to beat', () => {
     for (const key of BOSS_KEYS) assert(PORTRAIT_KEYS.includes(key), `${key} has no portrait`);
     for (const key of Object.keys(PROFILES)) assert(PORTRAIT_KEYS.includes(key), `the ${key} regular has no portrait`);
     assert(PORTRAIT_KEYS.includes(MENTOR.key), 'Silas has no face');
+    assert(PORTRAIT_KEYS.includes(ASSAYER.key), 'the assayer has no face');
   });
 
   it('draws the places you study as well as the places you play', () => {
-    for (const key of ['school', 'pilothouse']) assert(LANDMARKS[key], `nothing is drawn for the ${key}`);
+    for (const key of ['school', 'pilothouse', 'assay', 'race']) assert(LANDMARKS[key], `nothing is drawn for the ${key}`);
+  });
+
+  it('gives the assayer and the Belle enough to say that a run does not repeat itself', () => {
+    assert(ASSAYER.right.length >= 3 && ASSAYER.wrong.length >= 3, 'the assayer repeats herself within a session');
+    for (const key of ['high', 'mid', 'low']) assert(ASSAYER.done[key], `the assayer has nothing to say for a ${key} session`);
+    assert(RACE.gaining.length >= 3 && RACE.falling.length >= 3, 'Rourke repeats himself within a race');
+    assert(bossFor(RACE.rival), 'the Belle is raced by somebody who does not exist');
+  });
+});
+
+describe('the river: the race is the pass mark, told as a race', () => {
+  it('puts the Belle between the pass mark and one short of it, so there is never a dead heat', () => {
+    // The Belle finishes on 7.5 reaches of 10, so eight right is a win and
+    // seven is a loss — exactly the pass mark, never a tie to explain.
+    equal(raceMargin(8, 8), 'won by half a length');
+    equal(raceMargin(7, 8), 'lost by half a length');
+  });
+
+  it('tells a bigger win or loss in lengths, the way it would be told on the landing', () => {
+    equal(raceMargin(10, 8), 'won by 2½ lengths');
+    equal(raceMargin(9, 8), 'won by 1½ lengths');
+    equal(raceMargin(0, 8), 'lost by 7½ lengths');
   });
 
   it('gives Silas a word for every reason he can point you at a chapter', () => {
@@ -180,7 +206,10 @@ describe('the river: it speaks Dutch too', () => {
     }
     for (const boat of [...BOATS, FLAGSHIP]) need(boat.name);
     [MENTOR.title, MENTOR.school, MENTOR.pilot, MENTOR.shoals, MENTOR.asks, MENTOR.table,
+      MENTOR.log, MENTOR.charts, MENTOR.almanac,
       ...Object.values(MENTOR.next), ...MENTOR.right, ...MENTOR.wrong].forEach(need);
+    [ASSAYER.name, ASSAYER.title, ASSAYER.hello, ...ASSAYER.right, ...ASSAYER.wrong, ...Object.values(ASSAYER.done)].forEach(need);
+    [RACE.boat, RACE.hello, RACE.won, RACE.lost, ...RACE.gaining, ...RACE.falling].forEach(need);
     assert(!missing.length, `no Dutch for:\n      ${missing.join('\n      ')}`);
   });
 });

@@ -24,18 +24,23 @@ import { potShareVisual, renderGauge } from './visuals.js';
 import { generateSession } from '../trainers/lab.js';
 import { CONFIDENCE, review, recordConfidence } from '../state/spacing.js';
 import { handFromLabSpot, keepHand } from '../state/handHistory.js';
+import * as audio from '../audio/engine.js';
+import { ASSAYER } from '../data/characters.js';
+import { sceneBanner, says, voiceLine, pickLine, coins, xpPop, stamp } from './place.js';
 
 const SESSION_LENGTH = 9;
 
 export function renderLab(ctx) {
   const { profile, rng, go } = ctx;
   const spots = generateSession(rng, SESSION_LENGTH);
-  const state = { index: 0, value: null, result: null, correct: 0, answered: 0, saved: null };
+  // `results` is right or wrong per figure, for the coins along the top;
+  // `line` is what Hattie says about the one just weighed.
+  const state = { index: 0, value: null, result: null, correct: 0, answered: 0, saved: null, results: [], line: null };
 
-  const header = el('div.panel');
-  const body = el('div.panel');
+  const header = el('div.panel.book-bar');
+  const body = el('div.panel.page.paper.test-page.assay-page');
   const footer = el('div.row');
-  const root = el('div.screen', header, body, footer);
+  const root = el('div.screen.test.assay', header, body, footer);
 
   const spot = () => spots[state.index];
 
@@ -45,9 +50,13 @@ export function renderLab(ctx) {
     state.value = given;
     state.result = result;
     state.answered++;
+    state.results.push(Boolean(result.correct));
+    state.line = pickLine(result.correct ? ASSAYER.right : ASSAYER.wrong);
+    audio.sfx(result.correct ? 'right' : 'wrong');
     if (result.correct) {
       state.correct++;
       profile.addXp(14);
+      xpPop(14);
     }
     review(profile, spot().concept, result.correct);
     if (confidence) recordConfidence(profile, confidence, result.correct);
@@ -72,11 +81,19 @@ export function renderLab(ctx) {
 
   function finish() {
     const pct = state.answered ? state.correct / state.answered : 0;
+    const verdict = pct >= 0.8 ? 'high' : pct >= 0.5 ? 'mid' : 'low';
+    if (pct >= 0.8) audio.sfx('fanfare');
     mount(header,
-      el('h1', 'Session complete'),
-      el('div.muted', `${state.correct} of ${state.answered} solved — ${fmt.pct(pct)}`),
+      el('h1', { style: { margin: 0 } }, 'Session complete'),
+      el('div.muted', t('{n} of {total} solved — {pct}', { n: state.correct, total: state.answered, pct: fmt.pct(pct) })),
+      coins(state.results, spots.length),
     );
     mount(body,
+      el('div.result-head',
+        el('h2', { style: { margin: 0 } }, t('The day\'s figures')),
+        stamp(pct >= 0.8 ? t('Weighs true') : t('Short weight'), pct >= 0.8 ? 'good' : 'soft'),
+      ),
+      says(ASSAYER.key, t(ASSAYER.done[verdict]), { name: ASSAYER.name, typed: false, size: 60 }),
       el('div.grid.cols-3',
         el('div.stat', el('div.label', 'Solved'), el('div.value', `${state.correct}/${state.answered}`)),
         el('div.stat', el('div.label', 'Accuracy'), el(`div.value.${pct >= 0.8 ? 'good' : pct < 0.5 ? 'bad' : ''}`, fmt.pct(pct))),
@@ -84,11 +101,11 @@ export function renderLab(ctx) {
       ),
       el('div.notice', { style: { marginTop: '16px' } },
         'These spots are scheduled to come back. You will see this concept again in a few days — just as it starts to fade, '
-        + 'which is when practising it does the most good. Check the Progress page for what is due.'),
+        + 'which is when practising it does the most good. Your cabin shows what is due.'),
     );
     mount(footer,
       el('button.btn.primary', { onclick: () => go('lab') }, 'Another session'),
-      el('button.btn.ghost', { onclick: () => go('home') }, 'Back to the river'),
+      el('button.btn.ghost', { onclick: () => go('lab') }, 'Back to the counter'),
     );
     return null;
   }
@@ -183,7 +200,7 @@ export function renderLab(ctx) {
         el('div.lab-entry', input, el('span.lab-unit', '%')),
         confidenceRow(
           () => Number(input.value),
-          (v) => (input.value === '' || Number.isNaN(v) ? 'Type a percentage first.' : null),
+          (v) => (input.value === '' || Number.isNaN(v) ? t('Type a percentage first.') : null),
         ),
       );
     }
@@ -211,7 +228,7 @@ export function renderLab(ctx) {
         quick('Pot', s.table.pot),
         quick('2× pot', s.table.pot * 2),
       ),
-      confidenceRow(() => Number(slider.value), (v) => (v <= 0 ? 'Move the slider to choose a bet.' : null)),
+      confidenceRow(() => Number(slider.value), (v) => (v <= 0 ? t('Move the slider to choose a bet.') : null)),
     );
   }
 
@@ -225,6 +242,7 @@ export function renderLab(ctx) {
         : chosen ? chosen.label : String(state.value);
 
     return el(`div.feedback.${r.correct ? 'correct' : 'wrong'}`,
+      state.line ? voiceLine(ASSAYER.key, state.line) : null,
       el('div.verdict', r.correct
         ? t('✓ Correct — {answer}', { answer: shown })
         : t('✗ Not quite — you said {answer}', { answer: shown })),
@@ -253,20 +271,19 @@ export function renderLab(ctx) {
     mount(header,
       el('div.spread',
         el('div.row',
-          el('span', { style: { fontSize: 'var(--t-xl)' } }, '🎛️'),
+          el('span.module-glyph', icon('lab', { size: 20 })),
           el('div',
-            el('div', { style: { fontWeight: '650' } }, 'The Lab'),
+            el('div.book-title', t('The Assay Office')),
             el('div.faint', t('Spot {n} of {total} · {kind}',
               { n: state.index + 1, total: spots.length, kind: labelFor(s.type) })),
           ),
         ),
         el('div.row',
           el('span.badge', `${state.correct}/${state.answered}`),
-          el('button.btn.sm.ghost', { onclick: () => go('home') }, 'Leave'),
+          el('button.btn.sm.ghost', { onclick: () => go('lab') }, 'Leave'),
         ),
       ),
-      el('div.bar', { style: { marginTop: '12px' } },
-        el('span', { style: { width: `${((state.index + (state.result ? 1 : 0)) / spots.length) * 100}%` } })),
+      coins(state.results, spots.length),
     );
 
     mount(body,
@@ -306,20 +323,28 @@ function labelFor(type) {
   }[type] || type;
 }
 
-/** Entry screen: says what the Lab is for before dropping you into it. */
+/**
+ * The front of the assay office: who keeps it, what gets weighed, and the
+ * counter to step up to.
+ */
 export function renderLabIntro(ctx) {
   const { go } = ctx;
-  return el('div.screen',
-    el('div.panel',
-      el('h1', icon('lab', { size: 22 }), t('The Lab')),
+  return el('div.screen.assay',
+    sceneBanner({ id: 'assay', landmark: 'assay', kicker: t('On Front Street, by the bank'), title: t('The Assay Office') }),
+    el('div.panel.mentor-card',
+      says(ASSAYER.key, t(ASSAYER.hello), { name: ASSAYER.name }),
+    ),
+    el('div.panel.page.paper.assay-book',
+      el('div.page-kicker', t('The Lab')),
+      el('h2', t('What gets weighed here')),
       el('p.muted', 'Spots at a table, solved rather than chosen from a list. There are no options to pick between — you work the number out and enter it.'),
       el('ul.lesson-points',
-        el('li', el('span', richText('**Name the price** — face a bet and type the equity you need. Producing the number is what makes it stick; recognising it from a list does not.'))),
-        el('li', el('span', richText('**Size the bet** — you are given a price and must find the bet that offers it. This is the calculation run backwards, so a memorised table will not save you.'))),
-        el('li', el('span', richText('**Make the call** — real cards, real equity, and the actual Fold and Call buttons.'))),
+        el('li', el('span', richText(t('**Name the price** — face a bet and type the equity you need. Producing the number is what makes it stick; recognising it from a list does not.')))),
+        el('li', el('span', richText(t('**Size the bet** — you are given a price and must find the bet that offers it. This is the calculation run backwards, so a memorised table will not save you.')))),
+        el('li', el('span', richText(t('**Make the call** — real cards, real equity, and the actual Fold and Call buttons.')))),
       ),
       el('p.muted', 'The three kinds are shuffled together on purpose. Having to work out which calculation applies is most of the skill at a real table, and practising them in separate blocks quietly removes that part.'),
-      el('button.btn.primary.lg', { onclick: () => go('lab-run') }, 'Start a session'),
+      el('button.btn.primary.lg.plank', { onclick: () => go('lab-run') }, t('Step up to the counter')),
     ),
   );
 }

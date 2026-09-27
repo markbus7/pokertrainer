@@ -16,13 +16,18 @@ import { MODULE_META } from '../data/curriculum.js';
 import {
   masteryTier, bestTier, tierByKey, perfectRunNeeded, REQUIREMENTS,
 } from '../state/mastery.js';
+import { roomSign } from './place.js';
 
 export function renderLevels(ctx) {
   const { profile, go } = ctx;
   const current = profile.rank;
   const next = profile.nextRank;
 
-  return el('div.screen',
+  // Your papers: the certificate of the rank you hold, what the next one
+  // asks for, and the whole ladder of them, kept the way a pilot keeps the
+  // licence that says which water he may take a boat through.
+  return el('div.screen.papers',
+    roomSign({ glyph: 'ladder', kicker: t('Your standing on the river'), title: t('Your Papers') }),
     renderCurrent(profile, current, next),
     renderSlipped(profile, go),
     renderDropNotice(profile, current),
@@ -44,7 +49,7 @@ function renderSlipped(profile, go) {
   const slipped = slippedModules(profile);
   if (!slipped.length) return null;
 
-  return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
+  return el('div.panel.note-card.paper.pinned.urgent',
     el('div.panel-title', el('h3', { style: { margin: 0 } }, icon('cold', { size: 18 }), t('Gone cold'))),
     el('div.faint', { style: { marginBottom: '10px' } },
       t('Your rank counts these at their best, so it is safe. Recent answers have them lower — '
@@ -78,22 +83,20 @@ function renderSlipped(profile, go) {
  * ------------------------------------------------------------------ */
 
 function renderCurrent(profile, rank, next) {
-  return el('div.panel',
-    el('div.spread',
-      el('div.row',
-        el('div', { style: { fontSize: 'var(--t-3xl)', lineHeight: '1' } }, rank.emoji),
-        el('div',
-          el('div', { style: { fontSize: 'var(--t-lg)', fontWeight: '700' } }, rank.name),
-          el('div.faint', t('Level {level} of {total}', { level: rank.level, total: RANKS.length })),
-          el('div.faint', { style: { marginTop: '4px', maxWidth: '46ch' } }, rank.blurb),
-        ),
+  return el('div.panel.certificate.paper.big-cert',
+    el('div.cert-kicker', t('Certificate of standing')),
+    el('div.cert-body',
+      el('span.seal', { 'aria-hidden': 'true' }, rank.emoji),
+      el('div',
+        el('div.cert-rank', t(rank.name)),
+        el('div.faint', t('Level {level} of {total}', { level: rank.level, total: RANKS.length })),
       ),
-      el('div', { style: { textAlign: 'right' } },
-        el('div.mono', { style: { fontSize: 'var(--t-lg)', fontWeight: '700', color: 'var(--gold)' } },
-          fmt.chips(profile.xp)),
+      el('div.cert-xp',
+        el('div.mono', fmt.chips(profile.xp)),
         el('div.faint', 'total XP'),
       ),
     ),
+    el('p.cert-blurb', t(rank.blurb)),
     next
       ? el('div', { style: { marginTop: '14px' } },
           el('div.spread', { style: { marginBottom: '6px' } },
@@ -116,7 +119,7 @@ function renderNext(profile, next, go) {
   const rows = requirementRows(profile, next);
   const done = rows.filter((r) => r.met).length;
 
-  return el('div.panel',
+  return el('div.panel.page.paper.papers-next',
     el('div.panel-title',
       el('h2', next.emoji, ' ', t(next.name)),
       el('span.faint', t('{done} of {total} done', { done, total: rows.length })),
@@ -124,7 +127,7 @@ function renderNext(profile, next, go) {
     el('div.faint', { style: { marginBottom: '12px' } }, next.blurb),
     el('div.stack-sm', rows.map((r) => requirementRow(r))),
     el('div.row', { style: { marginTop: '14px', flexWrap: 'wrap', gap: '8px' } },
-      el('button.btn.sm', { onclick: () => go('home') }, 'Go to the lessons'),
+      el('button.btn.sm', { onclick: () => go('train') }, 'Go to the lessons'),
       el('button.btn.sm', { onclick: () => go('stats') }, 'See every skill'),
     ),
   );
@@ -158,7 +161,7 @@ export function requirementRow(r, { showSurplus = false } = {}) {
 }
 
 function renderMaxed() {
-  return el('div.panel',
+  return el('div.panel.page.paper',
     el('div.panel-title', el('h2', icon('ladder', { size: 20 }), t('Top of the ladder'))),
     el('div.faint',
       'Every skill mastered and every lesson finished. There is no rank above this one — '
@@ -171,14 +174,16 @@ function renderMaxed() {
  * ------------------------------------------------------------------ */
 
 function renderLadder(profile, current, next) {
-  return el('div.panel',
+  return el('div.panel.page.paper.papers-ladder',
     el('div.panel-title',
       el('h2', 'The ladder'),
       el('span.faint', t('{n} of {total} reached', { n: current.level, total: RANKS.length })),
     ),
     el('div.faint', { style: { marginBottom: '10px', fontSize: 'var(--t-sm)' } },
       'Tap any rank you have reached to see what it took.'),
-    el('div.stack-sm', RANKS.map((rank) => ladderRow(profile, rank, current, next))),
+    // Drawn top down from the highest rank, the way a ladder is climbed:
+    // where you are going above you, where you started at the foot.
+    el('div.rank-ladder', [...RANKS].reverse().map((rank) => ladderRow(profile, rank, current, next))),
   );
 }
 
@@ -223,7 +228,7 @@ function ladderRow(profile, rank, current, next) {
 
   const head = el('div.spread', { style: { alignItems: 'center' } },
     el('div.row',
-      el('span', { style: { fontSize: 'var(--t-lg)' } }, openable ? rank.emoji : '🔒'),
+      el('span.rank-seal', { 'aria-hidden': 'true' }, openable ? rank.emoji : '🔒'),
       el('div',
         el('div', { style: { fontWeight: '600' } }, rank.name),
         el('div.faint', { style: { fontSize: 'var(--t-xs)' } }, t('Level {level}', { level: rank.level })),
@@ -235,20 +240,9 @@ function ladderRow(profile, rank, current, next) {
     ),
   );
 
-  const row = el(openable ? 'button.ladder-row' : 'div.ladder-row', {
-    style: {
-      display: 'block',
-      width: '100%',
-      textAlign: 'left',
-      padding: '10px 12px',
-      borderRadius: 'var(--radius-sm)',
-      border: `1px solid ${isNext ? 'var(--gold-dim)' : 'var(--border)'}`,
-      background: isNext ? 'rgba(214,168,63,0.06)' : 'transparent',
-      color: 'inherit',
-      font: 'inherit',
-      opacity: openable ? '1' : '0.5',
-      cursor: openable ? 'pointer' : 'default',
-    },
+  const state = achieved ? (rank.level === current.level ? '.held.earned' : '.earned')
+    : isNext ? '.is-next' : lapsed ? '.lapsed' : '.locked';
+  const row = el(`${openable ? 'button' : 'div'}.ladder-row.rung-rank${state}`, {
     ...(openable
       ? {
           onclick: () => {
@@ -278,7 +272,7 @@ function renderDropNotice(profile, current) {
   // Worded as a standing fact rather than an event: this shows for anyone
   // whose playing has outrun their drilling, not only just after ranks
   // gained requirements.
-  return el('div.panel', { style: { borderColor: 'var(--gold-dim)' } },
+  return el('div.panel.note-card.paper.pinned',
     el('div.panel-title', el('h3', { style: { margin: 0 } }, icon('warn', { size: 18 }), t('Your XP is ahead of your skills'))),
     el('div.faint',
       t('On XP alone you would be Level {legacy}, {legacyName}. Ranks also ask for lessons finished '
@@ -302,7 +296,7 @@ function renderHowItWorks() {
     'Both matter, because XP on its own could be earned by repeating one drill forever — which would have unlocked the whole curriculum for somebody who had only ever practised one thing.',
     'A rank reflects what you can do now, so it can go down as well as up — if the skills behind it fade, the rank goes with them until you have them back. The date you first reached it is kept either way.',
   ];
-  return el('div.panel',
+  return el('div.panel.page.paper',
     el('div.panel-title', el('h2', 'How ranks are earned')),
     el('div.stack-sm', lines.map((line) => el('div.faint', richText(line)))),
   );

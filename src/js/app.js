@@ -49,15 +49,15 @@ const ROUTES = {
   ranges: { render: renderRangeLadder, dock: 'ranges', title: 'Range trainer' },
   'ranges-run': { render: renderRangeRun, dock: 'ranges', title: 'Range trainer', focus: true },
   'ranges-weak': { render: renderRangeWeak, dock: 'ranges', title: 'Weak hands' },
-  gauntlet: { render: renderGauntletIntro, dock: 'ledger', title: 'Gauntlet' },
-  lab: { render: renderLabIntro, dock: 'ledger', title: 'The Lab' },
-  'lab-run': { render: renderLab, dock: 'ledger', title: 'The Lab', focus: true },
+  gauntlet: { render: renderGauntletIntro, dock: 'ledger', title: 'The Race' },
+  lab: { render: renderLabIntro, dock: 'ledger', title: 'The Assay Office' },
+  'lab-run': { render: renderLab, dock: 'ledger', title: 'The Assay Office', focus: true },
   play: { render: renderTable, dock: 'play', title: 'Table', music: 'table', focus: true },
-  review: { render: renderReview, dock: 'ledger', title: 'Hand review' },
-  charts: { render: renderCharts, dock: 'ledger', title: 'Charts' },
-  glossary: { render: renderGlossary, dock: 'ledger', title: 'Glossary' },
-  stats: { render: renderStats, dock: 'ledger', title: 'Progress' },
-  levels: { render: renderLevels, dock: 'ledger', title: 'Ranks' },
+  review: { render: renderReview, dock: 'ledger', title: 'The Log' },
+  charts: { render: renderCharts, dock: 'ledger', title: 'The Chart Room' },
+  glossary: { render: renderGlossary, dock: 'ledger', title: 'The Almanac' },
+  stats: { render: renderStats, dock: 'ledger', title: 'Your Cabin' },
+  levels: { render: renderLevels, dock: 'ledger', title: 'Your Papers' },
 };
 
 /** The four places you go most, and the ledger for the rest. */
@@ -76,8 +76,8 @@ const LEDGER = [
     items: [
       { route: 'train', label: 'Lessons', icon: 'book', note: 'Read it, then drill it' },
       { route: 'ranges', label: 'Range trainer', icon: 'grid', note: 'Learn the charts until you do not need them' },
-      { route: 'lab', label: 'The Lab', icon: 'lab', note: 'Set up a spot and test your read' },
-      { route: 'gauntlet', label: 'Gauntlet', icon: 'gauntlet', note: 'Every module mixed, against the clock' },
+      { route: 'lab', label: 'The Assay Office', icon: 'lab', note: 'The Lab: work the figure out, then enter it' },
+      { route: 'gauntlet', label: 'The Race', icon: 'gauntlet', note: 'The Gauntlet: every module mixed, against the Belle' },
     ],
   },
   {
@@ -90,11 +90,11 @@ const LEDGER = [
   {
     title: 'Records',
     items: [
-      { route: 'review', label: 'Hand review', icon: 'review' },
-      { route: 'charts', label: 'Charts', icon: 'charts' },
-      { route: 'glossary', label: 'Glossary', icon: 'glossary' },
-      { route: 'stats', label: 'Progress', icon: 'progress' },
-      { route: 'levels', label: 'Ranks', icon: 'ladder' },
+      { route: 'review', label: 'The Log', icon: 'review', note: 'Hand review: the hands worth a second look' },
+      { route: 'charts', label: 'The Chart Room', icon: 'charts', note: 'Every range chart, by seat' },
+      { route: 'glossary', label: 'The Almanac', icon: 'glossary', note: 'Glossary: every word the tables use' },
+      { route: 'stats', label: 'Your Cabin', icon: 'progress', note: 'Progress, trophies and your save' },
+      { route: 'levels', label: 'Your Papers', icon: 'ladder', note: 'Ranks: what the next one asks for' },
     ],
   },
 ];

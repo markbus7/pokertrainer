@@ -42,18 +42,12 @@ import { HandRecorder, keepHand } from '../state/handHistory.js';
 import { checkAchievements } from '../state/achievements.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
 import { bossFor, MENTOR } from '../data/characters.js';
-import { svgNode } from './place.js';
+import { svgNode, lampNode } from './place.js';
 import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
 
 const BOT_DELAY = 620;
 
-/** The lamp over the table: a brass shade on a cord, and the light it throws. */
-const LAMP = '<svg class="lamp-art" viewBox="0 0 140 46" aria-hidden="true">'
-  + '<path class="lamp-cord" d="M70 0v11"/>'
-  + '<path class="lamp-shade" d="M46 11h48l17 21H29z"/>'
-  + '<path class="lamp-rim" d="M29 32h82"/>'
-  + '<ellipse class="lamp-bulb" cx="70" cy="36" rx="11" ry="4.5"/></svg>';
 /**
  * How many hands a lesson table will deal looking for the reader's own spot.
  * Measured over twelve fresh sessions per lesson, every one finds its spot;
@@ -292,7 +286,7 @@ export function renderTable(ctx, params = {}) {
     // between a simplification and a lie.
     lesson ? lessonNoteHost : null,
     el('div.table-wrap.with-coach',
-      el('div', el('div.saloon-stage', svgNode(LAMP, 'saloon-lamp'), feltHost), actionHost),
+      el('div', el('div.saloon-stage', lampNode(), feltHost), actionHost),
       coachHost),
   );
   root.classList.add('saloon');

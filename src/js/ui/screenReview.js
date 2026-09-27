@@ -26,6 +26,8 @@ import {
   recentHands, findHand, removeHand, clearHands, handSummary,
   frameAt, frameCount, reviewOf, MISTAKE_CAP, COOLER_BB,
 } from '../state/handHistory.js';
+import { MENTOR } from '../data/characters.js';
+import { roomSign, silasSays, lampNode } from './place.js';
 
 const SOURCES = { play: 'Table', grind: 'Bankroll', lab: 'Lab' };
 
@@ -46,11 +48,17 @@ function renderList(ctx) {
   // one of them is how those two quietly drift apart.
   const refresh = () => go('review');
 
-  return el('div.screen',
-    el('div.panel',
+  // The log: Silas's book of the hands worth a second look. The list is a
+  // page in it, one entry per hand, the way a pilot writes up the reach
+  // where he touched bottom.
+  return el('div.screen.hand-log',
+    roomSign({ glyph: 'review', kicker: t('Kept by Silas'), title: t('The Log') }),
+    el('div.panel.mentor-card', silasSays(t(MENTOR.log), { typed: false, size: 60 })),
+    el('div.panel.page.paper.log-page',
       el('div.spread',
         el('div',
-          el('h1', { style: { margin: 0 } }, icon('review', { size: 22 }), t('Hand review')),
+          el('div.page-kicker', t('Hand review')),
+          el('h2', t('Where you ran aground')),
           el('div.faint', { style: { marginTop: '4px' } },
             'Every hand here has something in it. Tap one to play it back.'),
         ),
@@ -65,21 +73,19 @@ function renderList(ctx) {
           : null,
       ),
       hands.length
-        ? el('div.grid.cols-3', { style: { marginTop: '14px' } },
+        ? el('div.grid.cols-3.log-sums', { style: { marginTop: '14px' } },
             el('div.stat', el('div.label', 'Mistakes'), el('div.value', String(summary.mistakes))),
             el('div.stat', el('div.label', 'Cost'), el('div.value.bad', `${summary.costBb.toFixed(1)}bb`)),
             el('div.stat', el('div.label', 'Coolers'), el('div.value', String(summary.coolers))),
           )
         : null,
-    ),
-    hands.length
-      ? el('div.stack-sm', hands.map((hand) => handCard(hand, go, refresh)))
-      : el('div.panel', el('div.notice', t(
-          'Nothing saved yet. Hands land here when the coach grades one of your decisions as a mistake, or '
-          + 'when you lose {n} big blinds or more having played it right. Go and play a few hands.',
-          { n: COOLER_BB }))),
-    el('div.panel',
-      el('div.faint', { style: { fontSize: 'var(--t-sm)' } }, richText(t(
+      hands.length
+        ? el('div.stack-sm.log-entries', hands.map((hand) => handCard(hand, go, refresh)))
+        : el('div.notice.log-empty', t(
+            'Nothing saved yet. Hands land here when the coach grades one of your decisions as a mistake, or '
+            + 'when you lose {n} big blinds or more having played it right. Go and play a few hands.',
+            { n: COOLER_BB })),
+      el('div.faint.log-note', richText(t(
         '**What gets saved.** A hand is kept when the coach graded one of your decisions bad, or when you lost '
         + '{n} big blinds or more with no mistake in it — the second kind matters as much as the first, because '
         + 'it is the proof that losing and misplaying are different things. The last {cap} mistakes are kept. '
@@ -216,13 +222,13 @@ function renderOneHand(ctx, id) {
 
   draw();
 
-  return el('div.screen',
-    el('div.panel',
+  return el('div.screen.hand-log.replay',
+    el('div.panel.book-bar',
       el('div.spread',
         el('div.row',
-          el('span', { style: { fontSize: 'var(--t-lg)' } }, review.kind === 'cooler' ? '🧊' : '🔍'),
+          el('span.module-glyph', icon(review.kind === 'cooler' ? 'cold' : 'review', { size: 20 })),
           el('div',
-            el('div', { style: { fontWeight: '650' } }, review.headline),
+            el('div.book-title', review.headline),
             el('div.faint', [
               t(SOURCES[hand.source] || hand.source),
               hand.handNumber ? t('hand #{n}', { n: hand.handNumber }) : null,
@@ -233,9 +239,9 @@ function renderOneHand(ctx, id) {
         el('button.btn.sm.ghost', { onclick: () => go('review') }, 'All hands'),
       ),
     ),
-    el('div.panel.replay-panel', feltHost, transport),
+    el('div.panel.replay-panel.saloon-stage', lampNode(), feltHost, transport),
     stepHost,
-    el('div.panel',
+    el('div.panel.page.paper.log-note-page',
       el('div.faint', { style: { fontSize: 'var(--t-sm)' } }, richText(t(
         '**Where the equity comes from.** It is measured by dealing the rest of the hand out thousands of times '
         + 'against the players still in, and counting how often you end up winning. It assumes they could hold '
@@ -285,7 +291,7 @@ function stepPanel(hand, review, index, goTo) {
   if (!step) return resultPanel(hand, review);
 
   if (step.kind === 'street') {
-    return el('div.panel',
+    return el('div.panel.paper.step-card',
       el('div.panel-title', el('h3', { style: { margin: 0 } },
         t('The {street}', { street: t(step.street) }))),
       el('div.faint', 'New cards. Nobody has acted yet on this street.'),
@@ -296,7 +302,7 @@ function stepPanel(hand, review, index, goTo) {
   const line = actionLine(step, seat);
 
   if (step.decision === undefined) {
-    return el('div.panel',
+    return el('div.panel.paper.step-card',
       el('div.panel-title', el('h3', { style: { margin: 0 } }, line)),
       el('div.faint', step.toCall > 0
         ? t('The pot was {pot}, and it cost {call} to stay in.',
@@ -309,7 +315,7 @@ function stepPanel(hand, review, index, goTo) {
   const verdict = review.verdicts[step.decision];
   const d = verdict.decision;
 
-  return el(`div.panel.verdict-panel.${verdict.level}`,
+  return el(`div.panel.paper.step-card.verdict-panel.${verdict.level}`,
     el('div.panel-title',
       el('h3', { style: { margin: 0 } }, line),
       el('span.badge' + (verdict.level === 'bad' ? '.red' : verdict.level === 'good' ? '.green' : ''), verdict.head),
@@ -342,7 +348,7 @@ function resultPanel(hand, review) {
   // the screen would then have to live with.
   if (hand.result.reason === 'review') {
     const verdict = review.verdicts[0];
-    return el('div.panel',
+    return el('div.panel.paper.step-card',
       el('div.panel-title', el('h3', { style: { margin: 0 } }, 'End of the spot')),
       el('div.faint',
         `${t('This one came from the Lab, so the hand stops here — the decision was the whole question.')} `
@@ -357,7 +363,7 @@ function resultPanel(hand, review) {
     .map((id) => (hand.seats.find((s) => s.id === id) || {}).name || id)
     .join(` ${t('and')} `);
 
-  return el('div.panel',
+  return el('div.panel.paper.step-card',
     el('div.panel-title',
       el('h3', { style: { margin: 0 } },
         heroWon ? t('You won the pot') : t('{names} won the pot', { names })),

@@ -4200,4 +4200,129 @@ export const NL = {
   'Dealing…': 'Er wordt gedeeld…',
   'Check it against the method': 'Controleer het met de methode',
   'Check it against the chart': 'Controleer het met de chart',
+
+  // ---- the assay office, the race, and the record rooms ----
+  'Hattie Quill': 'Hattie Quill',
+  'Assayer': 'Keurmeester',
+  'Everything that crosses this counter gets weighed. Bring me figures, not feelings — a guess is no use to anybody at a table.':
+    'Alles wat over deze toonbank gaat, wordt gewogen. Breng me getallen, geen gevoelens — aan tafel heeft niemand iets aan een gok.',
+  'Weighs true.': 'Het gewicht klopt.',
+  'Exact. Next.': 'Precies. Volgende.',
+  'That figure passes.': 'Dat getal wordt goedgekeurd.',
+  'Sound as gold.': 'Zuiver goud.',
+  'Short weight. See why.': 'Te licht. Kijk waarom.',
+  'That figure will not pass.': 'Dat getal wordt afgekeurd.',
+  'Close is not a price.': 'Bijna is geen prijs.',
+  'Weigh it again.': 'Weeg het nog eens.',
+  'Good figures, all of them honest. I have booked each one to come back just as it starts to fade.':
+    'Goede getallen, allemaal eerlijk. Ik heb ze stuk voor stuk ingeboekt om terug te komen, net wanneer ze beginnen te vervagen.',
+  'Mostly sound. The ones that came up light are booked to come back soonest.':
+    'Grotendeels zuiver. Wat te licht bleek, heb ik ingeboekt om het eerst terug te komen.',
+  'Too much of it came up light. Read the working under each miss, then weigh them again.':
+    'Te veel bleek te licht. Lees de uitwerking onder elke misser en weeg ze dan opnieuw.',
+  'The Assay Office': 'Het Keurkantoor',
+  'On Front Street, by the bank': 'Aan Front Street, naast de bank',
+  'What gets weighed here': 'Wat hier gewogen wordt',
+  'Step up to the counter': 'Naar de toonbank',
+  'The day\'s figures': 'De getallen van vandaag',
+  'Weighs true': 'Gewicht klopt',
+  'Short weight': 'Te licht',
+  'Back to the counter': 'Terug naar de toonbank',
+  'These spots are scheduled to come back. You will see this concept again in a few days — just as it starts to fade, which is when practising it does the most good. Your cabin shows what is due.':
+    'Deze spots zijn ingepland om terug te komen. Je ziet dit concept over een paar dagen weer — net wanneer het begint te vervagen, en juist dan heeft oefenen het meeste effect. In je hut zie je wat er aan de beurt is.',
+
+  'The Race': 'De Race',
+  'Ten reaches of river, and nobody tells you what is round the next bend. Get eight right and you beat the Belle to the landing. Get seven and I will be there waiting.':
+    'Tien stukken rivier, en niemand vertelt je wat er achter de volgende bocht ligt. Acht goed en je bent eerder bij de steiger dan de Belle. Zeven goed en ik sta je daar op te wachten.',
+  'Hmph. Lucky water.': 'Hmpf. Meezittend water.',
+  'Stoke the boilers, boys!': 'Stook de ketels op, jongens!',
+  'You are gaining. I do not care for it.': 'Je loopt in. Dat bevalt me niet.',
+  'Snagged! See you at the landing.': 'Vastgelopen! Tot bij de steiger.',
+  'Full steam — do try to keep up.': 'Volle kracht vooruit — probeer het een beetje bij te houden.',
+  'That is why you are a passenger.': 'Daarom ben jij passagier.',
+  'Beaten to the landing by a passenger. Do not get used to it.': 'Door een passagier verslagen tot aan de steiger. Wen er maar niet aan.',
+  'The Belle takes it again. Come back when your boilers are hotter.': 'De Belle wint weer. Kom terug als je ketels heter zijn.',
+  'You beat the Belle': 'Je hebt de Belle verslagen',
+  'The Belle got there first': 'De Belle was er eerder',
+  'Won': 'Gewonnen',
+  'Beaten': 'Verslagen',
+  'Race again': 'Nog een race',
+  'half a length': 'een halve lengte',
+  '{n} lengths': '{n} lengtes',
+  'won by {margin}': 'gewonnen met {margin}',
+  'lost by {margin}': 'verloren met {margin}',
+  'At the starting pole': 'Bij de startpaal',
+  'Ten reaches, any water': 'Tien stukken, elk water',
+  'A right answer moves your boat one reach.': 'Een goed antwoord brengt je boot één stuk verder.',
+  'The Belle keeps a steady pace: seven and a half reaches in ten.': 'De Belle houdt een vast tempo: zevenenhalf stuk in tien.',
+  'Eight right and you are first to the landing.': 'Acht goed en je bent als eerste bij de steiger.',
+  'The water you might meet': 'Het water dat je kunt tegenkomen',
+  'Fire the boilers': 'Stook de ketels op',
+  'Everything mixed, against the Belle.': 'Alles door elkaar, tegen de Belle.',
+
+  'The Lab: work the figure out, then enter it': 'Het Lab: reken het getal uit en vul het in',
+  'The Gauntlet: every module mixed, against the Belle': 'De Gauntlet: alle modules door elkaar, tegen de Belle',
+  // Not "Het Logboek": that is already the Dutch for the ledger on the dock.
+  'The Log': 'Het Scheepsjournaal',
+  'Hand review: the hands worth a second look': 'Handen terugkijken: de handen die een tweede blik waard zijn',
+  'The Chart Room': 'De Kaartenkamer',
+  'Every range chart, by seat': 'Elke range-chart, per positie',
+  'The Almanac': 'De Almanak',
+  'Glossary: every word the tables use': 'Woordenlijst: elk woord dat aan tafel valt',
+  'Your Cabin': 'Je Hut',
+  'Progress, trophies and your save': 'Voortgang, trofeeën en je opslag',
+  'Your Papers': 'Je Papieren',
+  'Ranks: what the next one asks for': 'Rangen: wat de volgende vraagt',
+
+  'Kept by Silas': 'Bijgehouden door Silas',
+  'Where you ran aground': 'Waar je aan de grond liep',
+  'Every pilot keeps a log. Write down where you ran aground, and you will not run aground there twice. The ones you lost and played right go in too — they are the proof that losing and misplaying are different things.':
+    'Elke loods houdt een logboek bij. Schrijf op waar je aan de grond liep, dan loop je daar geen tweede keer vast. De handen die je verloor terwijl je goed speelde, gaan er ook in — die bewijzen dat verliezen en slecht spelen twee verschillende dingen zijn.',
+  'These are the charts, drawn out by daylight. Study them here; the pilot house is where you learn them well enough to leave them in the drawer.':
+    'Dit zijn de kaarten, bij daglicht uitgetekend. Bestudeer ze hier; in het loodshuis leer je ze zo goed dat ze in de la kunnen blijven.',
+  'Every trade on the river has its own words, and the tables have more than most. When one stops you, it is in here.':
+    'Elk vak op de rivier heeft zijn eigen woorden, en de speeltafels meer dan de meeste. Blijf je ergens op haken, dan staat het hierin.',
+  'Next to the pilot house': 'Naast het loodshuis',
+  'Up to the pilot house': 'Naar het loodshuis',
+  'Opening': 'Openen',
+  '3-betting': '3-betten',
+  'On the shelf by the stove': 'Op de plank bij de kachel',
+  'Every word the tables use': 'Elk woord dat aan tafel valt',
+  'Below the texas deck': 'Onder het texasdek',
+  'The trophy shelf': 'De prijzenplank',
+  'Your standing on the river': 'Je rang op de rivier',
+
+  // The Lab's own front page, which had drifted from its Dutch.
+  'Spots at a table, solved rather than chosen from a list. There are no options to pick between — you work the number out and enter it.':
+    'Situaties aan een tafel, opgelost in plaats van gekozen uit een lijst. Er zijn geen opties om uit te kiezen — je rekent het getal uit en vult het in.',
+  '**Name the price** — face a bet and type the equity you need. Producing the number is what makes it stick; recognising it from a list does not.':
+    '**Noem de prijs** — je krijgt een bet tegen en typt de equity die je nodig hebt. Het getal zelf produceren is wat het laat beklijven; het herkennen in een lijst niet.',
+  '**Size the bet** — you are given a price and must find the bet that offers it. This is the calculation run backwards, so a memorised table will not save you.':
+    '**Bepaal de betgrootte** — je krijgt een prijs en moet de bet vinden die die prijs biedt. Dit is de berekening achterstevoren, dus een uit het hoofd geleerde tabel redt je niet.',
+  '**Make the call** — real cards, real equity, and the actual Fold and Call buttons.':
+    '**Neem de beslissing** — echte kaarten, echte equity, en de echte Fold- en Call-knoppen.',
+  'The three kinds are shuffled together on purpose. Having to work out which calculation applies is most of the skill at a real table, and practising them in separate blocks quietly removes that part.':
+    'De drie soorten zijn met opzet door elkaar gehusseld. Uitzoeken welke berekening van toepassing is, is aan een echte tafel het grootste deel van de vaardigheid — en ze in aparte blokken oefenen haalt dat deel stilletjes weg.',
+
+  // What Silas says at the end of a drill or a race, and the few words
+  // around it that never went through the translator.
+  'Flawless. That is the standard you want before moving up in stakes.':
+    'Foutloos. Dat is het niveau dat je wilt hebben voordat je hoger gaat spelen.',
+  'Nearly perfect. Raise the difficulty by moving on to the next module.':
+    'Bijna perfect. Maak het moeilijker door verder te gaan met de volgende module.',
+  'Strong. A few more sessions at this level and it will be automatic.':
+    'Sterk. Nog een paar sessies op dit niveau en het gaat vanzelf.',
+  'Getting there. Re-read the lesson points you missed — the explanation under each wrong answer is the important part.':
+    'Je komt er. Lees de lespunten die je miste nog eens — de uitleg onder elk fout antwoord is het belangrijkste deel.',
+  'This one needs work. Go back to the lesson and drill again; nobody gets this on the first pass.':
+    'Hier moet nog aan gewerkt worden. Ga terug naar de les en drill opnieuw; niemand heeft dit in één keer.',
+  'XP': 'XP',
+  'Type a percentage first.': 'Typ eerst een percentage.',
+  'Move the slider to choose a bet.': 'Schuif eerst om een bet te kiezen.',
+  'Reset all progress? This cannot be undone.': 'Alle voortgang wissen? Dit kan niet ongedaan worden gemaakt.',
+  'Notation': 'Notatie',
+  'Value 3-bets': 'Value-3-bets',
+  'Bluff 3-bets': 'Bluf-3-bets',
+  'Fold or call': 'Folden of callen',
+  '{n} of {total} solved — {pct}': '{n} van {total} opgelost — {pct}',
 };
