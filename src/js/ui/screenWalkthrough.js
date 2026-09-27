@@ -23,6 +23,8 @@ import { silasSays, silasVerdict, xpPop, stamp, svgNode } from './place.js';
 import { portraitSvg } from './portraits.js';
 import { MENTOR } from '../data/characters.js';
 import { MODULE_META } from '../data/curriculum.js';
+import { ownsLesson } from '../state/economy.js';
+import { lockedChapter } from './screenDrill.js';
 
 /**
  * Builds one hands-on exercise. A generator can decline a deal, so this
@@ -67,6 +69,7 @@ export function renderWalkthrough(ctx, params) {
   if (!meta || !walkthrough) {
     return el('div.empty', 'That lesson is not available yet.');
   }
+  if (!ownsLesson(ctx.profile, meta.id)) return lockedChapter(ctx, meta);
 
   const { profile, go } = ctx;
   const state = { index: 0, chosen: null, practice: null, correctCount: 0, answered: new Set(), verdictLine: null };

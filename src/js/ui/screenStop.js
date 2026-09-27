@@ -20,6 +20,10 @@ import { portraitSvg } from './portraits.js';
 import { riverState } from './screenRiver.js';
 import { svgNode, typedText } from './place.js';
 import * as audio from '../audio/engine.js';
+import { reportsOf } from '../state/sessionReport.js';
+import { EARN } from '../state/economy.js';
+import { pearls } from './shop.js';
+import { MENTOR } from '../data/characters.js';
 
 /** The place itself: sky, the far bank, the water, and the stop drawn big. */
 function scene(venue, state, arrived) {
@@ -204,6 +208,7 @@ function tookIt(venue, close) {
         el('span.keepsake.have.big', icon(`k-${boss.keepsake.key}`, { size: 34 })),
         el('div.boat-name', t(boss.keepsake.name)),
       ),
+      el('div.took-pearls', pearls(EARN.tableTaken), el('span', t('in pearls, for taking the table'))),
       el('button.btn.primary.plank', { onclick: close }, t('Hang it in the boat')),
     ),
   );
@@ -222,6 +227,23 @@ function neighbours(venue, go) {
   );
 }
 
+/**
+ * Straight after cashing out: what the sitting paid in pearls, and Silas's
+ * notes, folded, one tap away. The boss has had their say above; this is
+ * the quieter voice.
+ */
+function notesCard(report, index, go) {
+  return el('button.panel.stop-notes', { onclick: () => go('report', { i: index }) },
+    svgNode(portraitSvg(MENTOR.key, { size: 48 }), 'stop-notes-face'),
+    el('span.stop-notes-text',
+      el('span.stop-notes-title', t('Silas has notes on that session')),
+      el('span.faint', t('{hands} hands. Open them when you are ready.', { hands: report.hands })),
+    ),
+    el('span.stop-notes-pearls', pearls(report.pearls.total)),
+    icon('arrowRight', { size: 16, className: 'door-arrow' }),
+  );
+}
+
 export function renderStop(ctx, params = {}) {
   const { profile, go } = ctx;
   const venue = venueFor(params.at || profile.career.venue);
@@ -234,9 +256,13 @@ export function renderStop(ctx, params = {}) {
     setTimeout(() => audio.sfx('bell'), 1400);
   }
 
+  const reports = reportsOf(profile);
+  const notesIndex = params.notes != null && reports[Number(params.notes)] ? Number(params.notes) : null;
+
   const screen = el('div.screen.stop-screen',
     scene(venue, state, arrived),
     bossBlock(venue, state, after),
+    notesIndex !== null ? notesCard(reports[notesIndex], notesIndex, go) : null,
     el('div.stop-grid',
       tableBlock(venue, state, profile, go),
       keepsakeBlock(venue, state),

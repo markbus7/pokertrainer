@@ -243,6 +243,25 @@ const PEOPLE = {
       + '<path d="M61.3 47.5q5 6 3 17" stroke="#b9a15a" stroke-width=".8" fill="none"/>',
   },
 
+  /* ---- the trader: a madras tignon, gold hoops, and a shawl ---- */
+  delphine: {
+    skin: SKIN.brown,
+    ground: '#6a3f3a',
+    body: shoulders('#2f4a44')
+      + '<path d="M12 100C16 84 28 74 41 71L50 86L59 71C72 74 84 84 88 100Z" fill="#b8862e"/>'
+      + '<path d="M41 71L50 86L59 71" stroke="#8a6220" stroke-width="1.2" fill="none"/>'
+      + '<path d="M20 92l2 4M26 88l2 4M32 85l2 4M68 85l-2 4M74 88l-2 4M80 92l-2 4" stroke="#8a6220" stroke-width="1.3"/>'
+      + '<circle cx="50" cy="84" r="2.6" fill="#e0b64a"/>',
+    hair: '<path d="M31 43C27 21 73 19 69 43C66 31 58 27 50 27S34 31 31 43Z" fill="#b8322b"/>'
+      + '<path d="M33 35q17-9 34 0M32 40q18-8 36 0" stroke="#f2c14e" stroke-width="1.5" fill="none"/>'
+      + '<path d="M41 28v10M50 26v12M59 28v10" stroke="#2f5a8a" stroke-width="1.3"/>'
+      + '<path d="M44 24c3-11 19-11 21-1-6 5-15 5-21 1z" fill="#e0a13a"/>'
+      + '<path d="M48 22q7-4 13 0" stroke="#b8322b" stroke-width="1.2" fill="none"/>',
+    face: { mouth: 'smile', brow: '#2a1c14' },
+    front: '<circle cx="34" cy="56" r="3.2" fill="none" stroke="#e0b64a" stroke-width="1.7"/>'
+      + '<circle cx="66" cy="56" r="3.2" fill="none" stroke="#e0b64a" stroke-width="1.7"/>',
+  },
+
   /* ---- the regulars, keyed by the style they play ---- */
   rock: {
     skin: SKIN.tan,
@@ -305,8 +324,112 @@ const PEOPLE = {
   },
 };
 
+/* ---- the companions ------------------------------------------------ */
+
+/**
+ * The animals are drawn whole rather than assembled from the parts a person
+ * is built from — nobody's owl has ears in the same place as a riverboat
+ * captain — but they sit in the same cameo, so a companion beside your seat
+ * reads as one more face at the table.
+ */
+const ANIMALS = {
+  owl: {
+    ground: '#3d4a5c',
+    art: '<ellipse cx="50" cy="90" rx="31" ry="26" fill="#7a5a3a"/>'
+      + '<ellipse cx="50" cy="92" rx="17" ry="18" fill="#c9a77a"/>'
+      + '<path d="M43 83q3.5 2.4 7 0q3.5 2.4 7 0M41 91q4.5 2.8 9 0q4.5 2.8 9 0M43 99q3.5 2.4 7 0q3.5 2.4 7 0" stroke="#8a6a44" stroke-width="1.4" fill="none"/>'
+      + '<path d="M22 30l-4-18 15 10zM78 30l4-18-15 10z" fill="#6e5134"/>'
+      + '<ellipse cx="50" cy="46" rx="29" ry="26" fill="#8a6642"/>'
+      + '<ellipse cx="39" cy="47" rx="12.5" ry="13" fill="#d9c09a"/><ellipse cx="61" cy="47" rx="12.5" ry="13" fill="#d9c09a"/>'
+      + '<circle cx="39" cy="47" r="7.6" fill="#f2c14e"/><circle cx="61" cy="47" r="7.6" fill="#f2c14e"/>'
+      + '<circle cx="39.6" cy="47.6" r="3.8" fill="#1b1410"/><circle cx="61.6" cy="47.6" r="3.8" fill="#1b1410"/>'
+      + '<circle cx="38" cy="45.6" r="1.4" fill="#fff"/><circle cx="60" cy="45.6" r="1.4" fill="#fff"/>'
+      + '<circle cx="39" cy="47" r="10" fill="none" stroke="#c9a24a" stroke-width="1.5"/><circle cx="61" cy="47" r="10" fill="none" stroke="#c9a24a" stroke-width="1.5"/>'
+      + '<path d="M49 46.5h2M29 45l-5-2M71 45l5-2" stroke="#c9a24a" stroke-width="1.4"/>'
+      + '<path d="M26 35q12-8 22 1M74 35q-12-8-22 1" stroke="#5a4028" stroke-width="2.2" fill="none" stroke-linecap="round"/>'
+      + '<path d="M46.5 56l3.5 8 3.5-8z" fill="#e0a13a"/>',
+  },
+  cat: {
+    ground: '#4f5d4a',
+    art: '<path d="M14 100C16 80 31 72 50 72s34 8 36 28z" fill="#d98b3a"/>'
+      + '<path d="M40 73q10 8 20 0l-2 13h-16z" fill="#f6e6d2"/>'
+      + '<path d="M27 42l-5-24 19 13zM73 42l5-24-19 13z" fill="#e39a48"/>'
+      + '<path d="M28 37l-2.5-13 10.5 7.5zM72 37l2.5-13-10.5 7.5z" fill="#f2b8a8"/>'
+      + '<ellipse cx="50" cy="52" rx="26" ry="22" fill="#e39a48"/>'
+      + '<path d="M50 31v8M43.5 32.5l2 7M56.5 32.5l-2 7M26 50l6 1M26 55l6 0M74 50l-6 1M74 55l-6 0" stroke="#b86a24" stroke-width="2.2" stroke-linecap="round"/>'
+      + '<ellipse cx="44.5" cy="61.5" rx="7" ry="5.5" fill="#f6e6d2"/><ellipse cx="55.5" cy="61.5" rx="7" ry="5.5" fill="#f6e6d2"/>'
+      + '<ellipse cx="40" cy="48" rx="4.8" ry="5.4" fill="#8fc45a"/><ellipse cx="60" cy="48" rx="4.8" ry="5.4" fill="#8fc45a"/>'
+      + '<ellipse cx="40" cy="48" rx="1.4" ry="4.4" fill="#1b1410"/><ellipse cx="60" cy="48" rx="1.4" ry="4.4" fill="#1b1410"/>'
+      + '<circle cx="41.4" cy="46.2" r="1" fill="#fff"/><circle cx="61.4" cy="46.2" r="1" fill="#fff"/>'
+      + '<path d="M46.8 56h6.4l-3.2 3.6z" fill="#d36a6a"/>'
+      + '<path d="M50 59.6v2.4M50 62q-3 3-6 1M50 62q3 3 6 1" stroke="#6a3a2a" stroke-width="1.2" fill="none" stroke-linecap="round"/>'
+      + '<path d="M37 61l-17-3.5M37 63.5l-17 1M63 61l17-3.5M63 63.5l17 1" stroke="#fffaf0" stroke-width=".9" opacity=".85"/>',
+  },
+  raccoon: {
+    ground: '#51604a',
+    art: '<path d="M80 100q16-12 6-30" stroke="#6f6b66" stroke-width="10" fill="none" stroke-linecap="round"/>'
+      + '<path d="M84 90l6-3M87 81l6-1M88 73l5 1" stroke="#2a2522" stroke-width="3.2"/>'
+      + '<path d="M14 100C16 82 31 74 50 74s34 8 36 26z" fill="#7b7771"/>'
+      + '<path d="M40 76q10 7 20 0l-3 10h-14z" fill="#d9d4cc"/>'
+      + '<circle cx="28" cy="34" r="8.5" fill="#6f6b66"/><circle cx="72" cy="34" r="8.5" fill="#6f6b66"/>'
+      + '<circle cx="28" cy="34" r="4.4" fill="#d9d4cc"/><circle cx="72" cy="34" r="4.4" fill="#d9d4cc"/>'
+      + '<ellipse cx="50" cy="52" rx="27" ry="22" fill="#8e8a84"/>'
+      + '<path d="M29 42q9-6 17 0M54 42q9-6 17 0" stroke="#f1eee8" stroke-width="3.4" fill="none" stroke-linecap="round"/>'
+      + '<path d="M23 50q13-8 23 1q4 2.4 8 0q10-9 23-1q-2 10-13 10q-8 0-12-4.4q-4 4.4-12 4.4q-11 0-17-10z" fill="#2a2522"/>'
+      + '<circle cx="38.5" cy="51.5" r="3.4" fill="#f4efe6"/><circle cx="61.5" cy="51.5" r="3.4" fill="#f4efe6"/>'
+      + '<circle cx="38.8" cy="51.8" r="2.1" fill="#1b1410"/><circle cx="61.8" cy="51.8" r="2.1" fill="#1b1410"/>'
+      + '<ellipse cx="50" cy="64" rx="10" ry="7" fill="#efebe4"/>'
+      + '<ellipse cx="50" cy="60" rx="3.6" ry="2.5" fill="#1b1410"/>'
+      + '<path d="M50 62.5v2.4M50 65q-2.6 2.4-5 .8M50 65q2.6 2.4 5 .8" stroke="#3a322c" stroke-width="1.1" fill="none" stroke-linecap="round"/>',
+  },
+  turtle: {
+    ground: '#3f5a5a',
+    art: '<path d="M48 66q-4 8 0 14" stroke="#8fae5e" stroke-width="15" fill="none" stroke-linecap="round"/>'
+      + '<path d="M8 100C10 76 28 66 50 66s40 10 42 34z" fill="#5e7a3a"/>'
+      + '<path d="M8 100C10 76 28 66 50 66s40 10 42 34" stroke="#3f5a26" stroke-width="2.2" fill="none"/>'
+      + '<path d="M38 80l12-6 12 6-2 12H40zM38 80l-14 6M62 80l14 6M40 92l-8 8M60 92l8 8" stroke="#3f5a26" stroke-width="2" fill="none" stroke-linejoin="round"/>'
+      + '<ellipse cx="50" cy="46" rx="19" ry="17" fill="#9bb86a"/>'
+      + '<path d="M36 40q4-3 8 0M56 40q4-3 8 0" stroke="#6f8a44" stroke-width="1.4" fill="none"/>'
+      + '<circle cx="42" cy="45" r="3.6" fill="#1b1410"/><circle cx="58" cy="45" r="3.6" fill="#1b1410"/>'
+      + '<circle cx="43.1" cy="43.9" r="1.2" fill="#fff"/><circle cx="59.1" cy="43.9" r="1.2" fill="#fff"/>'
+      + '<path d="M43 54q7 5 14 0" stroke="#4a5f2a" stroke-width="1.6" fill="none" stroke-linecap="round"/>'
+      + '<circle cx="47" cy="50" r=".9" fill="#4a5f2a"/><circle cx="53" cy="50" r=".9" fill="#4a5f2a"/>'
+      + '<path d="M33 31c2-10 32-10 34 0l-2 3H35z" fill="#1f2e4a"/><path d="M31 33h38v3H31z" fill="#152036"/><circle cx="50" cy="29" r="2.2" fill="#d9b44a"/>',
+  },
+  hound: {
+    ground: '#4a4f5e',
+    art: '<path d="M14 100C16 84 30 78 50 78s34 6 36 22z" fill="#9a6838"/>'
+      + '<path d="M33 79h34l-1 6H34z" fill="#8f1f1f"/><circle cx="50" cy="90" r="3.6" fill="#d9b44a"/>'
+      + '<path d="M29 36c-11 4-14 24-9 39 3 7 11 5 12-2l2-31z" fill="#7a4e28"/>'
+      + '<path d="M71 36c11 4 14 24 9 39-3 7-11 5-12-2l-2-31z" fill="#7a4e28"/>'
+      + '<path d="M31 36c0-13 38-13 38 0v21c0 12-8 20-19 20s-19-8-19-20z" fill="#b07a44"/>'
+      + '<path d="M40 35q10-4 20 0M42 39.5q8-3 16 0" stroke="#8a5a30" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
+      + '<ellipse cx="42" cy="48" rx="3.6" ry="3" fill="#2a1c14"/><ellipse cx="58" cy="48" rx="3.6" ry="3" fill="#2a1c14"/>'
+      + '<path d="M37.6 50.6q4.4 3 8.8 0M53.6 50.6q4.4 3 8.8 0" stroke="#b5504a" stroke-width="1.4" fill="none"/>'
+      + '<path d="M37 45.4q5-3 10 0M53 45.4q5-3 10 0" stroke="#7a4e28" stroke-width="2" fill="none"/>'
+      + '<ellipse cx="50" cy="65" rx="12" ry="9.5" fill="#c99058"/>'
+      + '<ellipse cx="50" cy="59" rx="5.4" ry="3.8" fill="#2a1c14"/>'
+      + '<path d="M50 62.6v3.4M39 67q11 11 22 0" stroke="#7a4e28" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+  },
+  parrot: {
+    ground: '#2f5a4a',
+    art: '<path d="M28 100c-2-22 7-38 22-42 15 4 24 20 22 42z" fill="#c9302c"/>'
+      + '<path d="M57 63c11 7 15 21 13 37H56z" fill="#2e6fb5"/>'
+      + '<path d="M59 66c8 5 11 14 11 23" stroke="#f2c14e" stroke-width="4.2" fill="none" stroke-linecap="round"/>'
+      + '<path d="M60 72c6 4 8 11 8 18" stroke="#3aa04a" stroke-width="2.6" fill="none"/>'
+      + '<circle cx="48" cy="42" r="19" fill="#d8352f"/>'
+      + '<path d="M36 28q3-10 12-12M42 26q2-8 10-9" stroke="#e8554a" stroke-width="3" fill="none" stroke-linecap="round"/>'
+      + '<ellipse cx="44" cy="45" rx="9" ry="10" fill="#f4efe6"/>'
+      + '<path d="M38 44h4M38 48h4M39 52h4" stroke="#c9302c" stroke-width=".9" opacity=".6"/>'
+      + '<circle cx="45" cy="42" r="3.6" fill="#f2e6a0"/><circle cx="45.4" cy="42.2" r="1.9" fill="#1b1410"/>'
+      + '<path d="M56 37c11 0 15 9 11 17-2 4-6 5-8 3 2-3 2-7-2-10z" fill="#e8e0d0"/>'
+      + '<path d="M56 50c2 4 4 6 7 6-3 2-7 1-9-2z" fill="#2a2522"/>',
+  },
+};
+
 /** Everyone who can be drawn. */
-export const PORTRAIT_KEYS = Object.keys(PEOPLE);
+export const PORTRAIT_KEYS = [...Object.keys(PEOPLE), ...Object.keys(ANIMALS)];
+export const ANIMAL_KEYS = Object.keys(ANIMALS);
 
 let uid = 0;
 
@@ -317,6 +440,23 @@ let uid = 0;
 export function portraitSvg(key, { size = 64, className = '' } = {}) {
   const p = PEOPLE[key];
   const id = `pt${++uid}`;
+  const animal = ANIMALS[key];
+  if (animal) {
+    return `<svg class="portrait ${className}" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true">`
+      + '<defs>'
+      + `<clipPath id="${id}c"><circle cx="50" cy="50" r="47"/></clipPath>`
+      + `<radialGradient id="${id}v" cx="50%" cy="38%" r="62%"><stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".45"/></radialGradient>`
+      + `<radialGradient id="${id}l" cx="42%" cy="30%" r="55%"><stop offset="0%" stop-color="#fff" stop-opacity=".22"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient>`
+      + '</defs>'
+      + `<g clip-path="url(#${id}c)">`
+      + `<rect width="100" height="100" fill="${animal.ground}"/>`
+      + `<rect width="100" height="100" fill="url(#${id}l)"/>`
+      + animal.art
+      + `<rect width="100" height="100" fill="url(#${id}v)"/>`
+      + '</g>'
+      + '<circle class="portrait-rim" cx="50" cy="50" r="47.5"/>'
+      + '</svg>';
+  }
   if (!p) {
     return `<svg class="portrait ${className}" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true">`
       + `<defs><clipPath id="${id}"><circle cx="50" cy="50" r="47"/></clipPath></defs>`

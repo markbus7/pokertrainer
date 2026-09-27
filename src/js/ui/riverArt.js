@@ -350,6 +350,27 @@ export const LANDMARKS = {
       <path class="ink" d="M20 5h16M28 -3v16M22.3 -.7l11.4 11.4M33.7 -.7l-11.4 11.4"/>
     </g>`,
 
+  // A general store on stilts where two rivers meet: a porch, barrels, a
+  // board over the door and a flag to find it by.
+  tradingpost: () => `
+    <path class="shallows" d="M-46 16h92v8h-92z"/>
+    <path class="ink" d="M-32 24V11M-16 24V11M0 24V11M16 24V11M32 24V11"/>
+    <path class="roof ink" d="M-38 11h76v-3h-76z"/>
+    <path class="wall ink" d="M-31 8V-15h50V8z"/>
+    <path class="roof ink" d="M-35 -15L-6 -32L23 -15z"/>
+    <rect class="mark ink" x="-24" y="-11" width="36" height="7"/>
+    <path class="ink" d="M-19 -7.5h26"/>
+    <rect class="glow" x="-26" y="-1" width="7" height="7"/>
+    <path class="ink" d="M-26 2.5h7"/>
+    <path class="roof ink" d="M-9 8v-11h8v11z"/>
+    <rect class="glow" x="6" y="-1" width="7" height="7"/>
+    <path class="ink" d="M6 2.5h7"/>
+    <ellipse class="wall ink" cx="27" cy="3" rx="4.2" ry="5"/>
+    <ellipse class="wall ink" cx="35" cy="3" rx="4.2" ry="5"/>
+    <path class="ink" d="M23 1h8M31 1h8"/>
+    <path class="ink" d="M-40 8V-24"/>
+    <path class="mark ink" d="M-40 -24l12 3.5-12 3.5z"/>`,
+
   flagship: () => `
     <path class="roof ink" d="M-44 8h88l-11 12h-66z"/>
     <path class="wall ink" d="M-35 8V-2h68v10z"/>

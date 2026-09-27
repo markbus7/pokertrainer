@@ -4325,4 +4325,229 @@ export const NL = {
   'Bluff 3-bets': 'Bluf-3-bets',
   'Fold or call': 'Folden of callen',
   '{n} of {total} solved — {pct}': '{n} van {total} opgelost — {pct}',
+
+  // ---- pearls, the Trading Post, companions and free play ----
+  'Delphine Moreau': 'Delphine Moreau',
+  'Keeps the Trading Post': 'Houdt de handelspost',
+  'Pearls on the counter and anything on these shelves is yours. No pearls, no business — the tables pay in them.':
+    'Parels op de toonbank en alles op deze planken is van jou. Geen parels, geen zaken — de tafels betalen erin.',
+  'Your purse is light, cher. Go and sit at a table; a pearl a hand, and more for playing it right.':
+    'Je buidel is licht, cher. Ga aan een tafel zitten; een parel per hand, en meer als je hem goed speelt.',
+  'A fine choice.': 'Een goede keus.',
+  'Mind how you use it.': 'Let op hoe je het gebruikt.',
+  'Pleasure doing business.': 'Prettig zakendoen.',
+  'That one will earn its keep.': 'Die verdient zichzelf wel terug.',
+  'This chapter is on Delphine\'s shelf at the Trading Post. The tables pay in pearls — a pearl a hand, and more for every hand played well.':
+    'Dit hoofdstuk ligt bij Delphine op de plank in de handelspost. De tafels betalen in parels — een parel per hand, en meer voor elke hand die je goed speelt.',
+  'You have the pearls for this one. Buy it and we start.': 'Je hebt de parels voor deze. Koop hem en we beginnen.',
+  'Not yet. This chapter is built on the ones before it, and it waits for {rank}.':
+    'Nog niet. Dit hoofdstuk bouwt voort op de hoofdstukken ervoor, en wacht op {rank}.',
+  'Every figure here is a price, and you cannot weigh a price you have not learned to name. Bring me the Pot Odds chapter and the counter is yours.':
+    'Elk getal hier is een prijs, en je kunt geen prijs wegen die je nog niet hebt leren benoemen. Kom terug met het hoofdstuk Pot Odds en de toonbank is van jou.',
+
+  'Hoot': 'Hoot',
+  'Whiskers': 'Whiskers',
+  'Bandit': 'Bandit',
+  'Shelly': 'Shelly',
+  'Duke': 'Duke',
+  'Rosie': 'Rosie',
+  'Owl': 'Uil',
+  'Cat': 'Kat',
+  'Raccoon': 'Wasbeer',
+  'Turtle': 'Schildpad',
+  'Bloodhound': 'Bloedhond',
+  'Parrot': 'Papegaai',
+  'Does the sum: what the call costs, the share of the pot it has to win, and what your hand has.':
+    'Maakt de som: wat de call kost, welk deel van de pot hij moet winnen, en wat jouw hand heeft.',
+  'Sits on the chart for your seat, with your hand ringed on it.':
+    'Zit op de chart voor jouw positie, met jouw hand erop omcirkeld.',
+  'Counts the cards that save you, and turns the count into a percentage.':
+    'Telt de kaarten die je redden, en maakt van dat aantal een percentage.',
+  'Knows how deep the stacks are, and tells you when the pot has you committed.':
+    'Weet hoe diep de stacks zijn, en zegt je wanneer de pot je vastlegt.',
+  'Sniffs out how everybody at the table plays, and whether they have noticed you.':
+    'Snuffelt uit hoe iedereen aan tafel speelt, en of ze jou door hebben.',
+  'Repeats what Silas would do here, and why — the whole answer, so use her sparingly.':
+    'Herhaalt wat Silas hier zou doen, en waarom — het hele antwoord, dus gebruik haar spaarzaam.',
+  '{name} the {kind}': '{name} de {kind}',
+  'Reach {rank}': 'Bereik {rank}',
+  'Own the {module} chapter': 'Bezit het hoofdstuk {module}',
+  'Finish the {module} lesson': 'Maak de les {module} af',
+  'Finish {n} guided lessons ({done} so far)': 'Maak {n} begeleide lessen af ({done} tot nu toe)',
+  'Yours': 'Van jou',
+  '{n} more pearls to go — the tables pay them.': 'Nog {n} parels te gaan — de tafels betalen ze.',
+  'Play for pearls': 'Speel om parels',
+  'Bought: {name}': 'Gekocht: {name}',
+  '{n} pearls left in the purse.': 'Nog {n} parels in de buidel.',
+  'Buy': 'Koop',
+  'Where the two rivers meet': 'Waar de twee rivieren samenkomen',
+  'The Trading Post': 'De Handelspost',
+  'Your purse': 'Je buidel',
+  '{n} earned at the tables so far': '{n} tot nu toe verdiend aan de tafels',
+  'Where pearls come from': 'Waar parels vandaan komen',
+  'A pearl for every hand you play at a table — more at the stops further down the river.':
+    'Een parel voor elke hand die je aan een tafel speelt — meer bij de haltes verder stroomafwaarts.',
+  'One more for every sound decision you make without asking for help.':
+    'Nog een voor elke goede beslissing die je neemt zonder om hulp te vragen.',
+  'A hundred for taking a table from the one who owns it, and twenty-five for beating the Belle in the race.':
+    'Honderd voor het afpakken van een tafel van wie hem bezit, en vijfentwintig voor het verslaan van de Belle in de race.',
+  'Drills and lessons pay in XP, not pearls: the purse is filled at the tables, where nobody tells you which skill a spot is testing.':
+    'Drills en lessen betalen in XP, niet in parels: de buidel vult zich aan de tafels, waar niemand je vertelt welke vaardigheid een spot test.',
+  'Companions': 'Maatjes',
+  'They sit at the table with you and help when you ask. Each one needs its chapter finished first — they do the work for somebody who knows how it is done.':
+    'Ze zitten met je aan tafel en helpen als je het vraagt. Voor elk moet eerst het bijbehorende hoofdstuk af zijn — ze doen het werk voor iemand die weet hoe het moet.',
+  'Chapters': 'Hoofdstukken',
+  'The course, one chapter at a time. Your rank decides which ones are on the shelf; pearls decide which ones are yours.':
+    'De cursus, hoofdstuk voor hoofdstuk. Je rang bepaalt welke op de plank liggen; parels bepalen welke van jou zijn.',
+  'Charts for the pilot house': 'Charts voor het loodshuis',
+  'One reach of the river each: a range to learn by daylight, at dusk and at night.':
+    'Elk een stuk van de rivier: een range om te leren bij daglicht, in de schemering en in het donker.',
+  'The {seat} chart': 'De {seat}-chart',
+  'Three-bet, call or fold': 'Three-betten, callen of folden',
+  'Comes to the table with you. Ask for help and they chip in.': 'Gaat mee aan tafel. Vraag om hulp en ze helpen mee.',
+  'Next on the shelf: {module}': 'Volgende op de plank: {module}',
+  'On the shelf at the Trading Post': 'Op de plank in de handelspost',
+  '{n} of {total} yours': '{n} van {total} van jou',
+  'On the shelf — a chart to learn by heart': 'Op de plank — een chart om uit je hoofd te leren',
+  'That chapter is on the shelf at the Trading Post — {n} pearls.': 'Dat hoofdstuk ligt op de plank in de handelspost — {n} parels.',
+  'Your pearls. The tables pay them; the Trading Post takes them.': 'Je parels. De tafels betalen ze; de handelspost neemt ze aan.',
+  '{n} pearls — the Trading Post': '{n} parels — de handelspost',
+  'Spend your pearls: chapters, charts, companions': 'Besteed je parels: hoofdstukken, charts, maatjes',
+  'Stakes': 'Inzet',
+
+  'Silas: at my shoulder': 'Silas: naast me',
+  'Silas: quiet': 'Silas: stil',
+  'Silas grades every decision as you make it. Click for free play.': 'Silas beoordeelt elke beslissing terwijl je hem neemt. Klik voor vrij spel.',
+  'Free play: Silas says nothing unless you ask, and leaves notes for when you get up.':
+    'Vrij spel: Silas zegt niets tenzij je het vraagt, en laat aantekeningen achter voor als je opstaat.',
+  'Help': 'Hulp',
+  'Help with this decision. It costs the decision its pearl.': 'Hulp bij deze beslissing. Die kost de beslissing haar parel.',
+  'Companions from the Trading Post sit here': 'Maatjes uit de handelspost zitten hier',
+  'Pearls this sitting': 'Parels deze zitting',
+  'Hand log': 'Handlog',
+  'Hide the log': 'Verberg de log',
+  'Help for this decision': 'Hulp bij deze beslissing',
+  'Asking costs this decision its pearl, and it will not count as solved on your own.':
+    'Vragen kost deze beslissing haar parel, en hij telt niet als zelf opgelost.',
+  'Companions from the Trading Post add more here: the price, the chart, your outs, the table\'s habits.':
+    'Maatjes uit de handelspost voegen hier meer toe: de prijs, de chart, je outs, de gewoontes aan tafel.',
+  'This is a {skill} decision.': 'Dit is een beslissing over {skill}.',
+  'Take your time. What do you know about this spot?': 'Neem je tijd. Wat weet je van deze spot?',
+  'Pot / to call': 'Pot / te callen',
+  'Nobody has bet, so there is no price to pay. Checking costs nothing.': 'Niemand heeft gebet, dus er is geen prijs te betalen. Checken kost niets.',
+  'You are asked to put in {call} to win {pot}.': 'Je moet {call} inleggen om {pot} te winnen.',
+  'Equity needed': 'Benodigde equity',
+  'The charts are for before the flop. Now the board decides what your hand is worth.':
+    'De charts zijn voor vóór de flop. Nu bepaalt het bord wat je hand waard is.',
+  'No chart for this seat.': 'Geen chart voor deze positie.',
+  'Everybody limped or folded to you in the big blind — there is no chart for this one.':
+    'Iedereen limpte of foldde naar jou in de big blind — daar is geen chart voor.',
+  'Your hand is ringed. Find it and read the colour.': 'Je hand is omcirkeld. Zoek hem en lees de kleur.',
+  'Nothing to count before the flop.': 'Niets te tellen vóór de flop.',
+  'No more cards are coming. What you have is what you have.': 'Er komen geen kaarten meer. Wat je hebt, heb je.',
+  'No clean outs that I can find. You are ahead, or you are drawing thin.': 'Geen schone outs die ik kan vinden. Je staat voor, of je drawt dun.',
+  '{n} outs. Times four with two cards to come: about {pct}% to get there by the river.':
+    '{n} outs. Keer vier met nog twee kaarten te gaan: ongeveer {pct}% om het tot de river te halen.',
+  '{n} outs. Times two with one card to come: about {pct}% to get there on the river.':
+    '{n} outs. Keer twee met nog één kaart te gaan: ongeveer {pct}% om het op de river te halen.',
+  'Stacks are {n} big blinds deep. Plan the hand now: how big will this pot get if you play it?':
+    'De stacks zijn {n} big blinds diep. Plan de hand nu: hoe groot wordt deze pot als je hem speelt?',
+  'Effective stack': 'Effectieve stack',
+  '{n} bb': '{n} bb',
+  'Nobody has anything behind. The pot is all that is left.': 'Niemand heeft nog iets achter. De pot is alles wat er over is.',
+  'Stack to pot under two: you are committed. A strong pair does not fold here — the money goes in.':
+    'Stack tegen pot onder de twee: je zit vast. Een sterk paar foldt hier niet — het geld gaat erin.',
+  'A middling stack to pot. Top pair is worth getting the stacks in with; weaker pairs are not.':
+    'Een gemiddelde stack tegen pot. Top pair is het waard om de stacks mee in te zetten; zwakkere paren niet.',
+  'Deep: one pair is not worth your whole stack. Play for sets, straights and flushes.':
+    'Diep: één paar is je hele stack niet waard. Speel voor sets, straights en flushes.',
+  'Nobody left to read.': 'Niemand meer om te lezen.',
+  'Has noticed how you play, and adjusted.': 'Heeft door hoe jij speelt, en heeft zich aangepast.',
+  'Squawk! Even I do not know this one.': 'Krrra! Zelfs ik weet deze niet.',
+  'Silas would {action}.': 'Silas zou {action}.',
+  'check': 'checken',
+  'call {amount}': '{amount} callen',
+  'bet {amount}': '{amount} betten',
+  'raise to {amount}': 'raisen naar {amount}',
+  'fold': 'folden',
+  '{hand}, before the flop': '{hand}, vóór de flop',
+  'You won {n} chips this hand.': 'Je won {n} fiches deze hand.',
+  'You lost {n} chips this hand.': 'Je verloor {n} fiches deze hand.',
+
+  'Silas has notes on that session': 'Silas heeft aantekeningen over die sessie',
+  '{hands} hands. Open them when you are ready.': '{hands} handen. Open ze wanneer je klaar bent.',
+  'Silas\'s notes': 'Aantekeningen van Silas',
+  'No notes yet': 'Nog geen aantekeningen',
+  'Sit down at a table and play a few hands. When you get up, Silas\'s notes on the session are waiting here.':
+    'Ga aan een tafel zitten en speel een paar handen. Als je opstaat, liggen de aantekeningen van Silas over de sessie hier klaar.',
+  'earned at this table': 'verdiend aan deze tafel',
+  'Sound decisions': 'Goede beslissingen',
+  'Taking the table': 'De tafel afgepakt',
+  'A pearl for every hand, one more for every sound decision you made without asking.':
+    'Een parel per hand, en nog een voor elke goede beslissing die je zonder vragen nam.',
+  'Silas\'s notes on this session': 'De aantekeningen van Silas over deze sessie',
+  '{n} decisions looked at. Open them when you are ready.': '{n} beslissingen bekeken. Open ze wanneer je klaar bent.',
+  'Nothing to judge this time — you did not act in any hand.': 'Deze keer niets te beoordelen — je hebt in geen enkele hand gehandeld.',
+  'Play again': 'Nog eens spelen',
+  'You did not make a decision I could grade. Sit in a few pots next time.':
+    'Je nam geen beslissing die ik kon beoordelen. Speel de volgende keer wat potten mee.',
+  'Clean play. {sound} of {total} decisions were sound — that is how a table gets taken.':
+    'Zuiver gespeeld. {sound} van {total} beslissingen waren goed — zo pak je een tafel af.',
+  'Mostly sound: {sound} of {total}. The leaks below are where the rest went.':
+    'Grotendeels goed: {sound} van {total}. De lekken hieronder zijn waar de rest bleef.',
+  '{sound} of {total} decisions were sound. There is work here — start with the weakest skill below.':
+    '{sound} van {total} beslissingen waren goed. Hier is werk te doen — begin met de zwakste vaardigheid hieronder.',
+  'Every skill you were tested on': 'Elke vaardigheid waarop je getest werd',
+  'One decision is not enough to call a skill strong or weak, so those are listed but not judged.':
+    'Eén beslissing is te weinig om een vaardigheid sterk of zwak te noemen, dus die staan erbij maar worden niet beoordeeld.',
+  'What cost you most': 'Wat je het meest kostte',
+  'about {n}bb': 'ongeveer {n}bb',
+  'a range mistake — it costs over many hands': 'een range-fout — die kost over veel handen',
+  'Replay': 'Terugkijken',
+  'How you played, by the numbers': 'Hoe je speelde, in cijfers',
+  'hands you paid to play': 'handen waarvoor je betaalde om te spelen',
+  'hands you raised before the flop': 'handen die je vóór de flop raisede',
+  'bets and raises per call': 'bets en raises per call',
+  'Play {n} hands in one sitting and the notes will read your style as well.':
+    'Speel {n} handen in één zitting en de aantekeningen lezen ook je speelstijl.',
+  'Leaks': 'Lekken',
+  'One decision was made with help. It is not counted above and earned no pearl — which is only fair.':
+    'Eén beslissing werd met hulp genomen. Die telt hierboven niet mee en leverde geen parel op — en dat is niet meer dan eerlijk.',
+  '{n} decisions were made with help. They are not counted above and earned no pearls — which is only fair.':
+    '{n} beslissingen werden met hulp genomen. Die tellen hierboven niet mee en leverden geen parels op — en dat is niet meer dan eerlijk.',
+  'Held up best': 'Hield het best stand',
+  'Leaked most': 'Lekte het meest',
+  '{right} of {total} sound': '{right} van {total} goed',
+  '{name} the {kind} helps with exactly this, at the Trading Post.': '{name} de {kind} helpt precies hiermee, in de handelspost.',
+  'Earlier sessions': 'Eerdere sessies',
+  'You are playing too many hands': 'Je speelt te veel handen',
+  'Run the Preflop Ranges drill and fold your bottom 10% of opens for a session.':
+    'Doe de drill Preflop Ranges en fold een sessie lang je onderste 10% aan opens.',
+  'You are folding away your edge': 'Je foldt je voorsprong weg',
+  'Open more suited hands from the cutoff and button. Position is worth more than card strength.':
+    'Open meer suited handen vanaf de cutoff en de button. Positie is meer waard dan kaartsterkte.',
+  'You call too much preflop': 'Je callt te veel preflop',
+  'Raise or fold. Calling gives the pot to whoever bets first after the flop.':
+    'Raise of fold. Callen geeft de pot aan wie na de flop als eerste bet.',
+  'You are too passive after the flop': 'Je bent te passief na de flop',
+  'When you would call, ask whether raising folds out better hands or gets called by worse. If either is true, raise.':
+    'Als je zou callen, vraag je dan af of een raise betere handen laat folden of door slechtere gecalld wordt. Is een van beide waar, raise dan.',
+  'You are bluffing too much': 'Je bluft te veel',
+  'Bluff only with hands that can improve, and stop firing at players who never fold.':
+    'Bluf alleen met handen die kunnen verbeteren, en stop met schieten op spelers die nooit folden.',
+  'You go to showdown too often': 'Je gaat te vaak naar showdown',
+  'Fold your bluff-catchers against players who never bluff. Curiosity is expensive.':
+    'Fold je bluff-catchers tegen spelers die nooit bluffen. Nieuwsgierigheid is duur.',
+  'You are calling without the odds': 'Je callt zonder de odds',
+  'Before every call, say the price out loud: "I am calling X to win Y, so I need Z%."':
+    'Zeg voor elke call de prijs hardop: "Ik call X om Y te winnen, dus ik heb Z% nodig."',
+
+  'in pearls, for taking the table': 'aan parels, voor het afpakken van de tafel',
+  'in pearls for beating the Belle': 'aan parels voor het verslaan van de Belle',
+  'The tables pay in pearls, too: one for every hand, one more for every hand played well. Pearls buy your lessons, your charts and your companions at the Trading Post — so the first thing to do is play.':
+    'De tafels betalen ook in parels: een voor elke hand, en nog een voor elke hand die je goed speelt. Met parels koop je je lessen, je charts en je maatjes in de handelspost — dus het eerste wat je doet, is spelen.',
+  'What he saw at your last sittings': 'Wat hij zag bij je laatste zittingen',
+
+  'Only {total} decisions to go on — too few to say much. Sit longer next time and I can tell you more.':
+    'Maar {total} beslissingen om op af te gaan — te weinig om veel te zeggen. Blijf de volgende keer langer zitten, dan kan ik je meer vertellen.',
 };

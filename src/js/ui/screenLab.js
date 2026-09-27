@@ -27,10 +27,16 @@ import { handFromLabSpot, keepHand } from '../state/handHistory.js';
 import * as audio from '../audio/engine.js';
 import { ASSAYER } from '../data/characters.js';
 import { sceneBanner, says, voiceLine, pickLine, coins, xpPop, stamp } from './place.js';
+import { ownsLesson } from '../state/economy.js';
+import { buyControl } from './shop.js';
+
+/** The counter serves those who own the chapter every figure here comes from. */
+const LAB_NEEDS = 'pot-odds';
 
 const SESSION_LENGTH = 9;
 
 export function renderLab(ctx) {
+  if (!ownsLesson(ctx.profile, LAB_NEEDS)) return renderLabIntro(ctx);
   const { profile, rng, go } = ctx;
   const spots = generateSession(rng, SESSION_LENGTH);
   // `results` is right or wrong per figure, for the coins along the top;
@@ -328,11 +334,13 @@ function labelFor(type) {
  * counter to step up to.
  */
 export function renderLabIntro(ctx) {
-  const { go } = ctx;
+  const { go, profile } = ctx;
+  const open = ownsLesson(profile, LAB_NEEDS);
   return el('div.screen.assay',
     sceneBanner({ id: 'assay', landmark: 'assay', kicker: t('On Front Street, by the bank'), title: t('The Assay Office') }),
     el('div.panel.mentor-card',
-      says(ASSAYER.key, t(ASSAYER.hello), { name: ASSAYER.name }),
+      says(ASSAYER.key, t(open ? ASSAYER.hello : ASSAYER.closed), { name: ASSAYER.name }),
+      open ? null : el('div.shelf-line', buyControl(profile, `lesson:${LAB_NEEDS}`, { go, onBought: () => go('lab') })),
     ),
     el('div.panel.page.paper.assay-book',
       el('div.page-kicker', t('The Lab')),
@@ -344,7 +352,7 @@ export function renderLabIntro(ctx) {
         el('li', el('span', richText(t('**Make the call** — real cards, real equity, and the actual Fold and Call buttons.')))),
       ),
       el('p.muted', 'The three kinds are shuffled together on purpose. Having to work out which calculation applies is most of the skill at a real table, and practising them in separate blocks quietly removes that part.'),
-      el('button.btn.primary.lg.plank', { onclick: () => go('lab-run') }, t('Step up to the counter')),
+      el('button.btn.primary.lg.plank', { disabled: !open, onclick: () => go('lab-run') }, t('Step up to the counter')),
     ),
   );
 }

@@ -2373,3 +2373,379 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
   .cabin-plaques .stat { padding: var(--s-3); }
   .cabin-plaques .stat .value { font-size: var(--t-md); }
 }
+
+/* ================================================================
+   Pearls, prices and the Trading Post
+   ================================================================ */
+
+.pearl {
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, var(--pearl-hi) 0%, var(--pearl) 34%, var(--pearl-rose) 62%, var(--pearl-lo) 100%);
+  box-shadow: inset -1px -1px 2px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.35);
+  vertical-align: -3px;
+}
+.pearls { display: inline-flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; font-weight: 700; }
+.pearls.big { font-size: var(--t-xl); font-family: var(--font-print); gap: 8px; }
+.pearls.big .pearl { width: 26px !important; height: 26px !important; }
+
+/* On the rail, beside the purse. */
+.pearl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--on-wood);
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-md);
+  cursor: pointer;
+}
+.pearl-chip:hover { border-color: var(--brass); }
+.pearl-count { font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .pearl-chip { padding: 5px 9px; font-size: var(--t-sm); } }
+
+/* Pearls earned, flying to the purse. */
+.pearl-pop {
+  position: fixed;
+  z-index: 180;
+  transform: translate(-50%, 0);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-family: var(--font-print);
+  font-weight: 700;
+  font-size: var(--t-sm);
+  background: var(--wood-2);
+  color: var(--on-wood);
+  border: 1px solid var(--brass-lo);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  animation: xp-rise 1.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.price-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  font-size: var(--t-sm);
+}
+.price-tag.dim { opacity: 0.7; }
+.price-tag.on-button { background: rgba(0, 0, 0, 0.18); border-color: rgba(0, 0, 0, 0.2); padding: 1px 8px; margin-left: 4px; }
+.buy-btn { display: inline-flex; align-items: center; gap: 4px; }
+.buy-locked, .buy-short { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.buy-locked .needs { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: var(--t-sm); color: var(--text-dim); }
+.buy-locked .needs li { display: flex; align-items: center; gap: 6px; }
+.owned-tag { white-space: nowrap; }
+
+/* Under Silas's recommendation in the school: the next thing on the shelf. */
+.shelf-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px dashed var(--border-bright);
+}
+.shelf-what { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.course-purse { margin-left: auto; }
+.course-head { display: flex; align-items: baseline; gap: var(--s-3); flex-wrap: wrap; }
+
+/* A chapter on the shelf: open to look at, priced, but not yet yours. */
+.trail-stop.shelved .medallion {
+  background: radial-gradient(circle at 35% 30%, var(--pearl-hi), var(--pearl) 40%, var(--pearl-lo));
+  color: var(--ink);
+}
+.trail-stop.shelved .chapter-card { opacity: 0.9; }
+.trail-stop.shelved .module-tile { cursor: pointer; }
+.price-badge { background: var(--paper); border-color: var(--ink-rule); }
+.medallion.shelved {
+  background: radial-gradient(circle at 35% 30%, var(--pearl-hi), var(--pearl) 40%, var(--pearl-lo));
+  color: var(--ink);
+}
+.on-shelf .shelf-buy { margin-top: var(--s-4); }
+
+/* A reach of the pilot house still on the shelf. */
+.rung-row.on-shelf { cursor: default; opacity: 0.95; }
+.rung-row.on-shelf .rung-mark { background: var(--paper-2); }
+.rung-buy { margin-left: auto; }
+
+/* ---- the store ---------------------------------------------------- */
+
+.store-purse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px dashed var(--border-bright);
+}
+.store-purse-label { font-family: var(--font-print); font-style: italic; color: var(--text-dim); }
+.shelf h2 { font-family: var(--font-print); }
+.shelf-items { display: grid; gap: var(--s-2); }
+.shelf-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--ink-rule);
+  border-radius: 6px;
+  background: var(--paper);
+}
+.shelf-row.owned { background: var(--paper-2); }
+.shelf-row.locked { opacity: 0.8; }
+.shelf-text { flex: 1; min-width: 0; }
+.shelf-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+.shelf-no { display: block; font-size: var(--t-xs); font-weight: 400; text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--ink-dim); }
+.shelf-buy { flex: none; display: flex; justify-content: flex-end; }
+@media (max-width: 640px) {
+  .shelf-row { flex-wrap: wrap; }
+  .shelf-buy { width: 100%; justify-content: flex-start; }
+}
+
+.shelf-items.pet { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: var(--s-3); }
+.companion-card {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border: 1px solid var(--ink-rule);
+  border-radius: 8px;
+  background: var(--paper);
+}
+.companion-card.owned { background: var(--paper-2); box-shadow: inset 4px 0 0 var(--ink-green); }
+.companion-card.locked .companion-face { filter: grayscale(0.7); opacity: 0.8; }
+.companion-face { flex: none; line-height: 0; }
+.companion-text { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.companion-name { font-family: var(--font-sign); font-size: 22px; color: var(--ink); }
+.companion-kind { font-family: var(--font-print); font-size: var(--t-md); color: var(--ink-dim); }
+.companion-does { font-family: var(--font-print); color: var(--ink); line-height: 1.4; }
+.companion-with { font-size: var(--t-sm); color: var(--ink-green); display: flex; align-items: center; gap: 4px; }
+.store-earn h3 { display: flex; align-items: center; gap: 8px; font-family: var(--font-print); }
+
+/* ---- the report: Silas's notes on a sitting ------------------------- */
+
+.report-head .report-result { display: grid; justify-items: end; }
+.report-bb { font-family: var(--font-print); font-size: var(--t-xl); font-weight: 700; }
+.report-bb.up { color: var(--on-wood); }
+.report-bb.down { color: var(--on-wood); opacity: 0.75; }
+.report-pearls { display: grid; gap: var(--s-3); }
+.report-pearl-total { display: flex; align-items: center; gap: var(--s-3); font-family: var(--font-print); font-size: var(--t-lg); }
+.report-pearl-parts { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); }
+.report-part { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Folded shut: an envelope with a wax seal, until you open it. */
+.notes-envelope {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  width: 100%;
+  padding: var(--s-4) var(--s-5);
+  border-radius: 8px;
+  border: 1px solid var(--brass-lo);
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  background:
+    linear-gradient(160deg, transparent 49.5%, rgba(0, 0, 0, 0.08) 50%, transparent 50.5%),
+    linear-gradient(20deg, transparent 49.5%, rgba(0, 0, 0, 0.08) 50%, transparent 50.5%),
+    var(--grain-paper),
+    linear-gradient(180deg, var(--paper), var(--paper-2));
+  background-size: auto, auto, 180px 180px, auto;
+  background-blend-mode: normal, normal, multiply, normal;
+  box-shadow: var(--shadow-sm);
+  transition: transform 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.notes-envelope:hover { transform: translateY(-2px); }
+.envelope-seal {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--paper);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 55%), var(--ink-red);
+  box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.2), 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+.envelope-text { display: grid; gap: 2px; flex: 1; }
+.envelope-title { font-family: var(--font-sign); font-size: 22px; }
+.envelope-sub { font-family: var(--font-print); font-style: italic; color: var(--ink-dim); }
+.notes-host.open { animation: notes-open 360ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes notes-open { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+.notes { display: grid; gap: var(--s-4); }
+.notes h3 { display: flex; align-items: center; gap: 8px; font-family: var(--font-print); margin: 0 0 var(--s-2); }
+.notes-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--s-3); }
+.notes-card { padding: var(--s-4); border-radius: 8px; border: 1px solid var(--ink-rule); background: var(--paper); display: grid; gap: 4px; }
+.notes-card.strong { box-shadow: inset 4px 0 0 var(--ink-green); }
+.notes-card.weak { box-shadow: inset 4px 0 0 var(--ink-red); }
+.notes-card-kicker { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--ink-dim); }
+.notes-card-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-lg); display: flex; align-items: center; gap: 6px; }
+.notes-card-do { display: grid; gap: 6px; margin-top: 6px; justify-items: start; }
+.notes-skills { display: grid; gap: 8px; }
+.notes-skill { display: grid; grid-template-columns: minmax(130px, 200px) 1fr auto; align-items: center; gap: var(--s-3); }
+.notes-skill-name { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.notes-bar { height: 8px; border-radius: 99px; background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--ink-rule); overflow: hidden; }
+.notes-bar span { display: block; height: 100%; border-radius: 99px; }
+.notes-bar .good { background: var(--ink-green); }
+.notes-bar .mid { background: var(--brass); }
+.notes-bar .bad { background: var(--ink-red); }
+.notes-count { font-variant-numeric: tabular-nums; color: var(--ink-dim); }
+.notes-mistake { display: flex; justify-content: space-between; align-items: center; gap: var(--s-3); padding: var(--s-3); border-radius: 6px; background: var(--paper-2); }
+.notes-mistake-head { font-family: var(--font-print); font-weight: 700; }
+.notes-style { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.notes-style .stat { background: var(--paper-2); border-color: var(--ink-rule); }
+@media (max-width: 520px) {
+  .notes-skill { grid-template-columns: 1fr auto; }
+  .notes-bar { grid-column: 1 / -1; order: 3; }
+  .notes-style { grid-template-columns: 1fr; }
+}
+.report-foot { flex-wrap: wrap; align-items: center; }
+.report-pick-wrap { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.report-pick { max-width: 280px; }
+
+/* ================================================================
+   Free play: the tray under the felt, and the help drawer
+   ================================================================ */
+
+/* Free play gives the table the whole width — but a felt as wide as the
+   page is taller than the screen, and the buttons fall off the bottom. So
+   it is held to a size where table, buttons and tray all fit in one look. */
+.table-wrap.free-play { grid-template-columns: 1fr; max-width: 980px; margin: 0 auto; }
+.table-wrap.free-play .saloon-stage .felt { max-width: min(100%, calc((100vh - 420px) * 1.6)); margin: 0 auto; }
+@media (max-width: 1320px) {
+  .table-wrap.free-play .saloon-stage .felt { max-width: min(100%, calc((100vh - 420px) * 1.333)); }
+}
+@media (max-width: 700px) {
+  .table-wrap.free-play .saloon-stage .felt { max-width: 100%; }
+}
+.table-main { min-width: 0; }
+.companion-tray {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: 12px;
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-2), var(--wood-3));
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  border: 1px solid var(--brass-lo);
+  color: var(--on-wood);
+}
+.help-btn { display: inline-flex; align-items: center; gap: 6px; }
+.help-btn.used { opacity: 0.8; }
+.tray-pets { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tray-pet {
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.tray-pet:hover:not(:disabled) { transform: translateY(-3px); }
+.tray-pet:disabled { cursor: default; filter: grayscale(0.4); opacity: 0.75; }
+.tray-pet.empty {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+  color: var(--on-wood);
+  line-height: 1;
+}
+.tray-pearls { margin-left: auto; color: var(--on-wood); }
+.companion-tray .btn.ghost { color: var(--on-wood); border-color: rgba(255, 255, 255, 0.25); }
+.tray-log-body { margin-top: var(--s-2); max-height: 220px; overflow-y: auto; }
+
+.help-drawer {
+  margin-top: var(--s-3);
+  padding: var(--s-4);
+  border-radius: 10px;
+  animation: notes-open 260ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.help-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin-bottom: var(--s-3); }
+.help-title { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+.help-cost { flex: 1; min-width: 200px; font-size: var(--t-xs); }
+.help-sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--s-3); }
+.help-section {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: 8px;
+  border: 1px solid var(--ink-rule);
+  background: var(--paper);
+  scroll-margin: 80px;
+}
+.help-face { flex: none; line-height: 0; }
+.help-body { min-width: 0; flex: 1; display: grid; gap: 6px; align-content: start; }
+.help-name { font-family: var(--font-sign); font-size: 18px; color: var(--ink); }
+.help-said { font-family: var(--font-print); color: var(--ink); line-height: 1.45; }
+.help-answer { font-weight: 700; font-size: var(--t-md); }
+.help-read { padding-bottom: 6px; border-bottom: 1px dashed var(--ink-rule); }
+.help-read:last-child { border-bottom: 0; }
+.help-section .chart-panel { margin-top: 4px; }
+.help-section .range-grid { max-width: 100%; }
+.help-more { margin-top: var(--s-3); display: flex; align-items: center; gap: 4px; }
+
+.coach-toggle { display: inline-flex; align-items: center; gap: 4px; }
+
+/* After cashing out: Silas's notes, one tap away on the stop. */
+.stop-notes {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+}
+.stop-notes-face { flex: none; line-height: 0; }
+.stop-notes-text { display: grid; flex: 1; gap: 2px; }
+.stop-notes-title { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+.stop-notes-pearls { font-size: var(--t-md); }
+
+/* Buttons that carry an icon beside their words stay on one line. */
+.buy-short .btn, .store-purse .btn, .on-shelf .btn, .shelf-line .btn, .report-foot .btn, .notes .btn { display: inline-flex; align-items: center; gap: 6px; }
+.took-pearls, .race-prize {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: var(--s-3) 0;
+  font-family: var(--font-print);
+  font-style: italic;
+  color: var(--ink);
+}
+.race-prize { justify-content: flex-start; }
+/* A chart in the help drawer is drawn compact, the way the drill's reference
+   drawer draws it: thirteen columns that share the width rather than a grid
+   with a minimum that pushes the page sideways on a phone. */
+.help-sections > * { min-width: 0; }
+.help-section .range-grid-scroll { overflow-x: auto; max-width: 100%; }
+.help-section .range-grid { min-width: 0; font-size: 8px; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 1px; }
+.help-section .range-cell { min-height: 16px; letter-spacing: -0.02em; padding: 0; }
+@media (max-width: 520px) {
+  .help-sections { grid-template-columns: 1fr; }
+  .help-drawer { padding: var(--s-3); }
+  .help-section { padding: var(--s-2); gap: var(--s-2); }
+  .help-face .portrait { width: 32px; height: 32px; }
+}

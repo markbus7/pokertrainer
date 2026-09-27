@@ -28,6 +28,8 @@ import { IDK, dontKnowButton } from './dontKnow.js';
 import * as audio from '../audio/engine.js';
 import { MENTOR } from '../data/characters.js';
 import { sceneBanner, silasSays, silasVerdict, svgNode } from './place.js';
+import { ownsChart } from '../state/economy.js';
+import { buyControl } from './shop.js';
 import { portraitSvg } from './portraits.js';
 
 /**
@@ -65,9 +67,21 @@ export function renderRangeLadder(ctx) {
   // the first time it runs.
   profile.migrateEdgeCoverage(Object.fromEntries(PRACTICABLE.map((c) => [c.key, edgePoolFor(c)])));
   const cleared = profile.rangesCleared(CHECKPOINTS.map((c) => c.key));
-  const weakCount = profile.weakRangeHands(PRACTICABLE_KEYS, 999).length;
+  const weakCount = profile.weakRangeHands(PRACTICABLE_KEYS.filter((k) => ownsChart(profile, k)), 999).length;
 
   const rung = (checkpoint) => {
+    // A reach that has not been bought: its name, and the shelf control in
+    // place of the pips — a price, what is still missing, or the button.
+    if (checkpoint.kind !== 'exam' && !ownsChart(profile, checkpoint.key)) {
+      return el('div.rung-row.on-shelf',
+        el('span.rung-mark', icon('store', { size: 15 })),
+        el('span.rung-body',
+          el('span.rung-name', t(checkpoint.name)),
+          el('span.rung-note', t('On the shelf — a chart to learn by heart')),
+        ),
+        el('span.rung-buy', buyControl(profile, `chart:${checkpoint.key}`, { go, onBought: () => go('ranges') })),
+      );
+    }
     const p = profile.rangeProgress(checkpoint.key);
     const total = checkpoint.only === 'blind' ? 1 : STAGES.length;
     const done = checkpoint.only === 'blind' ? (p.cleared ? 1 : 0) : Math.min(p.stage, total);
@@ -170,6 +184,8 @@ export function renderRangeLadder(ctx) {
 export function renderRangeRun(ctx) {
   const { profile, go, params } = ctx;
   const checkpoint = checkpointFor(params.spot);
+  // A reach that has not been bought is run from the shelf, not from a link.
+  if (checkpoint.kind !== 'exam' && !ownsChart(profile, checkpoint.key)) return renderRangeLadder(ctx);
   const progress = profile.rangeProgress(checkpoint.key);
   const stageIndex = checkpoint.only === 'blind' ? 2 : Math.min(progress.stage, STAGES.length - 1);
   const stage = stageAt(stageIndex);
@@ -409,10 +425,11 @@ export function renderRangeWeak(ctx) {
   // One uncapped pass over everything there is to practise. It feeds both
   // the chip row — only a checkpoint that actually has something shows a
   // chip at all — and the "how many total" count on the mixed one.
-  const everything = profile.weakRangeHands(PRACTICABLE_KEYS, 999);
+  const owned = PRACTICABLE_KEYS.filter((k) => ownsChart(profile, k));
+  const everything = profile.weakRangeHands(owned, 999);
   const countFor = (key) => everything.filter((row) => row.checkpointKey === key).length;
 
-  const sessionKeys = scopeKey ? [scopeKey] : PRACTICABLE_KEYS;
+  const sessionKeys = scopeKey ? [scopeKey] : owned;
   const pool = profile.weakRangeHands(sessionKeys);
 
   const rng = makeRng();

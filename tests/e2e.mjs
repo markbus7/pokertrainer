@@ -48,7 +48,36 @@ const step = async (name, fn) => {
   catch (e) { console.log(`  ✗ ${name}: ${e.message}`); errors.push(`${name}: ${e.message}`); }
 };
 
+// Most of these steps were written for a course that was open by rank and a
+// coach who graded every decision out loud. Both are now things a player
+// earns or switches on, so the steps that test the teaching itself run as a
+// veteran: every chapter and chart owned, and Silas at the table. The steps
+// that test the economy and free play switch this off for themselves and put
+// it back afterwards.
+const VETERAN_OWNS = [
+  'hand-rankings', 'pot-odds', 'outs', 'preflop', 'position', 'cbet', 'mdf', 'bluffing', 'spr', 'exploit', 'icm', 'bankroll',
+].map((id) => `lesson:${id}`).concat(
+  ['open:UTG', 'open:HJ', 'open:CO', 'open:BTN', 'open:SB', 'defend:BB', 'threebet'].map((key) => `chart:${key}`),
+);
+await page.addInitScript((owned) => {
+  try {
+    if (localStorage.getItem('e2e.veteran') !== '1') return;
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    const economy = raw.economy || {};
+    raw.economy = { version: 1, pearls: economy.pearls || 0, earned: economy.earned || 0, spent: economy.spent || 0, owned };
+    raw.settings = { ...(raw.settings || {}) };
+    if (raw.settings.liveCoach === undefined) raw.settings.liveCoach = true;
+    localStorage.setItem(key, JSON.stringify(raw));
+  } catch { /* a test that breaks storage on purpose breaks this too */ }
+}, VETERAN_OWNS);
+const veteran = async (on) => {
+  await page.evaluate((flag) => localStorage.setItem('e2e.veteran', flag ? '1' : '0'), on);
+};
+
 await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+await veteran(true);
+await page.reload({ waitUntil: 'networkidle' });
 
 await step('dashboard renders', async () => {
   // The app opens on the career now, so the training dashboard is somewhere
@@ -2066,6 +2095,128 @@ await step('the rank chip opens the ladder, and locked ranks stay locked', async
   if (lockedPressable) throw new Error(`${lockedPressable} locked ranks are pressable`);
 });
 
+/* ---- pearls, the shelf, free play and Silas's notes ---- */
+
+const seedFresh = async (extra = {}) => {
+  await veteran(false);
+  await page.evaluate((more) => {
+    const base = { seenPrologue: true, settings: { theme: 'midnight', lang: 'en', sound: false, music: false } };
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify({ ...base, ...more }));
+  }, extra);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+};
+
+await step('a new player owns the first chapter and has to play for the next', async () => {
+  await seedFresh();
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.trail-stop', { timeout: 5000 });
+  const trail = await page.evaluate(() => [...document.querySelectorAll('.trail-stop')].map((n) => n.className));
+  if (/shelved|locked/.test(trail[0])) throw new Error('the first chapter is not open to a new player');
+  if (!/shelved/.test(trail[1])) throw new Error(`chapter two should be on the shelf: ${trail[1]}`);
+  const shelfLine = await page.textContent('.shelf-line');
+  if (!/Pot Odds/.test(shelfLine) || !/more pearls/.test(shelfLine)) throw new Error(`the school does not say what the next chapter costs: ${shelfLine}`);
+
+  // Every way into a chapter on the shelf lands on its price.
+  for (const route of ['#learn?module=pot-odds', '#drill?module=pot-odds', '#walkthrough?module=pot-odds']) {
+    await page.goto(`${BASE}/${route}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(250);
+    if (!await page.$('.on-shelf .price-tag')) throw new Error(`${route} opened without being bought`);
+    if (await page.$('.option')) throw new Error(`${route} asked a question from a chapter nobody owns`);
+  }
+  // The assay office serves nobody without the Pot Odds chapter.
+  await page.goto(`${BASE}/#lab-run`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(250);
+  if (await page.$('.lab-input, .action-buttons')) throw new Error('the Lab dealt a spot to a player without the chapter');
+  // And the pilot house has nothing on its table but price tags.
+  await page.goto(`${BASE}/#ranges`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(250);
+  const shelved = await page.$$eval('.rung-row.on-shelf', (n) => n.length);
+  if (shelved !== 7) throw new Error(`expected seven charts on the shelf, found ${shelved}`);
+});
+
+await step('pearls buy a chapter, and the chapter opens', async () => {
+  await seedFresh({ economy: { version: 1, pearls: 75, earned: 75, spent: 0, owned: ['lesson:hand-rankings'] } });
+  await page.goto(`${BASE}/#store`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.shelf-row', { timeout: 5000 });
+  const chip = await page.textContent('#topbar .pearl-chip');
+  if (!/75/.test(chip)) throw new Error(`the rail does not show the purse: ${chip}`);
+  const row = await page.$('.shelf-row:has-text("Pot Odds") .buy-btn');
+  if (!row) throw new Error('Pot Odds cannot be bought with 75 pearls in the purse');
+  await row.click();
+  await page.waitForTimeout(300);
+  const purse = await page.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).economy);
+  if (purse.pearls !== 15 || !purse.owned.includes('lesson:pot-odds')) throw new Error(`the purchase went wrong: ${JSON.stringify(purse)}`);
+  await page.goto(`${BASE}/#drill?module=pot-odds`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(300);
+  if (await page.$('.on-shelf')) throw new Error('the bought chapter is still on the shelf');
+  if (!await page.$('.question')) throw new Error('the bought chapter asks no questions');
+  // What the rank does not allow yet cannot be bought at any price.
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('poker-trainer.profile.v1'));
+    raw.economy.pearls = 5000;
+    localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#store`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.shelf-row', { timeout: 5000 });
+  if (await page.$('.shelf-row:has-text("Tournament ICM") .buy-btn')) throw new Error('a chapter above the rank was for sale');
+});
+
+await step('the table is free play: help is asked for, and costs the decision its pearl', async () => {
+  await seedFresh({
+    walkthroughs: ['hand-rankings', 'pot-odds'],
+    economy: { version: 1, pearls: 0, earned: 0, spent: 0, owned: ['lesson:hand-rankings', 'lesson:pot-odds', 'pet:owl'] },
+  });
+  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.felt', { timeout: 5000 });
+  if (await page.$('.coach')) throw new Error('Silas is talking at a free-play table');
+  await page.click('button:has-text("Deal me in")');
+  await page.waitForSelector('.help-btn:not([disabled])', { timeout: 15000 });
+  const tags = await page.$$eval('.seat .style-tag', (n) => n.length);
+  if (tags) throw new Error(`${tags} opponents wear their style on their seat without the hound`);
+  await page.click('.help-btn');
+  await page.waitForSelector('.help-drawer', { timeout: 3000 });
+  const help = await page.textContent('.help-drawer');
+  if (!/decision/.test(help)) throw new Error('Silas says nothing when asked');
+  if (!/Hoot/.test(help)) throw new Error('the owl did not come to the table');
+  if (!/Your equity/.test(help)) throw new Error('the owl did not do the sum');
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).economy.pearls);
+  const act = await page.$('.action-buttons .btn:has-text("Fold")') || await page.$('.action-buttons .btn:has-text("Check")');
+  await act.click();
+  await page.waitForTimeout(200);
+  if (await page.$('.help-drawer')) throw new Error('the help stayed open for the next decision');
+  if (await page.$('.verdict-box')) throw new Error('free play graded the decision out loud');
+  // Play the hand out, and a few more.
+  for (let i = 0, hands = 0; i < 300 && hands < 4; i++) {
+    const deal = await page.$('button:has-text("Deal next hand")');
+    if (deal) { hands++; await deal.click(); await page.waitForTimeout(100); continue; }
+    const next = await page.$('.action-buttons .btn:has-text("Check")') || await page.$('.action-buttons .btn:has-text("Fold")');
+    if (next) await next.click().catch(() => {});
+    await page.waitForTimeout(120);
+  }
+  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).economy);
+  if (after.pearls <= before) throw new Error(`four hands paid nothing: ${before} → ${after.pearls}`);
+  console.log(`      the purse went ${before} → ${after.pearls} over the sitting`);
+});
+
+await step('getting up leaves Silas\'s notes, folded until they are opened', async () => {
+  await page.click('button:has-text("Leave table")');
+  await page.waitForFunction(() => /#report/.test(location.hash), null, { timeout: 5000 })
+    .catch(() => { throw new Error(`leaving went to ${page.url()}`); });
+  await page.waitForSelector('.report-pearls', { timeout: 3000 });
+  if (await page.$('.notes')) throw new Error('the notes were open before anybody asked');
+  await page.click('.notes-envelope');
+  await page.waitForSelector('.notes', { timeout: 3000 });
+  const notes = await page.textContent('.notes');
+  if (!/Every skill you were tested on/.test(notes)) throw new Error(`the notes judge nothing: ${notes.slice(0, 120)}`);
+  if (!/made with help/.test(notes)) throw new Error('the helped decision is not set apart in the notes');
+  const kept = await page.evaluate(() => (JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).reports || []).length);
+  if (kept !== 1) throw new Error(`expected one set of notes kept, found ${kept}`);
+});
+
+await veteran(true);
+await page.reload({ waitUntil: 'domcontentloaded' });
+
 await step('the language switch turns the whole app Dutch and persists', async () => {
   await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
@@ -2130,7 +2281,7 @@ await step('no screen is half in English when the app is in Dutch', async () => 
     '#home', '#stop?at=nl10', '#stop?at=nl50', '#train', '#learn?module=pot-odds',
     '#lab-run', '#review', '#charts?chart=BTN', '#glossary', '#stats',
     '#levels', '#gauntlet', '#drill?module=outs', '#walkthrough?module=pot-odds',
-    '#ranges', '#ranges-run', '#ranges-weak',
+    '#ranges', '#ranges-run', '#ranges-weak', '#store', '#report',
   ];
 
   // domcontentloaded rather than networkidle: the app fires an update check

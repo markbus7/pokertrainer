@@ -170,6 +170,10 @@ export const MENTOR = {
   },
   pilot: 'A pilot knows the river by heart: every bend and every snag, at night, with no chart. The charts are the same. First by daylight with the chart on the table, then at dusk with it in the drawer, then at night with nothing but what you remember.',
   shoals: 'These are your shoals — the hands you keep running aground on. Sound them until they are charted, and they come off this list on their own.',
+  // A chapter still on the shelf: what it costs, and where pearls come from.
+  shelf: 'This chapter is on Delphine\'s shelf at the Trading Post. The tables pay in pearls — a pearl a hand, and more for every hand played well.',
+  shelfReady: 'You have the pearls for this one. Buy it and we start.',
+  shelfRank: 'Not yet. This chapter is built on the ones before it, and it waits for {rank}.',
   // The records: the log of hands, the chart room, the almanac.
   log: 'Every pilot keeps a log. Write down where you ran aground, and you will not run aground there twice. The ones you lost and played right go in too — they are the proof that losing and misplaying are different things.',
   charts: 'These are the charts, drawn out by daylight. Study them here; the pilot house is where you learn them well enough to leave them in the drawer.',
@@ -195,6 +199,7 @@ export const ASSAYER = {
   short: 'Hattie',
   title: 'Assayer',
   hello: 'Everything that crosses this counter gets weighed. Bring me figures, not feelings — a guess is no use to anybody at a table.',
+  closed: 'Every figure here is a price, and you cannot weigh a price you have not learned to name. Bring me the Pot Odds chapter and the counter is yours.',
   right: ['Weighs true.', 'Exact. Next.', 'That figure passes.', 'Sound as gold.'],
   wrong: ['Short weight. See why.', 'That figure will not pass.', 'Close is not a price.', 'Weigh it again.'],
   done: {
@@ -224,6 +229,23 @@ export const RACE = {
   falling: ['Snagged! See you at the landing.', 'Full steam — do try to keep up.', 'That is why you are a passenger.'],
   won: 'Beaten to the landing by a passenger. Do not get used to it.',
   lost: 'The Belle takes it again. Come back when your boilers are hotter.',
+};
+
+/**
+ * The trader, who keeps the Trading Post at the fork.
+ *
+ * Everything that can be bought is on her shelves: the chapters, the charts
+ * for the pilot house, and the companions who help at the table. She takes
+ * pearls and nothing else — never the bankroll, which is for the tables.
+ */
+export const TRADER = {
+  key: 'delphine',
+  name: 'Delphine Moreau',
+  short: 'Delphine',
+  title: 'Keeps the Trading Post',
+  hello: 'Pearls on the counter and anything on these shelves is yours. No pearls, no business — the tables pay in them.',
+  poor: 'Your purse is light, cher. Go and sit at a table; a pearl a hand, and more for playing it right.',
+  thanks: ['A fine choice.', 'Mind how you use it.', 'Pleasure doing business.', 'That one will earn its keep.'],
 };
 
 export const bossFor = (key) => BOSSES[key] || null;

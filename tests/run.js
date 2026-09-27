@@ -7,6 +7,7 @@ const modules = [
   './icons.test.js',
   './career.test.js',
   './river.test.js',
+  './economy.test.js',
   './audio.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',

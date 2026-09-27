@@ -20,8 +20,23 @@ import {
 import { MODULE_META } from '../data/curriculum.js';
 import { DEFAULT_THEME } from '../data/themes.js';
 import { STAKES } from './stats.js';
+import { STARTER, LESSON_PRICES } from './economy.js';
 
 const STORAGE_KEY = 'poker-trainer.profile.v1';
+
+/**
+ * The purse of pearls and what has been bought with it.
+ *
+ * `version` marks the save as having been through the change to a bought
+ * curriculum, so the reset below happens once and never again.
+ */
+const emptyEconomy = () => ({
+  version: 1,
+  pearls: 0,
+  earned: 0,
+  spent: 0,
+  owned: [...STARTER],
+});
 
 /** How many recent unaided attempts at one hand, in one checkpoint, to remember. */
 const RANGE_HAND_WINDOW = 5;
@@ -178,12 +193,17 @@ const emptyProfile = () => ({
   handsPlayed: 0,
   lifetimeProfitBb: 0,
   sessions: [],
+  economy: emptyEconomy(),
   // lang and theme both live in settings so they travel with the cloud
   // sync: pick Dutch and Daylight on the iPad and the iPhone matches,
   // without setting either twice.
   settings: {
     sound: true, music: true, coach: true, fourColour: false, autoMuck: true,
     lang: 'en', theme: DEFAULT_THEME,
+    // Silas talking you through every hand is a choice now, not the table.
+    // Off, the table is free play: he stays quiet until you ask, and his
+    // notes on the session are waiting when you get up.
+    liveCoach: false,
   },
 });
 
@@ -214,6 +234,24 @@ export class Profile {
     this.listeners = new Set();
     this.carryForwardTiers();
     this.migrateThreeBetCall();
+    this.migrateEconomy();
+  }
+
+  /**
+   * The curriculum became something you buy. A save from before that owns
+   * nothing but the first chapter and has an empty purse: everything that can
+   * be bought goes back on the shelf, and has to be played for again.
+   *
+   * Everything that was *learned* stays exactly where it was — XP, the rank,
+   * every drill answer, every guided lesson finished, the charts' progress,
+   * the bankroll and the river. Buying a chapter back opens it with all of
+   * that still in it. This was the reader's own call: lose what can be
+   * bought, keep what was earned.
+   */
+  migrateEconomy() {
+    const e = this.data.economy;
+    if (e && e.version >= 1) return;
+    this.data.economy = emptyEconomy();
   }
 
   /**
@@ -391,6 +429,46 @@ export class Profile {
     // null means "not enough answers to say", and every screen that shows a
     // score honours it. The bar lives in mastery.js so there is one of it.
     return s.attempts >= EVIDENCE_BAR ? s.correct / s.attempts : null;
+  }
+
+  /* ---- pearls and what they buy ------------------------------------ */
+
+  get economy() {
+    if (!this.data.economy || !Array.isArray(this.data.economy.owned)) this.data.economy = emptyEconomy();
+    return this.data.economy;
+  }
+
+  get pearls() { return this.economy.pearls; }
+
+  owns(key) { return this.economy.owned.includes(key); }
+
+  /** Whether a chapter is open to study: free, or bought. */
+  canStudy(moduleId) { return LESSON_PRICES[moduleId] === 0 || this.owns(`lesson:${moduleId}`); }
+
+  /** Pay pearls in. Returns what was actually added, which is never negative. */
+  earnPearls(amount) {
+    const n = Math.max(0, Math.round(amount));
+    if (!n) return 0;
+    const e = this.economy;
+    e.pearls += n;
+    e.earned += n;
+    this.save();
+    return n;
+  }
+
+  /**
+   * Take something off the shelf. The price and whether it may be bought at
+   * all are the economy's business (state/economy.js); this only refuses what
+   * would corrupt the purse — buying twice, or on credit.
+   */
+  buy(key, price) {
+    const e = this.economy;
+    if (e.owned.includes(key) || price > e.pearls || price < 0) return false;
+    e.pearls -= price;
+    e.spent += price;
+    e.owned.push(key);
+    this.save();
+    return true;
   }
 
   /* ---- the career ------------------------------------------------- */

@@ -523,6 +523,13 @@
   --card-back-2: #57161c;
   --card-brass: #d9b44a;
   --card-brass-lo: #8a6a2a;
+
+  /* A freshwater pearl: white at the lustre, a rose sheen, grey in the
+     shadow. The same pearl in every room, like the deck. */
+  --pearl-hi: #ffffff;
+  --pearl: #efe8dc;
+  --pearl-rose: #efd3d6;
+  --pearl-lo: #a79d90;
 }
 
 :root {
