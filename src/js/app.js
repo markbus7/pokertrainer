@@ -1,14 +1,14 @@
 /**
- * Application shell: routing, the rail, the dock and the ledger, and the
+ * Application shell: routing, the rail and the ledger, and the
  * screen lifecycle. Routes live in the URL hash, so the back button and a
  * refresh both work.
  *
  * The shell used to be a website's: a brand, nine tabs and a row of chips.
  * It is a game's now. The rail across the top holds what a player checks
- * between hands — the purse and the rank — and nothing else; a dock at the
- * bottom has the four places you go most (the river, the lessons, the range
- * trainer and a free table); everything else, and the switches, are in the
- * ledger, which opens over the screen rather than replacing it.
+ * between hands — the purse, the pearls and the rank — and the way back to
+ * the river. There are no tabs: the map is how you get anywhere, the way it
+ * is in a game, and everything that is not a place on it, and the switches,
+ * are in the ledger, which opens over the screen rather than replacing it.
  */
 
 import { el, mount, $, toast, fmt } from './ui/dom.js';
@@ -37,44 +37,34 @@ import { pearl } from './ui/shop.js';
 import * as audio from './audio/engine.js';
 
 /**
- * `dock` is which dock button lights up; `music` is the track a screen
- * plays ('river', 'table', or none); `focus` screens are the ones you are in
- * the middle of — a hand, a run on the clock, a lesson — and they hide the
- * dock so the work gets the whole screen. The rail and its ledger stay, so
- * there is always a way out.
+ * `music` is the track a screen plays ('river', 'table', or none); `focus`
+ * screens are the ones you are in the middle of — a hand, a run on the
+ * clock, a lesson — and get the whole screen. The rail and its ledger stay,
+ * so there is always a way out.
  */
 const ROUTES = {
-  home: { render: renderRiver, dock: 'home', title: 'The river', music: 'river' },
-  stop: { render: renderStop, dock: 'home', title: 'The river', music: 'river' },
-  train: { render: renderHome, dock: 'train', title: 'Lessons' },
-  learn: { render: renderLearn, dock: 'train', title: 'Lesson' },
-  walkthrough: { render: renderWalkthrough, dock: 'train', title: 'Guided lesson', focus: true },
-  drill: { render: renderDrill, dock: 'train', title: 'Drill', focus: true },
-  ranges: { render: renderRangeLadder, dock: 'ranges', title: 'Range trainer' },
-  'ranges-run': { render: renderRangeRun, dock: 'ranges', title: 'Range trainer', focus: true },
-  'ranges-weak': { render: renderRangeWeak, dock: 'ranges', title: 'Weak hands' },
-  gauntlet: { render: renderGauntletIntro, dock: 'ledger', title: 'The Race' },
-  lab: { render: renderLabIntro, dock: 'ledger', title: 'The Assay Office' },
-  'lab-run': { render: renderLab, dock: 'ledger', title: 'The Assay Office', focus: true },
-  play: { render: renderTable, dock: 'play', title: 'Table', music: 'table', focus: true },
-  review: { render: renderReview, dock: 'ledger', title: 'The Log' },
-  charts: { render: renderCharts, dock: 'ledger', title: 'The Chart Room' },
-  glossary: { render: renderGlossary, dock: 'ledger', title: 'The Almanac' },
-  stats: { render: renderStats, dock: 'ledger', title: 'Your Cabin' },
-  levels: { render: renderLevels, dock: 'ledger', title: 'Your Papers' },
-  store: { render: renderStore, dock: 'ledger', title: 'The Trading Post' },
-  boatyard: { render: renderBoatyard, dock: 'home', title: 'The Boatyard', music: 'river' },
-  report: { render: renderReport, dock: 'play', title: 'Silas\'s notes' },
+  home: { render: renderRiver, title: 'The river', music: 'river' },
+  stop: { render: renderStop, title: 'The river', music: 'river' },
+  train: { render: renderHome, title: 'Lessons' },
+  learn: { render: renderLearn, title: 'Lesson' },
+  walkthrough: { render: renderWalkthrough, title: 'Guided lesson', focus: true },
+  drill: { render: renderDrill, title: 'Drill', focus: true },
+  ranges: { render: renderRangeLadder, title: 'Range trainer' },
+  'ranges-run': { render: renderRangeRun, title: 'Range trainer', focus: true },
+  'ranges-weak': { render: renderRangeWeak, title: 'Weak hands' },
+  gauntlet: { render: renderGauntletIntro, title: 'The Race' },
+  lab: { render: renderLabIntro, title: 'The Assay Office' },
+  'lab-run': { render: renderLab, title: 'The Assay Office', focus: true },
+  play: { render: renderTable, title: 'Table', music: 'table', focus: true },
+  review: { render: renderReview, title: 'The Log' },
+  charts: { render: renderCharts, title: 'The Chart Room' },
+  glossary: { render: renderGlossary, title: 'The Almanac' },
+  stats: { render: renderStats, title: 'Your Cabin' },
+  levels: { render: renderLevels, title: 'Your Papers' },
+  store: { render: renderStore, title: 'The Trading Post' },
+  boatyard: { render: renderBoatyard, title: 'The Boatyard', music: 'river' },
+  report: { render: renderReport, title: 'Silas\'s notes' },
 };
-
-/** The four places you go most, and the ledger for the rest. */
-const DOCK = [
-  { key: 'home', route: 'home', label: 'River', icon: 'river' },
-  { key: 'train', route: 'train', label: 'Lessons', icon: 'book' },
-  { key: 'ranges', route: 'ranges', label: 'Ranges', icon: 'grid' },
-  { key: 'play', route: 'play', label: 'Play', icon: 'cards' },
-  { key: 'ledger', label: 'Ledger', icon: 'ledger' },
-];
 
 /** Everything, in the order a player looks for it. */
 const LEDGER = [
@@ -330,14 +320,17 @@ function rollPurse(figure, from, to) {
 function drawHud() {
   const rank = profile.rank;
   const next = profile.nextRank;
+  // On the river the crest is the game's name. Everywhere else it is the
+  // way back to the river: with no tabs, it is the one door out of any room.
+  const onRiver = parseHash().route === 'home';
   mount($('#topbar'),
-    el('button.crest', {
+    el(`button.crest${onRiver ? '' : '.back'}`, {
       onclick: () => go('home'),
-      title: 'Back to the river',
-      'aria-label': 'Back to the river',
+      title: t('Back to the river'),
+      'aria-label': t('Back to the river'),
     },
-      el('span.crest-disc', { 'aria-hidden': 'true' }, '♠'),
-      el('span.crest-name', 'Poker Trainer'),
+      el('span.crest-disc', { 'aria-hidden': 'true' }, onRiver ? '♠' : icon('river', { size: 20 })),
+      el('span.crest-name', onRiver ? 'Poker Trainer' : t('The river')),
     ),
     purse(),
     el('button.pearl-chip', {
@@ -361,23 +354,6 @@ function drawHud() {
       'aria-haspopup': 'dialog',
       'aria-expanded': ledgerOpen ? 'true' : 'false',
     }, icon('ledger', { size: 20 }), el('span.ledger-button-label', 'Ledger')),
-  );
-}
-
-/* ------------------------------------------------------------------ *
- * The dock
- * ------------------------------------------------------------------ */
-
-function drawDock(active) {
-  mount($('#dock'),
-    el('div.dock-plank', DOCK.map((d) => el(`button.dock-item${d.key === active ? '.active' : ''}`, {
-      onclick: () => {
-        audio.sfx('click');
-        if (d.route) go(d.route);
-        else toggleLedger(true);
-      },
-      'aria-current': d.key === active && d.route ? 'page' : null,
-    }, icon(d.icon, { size: 22 }), el('span.dock-label', t(d.label))))),
   );
 }
 
@@ -474,9 +450,7 @@ function drawLedger({ entering = false } = {}) {
 }
 
 function drawShell() {
-  const def = ROUTES[parseHash().route];
   drawHud();
-  drawDock(def.dock);
   drawLedger();
 }
 

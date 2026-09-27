@@ -27,8 +27,9 @@ import { copyButton } from './copySpot.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
 import * as audio from '../audio/engine.js';
 import { MENTOR } from '../data/characters.js';
-import { sceneBanner, silasSays, silasVerdict, svgNode } from './place.js';
-import { ownsChart } from '../state/economy.js';
+import { silasSays, silasVerdict, svgNode } from './place.js';
+import { ownsChart, boatLook } from '../state/economy.js';
+import { creekBend, bankScene, creekHead, creekMouth, regionBar } from './creekMap.js';
 import { buyControl } from './shop.js';
 import { portraitSvg } from './portraits.js';
 
@@ -69,18 +70,28 @@ export function renderRangeLadder(ctx) {
   const cleared = profile.rangesCleared(CHECKPOINTS.map((c) => c.key));
   const weakCount = profile.weakRangeHands(PRACTICABLE_KEYS.filter((k) => ownsChart(profile, k)), 999).length;
 
-  const rung = (checkpoint) => {
+  // Each checkpoint is a reach of the channel: a mark on the water with its
+  // card on the bank, alternating sides so the water runs between them.
+  const rung = (checkpoint, i) => {
+    const side = i % 2 === 0 ? 'left' : 'right';
+    const reach = (row) => el(`li.channel-stop.creek-row.card-${side}`,
+      creekBend(i),
+      bankScene(i, CHECKPOINTS.length, 'channel'),
+      row,
+    );
     // A reach that has not been bought: its name, and the shelf control in
     // place of the pips — a price, what is still missing, or the button.
     if (checkpoint.kind !== 'exam' && !ownsChart(profile, checkpoint.key)) {
-      return el('div.rung-row.on-shelf',
+      return reach(el('div.rung-row.on-shelf',
         el('span.rung-mark', icon('store', { size: 15 })),
-        el('span.rung-body',
-          el('span.rung-name', t(checkpoint.name)),
-          el('span.rung-note', t('On the shelf — a chart to learn by heart')),
+        el('span.rung-card.paper',
+          el('span.rung-body',
+            el('span.rung-name', t(checkpoint.name)),
+            el('span.rung-note', t('On the shelf — a chart to learn by heart')),
+          ),
+          el('span.rung-buy', buyControl(profile, `chart:${checkpoint.key}`, { go, onBought: () => go('ranges') })),
         ),
-        el('span.rung-buy', buyControl(profile, `chart:${checkpoint.key}`, { go, onBought: () => go('ranges') })),
-      );
+      ));
     }
     const p = profile.rangeProgress(checkpoint.key);
     const total = checkpoint.only === 'blind' ? 1 : STAGES.length;
@@ -104,76 +115,84 @@ export function renderRangeLadder(ctx) {
     // The hours this reach has been run in: the sun, dusk and the moon,
     // lit as each rung is passed. The exam is only ever run at night.
     const hours = checkpoint.only === 'blind' ? [STAGES[2]] : STAGES;
-    return el(`button.rung-row${p.cleared ? '.done' : ''}${locked ? '.shut' : ''}`, {
+    return reach(el(`button.rung-row${p.cleared ? '.done' : ''}${locked ? '.shut' : ''}`, {
       disabled: locked,
       onclick: () => go('ranges-run', { spot: checkpoint.key }),
     },
-      el('span.rung-mark', p.cleared ? icon('check', { size: 16 }) : locked ? icon('lock', { size: 15 }) : String(done)),
-      el('span.rung-body',
-        el('span.rung-name', t(checkpoint.name)),
-        el('span.rung-note', note()),
+      el('span.rung-mark', p.cleared ? icon('check', { size: 16 }) : locked ? icon('lock', { size: 15 }) : String(i + 1)),
+      el('span.rung-card.paper',
+        el('span.rung-body',
+          el('span.rung-name', t(checkpoint.name)),
+          el('span.rung-note', note()),
+        ),
+        el('span.rung-pips', { 'aria-label': t('{done} of {total}', { done, total }) },
+          hours.map((stage, k) => el(`span.hour-pip${k < done ? '.lit' : ''}`, { title: t(stage.name) }, hourIcon(stage, 15)))),
       ),
-      el('span.rung-pips', { 'aria-label': t('{done} of {total}', { done, total }) },
-        hours.map((stage, i) => el(`span.hour-pip${i < done ? '.lit' : ''}`, { title: t(stage.name) }, hourIcon(stage, 15)))),
-    );
+    ));
   };
 
-  return el('div.screen.pilot',
-    sceneBanner({
-      id: 'pilothouse',
-      landmark: 'pilothouse',
-      kicker: t('Up on the texas deck'),
-      title: t('The Pilot House'),
-    }),
+  return el('div.screen.pilot.region',
+    regionBar({ go, name: t('The pilot\'s channel') }),
     el('div.panel.mentor-card', silasSays(t(MENTOR.pilot), { typed: false })),
-    el('div.panel.page.paper.logbook',
-      el('div.panel-title', el('h2.sign', t('The river by heart'))),
-      el('p.muted', t('One question, over and over: what does the chart say to do with this hand, here. '
-        + 'Each checkpoint is walked three times — with the chart open, with it behind a button, and '
-        + 'then from memory on a clock. The last one is the only one that counts, because it is the '
-        + 'one the table asks for. A checkpoint is in your head once you pass it and every hand on the '
-        + 'edge of its range has come up at least once — fifteen questions are a sample, not the whole '
-        + 'boundary.')),
-      el('div.hour-key',
-        STAGES.map((stage) => el('span.hour-key-item', hourIcon(stage, 16), t(stage.name))),
+    el('div.school-floor.pilot-floor',
+      el('section.creek-map.channel-map',
+        creekHead({
+          kicker: t('The pilot\'s channel'),
+          title: t('The Pilot House'),
+          landmark: 'pilothouse',
+          extra: el('div.ladder-head',
+            el('span.badge.gold', t('{done} of {total} in your head', { done: cleared, total: CHECKPOINTS.length })),
+            el('div.hour-key',
+              STAGES.map((stage) => el('span.hour-key-item', hourIcon(stage, 16), t(stage.name))),
+            ),
+          ),
+        }),
+        el('ol.creek-trail.rungs', CHECKPOINTS.map(rung)),
+        creekMouth({ go, look: boatLook(profile) }),
       ),
-      // The reader's own report said it plainly: "DRILLED WITHOUT READING THE
-      // LESSON: Preflop Ranges". The lesson exists and teaches exactly this —
-      // step 4 reads the shorthand, step 7 is five numbers instead of a
-      // hundred and sixty-nine — and nothing had ever pointed at it from the
-      // place somebody sits down to learn ranges. Reading it is not required;
-      // not knowing it is there is a different thing.
-      profile.hasCompletedWalkthrough('preflop')
-        ? null
-        : el('div.notice', { style: { marginBottom: 'var(--s-3)' } },
-          el('div', { style: { fontWeight: '600' } }, t('There is a lesson behind these charts')),
-          el('div.faint', { style: { marginTop: '4px' } },
-            t('Eight steps on why position decides how many hands you play, how to read the '
-              + 'shorthand, and the five numbers that replace the grid. You can drill without it — '
-              + 'but the boundary is much easier to remember once you know why it is there.')),
-          el('button.btn.sm.ghost', {
-            style: { marginTop: '8px' },
-            onclick: () => go('walkthrough', { module: 'preflop' }),
-          }, t('Read it first')),
+
+      el('aside.school-rail',
+        el('div.panel.page.paper.logbook',
+          el('div.panel-title', el('h2.sign', t('The river by heart'))),
+          el('p.muted', t('One question, over and over: what does the chart say to do with this hand, here. '
+            + 'Each checkpoint is walked three times — with the chart open, with it behind a button, and '
+            + 'then from memory on a clock. The last one is the only one that counts, because it is the '
+            + 'one the table asks for. A checkpoint is in your head once you pass it and every hand on the '
+            + 'edge of its range has come up at least once — fifteen questions are a sample, not the whole '
+            + 'boundary.')),
         ),
-
-      el('div.ladder-head',
-        el('span.badge.gold', t('{done} of {total} in your head', { done: cleared, total: CHECKPOINTS.length })),
+        // The reader's own report said it plainly: "DRILLED WITHOUT READING THE
+        // LESSON: Preflop Ranges". The lesson exists and teaches exactly this —
+        // step 4 reads the shorthand, step 7 is five numbers instead of a
+        // hundred and sixty-nine — and nothing had ever pointed at it from the
+        // place somebody sits down to learn ranges. Reading it is not required;
+        // not knowing it is there is a different thing.
+        profile.hasCompletedWalkthrough('preflop')
+          ? null
+          : el('div.notice',
+            el('div', { style: { fontWeight: '600' } }, t('There is a lesson behind these charts')),
+            el('div.faint', { style: { marginTop: '4px' } },
+              t('Eight steps on why position decides how many hands you play, how to read the '
+                + 'shorthand, and the five numbers that replace the grid. You can drill without it — '
+                + 'but the boundary is much easier to remember once you know why it is there.')),
+            el('button.btn.sm.ghost', {
+              style: { marginTop: '8px' },
+              onclick: () => go('walkthrough', { module: 'preflop' }),
+            }, t('Read it first')),
+          ),
+        // Only appears once there is something to show: a hand nobody has ever
+        // missed unaided is not a weak spot, and a button that opens onto an
+        // empty screen is worse than no button.
+        weakCount
+          ? el('div.panel.note-card.paper.pinned.urgent.shoals-note',
+            el('div.panel-title', el('h3', icon('warn', { size: 18 }), t('Your shoals'))),
+            el('p.muted', t('{n} hands you have missed outside an open chart, across every checkpoint. '
+              + 'Run them again, mixed together or one seat at a time.', { n: weakCount })),
+            el('button.btn.primary', { onclick: () => go('ranges-weak') }, t('Practise them')),
+          )
+          : null,
       ),
-      el('div.rungs', CHECKPOINTS.map(rung)),
     ),
-
-    // Only appears once there is something to show: a hand nobody has ever
-    // missed unaided is not a weak spot, and a button that opens onto an
-    // empty screen is worse than no button.
-    weakCount
-      ? el('div.panel.note-card.paper.pinned.urgent.shoals-note',
-        el('div.panel-title', el('h3', icon('warn', { size: 18 }), t('Your shoals'))),
-        el('p.muted', t('{n} hands you have missed outside an open chart, across every checkpoint. '
-          + 'Run them again, mixed together or one seat at a time.', { n: weakCount })),
-        el('button.btn.primary', { onclick: () => go('ranges-weak') }, t('Practise them')),
-      )
-      : null,
   );
 }
 

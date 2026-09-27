@@ -156,7 +156,7 @@ h2 { font-size: var(--t-lg); }
 }
 .paper .muted, .paper .faint { color: var(--ink-dim); }
 
-/* Wood: the rail, the signboards, the dock. */
+/* Wood: the rail and the signboards. */
 .wood {
   background:
     var(--wood-grain),
@@ -243,7 +243,7 @@ h2 { font-size: var(--t-lg); }
  * A plank across the top of the screen with brass let into it: the crest,
  * the purse, the rank, and the ledger. Opaque on purpose — the old rail was
  * frosted glass, which is a website's material, and a blur on the ancestor
- * of anything fixed-position would also trap the dock inside it.
+ * of anything fixed-position would also trap the toasts inside it.
  * ==================================================================== */
 
 #topbar.topbar {
@@ -373,81 +373,20 @@ h2 { font-size: var(--t-lg); }
   .purse, #topbar .rank-chip, .ledger-button { min-height: 44px; }
 }
 
-/* ==================================================================== *
- * The dock
- *
- * The four places a player goes most, on a plank along the bottom where a
- * thumb already is. Screens you are in the middle of hide it — a hand, a
- * run on the clock, a lesson — the way a game clears its bar for a match.
- * ==================================================================== */
+/* No dock: the map is how you get anywhere, and the crest on the rail is the
+   way back to it. The page keeps a little room at the bottom for the toasts. */
+main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
+#toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
 
-.dock {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 55;
-  display: flex;
-  justify-content: center;
-  padding: 0 max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-  pointer-events: none;
-}
-.dock-plank {
-  pointer-events: auto;
-  display: flex;
-  gap: 2px;
-  width: min(560px, 100%);
-  padding: 6px;
-  border-radius: 16px;
-  background:
-    var(--wood-grain),
-    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 58%, var(--wood-3) 100%);
-  background-size: 400px 120px, auto;
-  background-blend-mode: multiply, normal;
-  border: 1px solid var(--brass-lo);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 14px 32px rgba(0, 0, 0, 0.6);
-}
-.dock-item {
-  flex: 1;
-  min-width: 0;
-  min-height: 56px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  padding: 6px 2px 5px;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 11px;
-  color: var(--on-wood);
-  font: inherit;
-  font-size: var(--t-xs);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: background 140ms, transform 70ms;
-}
-.dock-item:hover { background: rgba(255, 255, 255, 0.06); }
-.dock-item:active { transform: translateY(1px); }
-.dock-item.active {
-  background: linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 50%, var(--brass-lo) 100%);
-  border-color: var(--brass-lo);
-  color: var(--on-brass);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 0 rgba(0, 0, 0, 0.45);
-}
-.dock-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-
-main { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
-#toasts { bottom: calc(96px + env(safe-area-inset-bottom)); }
-body.focus .dock { display: none; }
-body.focus main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
-body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
+/* Away from the river, the crest is a way back to it. */
+.crest.back .crest-disc .icon { width: 20px; height: 20px; }
+.crest.back .crest-name { font-size: 18px; }
+.crest.back:hover .crest-name { color: var(--brass-hi); }
 
 /* ==================================================================== *
  * The ledger
  *
- * Everything the dock does not hold, and the switches, written on paper in
+ * Everything that is not a place on the map, and the switches, written on paper in
  * a book that opens over the screen. Opening it does not leave where you
  * were, so a quick look at the charts or a switch of the music costs nothing.
  * ==================================================================== */
@@ -1306,47 +1245,6 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
 .course-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-3); }
 .course-head h2 { margin: 0; font-family: var(--font-sign); font-weight: 400; font-size: 30px; }
 
-.trail {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-}
-/* The path itself, running through the middle of every medallion. */
-.trail::before {
-  content: '';
-  position: absolute;
-  left: 35px;
-  top: 36px;
-  bottom: 36px;
-  border-left: 3px dashed var(--brass-lo);
-  opacity: 0.8;
-}
-.trail-stop { position: relative; }
-
-.trail .module-tile {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--s-4);
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  background: none;
-  border: 0;
-  box-shadow: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: transform 140ms cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-.trail .module-tile:hover:not(:disabled) { transform: translateX(3px); background: none; }
-.trail .module-tile:disabled, .trail .module-tile.locked { cursor: default; opacity: 1; }
-.trail .module-tile:focus-visible { outline: 2px solid var(--brass); outline-offset: 4px; border-radius: 10px; }
 
 .medallion {
   position: relative;
@@ -1426,15 +1324,12 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
 .chapter-card .bar { display: block; height: 5px; margin-top: 4px; }
 .trail-stop.locked .chapter-card { opacity: 0.62; }
 .trail-stop.is-next .chapter-card { box-shadow: 0 0 0 2px var(--brass), 0 8px 18px rgba(0, 0, 0, 0.45); }
-.trail .module-tile:hover:not(:disabled) .chapter-card { box-shadow: 0 0 0 1px var(--brass-lo), 0 8px 18px rgba(0, 0, 0, 0.4); }
 .trail-stop.is-next .module-tile:hover .chapter-card { box-shadow: 0 0 0 2px var(--brass), 0 8px 18px rgba(0, 0, 0, 0.45); }
 
 @media (max-width: 700px) {
-  .trail::before { left: 27px; }
   .medallion { width: 54px; height: 54px; }
   .medallion-face { width: 36px; height: 36px; }
   .medallion-face .icon { width: 20px; height: 20px; }
-  .trail .module-tile { gap: var(--s-3); }
   .chapter-card .name { font-size: var(--t-md); }
 }
 
@@ -1491,30 +1386,6 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
 .note-card .spread { align-items: flex-start; }
 
 /* Doors out of the school: signboards on the wall. */
-.school-rail .door {
-  border: 1px solid var(--brass-lo);
-  border-radius: 8px;
-  padding: var(--s-3);
-  margin-bottom: 6px;
-  background:
-    var(--wood-grain),
-    linear-gradient(180deg, var(--wood-1) 0%, var(--wood-2) 60%, var(--wood-3) 100%);
-  background-size: 400px 120px, auto;
-  background-blend-mode: multiply, normal;
-  color: var(--on-wood);
-  box-shadow: var(--press);
-}
-.school-rail .door:hover { padding-left: var(--s-3); color: var(--brass-hi); }
-.school-rail .door .door-sub { color: var(--on-wood); opacity: 0.8; }
-.school-rail .door .door-arrow { color: var(--brass-hi); }
-.school-rail .door .module-glyph {
-  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
-  color: var(--on-brass);
-  border: 0;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-.school-rail .doors { display: flex; flex-direction: column; }
 .pilot-door { margin-bottom: 0; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1733,23 +1604,6 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
 .pilot { display: flex; flex-direction: column; gap: var(--s-4); }
 .pilot .panel + .panel { margin-top: 0; }
 .logbook h2.sign { margin: 0; font-family: var(--font-sign); font-weight: 400; font-size: 28px; color: var(--ink); }
-.logbook .rung-row {
-  background: var(--paper);
-  border: 1px solid var(--ink-rule);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
-}
-.logbook .rung-row:hover:not(:disabled) { background: var(--paper-2); border-color: var(--brass-lo); }
-.logbook .rung-row .rung-mark {
-  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
-  color: var(--on-brass);
-  border: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  font-family: var(--font-print);
-  font-weight: 700;
-}
-.logbook .rung-row.done .rung-mark { background: var(--ink-green); color: var(--paper); }
-.logbook .rung-row.shut .rung-mark { background: var(--paper-2); color: var(--ink-dim); box-shadow: none; }
-.logbook .rung-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); color: var(--ink); }
 
 /* The hours a reach has been run in: sun, dusk, moon. */
 .hour-pip {
@@ -2944,3 +2798,228 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
 .yard-boat-do { margin-top: var(--s-2); }
 .yard-fittings { display: grid; gap: var(--s-2); }
 .fitting-art { flex: none; line-height: 0; }
+
+/* ================================================================
+   Regions: School Creek and the pilot's channel, drawn down the page
+   ================================================================ */
+
+.region-bar { display: flex; align-items: center; gap: var(--s-2); font-family: var(--font-print); color: var(--text-dim); }
+.region-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-bright);
+  background: var(--bg-card);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.region-back:hover { border-color: var(--brass); color: var(--brass-hi); }
+.region-sep { opacity: 0.6; }
+.region-here { font-style: italic; }
+
+/* The map itself: the land of the big chart, framed the same way. */
+.creek-map {
+  position: relative;
+  background: var(--map-land);
+  border: 1px solid var(--border-bright);
+  outline: 1px solid var(--border);
+  outline-offset: 4px;
+  border-radius: 14px;
+  box-shadow: var(--shadow), inset 0 0 80px rgba(0, 0, 0, 0.25);
+  --creek-pad: var(--s-3);
+  padding: var(--s-4) var(--creek-pad) 0;
+  overflow: hidden;
+}
+.creek-map .course-head { position: relative; z-index: 2; margin: var(--s-2) 0 0; flex-wrap: wrap; justify-content: flex-start; }
+.creek-map .course-head h2 { font-size: 22px; }
+.creek-map .course-head h2 { color: var(--map-ink); }
+.creek-map .course-head .faint { color: var(--map-ink-dim); }
+
+/* Rows: a card on one bank, the water in the middle, scenery on the other. */
+.creek-row { position: relative; }
+.creek-cell { min-width: 0; }
+.creek-bend { display: block; line-height: 0; }
+.creek-bend-art { display: block; width: 100%; height: 100%; }
+.creek-sand, .creek-edge, .creek-water, .creek-current { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: butt; }
+.creek-sand { stroke: var(--map-sand); stroke-width: 34; }
+.creek-edge { stroke: var(--map-water-2); stroke-width: 24; stroke-opacity: 0.6; }
+.creek-water { stroke: var(--map-water); stroke-width: 20; }
+.creek-current { stroke: var(--map-water-2); stroke-width: 1.2; stroke-dasharray: 2 9; opacity: 0.6; }
+.spring-pool { fill: var(--map-water); stroke: var(--map-water-2); stroke-width: 1.5; stroke-opacity: 0.6; }
+
+.creek-trail { list-style: none; margin: 0; padding: 0; position: relative; }
+.creek-trail > .creek-row > .creek-bend { position: absolute; top: 0; bottom: 0; left: calc(50% - 60px); width: 120px; z-index: 0; }
+.creek-trail .module-tile {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  min-height: 170px;
+  padding: var(--s-3) var(--s-2);
+  margin: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.creek-trail .module-tile:disabled, .creek-trail .module-tile.locked { cursor: default; opacity: 1; }
+.creek-trail .module-tile:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; border-radius: 10px; }
+.creek-trail .module-tile:hover:not(:disabled) .chapter-card { box-shadow: 0 0 0 1px var(--brass-lo), 0 8px 18px rgba(0, 0, 0, 0.4); transform: translateY(-2px); }
+.creek-trail .chapter-card { transition: box-shadow 140ms, transform 140ms; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35); }
+.creek-trail .medallion { grid-column: 2; grid-row: 1; justify-self: center; }
+.creek-row.card-left .module-tile .chapter-card { grid-column: 1; grid-row: 1; }
+.creek-row.card-right .module-tile .chapter-card { grid-column: 3; grid-row: 1; }
+.creek-trail .creek-scene {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: calc(50% - 60px);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 0;
+  line-height: 0;
+}
+.creek-row.card-left .creek-scene { right: 0; }
+.creek-row.card-right .creek-scene { left: 0; }
+.map-art.creek-scene-art, .map-art.creek-place-art, .map-art.creek-spring-art { position: static; inset: auto; width: min(92%, 250px); height: auto; }
+
+/* The head: the school on its bluff, the spring, and the name. */
+.creek-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px minmax(0, 1fr);
+  align-items: end;
+  min-height: 150px;
+}
+.creek-head .creek-cell.water { align-self: stretch; position: relative; }
+.creek-spring { position: relative; height: 100%; }
+/* The water leaves the pool from its middle: the pool is 120 wide and sits
+   12 down, so its middle is 72 from the top of the cell. */
+.creek-spring .creek-bend-art { position: absolute; left: 0; right: 0; top: 72px; bottom: 0; height: auto; }
+.creek-spring .creek-spring-art { position: absolute; left: 50%; top: 12px; width: 120px; transform: translateX(-50%); }
+.creek-place { display: grid; place-items: center; }
+.map-art.creek-place-art { width: min(100%, 240px); }
+.creek-title { padding: 0 var(--s-3) var(--s-4); }
+.creek-kicker { font-family: var(--font-print); font-style: italic; color: var(--map-ink-dim); letter-spacing: 0.08em; }
+.creek-name { margin: 0; font-family: var(--font-sign); font-weight: 400; font-size: clamp(26px, 4vw, 38px); color: var(--map-ink); text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
+
+/* The mouth: the creek runs out into the Long River, the way back. */
+.creek-mouth { position: relative; margin: 0 calc(-1 * var(--creek-pad)); }
+.creek-last { display: grid; grid-template-columns: minmax(0, 1fr) 120px minmax(0, 1fr); grid-template-rows: 70px; padding: 0 var(--creek-pad); }
+.creek-last .creek-cell.water { position: relative; }
+.creek-last .creek-bend { position: absolute; inset: 0; }
+/* The water and the banks are pictures: a tap goes through them to the
+   stop or the button underneath. */
+.creek-bend, .creek-scene, .creek-spring { pointer-events: none; }
+.creek-river {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-3) var(--s-5);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 14px, var(--map-water-2) 14px 16px, transparent 16px 40px) 0 50% / 100% 1px no-repeat,
+    linear-gradient(180deg, var(--map-sand) 0 7px, var(--map-water-2) 7px 10px, var(--map-water) 10px 100%);
+}
+.creek-boat { line-height: 0; }
+.creek-river-boat { width: 90px; height: auto; overflow: visible; }
+.creek-home { min-width: 220px; }
+
+@media (max-width: 700px) {
+  .creek-map { --creek-pad: var(--s-2); padding: var(--s-3) var(--creek-pad) 0; }
+  .creek-trail > .creek-row > .creek-bend { left: 0; width: 76px; }
+  .creek-trail .module-tile { grid-template-columns: 76px minmax(0, 1fr); min-height: 0; padding: var(--s-2) var(--s-1); gap: var(--s-2); }
+  .creek-trail .medallion { grid-column: 1; }
+  .creek-row.card-left .module-tile .chapter-card, .creek-row.card-right .module-tile .chapter-card { grid-column: 2; }
+  .creek-trail .creek-scene { display: none; }
+  .creek-head { grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "water title" "water place"; min-height: 0; }
+  .creek-head .creek-cell.water { grid-area: water; }
+  .creek-head .creek-title { grid-area: title; padding: var(--s-2); }
+  .creek-head .creek-place { grid-area: place; justify-items: start; }
+  .map-art.creek-place-art { width: min(100%, 200px); }
+  .creek-spring .creek-spring-art { width: 70px; top: 8px; }
+  .creek-spring .creek-bend-art { top: 43px; }
+  .creek-last { grid-template-columns: 76px minmax(0, 1fr); }
+  .creek-last .creek-cell.side:first-child { display: none; }
+}
+
+/* ---- the pilot's channel: each chart a buoy on the water ---- */
+.creek-trail.rungs { display: block; }
+.channel-map .ladder-head { justify-content: flex-start; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin: var(--s-2) 0 0; }
+.channel-map .hour-key { margin: 0; color: var(--map-ink-dim); }
+.channel-map .hour-key-item .icon { color: var(--map-glow); }
+.world-art .beach-bar { fill: var(--map-sand); }
+.creek-trail .rung-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  min-height: 140px;
+  padding: var(--s-3) var(--s-2);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.creek-trail .rung-row:hover:not(:disabled) { background: none; }
+.creek-trail .rung-row.done { border-left: 0; }
+.creek-trail .rung-row.shut { opacity: 1; }
+.creek-trail .rung-row.shut .rung-card { opacity: 0.62; }
+.creek-trail .rung-row:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; border-radius: 10px; }
+.creek-trail .rung-mark {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  width: 54px;
+  height: 54px;
+  border: 0;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 55%, var(--brass-lo));
+  color: var(--on-brass);
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.2), inset 0 0 0 6px rgba(255, 255, 255, 0.2), 0 4px 10px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-print);
+  font-size: var(--t-md);
+}
+.creek-trail .rung-row.done .rung-mark { background: var(--ink-green); color: var(--paper); }
+.creek-trail .rung-row.shut .rung-mark, .creek-trail .rung-row.on-shelf .rung-mark {
+  background: radial-gradient(circle at 35% 30%, var(--bg-hover), var(--bg-sunken) 75%);
+  color: var(--text-faint);
+  box-shadow: inset 0 0 0 2px var(--border-bright), 0 3px 8px rgba(0, 0, 0, 0.45);
+}
+.creek-row.card-left .rung-card { grid-column: 1; grid-row: 1; }
+.creek-row.card-right .rung-card { grid-column: 3; grid-row: 1; }
+.rung-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: box-shadow 140ms, transform 140ms;
+}
+.creek-trail .rung-row:hover:not(:disabled) .rung-card { box-shadow: 0 0 0 1px var(--brass-lo), 0 8px 18px rgba(0, 0, 0, 0.4); transform: translateY(-2px); }
+.rung-card .rung-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); color: var(--ink); }
+.rung-card .rung-note { color: var(--ink-dim); }
+.rung-card .rung-buy { width: 100%; }
+@media (max-width: 700px) {
+  .creek-trail .rung-row { grid-template-columns: 76px minmax(0, 1fr); min-height: 0; padding: var(--s-2) var(--s-1); gap: var(--s-2); }
+  .creek-trail .rung-mark { grid-column: 1; width: 46px; height: 46px; }
+  .creek-row.card-left .rung-card, .creek-row.card-right .rung-card { grid-column: 2; }
+}
+.creek-home, .boat-yard-link, .companion-ashore .btn, .yard-crew .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }

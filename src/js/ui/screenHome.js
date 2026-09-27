@@ -1,12 +1,14 @@
 /**
- * Silas's card school: where the lessons live.
+ * Silas's card school, and School Creek below it: where the lessons live.
  *
  * It was a dashboard — a rank panel, a stack of cards and a grid of tiles —
- * and it looked like one after the rest of the app became a river. So it is
- * a place now. The school stands on the bank in the room's hour, Silas says
- * which chapter is next and why, and the twelve modules are a course walked
- * from the first chapter to the last: a trail of medallions that fill with
- * stars as each one moves from learning to solid to mastered.
+ * and it looked like one after the rest of the app became a river. Then it
+ * was a place with a list in it, behind a tab. Now it is part of the map:
+ * the creek the school stands over, drawn from the spring by the schoolhouse
+ * down to the Long River, with the twelve chapters as stops along the water
+ * whose medallions fill with stars as each moves from learning to solid to
+ * mastered. Silas says which chapter is next and why, and the way out is
+ * down the creek to the river.
  *
  * Everything it knew stays: why this chapter, what is still missing on each,
  * the reviews that have come due, the hands worth another look. Only where
@@ -22,13 +24,12 @@ import { masteryTier, nextTierGoal, tierByKey, scoreLine, EVIDENCE_BAR } from '.
 import { RANKS, requirementRows } from '../state/profile.js';
 import { ACHIEVEMENTS } from '../state/achievements.js';
 import { handSummary } from '../state/handHistory.js';
-import { CHECKPOINTS } from '../data/rangeLadder.js';
 import { MENTOR } from '../data/characters.js';
-import { sceneBanner, silasSays } from './place.js';
+import { silasSays } from './place.js';
 import { ownsLesson, ownedModules, nextPurchase, LESSON_PRICES } from '../state/economy.js';
 import { buyControl, pearls } from './shop.js';
-
-const RANGE_KEYS = CHECKPOINTS.map((c) => c.key);
+import { creekBend, bankScene, creekHead, creekMouth, regionBar } from './creekMap.js';
+import { boatLook } from '../state/economy.js';
 
 /**
  * What is actually still missing for the next rank. Reports the requirement
@@ -50,15 +51,9 @@ export function renderHome(ctx) {
   const { profile, go } = ctx;
   const plan = nextUp(profile);
   const recommended = plan.module;
-  const cleared = profile.rangesCleared(RANGE_KEYS);
 
-  return el('div.screen.school',
-    sceneBanner({
-      id: 'school',
-      landmark: 'school',
-      kicker: t('On the bluff above the landing'),
-      title: t('Silas\'s Card School'),
-    }),
+  return el('div.screen.school.region',
+    regionBar({ go, name: t('School Creek') }),
 
     /* ---- Silas, and the one chapter most worth studying now ---- */
     el('div.panel.mentor-card',
@@ -76,43 +71,33 @@ export function renderHome(ctx) {
     ),
 
     el('div.school-floor',
-      /* ---- the course itself ---- */
-      el('section.course',
-        el('div.course-head',
-          el('h2.sign', t('The course')),
-          el('span.faint', t('{n} of {total} yours', {
-            n: ownedModules(profile).length,
-            total: MODULE_META.length,
-          })),
-          el('span.course-purse', pearls(profile.pearls)),
-        ),
-        el('ol.trail',
+      /* ---- the course: the creek, from the school to the river ---- */
+      el('section.course.creek-map',
+        creekHead({
+          kicker: t('School Creek'),
+          title: t('Silas\'s Card School'),
+          landmark: 'school',
+          extra: el('div.course-head',
+            el('h2.sign', t('The course')),
+            el('span.faint', t('{n} of {total} yours', {
+              n: ownedModules(profile).length,
+              total: MODULE_META.length,
+            })),
+            el('span.course-purse', pearls(profile.pearls)),
+          ),
+        }),
+        el('ol.creek-trail',
           MODULE_META.map((meta, i) => chapter(meta, i, profile, go, recommended.id)),
         ),
+        creekMouth({ go, look: boatLook(profile) }),
       ),
 
       /* ---- what you carry: your papers, your record, Silas's notes ---- */
       el('aside.school-rail',
         certificate(profile),
-        el('button.door.pilot-door', { onclick: () => go('ranges') },
-          el('span.module-glyph', icon('grid', { size: 18 })),
-          el('span.door-text',
-            el('span.door-title', t('The pilot house')),
-            el('span.door-sub', cleared
-              ? t('{done} of {total} in your head', { done: cleared, total: RANGE_KEYS.length })
-              : t('Learn the charts until you do not need them')),
-          ),
-          icon('arrowRight', { size: 16, className: 'door-arrow' }),
-        ),
         duePanel(profile, go),
         mistakesPanel(go),
         record(profile),
-        el('nav.doors',
-          doorway('lab', 'The Assay Office', 'Type the equity, size the bet.', () => go('lab')),
-          doorway('gauntlet', 'The Race', 'Everything mixed, against the Belle.', () => go('gauntlet')),
-          doorway('review', 'The Log', 'Replay what you misplayed.', () => go('review')),
-          doorway('cards', 'Practice table', 'Play hands with Silas at your shoulder.', () => go('play')),
-        ),
       ),
     ),
   );
@@ -283,25 +268,6 @@ function whyThisOne(plan) {
     + 'barely tried cannot jump the queue.');
 }
 
-/**
- * A door out of this room.
- *
- * The three equal cards in a row that this replaces were the shape every
- * generated dashboard arrives in, and they gave the Lab the same weight as
- * the thing the reader actually came to do. A door is a line you walk
- * through, not a card competing for the middle of the screen.
- */
-function doorway(mark, title, body, onclick) {
-  return el('button.door', { onclick },
-    el('span.module-glyph', icon(mark, { size: 18 })),
-    el('span.door-text',
-      el('span.door-title', t(title)),
-      el('span.door-sub', body),
-    ),
-    icon('arrowRight', { size: 16, className: 'door-arrow' }),
-  );
-}
-
 function statTile(label, value, sub = '') {
   return el('div.stat',
     el('div.label', label),
@@ -348,7 +314,12 @@ function chapter(meta, index, profile, go, recommendedId) {
   const goal = locked ? null : nextTierGoal(profile, meta.id);
   const stars = STARS[tier] || 0;
 
-  return el(`li.trail-stop${locked ? '.locked' : ''}${shelved ? '.shelved' : ''}${isNext ? '.is-next' : ''}.tier-${tier}`,
+  // The chapters alternate banks down the creek, so the water runs between
+  // them; the far bank of each has its own scenery.
+  const bank = index % 2 === 0 ? 'left' : 'right';
+  return el(`li.trail-stop.creek-row.card-${bank}${locked ? '.locked' : ''}${shelved ? '.shelved' : ''}${isNext ? '.is-next' : ''}.tier-${tier}`,
+    creekBend(index),
+    bankScene(index, MODULE_META.length),
     el(`button.module-tile${locked ? '.locked' : ''}${isNext ? '.next-up' : ''}`, {
       disabled: rankLocked,
       onclick: () => !rankLocked && go('learn', { module: meta.id }),
