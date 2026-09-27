@@ -2736,11 +2736,13 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 .you.paint-blue .hull { fill: var(--paint-blue); }
 .you.paint-white .hull { fill: var(--paint-white); }
 .you.paint-white .deck { fill: var(--paint-gilt); }
-.flag-brass { fill: var(--brass); }
-.flag-blue { fill: var(--flag-blue); }
-.flag-black { fill: var(--flag-black); }
-.flag-pearl { fill: var(--pearl); }
-.flag-spade { fill: var(--flag-white); }
+/* Scoped to your boat so they outrank the outline-only ink every drawing
+   uses; a flag drawn in outline is a flag nobody can tell apart. */
+.you .flag-brass { fill: var(--brass); }
+.you .flag-blue { fill: var(--flag-blue); }
+.you .flag-black { fill: var(--flag-black); }
+.you .flag-pearl { fill: var(--pearl); }
+.you .flag-spade { fill: var(--flag-white); }
 .lantern-halo { fill: var(--map-glow); opacity: 0.3; animation: lantern 3.2s ease-in-out infinite; }
 @keyframes lantern { 0%, 100% { opacity: 0.18; } 50% { opacity: 0.42; } }
 @media (prefers-reduced-motion: reduce) { .lantern-halo { animation: none; } }

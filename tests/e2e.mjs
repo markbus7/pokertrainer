@@ -2301,8 +2301,8 @@ await step('the boatyard sells a bigger boat, and it takes more of the crew to t
     walkthroughs: ['pot-odds', 'preflop'],
     career: { venue: 'nl5', best: 'nl5', busted: 0, staked: 0, beaten: [] },
     economy: {
-      version: 2, pearls: 400, earned: 400, spent: 0, boat: 'rowboat', crew: ['owl', 'cat'], paint: null, flag: null, lantern: false,
-      owned: ['lesson:hand-rankings', 'lesson:pot-odds', 'lesson:preflop', 'pet:owl', 'pet:cat'],
+      version: 2, pearls: 400, earned: 400, spent: 0, boat: 'rowboat', crew: ['owl', 'cat'], paint: null, flag: 'flag-pearl', lantern: false,
+      owned: ['lesson:hand-rankings', 'lesson:pot-odds', 'lesson:preflop', 'pet:owl', 'pet:cat', 'fit:flag-pearl'],
     },
   });
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
@@ -2320,6 +2320,10 @@ await step('the boatyard sells a bigger boat, and it takes more of the crew to t
   }));
   if (before.aboard !== 1 || before.ashore !== 1) throw new Error(`a rowboat has ${before.aboard} aboard and ${before.ashore} ashore, expected 1 and 1`);
   if (!/rowboat/.test(before.sailing)) throw new Error(`sailing ${before.sailing} before buying anything`);
+  // A flag flown is a flag you can see: filled with its colour, not drawn in
+  // the outline every other part of the boat uses.
+  const flagFill = await page.$eval('.yard-boat-pic .you .flag-blue', (n) => getComputedStyle(n).fill).catch(() => 'missing');
+  if (flagFill === 'none' || flagFill === 'missing') throw new Error(`the pearl flag is ${flagFill === 'none' ? 'hollow' : 'not flown'}`);
 
   // The launch is sold only further down the river than Fisher's Rest.
   const launch = await page.$('.yard-boat:has-text("A steam launch") .buy-btn');
