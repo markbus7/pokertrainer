@@ -12,7 +12,8 @@ import { el, fmt, toast } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import * as audio from '../audio/engine.js';
-import { itemByKey, itemState, purchase, companionByKey } from '../state/economy.js';
+import { itemByKey, itemState, purchase, companionByKey, fittingByKey } from '../state/economy.js';
+import { boatByKey } from '../data/characters.js';
 import { moduleMeta } from '../data/curriculum.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
 import { RANKS } from '../state/profile.js';
@@ -38,6 +39,8 @@ export function itemName(item) {
     const c = companionByKey(item.pet);
     return t('{name} the {kind}', { name: c.name, kind: t(c.kind).toLowerCase() });
   }
+  if (item.kind === 'boat') return t(boatByKey(item.boat).name);
+  if (item.kind === 'fitting') return t(fittingByKey(item.fitting).name);
   return item.key;
 }
 
@@ -52,6 +55,7 @@ export function requirementText(missing) {
     const meta = moduleMeta(p.module);
     return t(missing.text, { module: meta ? t(meta.name) : p.module });
   }
+  if (missing.key === 'reach') return t(missing.text, { place: t(p.place) });
   return t(missing.text, p);
 }
 

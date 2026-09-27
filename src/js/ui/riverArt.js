@@ -208,6 +208,24 @@ export const LANDMARKS = {
     <path class="roof ink" d="M-8 17v-10h7v10zM1 17v-10h7v10z"/>
     <path class="ink" d="M32 18v-11M42 18v-11M30 9h14"/>`,
 
+  // The boatyard: a long shed, a hull up on the stocks with her ribs still
+  // showing, the slipway down into the water, and a derrick to lift the
+  // boilers in.
+  boatyard: () => `
+    <path class="shallows" d="M-46 16h92v8h-92z"/>
+    <path class="ground" d="M-44 16h30"/>
+    <path class="wall ink" d="M-40 16V-6h30v22z"/>
+    <path class="roof ink" d="M-43 -6L-25 -20L-7 -6z"/>
+    <rect class="glow" x="-35" y="0" width="6" height="6"/>
+    <path class="roof ink" d="M-24 16v-12h9v12z"/>
+    <path class="ink" d="M-6 16L40 24M-2 11L42 19"/>
+    <path class="hull ink" d="M-2 4h34l-6 8h-22z"/>
+    <path class="ink" d="M4 4v-7M10 4v-8M16 4v-8M22 4v-7M28 4v-5"/>
+    <path class="ink" d="M1 12v6M27 12v8"/>
+    <path class="ink" d="M36 16V-26M36 -26L14 -12M36 -18L20 -8"/>
+    <path class="ink" d="M14 -12v10"/>
+    <path class="mark ink" d="M36 -26l9 3-9 3z"/>`,
+
   // A general store on stilts where two rivers meet: a porch, barrels, a
   // board over the door and a flag to find it by.
   tradingpost: () => `
@@ -282,12 +300,53 @@ export const BOAT_ART = {
     <path class="mark ink" d="M14 -30l10 2.5-10 2.5z"/>`,
 };
 
-/** A boat drawn on its own, for the side panel. */
-export function boatSvg(key, { width = 120 } = {}) {
-  const art = (BOAT_ART[key] || BOAT_ART.rowboat)();
+/**
+ * Where each boat flies a flag and hangs a lantern: a staff from `base` up to
+ * `top` at `x` (no staff when the flag goes on the mast), and the lantern at
+ * the bow. Every boat is drawn bow to the left.
+ */
+const RIGGING = {
+  rowboat: { x: 11, base: 0, top: -12, bow: [-14, -2] },
+  skiff: { x: -2, base: null, top: -22, bow: [-16, -1] },
+  launch: { x: -15, base: 1, top: -14, bow: [-19, -1] },
+  sternwheeler: { x: -19, base: 1, top: -19, bow: [-22, -1] },
+  flagship: { x: -22, base: 1, top: -18, bow: [-26, -1] },
+};
+
+const FLAGS = {
+  'flag-pennant': '<path class="flag-brass ink" d="M0 0l11 3.2-11 3.2z"/>',
+  'flag-pearl': '<rect class="flag-blue ink" x="0" y="0" width="11" height="7"/><circle class="flag-pearl" cx="5.5" cy="3.5" r="1.9"/>',
+  'flag-spade': '<rect class="flag-black ink" x="0" y="0" width="11" height="7"/>'
+    + '<path class="flag-spade" d="M5.5 1.1C3.8 2.8 2.6 3.6 2.6 4.6c0 1 1.3 1.4 2.4.6l-.6 1.5h2.2l-.6-1.5c1.1.8 2.4.4 2.4-.6 0-1-1.2-1.8-2.9-3.5z"/>',
+};
+
+/**
+ * Your boat as you have dressed it: the drawing for its kind, the paint as a
+ * class the stylesheet colours, and the flag and lantern you have put on.
+ * `look` is a boat key, or {boat, paint, flag, lantern}.
+ */
+export function yourBoat(look = 'rowboat') {
+  const l = typeof look === 'string' ? { boat: look } : (look || {});
+  const key = BOAT_ART[l.boat] ? l.boat : 'rowboat';
+  const rig = RIGGING[key];
+  let extras = '';
+  if (l.flag && FLAGS[l.flag]) {
+    extras += (rig.base == null ? '' : `<path class="ink" d="M${rig.x} ${rig.base}V${rig.top}"/>`)
+      + `<g transform="translate(${rig.x} ${rig.top})">${FLAGS[l.flag]}</g>`;
+  }
+  if (l.lantern) {
+    const [bx, by] = rig.bow;
+    extras += `<circle class="lantern-halo" cx="${bx}" cy="${by}" r="6"/><circle class="glow ink" cx="${bx}" cy="${by}" r="1.6"/>`;
+  }
+  const cls = ['you', l.paint || ''].filter(Boolean).join(' ');
+  return `<g class="${cls}">${BOAT_ART[key]()}${extras}</g>`;
+}
+
+/** A boat drawn on its own, for the side panel and the boatyard. */
+export function boatSvg(look, { width = 120 } = {}) {
   return `<svg class="boat-art" viewBox="-34 -36 68 50" width="${width}" aria-hidden="true">`
     + `<path class="water" d="M-34 6h68v8h-68z"/><path class="ripple" d="M-28 9q3 -2.5 6 0t6 0M12 11q3 -2.5 6 0t6 0"/>`
-    + `<g class="you">${art}</g></svg>`;
+    + `${yourBoat(look)}</svg>`;
 }
 
 /**
@@ -308,7 +367,7 @@ export function sceneSvg({ id, landmark, orbLeft = false, boat = null, arriving 
     return y > 120 ? '' : `<circle class="far-tree" cx="${x}" cy="${y}" r="${4 + (i % 3)}"/>`;
   }).join('');
   const boatArt = boat
-    ? `<g class="scene-boat${arriving ? ' arriving' : ''}"><g transform="translate(400 146) scale(1.6)"><g class="bob"><g class="you">${(BOAT_ART[boat] || BOAT_ART.rowboat)()}</g></g></g></g>`
+    ? `<g class="scene-boat${arriving ? ' arriving' : ''}"><g transform="translate(400 146) scale(1.6)"><g class="bob">${yourBoat(boat)}</g></g></g>`
     : '';
   return `<svg class="scene-art" viewBox="0 0 600 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs><linearGradient id="sky-${id}" x1="0" y1="0" x2="0" y2="1">

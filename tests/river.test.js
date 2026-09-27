@@ -1,7 +1,7 @@
 import { describe, it, assert, equal } from './harness.js';
 import { VENUES } from '../src/js/data/venues.js';
 import {
-  BOSSES, BOSS_KEYS, bossFor, boatFor, BOATS, FLAGSHIP, MENTOR, ASSAYER, RACE,
+  BOSSES, BOSS_KEYS, bossFor, boatEarnedBy, BOATS, FLAGSHIP, MENTOR, ASSAYER, RACE, SHIPWRIGHT,
 } from '../src/js/data/characters.js';
 import { PROFILES } from '../src/js/engine/bots.js';
 import { NL } from '../src/js/i18n/nl.js';
@@ -137,7 +137,7 @@ describe('the river: the chart is drawn where things are', () => {
   });
 
   it('sends each place to a screen the app has', () => {
-    const routes = new Set(['train', 'play', 'ranges', 'lab', 'gauntlet', 'store']);
+    const routes = new Set(['train', 'play', 'ranges', 'lab', 'gauntlet', 'store', 'boatyard']);
     equal(new Set(PLACES.map((p) => p.key)).size, PLACES.length, 'two places share a key');
     for (const place of PLACES) {
       assert(routes.has(place.route), `${place.name} leads nowhere`);
@@ -228,24 +228,31 @@ describe('the river: what a stop says about itself', () => {
   });
 });
 
-describe('the river: the boat is a picture of the climb, not a purchase', () => {
-  it('upgrades with the furthest stop reached, and never goes back', () => {
-    equal(boatFor(0).key, 'rowboat');
-    equal(boatFor(1).key, 'rowboat');
-    equal(boatFor(2).key, 'skiff');
-    equal(boatFor(4).key, 'launch');
-    equal(boatFor(7).key, 'sternwheeler');
-    let last = -1;
-    for (let i = 0; i < VENUES.length; i++) {
-      const rank = BOATS.findIndex((b) => b.key === boatFor(i).key);
-      assert(rank >= last, `stop ${i} hands back a smaller boat`);
-      last = rank;
+describe('the river: boats are bought, and each one does more', () => {
+  it('sells bigger boats for more pearls, further down the river', () => {
+    for (let i = 1; i < BOATS.length; i++) {
+      const [a, b] = [BOATS[i - 1], BOATS[i]];
+      assert(b.price > a.price, `the ${b.key} costs no more than the ${a.key}`);
+      assert(b.reach >= a.reach, `the ${b.key} is sold nearer the start than the ${a.key}`);
+      assert(b.berths > a.berths, `the ${b.key} carries no more companions than the ${a.key}`);
+      assert(b.bonus > a.bonus, `the ${b.key}'s strongbox is no heavier than the ${a.key}'s`);
     }
+    equal(BOATS[0].price, 0, 'the rowboat is borrowed, not bought');
+    assert(FLAGSHIP.berths >= BOATS[BOATS.length - 1].berths && FLAGSHIP.bonus > BOATS[BOATS.length - 1].bonus,
+      'the Commodore\'s flagship is not the best boat on the river');
   });
 
-  it('keeps the flagship for beating the Commodore', () => {
-    equal(boatFor(7, false).key, 'sternwheeler', 'reaching the delta is not the same as winning it');
-    equal(boatFor(7, true).key, FLAGSHIP.key);
+  it('keeps the boat a save had already earned before the boatyard opened', () => {
+    equal(boatEarnedBy(0), 'rowboat');
+    equal(boatEarnedBy(1), 'rowboat');
+    equal(boatEarnedBy(2), 'skiff');
+    equal(boatEarnedBy(4), 'launch');
+    equal(boatEarnedBy(7), 'sternwheeler');
+  });
+
+  it('gives the shipwright something to say to every customer', () => {
+    for (const line of ['hello', 'poor', 'far']) assert(SHIPWRIGHT[line], `Amos has nothing to say for "${line}"`);
+    assert(SHIPWRIGHT.thanks.length >= 3, 'Amos thanks everybody the same way');
   });
 });
 

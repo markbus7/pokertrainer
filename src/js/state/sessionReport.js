@@ -28,7 +28,7 @@ export const SKILL_SAMPLE = 2;
  * @param {{kind:'stop'|'practice', key:string, name:string, label?:string}} s.place
  * @param {object} s.stats         the table's SessionStats
  * @param {Array} s.graded         one entry per decision: {skill, level, street, action, helped, head, costBb, handId}
- * @param {{hands:number, decisions:number, bonus:number}} s.pearls
+ * @param {{hands:number, decisions:number, bonus:number, boat?:number}} s.pearls  `boat` is the strongbox's share
  * @param {Array<string>} s.savedHands  ids of hands kept in the Log this sitting
  * @param {{spent:number, back:number}|null} s.cash  at a stop: what the seats cost and what came back
  */
@@ -55,7 +55,7 @@ export function buildReport({ place, stats, graded, pearls, savedHands = [], cas
 
   const summary = stats.summary();
   const leaks = leakReport(stats);
-  const total = (pearls.hands || 0) + (pearls.decisions || 0) + (pearls.bonus || 0);
+  const total = (pearls.hands || 0) + (pearls.decisions || 0) + (pearls.bonus || 0) + (pearls.boat || 0);
 
   return {
     at,
@@ -63,7 +63,7 @@ export function buildReport({ place, stats, graded, pearls, savedHands = [], cas
     hands: summary.hands,
     profitBb: Math.round(summary.profitBb * 10) / 10,
     cash,
-    pearls: { hands: pearls.hands || 0, decisions: pearls.decisions || 0, bonus: pearls.bonus || 0, total },
+    pearls: { hands: pearls.hands || 0, decisions: pearls.decisions || 0, bonus: pearls.bonus || 0, boat: pearls.boat || 0, total },
     decisions: { total: own, sound, helped, bySkill },
     worst,
     savedHands: savedHands.slice(-10),

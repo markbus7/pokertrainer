@@ -72,6 +72,7 @@ export function renderReport(ctx) {
         part(t('Hands played'), report.pearls.hands),
         part(t('Sound decisions'), report.pearls.decisions),
         report.pearls.bonus ? part(t('Taking the table'), report.pearls.bonus) : null,
+        report.pearls.boat ? part(t('Your boat\'s strongbox'), report.pearls.boat) : null,
       ),
       el('div.faint', t('A pearl for every hand, one more for every sound decision you made without asking.')),
     ),

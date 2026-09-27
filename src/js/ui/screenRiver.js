@@ -22,15 +22,18 @@ import { el, fmt } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { VENUES, venueFor, roomYouCanAfford } from '../data/venues.js';
-import { bossFor, boatFor } from '../data/characters.js';
+import { bossFor } from '../data/characters.js';
 import { nextUp, moduleMeta, MODULE_META } from '../data/curriculum.js';
 import { boatSvg } from './riverArt.js';
 import { WORLD, stopAt, PLACES, worldSvg, voyage } from './worldMap.js';
 import { portraitSvg } from './portraits.js';
 import { svgNode } from './place.js';
-import { ownedModules, ownsLesson, ownsChart, CATALOGUE, itemState } from '../state/economy.js';
+import {
+  ownedModules, ownsLesson, ownsChart, somethingToBuy, currentBoat, boatLook, crewAboard,
+} from '../state/economy.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
 import { pearls } from './shop.js';
+import { boatPerks, crewStrip } from './boats.js';
 import * as audio from '../audio/engine.js';
 
 export { svgNode };
@@ -50,7 +53,8 @@ export function riverState(profile) {
     open: roomYouCanAfford(bankroll).index,
     beaten: new Set(VENUES.filter((v) => beatenKeys.has(v.key)).map((v) => v.index)),
     beatenKeys,
-    boat: boatFor(Math.max(best.index, here.index), wonRiver),
+    boat: currentBoat(profile),
+    look: boatLook(profile),
     wonRiver,
   };
 }
@@ -101,21 +105,14 @@ function placeStatus(place, profile) {
     case 'race': return t('Beat the Belle for pearls');
     case 'tradingpost': return null;
     case 'saloon': return t('Free play, pearls a hand');
+    case 'boatyard': return t('Boats, paint and flags');
     default: return null;
   }
 }
 
-/** Whether the Trading Post has anything on its shelves you could buy now. */
-function somethingToBuy(profile) {
-  return CATALOGUE.some((item) => {
-    const state = itemState(profile, item);
-    return state.ready && state.affordable;
-  });
-}
-
 function placePlate(place, profile, go) {
   const status = placeStatus(place, profile);
-  const canBuy = place.key === 'tradingpost' && somethingToBuy(profile);
+  const canBuy = (place.key === 'tradingpost' || place.key === 'boatyard') && somethingToBuy(profile, place.key);
   return el(`button.map-place.place-${place.key}${canBuy ? '.can-buy' : ''}`, {
     style: { left: `${(place.x / WORLD.W) * 100}%`, top: `${((place.y + 26) / WORLD.H) * 100}%` },
     onclick: () => { audio.sfx('click'); go(place.route); },
@@ -124,7 +121,7 @@ function placePlate(place, profile, go) {
     el('span.map-place-name', t(place.name)),
     place.key === 'tradingpost'
       ? el('span.map-place-meta', pearls(profile.pearls), canBuy ? el('span.place-new', t('Something to buy')) : null)
-      : el('span.map-place-meta', status),
+      : el('span.map-place-meta', canBuy ? el('span.place-new', t('Something to buy')) : status),
   );
 }
 
@@ -138,6 +135,7 @@ function riverMap(state, profile, go) {
     open: state.open,
     beaten: state.beaten,
     boat: state.boat.key,
+    look: state.look,
     landmarks: VENUES.map((v) => v.landmark),
   });
   // The drawings answer taps as well as their name plates do.
@@ -193,18 +191,24 @@ function hereCard(state, profile, go) {
   );
 }
 
-/** The boat you have, and the keepsakes on its shelf. */
-function boatCard(state) {
+/** The boat you have, who is aboard, and the keepsakes on its shelf. */
+function boatCard(state, profile, go) {
   const got = VENUES.filter((v) => state.beaten.has(v.index)).length;
   return el('div.panel.boat-card',
     el('div.boat-head',
-      svgNode(boatSvg(state.boat.key, { width: 112 }), 'boat-pic'),
+      svgNode(boatSvg(state.look, { width: 112 }), 'boat-pic'),
       el('div',
         el('div.here-kicker', t('Your boat')),
         el('div.boat-name', t(state.boat.name)),
-        el('div.faint', t('{n} of {total} keepsakes', { n: got, total: VENUES.length })),
+        el('div.faint.boat-perks', boatPerks(state.boat)),
       ),
     ),
+    el('div.boat-crew',
+      el('span.boat-crew-label', t('Aboard')),
+      crewStrip(profile, { size: 34 }),
+      el('button.btn.sm.ghost.boat-yard-link', { onclick: () => go('boatyard') }, icon('anchor', { size: 14 }), ' ', t('To the boatyard')),
+    ),
+    el('div.faint.keepsake-count', t('{n} of {total} keepsakes', { n: got, total: VENUES.length })),
     el('div.keepsakes', VENUES.map((v) => {
       const boss = bossFor(v.boss);
       const have = state.beaten.has(v.index);
@@ -320,7 +324,7 @@ export function renderRiver(ctx) {
       el('div.river-below',
         hereCard(state, profile, go),
         el('div.river-side',
-          boatCard(state),
+          boatCard(state, profile, go),
           studyLine(profile, go),
         ),
       ),

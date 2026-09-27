@@ -19,6 +19,7 @@
  *    southern channel is the racing chute.
  *  - The Black River joins from the north, and the Trading Post stands at
  *    the fork.
+ *  - The boatyard has its slip on Gold Creek, a little up from the river.
  *  - At the end the river splits again into the delta, and runs out through
  *    three mouths into the sea.
  *
@@ -27,7 +28,7 @@
  * chart is the river by moonlight, at dusk, in the bayou and by day.
  */
 
-import { LANDMARKS, BOAT_ART } from './riverArt.js';
+import { LANDMARKS, yourBoat } from './riverArt.js';
 import { t } from '../i18n/index.js';
 
 /** The chart's own coordinate space. The page scales it. */
@@ -175,6 +176,7 @@ export const PLACES = [
   { key: 'assay', route: 'lab', landmark: 'assay', x: 470, y: 690, name: 'The Assay Office', label: 'The Lab' },
   { key: 'race', route: 'gauntlet', landmark: 'race', x: 862, y: 640, name: 'The Racing Chute', label: 'The Race' },
   { key: 'tradingpost', route: 'store', landmark: 'tradingpost', x: 1070, y: 290, name: 'The Trading Post', label: 'Spend pearls' },
+  { key: 'boatyard', route: 'boatyard', landmark: 'boatyard', x: 550, y: 556, name: 'The Boatyard', label: 'Boats and fittings' },
 ];
 
 /**
@@ -470,9 +472,10 @@ export function voyage(fromIndex, toIndex) {
  * @param {number} s.open      furthest stop the purse opens
  * @param {Set<number>} s.beaten
  * @param {string} s.boat      key of your boat
+ * @param {object} [s.look]    how it is dressed: {boat, paint, flag, lantern}
  * @param {Array<string>} s.landmarks  one per stop
  */
-export function worldSvg({ here, best, open, beaten, boat, landmarks }) {
+export function worldSvg({ here, best, open, beaten, boat, look = null, landmarks }) {
   const { W, H } = WORLD;
   const g = worldGeometry();
   const sc = scenery();
@@ -520,7 +523,6 @@ export function worldSvg({ here, best, open, beaten, boat, landmarks }) {
     + '</g>').join('');
 
   const tie = voyage(here, here)[0];
-  const boatArt = (BOAT_ART[boat] || BOAT_ART.rowboat)();
 
   // Old-chart dressing: a compass rose, a scale of leagues, a border ruled in
   // degrees, a lighthouse on the point and something in the sea.
@@ -582,7 +584,7 @@ export function worldSvg({ here, best, open, beaten, boat, landmarks }) {
     ${ahead.length > 1 ? `<path class="route-ahead" d="${line(ahead)}"/>` : ''}
     ${places}
     ${stops}
-    <g class="your-boat" transform="translate(${f1(tie[0])} ${f1(tie[1])})"><g class="bob"><g class="you">${boatArt}</g></g></g>
+    <g class="your-boat" transform="translate(${f1(tie[0])} ${f1(tie[1])})"><g class="bob">${yourBoat(look || boat)}</g></g>
     ${compass}
     ${scale}
     <path class="border-ticks" d="${ticks.join('')}"/>

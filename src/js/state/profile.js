@@ -20,22 +20,33 @@ import {
 import { MODULE_META } from '../data/curriculum.js';
 import { DEFAULT_THEME } from '../data/themes.js';
 import { STAKES } from './stats.js';
-import { STARTER, LESSON_PRICES } from './economy.js';
+import { STARTER, LESSON_PRICES, fillBerths } from './economy.js';
+import { boatEarnedBy } from '../data/characters.js';
+import { VENUES, venueFor } from '../data/venues.js';
 
 const STORAGE_KEY = 'poker-trainer.profile.v1';
 
 /**
  * The purse of pearls and what has been bought with it.
  *
- * `version` marks the save as having been through the change to a bought
- * curriculum, so the reset below happens once and never again.
+ * `version` marks how far the save has been brought up to date: 1 is the
+ * change to a bought curriculum, 2 the boatyard. Each step runs once.
+ *
+ * `boat` is the boat you sail, `crew` the companions aboard it, and `paint`,
+ * `flag` and `lantern` how it is dressed.
  */
+const ECONOMY_VERSION = 2;
 const emptyEconomy = () => ({
-  version: 1,
+  version: ECONOMY_VERSION,
   pearls: 0,
   earned: 0,
   spent: 0,
   owned: [...STARTER],
+  boat: 'rowboat',
+  crew: [],
+  paint: null,
+  flag: null,
+  lantern: false,
 });
 
 /** How many recent unaided attempts at one hand, in one checkpoint, to remember. */
@@ -234,7 +245,7 @@ export class Profile {
     this.listeners = new Set();
     this.carryForwardTiers();
     this.migrateThreeBetCall();
-    this.migrateEconomy();
+    this.migrateEconomy(data.economy);
   }
 
   /**
@@ -248,10 +259,34 @@ export class Profile {
    * that still in it. This was the reader's own call: lose what can be
    * bought, keep what was earned.
    */
-  migrateEconomy() {
+  migrateEconomy(stored) {
+    // Read what was stored, not the defaults it was merged over: a save with
+    // no purse at all is one from before the economy, not a new one.
+    if (!stored || !(stored.version >= 1)) this.data.economy = { ...emptyEconomy(), version: 1 };
+    if (this.data.economy.version < 2) this.migrateBoatyard();
+  }
+
+  /**
+   * Boats used to come with how far down the river you had been; now the
+   * boatyard sells them. A save from before keeps the boat it had — it was
+   * earned, not bought — and the yard sells the next one up. The companions
+   * it owns go aboard as far as the berths allow; the rest wait ashore.
+   */
+  migrateBoatyard() {
     const e = this.data.economy;
-    if (e && e.version >= 1) return;
-    this.data.economy = emptyEconomy();
+    const career = this.data.career || {};
+    const best = Math.max(venueFor(career.best || 'nl2').index, venueFor(career.venue || 'nl2').index);
+    const won = (career.beaten || []).includes(VENUES[VENUES.length - 1].key);
+    const earned = boatEarnedBy(best);
+    if (!Array.isArray(e.owned)) e.owned = [...STARTER];
+    if (earned !== 'rowboat' && !e.owned.includes(`boat:${earned}`)) e.owned.push(`boat:${earned}`);
+    e.boat = won ? 'flagship' : earned;
+    e.crew = Array.isArray(e.crew) ? e.crew : [];
+    e.paint = e.paint || null;
+    e.flag = e.flag || null;
+    e.lantern = !!e.lantern;
+    e.version = ECONOMY_VERSION;
+    fillBerths(this);
   }
 
   /**
@@ -513,11 +548,18 @@ export class Profile {
     return c;
   }
 
-  /** You took the room regular's stack. */
+  /**
+   * You took the room regular's stack. Taking the last table hands you the
+   * Commodore's flagship, and you sail away in it.
+   */
   noteResidentBeaten(key) {
     const c = this.career;
     if (c.beaten.includes(key)) return false;
     c.beaten.push(key);
+    if (key === VENUES[VENUES.length - 1].key) {
+      this.economy.boat = 'flagship';
+      fillBerths(this);
+    }
     this.save();
     return true;
   }

@@ -1662,7 +1662,7 @@ await step('every place is on the chart, and no sign covers another', async () =
     await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(600);
     const seen = await signs();
-    if (seen.count !== 14 || seen.places !== 6) throw new Error(`${seen.count} signs and ${seen.places} places at ${w}px, expected 14 and 6`);
+    if (seen.count !== 15 || seen.places !== 7) throw new Error(`${seen.count} signs and ${seen.places} places at ${w}px, expected 15 and 7`);
     if (seen.hits.length) throw new Error(`signs on top of each other at ${w}px: ${seen.hits.join(', ')}`);
     // On a phone the chart is wider than the screen; it opens on your boat.
     if (!seen.hereInView) throw new Error(`the stop you are at is scrolled out of sight at ${w}px`);
@@ -2285,6 +2285,67 @@ await step('getting up leaves Silas\'s notes, folded until they are opened', asy
 await veteran(true);
 await page.reload({ waitUntil: 'domcontentloaded' });
 
+await step('the boatyard sells a bigger boat, and it takes more of the crew to the table', async () => {
+  // The reader asked whether better boats could be bought. They can, with
+  // pearls — and a bigger one carries more companions, so the owl and the
+  // cat both come to the table instead of one of them waiting at the landing.
+  await seedFresh({
+    bankroll: 400,
+    walkthroughs: ['pot-odds', 'preflop'],
+    career: { venue: 'nl5', best: 'nl5', busted: 0, staked: 0, beaten: [] },
+    economy: {
+      version: 2, pearls: 400, earned: 400, spent: 0, boat: 'rowboat', crew: ['owl', 'cat'], paint: null, flag: null, lantern: false,
+      owned: ['lesson:hand-rankings', 'lesson:pot-odds', 'lesson:preflop', 'pet:owl', 'pet:cat'],
+    },
+  });
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+  const sign = await page.$('.map-place.place-boatyard');
+  if (!sign) throw new Error('there is no boatyard on the map');
+  if (!/can-buy/.test(await sign.getAttribute('class'))) throw new Error('the boatyard sign does not light up for a purse that can buy a boat');
+  await sign.click();
+  await page.waitForTimeout(500);
+  if (!/#boatyard/.test(page.url())) throw new Error(`the boatyard sign went to ${page.url()}`);
+  const before = await page.evaluate(() => ({
+    aboard: document.querySelectorAll('.crew-row.aboard').length,
+    ashore: document.querySelectorAll('.crew-row.ashore').length,
+    sailing: document.querySelector('.yard-boat.sailing .yard-boat-title')?.textContent || '',
+  }));
+  if (before.aboard !== 1 || before.ashore !== 1) throw new Error(`a rowboat has ${before.aboard} aboard and ${before.ashore} ashore, expected 1 and 1`);
+  if (!/rowboat/.test(before.sailing)) throw new Error(`sailing ${before.sailing} before buying anything`);
+
+  // The launch is sold only further down the river than Fisher's Rest.
+  const launch = await page.$('.yard-boat:has-text("A steam launch") .buy-btn');
+  if (launch) throw new Error('the launch is for sale to somebody who has only reached Fisher\'s Rest');
+  await page.click('.yard-boat:has-text("A sailing skiff") .buy-btn');
+  await page.waitForTimeout(500);
+  const after = await page.evaluate(() => ({
+    aboard: document.querySelectorAll('.crew-row.aboard').length,
+    sailing: document.querySelector('.yard-boat.sailing .yard-boat-title')?.textContent || '',
+    saved: JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).economy,
+    bankroll: JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).bankroll,
+  }));
+  if (!/skiff/.test(after.sailing)) throw new Error(`bought the skiff but sailing ${after.sailing}`);
+  if (after.aboard !== 2) throw new Error(`${after.aboard} aboard the skiff, expected both companions`);
+  if (after.saved.pearls !== 250) throw new Error(`the purse holds ${after.saved.pearls} after a 150-pearl skiff, expected 250`);
+  if (after.bankroll !== 400) throw new Error(`the bankroll moved to ${after.bankroll}: boats are paid in pearls`);
+
+  // Both of them are at the table now.
+  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.companion-tray', { timeout: 5000 });
+  const pets = await page.$$eval('.tray-pet:not(.empty)', (n) => n.length);
+  if (pets !== 2) throw new Error(`${pets} companions at the table, expected the two aboard`);
+
+  // And the river shows the boat you sail, with its crew.
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+  const card = await page.evaluate(() => ({
+    name: document.querySelector('.boat-card .boat-name')?.textContent || '',
+    faces: document.querySelectorAll('.boat-card .berth.taken').length,
+  }));
+  if (!/skiff/.test(card.name) || card.faces !== 2) throw new Error(`the river shows ${card.name} with ${card.faces} aboard`);
+});
+
 await step('the language switch turns the whole app Dutch and persists', async () => {
   await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
@@ -2346,7 +2407,7 @@ await step('no screen is half in English when the app is in Dutch', async () => 
   // reached t(). Randomly dealt content differs between renders anyway, so
   // what this actually measures is the fixed chrome of every screen.
   const routes = [
-    '#home', '#stop?at=nl10', '#stop?at=nl50', '#train', '#learn?module=pot-odds',
+    '#home', '#stop?at=nl10', '#stop?at=nl50', '#train', '#learn?module=pot-odds', '#boatyard',
     '#lab-run', '#review', '#charts?chart=BTN', '#glossary', '#stats',
     '#levels', '#gauntlet', '#drill?module=outs', '#walkthrough?module=pot-odds',
     '#ranges', '#ranges-run', '#ranges-weak', '#store', '#report',

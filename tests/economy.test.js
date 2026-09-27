@@ -3,6 +3,7 @@ import { Profile } from '../src/js/state/profile.js';
 import {
   CATALOGUE, COMPANIONS, LESSON_PRICES, EARN, handPearls, decisionPearls, itemByKey, itemState,
   purchase, ownsLesson, ownedModules, nextPurchase, missingFor,
+  currentBoat, crewAboard, crewAshore, toggleCrew, strongbox, boatLook, wearFitting, somethingToBuy,
 } from '../src/js/state/economy.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
 import { buildReport, strongestAndWeakest, keepReport, reportsOf, KEEP_REPORTS } from '../src/js/state/sessionReport.js';
@@ -169,5 +170,107 @@ describe('the session report: Silas\'s notes on one sitting', () => {
     for (let i = 0; i < KEEP_REPORTS + 5; i++) keepReport(p, { ...report, at: i });
     equal(reportsOf(p).length, KEEP_REPORTS);
     equal(reportsOf(p)[0].at, 5);
+  });
+});
+
+describe('economy: boats are bought at the boatyard, and carry the crew', () => {
+  const at = (best, extra = {}) => fresh({
+    bankroll: 900,
+    career: { venue: best, best, busted: 0, staked: 0, beaten: [] },
+    economy: { version: 2, pearls: 0, earned: 0, spent: 0, owned: ['lesson:hand-rankings'], boat: 'rowboat', crew: [], paint: null, flag: null, lantern: false, ...extra },
+  });
+
+  it('starts everybody in the borrowed rowboat, with one berth and no strongbox', () => {
+    const p = fresh();
+    const boat = currentBoat(p);
+    equal(boat.key, 'rowboat');
+    equal(boat.berths, 1);
+    equal(boat.bonus, 0);
+  });
+
+  it('only sells a boat to somebody who has taken theirs that far down the river', () => {
+    const p = at('nl2', { pearls: 2000 });
+    const skiff = itemState(p, itemByKey('boat:skiff'));
+    assert(skiff.missing.some((m) => m.key === 'reach'), 'the skiff is sold at Mud Landing');
+    equal(purchase(p, 'boat:skiff').reason, 'locked');
+    const q = at('nl5', { pearls: 2000 });
+    equal(purchase(q, 'boat:skiff').ok, true, 'the skiff is not sold at Fisher\'s Rest');
+    equal(purchase(q, 'boat:launch').reason, 'locked', 'the launch is sold before the Ferry');
+  });
+
+  it('pays for a boat in pearls and never touches the bankroll', () => {
+    const p = at('nl5', { pearls: 200 });
+    equal(purchase(p, 'boat:skiff').ok, true);
+    equal(p.pearls, 50);
+    equal(p.data.bankroll, 900, 'the boat came out of the bankroll');
+    equal(currentBoat(p).key, 'skiff', 'a boat just bought is not the one you sail');
+  });
+
+  it('never takes more companions to the table than the boat has berths', () => {
+    const p = at('nl10', { pearls: 1000, owned: ['lesson:hand-rankings', 'pet:owl', 'pet:cat', 'pet:raccoon'], crew: ['owl', 'cat', 'raccoon'] });
+    equal(crewAboard(p).map((c) => c.key).join(','), 'owl', 'a rowboat carried more than one');
+    equal(crewAshore(p).length, 2);
+    // Bringing one aboard a full boat swaps out whoever has been aboard longest.
+    toggleCrew(p, 'cat');
+    equal(crewAboard(p).map((c) => c.key).join(','), 'cat');
+    // A bigger boat takes the ones waiting at the landing aboard.
+    equal(purchase(p, 'boat:launch').ok, true);
+    equal(crewAboard(p).length, 3);
+    equal(crewAshore(p).length, 0);
+  });
+
+  it('boards a companion bought while there is a berth free', () => {
+    const p = at('nl5', { pearls: 500 });
+    p.data.walkthroughs = ['pot-odds'];
+    equal(purchase(p, 'pet:owl').ok, true);
+    equal(crewAboard(p).map((c) => c.key).join(','), 'owl');
+  });
+
+  it('pays the strongbox share in full over many hands, a fraction at a time', () => {
+    let carry = 0;
+    let extra = 0;
+    for (let i = 0; i < 100; i++) {
+      const r = strongbox(carry, 1, 0.1);
+      carry = r.carry;
+      extra += r.extra;
+    }
+    equal(extra, 10, 'a tenth of a pearl a hand for a hundred hands is ten pearls');
+    equal(strongbox(0, 3, 0).extra, 0, 'the rowboat has no strongbox');
+    equal(strongbox(0.9, 1, 0.2).extra, 1);
+  });
+
+  it('puts a fitting on when it is bought, and flies the spade only for a table-taker', () => {
+    const p = at('nl5', { pearls: 500 });
+    equal(purchase(p, 'fit:paint-red').ok, true);
+    equal(boatLook(p).paint, 'paint-red');
+    wearFitting(p, 'paint-red', false);
+    equal(boatLook(p).paint, null);
+    equal(purchase(p, 'fit:flag-spade').reason, 'locked', 'the black spade flies before a table is taken');
+    p.career.beaten.push('nl2');
+    equal(purchase(p, 'fit:flag-spade').ok, true);
+    equal(boatLook(p).flag, 'flag-spade');
+  });
+
+  it('keeps the boat a save had earned before the boatyard, and hands over the flagship for the river', () => {
+    const old = fresh({
+      career: { venue: 'nl25', best: 'nl50', busted: 0, staked: 0, beaten: ['nl2'] },
+      economy: { version: 1, pearls: 40, earned: 40, spent: 0, owned: ['lesson:hand-rankings', 'pet:owl', 'pet:cat', 'pet:raccoon'] },
+    });
+    equal(currentBoat(old).key, 'launch', 'a save that reached the Belle lost its launch');
+    equal(crewAboard(old).length, 3);
+    equal(old.pearls, 40, 'the purse changed in the move to the boatyard');
+    const ancient = fresh({ career: { venue: 'nl10', best: 'nl10', busted: 0, staked: 0, beaten: [] } });
+    equal(currentBoat(ancient).key, 'skiff', 'a save from before pearls lost its skiff');
+    const p = at('nl500');
+    p.noteResidentBeaten('nl500');
+    equal(currentBoat(p).key, 'flagship', 'beating the Commodore did not hand over his flagship');
+  });
+
+  it('lights a shop up only for what it sells', () => {
+    const p = at('nl5', { pearls: 60 });
+    assert(somethingToBuy(p, 'boatyard'), 'sixty pearls buys paint, and the boatyard does not say so');
+    assert(somethingToBuy(p, 'tradingpost'), 'sixty pearls buys Pot Odds, and the Trading Post does not say so');
+    const poor = at('nl5', { pearls: 10 });
+    assert(!somethingToBuy(poor, 'boatyard') && !somethingToBuy(poor, 'tradingpost'), 'a shop lights up for a purse that cannot pay');
   });
 });
