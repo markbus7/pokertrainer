@@ -29,7 +29,7 @@ import { silasSays } from './place.js';
 import { ownsLesson, ownedModules, nextPurchase, LESSON_PRICES } from '../state/economy.js';
 import { buyControl, pearls } from './shop.js';
 import { creekBend, bankScene, creekHead, creekMouth, regionBar } from './creekMap.js';
-import { boatLook } from '../state/economy.js';
+import { currentBoat } from '../state/economy.js';
 
 /**
  * What is actually still missing for the next rank. Reports the requirement
@@ -89,7 +89,7 @@ export function renderHome(ctx) {
         el('ol.creek-trail',
           MODULE_META.map((meta, i) => chapter(meta, i, profile, go, recommended.id)),
         ),
-        creekMouth({ go, look: boatLook(profile) }),
+        creekMouth({ go, boat: currentBoat(profile).key }),
       ),
 
       /* ---- what you carry: your papers, your record, Silas's notes ---- */

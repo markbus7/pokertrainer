@@ -475,10 +475,9 @@ export function voyage(fromIndex, toIndex) {
  * @param {number} s.open      furthest stop the purse opens
  * @param {Set<number>} s.beaten
  * @param {string} s.boat      key of your boat
- * @param {object} [s.look]    how it is dressed: {boat, paint, flag, lantern}
  * @param {Array<string>} s.landmarks  one per stop
  */
-export function worldSvg({ here, best, open, beaten, boat, look = null, landmarks }) {
+export function worldSvg({ here, best, open, beaten, boat, landmarks }) {
   const { W, H } = WORLD;
   const g = worldGeometry();
   const sc = scenery();
@@ -585,7 +584,7 @@ export function worldSvg({ here, best, open, beaten, boat, look = null, landmark
     ${ahead.length > 1 ? `<path class="route-ahead" d="${line(ahead)}"/>` : ''}
     ${places}
     ${stops}
-    <g class="your-boat" transform="translate(${f1(tie[0])} ${f1(tie[1])})"><g class="bob">${yourBoat(look || boat)}</g></g>
+    <g class="your-boat" transform="translate(${f1(tie[0])} ${f1(tie[1])})"><g class="bob">${yourBoat(boat)}</g></g>
     ${compass}
     ${scale}
     <path class="border-ticks" d="${ticks.join('')}"/>

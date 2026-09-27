@@ -28,7 +28,7 @@ import { IDK, dontKnowButton } from './dontKnow.js';
 import * as audio from '../audio/engine.js';
 import { MENTOR } from '../data/characters.js';
 import { silasSays, silasVerdict, svgNode } from './place.js';
-import { ownsChart, boatLook } from '../state/economy.js';
+import { ownsChart, currentBoat } from '../state/economy.js';
 import { creekBend, bankScene, creekHead, creekMouth, regionBar } from './creekMap.js';
 import { buyControl } from './shop.js';
 import { portraitSvg } from './portraits.js';
@@ -148,7 +148,7 @@ export function renderRangeLadder(ctx) {
           ),
         }),
         el('ol.creek-trail.rungs', CHECKPOINTS.map(rung)),
-        creekMouth({ go, look: boatLook(profile) }),
+        creekMouth({ go, boat: currentBoat(profile).key }),
       ),
 
       el('aside.school-rail',

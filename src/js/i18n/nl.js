@@ -4575,8 +4575,6 @@ export const NL = {
   'The Boatyard': 'De Scheepswerf',
   'Amos Leary': 'Amos Leary',
   'Boats and fittings': 'Boten en tuig',
-  'Boats, paint and flags': 'Boten, verf en vlaggen',
-  'Better boats, and paint and flags for yours': 'Betere boten, en verf en vlaggen voor die van jou',
   Shipwright: 'Scheepsbouwer',
   'Every boat on this river came off my slip. A bigger one carries more friends and a heavier strongbox — pearls on the plank and she is yours.':
     'Elke boot op deze rivier kwam van mijn helling. Een grotere neemt meer maatjes mee en heeft een zwaardere geldkist — parels op de plank en ze is van jou.',
@@ -4588,14 +4586,6 @@ export const NL = {
   'Mind the snags.': 'Pas op voor de boomstronken.',
   'Built to last. Try not to sink her.': 'Gebouwd om te blijven. Probeer haar niet te laten zinken.',
   'A fine boat for a fine player.': 'Een mooie boot voor een goede speler.',
-  'Riverboat red': 'Rivierbootrood',
-  'Bayou green': 'Bayougroen',
-  'Midnight blue': 'Middernachtblauw',
-  'Whitewash and gilt': 'Witkalk en bladgoud',
-  'A brass pennant': 'Een koperen wimpel',
-  'The pearl flag': 'De parelvlag',
-  'The black spade': 'De zwarte schoppen',
-  'A bow lantern': 'Een boeglantaarn',
   'Take your boat as far as {place}': 'Vaar met je boot tot {place}',
   'Take a table from the one who owns it': 'Pak een tafel af van degene die hem bezit',
   'Carries one companion': 'Neemt één maatje mee',
@@ -4612,8 +4602,6 @@ export const NL = {
   'Boats on the slip': 'Boten op de helling',
   'A bigger boat carries more companions to the table, and its strongbox adds a share to every pearl the tables pay for hands and decisions. Amos only sells a boat to somebody who has taken theirs that far down the river.':
     'Een grotere boot neemt meer maatjes mee naar de tafel, en de geldkist legt iets bij op elke parel die de tafels betalen voor handen en beslissingen. Amos verkoopt een boot alleen aan wie met de eigen boot al zo ver de rivier af is geweest.',
-  'Paint and flags': 'Verf en vlaggen',
-  'They do nothing at the table. They make the boat on the map yours.': 'Aan tafel doen ze niets. Ze maken de boot op de kaart van jou.',
   'No companions yet. The Trading Post sells them, once you have finished the chapter each one helps with.':
     'Nog geen maatjes. De handelspost verkoopt ze, zodra je het hoofdstuk hebt afgerond waar ieder maatje bij helpt.',
   'Send ashore': 'Naar de wal',
@@ -4626,12 +4614,7 @@ export const NL = {
   'Sail her': 'Vaar met haar',
   'Beat the Commodore at the delta — nothing else buys her.': 'Versla de Commodore bij de delta — niets anders koopt haar.',
   'Buy her': 'Koop haar',
-  'On your boat': 'Op je boot',
   'Take it off': 'Haal eraf',
-  'Put it on': 'Zet erop',
-  'A coat of paint for the hull': 'Een laag verf voor de romp',
-  'A flag to fly': 'Een vlag om te voeren',
-  'A lamp at the bow, for the night reaches': 'Een lamp op de boeg, voor de nachtelijke stukken',
   'Companions aboard your boat sit here': 'Maatjes aan boord van je boot zitten hier',
   "Companions aboard your boat add more here: the price, the chart, your outs, the table's habits.":
     'Maatjes aan boord van je boot voegen hier meer toe: de prijs, de chart, je outs, de gewoontes van de tafel.',
@@ -4644,4 +4627,14 @@ export const NL = {
   "The pilot's channel": 'Het vaarwater van de loods',
   'Down to the Long River': 'Stroomafwaarts naar de Lange Rivier',
   'Where you are': 'Waar je bent',
+
+  /* ---- v3.4: fittings that do something ---- */
+  Fittings: 'Tuig',
+  'Each one does one thing at the table, on whatever boat you sail.': 'Elk stuk doet één ding aan tafel, op welke boot je ook vaart.',
+  'Better boats, and fittings that earn their keep': 'Betere boten, en tuig dat zijn geld waard is',
+  'A spare cabin': 'Een extra hut',
+  'A heavier strongbox': 'Een zwaardere geldkist',
+  'Room for one more companion at the table, on whatever boat you sail.': 'Plaats voor één maatje meer aan tafel, op welke boot je ook vaart.',
+  "A tenth more pearls at the tables, on top of your boat's own share.": 'Een tiende meer parels aan de tafels, bovenop wat je boot zelf al geeft.',
+  Fitted: 'Aangebracht',
 };

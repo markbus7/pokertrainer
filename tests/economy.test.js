@@ -3,7 +3,7 @@ import { Profile } from '../src/js/state/profile.js';
 import {
   CATALOGUE, COMPANIONS, LESSON_PRICES, EARN, handPearls, decisionPearls, itemByKey, itemState,
   purchase, ownsLesson, ownedModules, nextPurchase, missingFor,
-  currentBoat, crewAboard, crewAshore, toggleCrew, strongbox, boatLook, wearFitting, somethingToBuy,
+  currentBoat, crewAboard, crewAshore, toggleCrew, strongbox, somethingToBuy, boatBerths, boatBonus, UPGRADES,
 } from '../src/js/state/economy.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
 import { buildReport, strongestAndWeakest, keepReport, reportsOf, KEEP_REPORTS } from '../src/js/state/sessionReport.js';
@@ -177,7 +177,7 @@ describe('economy: boats are bought at the boatyard, and carry the crew', () => 
   const at = (best, extra = {}) => fresh({
     bankroll: 900,
     career: { venue: best, best, busted: 0, staked: 0, beaten: [] },
-    economy: { version: 2, pearls: 0, earned: 0, spent: 0, owned: ['lesson:hand-rankings'], boat: 'rowboat', crew: [], paint: null, flag: null, lantern: false, ...extra },
+    economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: ['lesson:hand-rankings'], boat: 'rowboat', crew: [], ...extra },
   });
 
   it('starts everybody in the borrowed rowboat, with one berth and no strongbox', () => {
@@ -239,16 +239,36 @@ describe('economy: boats are bought at the boatyard, and carry the crew', () => 
     equal(strongbox(0.9, 1, 0.2).extra, 1);
   });
 
-  it('puts a fitting on when it is bought, and flies the spade only for a table-taker', () => {
-    const p = at('nl5', { pearls: 500 });
-    equal(purchase(p, 'fit:paint-red').ok, true);
-    equal(boatLook(p).paint, 'paint-red');
-    wearFitting(p, 'paint-red', false);
-    equal(boatLook(p).paint, null);
-    equal(purchase(p, 'fit:flag-spade').reason, 'locked', 'the black spade flies before a table is taken');
-    p.career.beaten.push('nl2');
-    equal(purchase(p, 'fit:flag-spade').ok, true);
-    equal(boatLook(p).flag, 'flag-spade');
+  it('sells only fittings that do something at the table', () => {
+    for (const u of UPGRADES) assert(u.berths > 0 || u.bonus > 0, `${u.name} does nothing at the table`);
+    const p = at('nl5', { pearls: 700, owned: ['lesson:hand-rankings', 'pet:owl', 'pet:cat'], crew: ['owl'] });
+    equal(boatBerths(p), 1);
+    equal(crewAshore(p).length, 1);
+    // A spare cabin is one more companion at the table, on any boat.
+    equal(purchase(p, 'up:cabin').ok, true);
+    equal(boatBerths(p), 2);
+    equal(crewAboard(p).length, 2, 'the cabin went unused with a companion waiting ashore');
+    // A heavier strongbox is a tenth more on top of the boat's own share.
+    equal(boatBonus(p), 0);
+    equal(purchase(p, 'up:strongbox').ok, true);
+    equal(Math.round(boatBonus(p) * 100), 10);
+    equal(purchase(p, 'boat:skiff').ok, true);
+    equal(boatBerths(p), 3, 'the cabin did not come along to the new boat');
+    equal(Math.round(boatBonus(p) * 100), 20, 'the heavier box did not add to the skiff\'s own');
+  });
+
+  it('pays back what paint, flags and the lantern cost, now they are gone', () => {
+    const p = fresh({
+      career: { venue: 'nl5', best: 'nl5', busted: 0, staked: 0, beaten: [] },
+      economy: {
+        version: 2, pearls: 10, earned: 300, spent: 290, boat: 'rowboat', crew: [], paint: 'paint-red', flag: 'flag-pearl', lantern: true,
+        owned: ['lesson:hand-rankings', 'fit:paint-red', 'fit:flag-pearl', 'fit:lantern'],
+      },
+    });
+    equal(p.pearls, 190, 'sixty for the paint, seventy for the flag and fifty for the lantern should be back');
+    equal(p.economy.spent, 110);
+    assert(!p.economy.owned.some((k) => k.startsWith('fit:')), 'a retired fitting is still owned');
+    assert(!('paint' in p.economy) && !('flag' in p.economy) && !('lantern' in p.economy), 'the old dressing is still on the save');
   });
 
   it('keeps the boat a save had earned before the boatyard, and hands over the flagship for the river', () => {
@@ -267,9 +287,9 @@ describe('economy: boats are bought at the boatyard, and carry the crew', () => 
   });
 
   it('lights a shop up only for what it sells', () => {
-    const p = at('nl5', { pearls: 60 });
-    assert(somethingToBuy(p, 'boatyard'), 'sixty pearls buys paint, and the boatyard does not say so');
-    assert(somethingToBuy(p, 'tradingpost'), 'sixty pearls buys Pot Odds, and the Trading Post does not say so');
+    const p = at('nl5', { pearls: 120 });
+    assert(somethingToBuy(p, 'boatyard'), 'a hundred and twenty pearls buys a spare cabin, and the boatyard does not say so');
+    assert(somethingToBuy(p, 'tradingpost'), 'a hundred and twenty pearls buys Pot Odds, and the Trading Post does not say so');
     const poor = at('nl5', { pearls: 10 });
     assert(!somethingToBuy(poor, 'boatyard') && !somethingToBuy(poor, 'tradingpost'), 'a shop lights up for a purse that cannot pay');
   });

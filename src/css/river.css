@@ -2703,25 +2703,8 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 @media (prefers-reduced-motion: reduce) { .map-place.can-buy { animation: none; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), 0 0 0 2px var(--brass); } }
 
 /* ================================================================
-   Boats: paint, flags, a lantern, the crew, and the boatyard
+   Boats: the crew, and the boatyard
    ================================================================ */
-
-/* Your boat, dressed at the boatyard. The yard sends every boat out in brass. */
-.you.paint-red .hull { fill: var(--paint-red); }
-.you.paint-green .hull { fill: var(--paint-green); }
-.you.paint-blue .hull { fill: var(--paint-blue); }
-.you.paint-white .hull { fill: var(--paint-white); }
-.you.paint-white .deck { fill: var(--paint-gilt); }
-/* Scoped to your boat so they outrank the outline-only ink every drawing
-   uses; a flag drawn in outline is a flag nobody can tell apart. */
-.you .flag-brass { fill: var(--brass); }
-.you .flag-blue { fill: var(--flag-blue); }
-.you .flag-black { fill: var(--flag-black); }
-.you .flag-pearl { fill: var(--pearl); }
-.you .flag-spade { fill: var(--flag-white); }
-.lantern-halo { fill: var(--map-glow); opacity: 0.3; animation: lantern 3.2s ease-in-out infinite; }
-@keyframes lantern { 0%, 100% { opacity: 0.18; } 50% { opacity: 0.42; } }
-@media (prefers-reduced-motion: reduce) { .lantern-halo { animation: none; } }
 
 /* The berths on the boat card: a face for each companion aboard, and an
    empty ring for each berth nobody is in. */
@@ -2775,7 +2758,6 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 .yard-boat-title { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); color: var(--ink); }
 .yard-boat-do { margin-top: var(--s-2); }
 .yard-fittings { display: grid; gap: var(--s-2); }
-.fitting-art { flex: none; line-height: 0; }
 
 /* ================================================================
    Regions: School Creek and the pilot's channel, drawn down the page

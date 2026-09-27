@@ -140,28 +140,27 @@ export const COMPANIONS = [
 export const companionByKey = (key) => COMPANIONS.find((c) => c.key === key) || null;
 
 /**
- * What a boat can be dressed in: a coat of paint, a flag, a lantern. They do
- * nothing at the table — they make the boat on the map yours, and they are
- * something small to play for between the big things. The black spade is
- * only flown by somebody who has taken a table from its owner.
+ * Fittings for the boat. Each does one thing at the table, on whatever boat
+ * you sail. There were paint and flags here once; the reader wanted nothing
+ * on the shelves that does nothing, so every fitting now earns its keep.
  */
-export const FITTINGS = [
-  { key: 'paint-red', slot: 'paint', name: 'Riverboat red', price: 60 },
-  { key: 'paint-green', slot: 'paint', name: 'Bayou green', price: 60 },
-  { key: 'paint-blue', slot: 'paint', name: 'Midnight blue', price: 60 },
-  { key: 'paint-white', slot: 'paint', name: 'Whitewash and gilt', price: 90 },
-  { key: 'flag-pennant', slot: 'flag', name: 'A brass pennant', price: 40 },
-  { key: 'flag-pearl', slot: 'flag', name: 'The pearl flag', price: 70 },
-  { key: 'flag-spade', slot: 'flag', name: 'The black spade', price: 70, needs: { taken: 1 } },
-  { key: 'lantern', slot: 'lantern', name: 'A bow lantern', price: 50 },
+export const UPGRADES = [
+  {
+    key: 'cabin', name: 'A spare cabin', price: 120, berths: 1, bonus: 0,
+    does: 'Room for one more companion at the table, on whatever boat you sail.',
+  },
+  {
+    key: 'strongbox', name: 'A heavier strongbox', price: 250, berths: 0, bonus: 0.1, needs: { reach: 1 },
+    does: 'A tenth more pearls at the tables, on top of your boat\'s own share.',
+  },
 ];
 
-export const fittingByKey = (key) => FITTINGS.find((f) => f.key === key) || null;
+export const upgradeByKey = (key) => UPGRADES.find((u) => u.key === key) || null;
 
 /**
  * Everything on the shelves, in the order it is shown. The Trading Post
  * sells the chapters, charts and companions; the boatyard the boats and
- * fittings.
+ * their fittings.
  * `key` is what the profile stores; the rest is read off the catalogue so a
  * price is only ever written down once.
  */
@@ -176,13 +175,13 @@ export const CATALOGUE = [
   ...BOATS.filter((b) => b.price > 0).map((b) => ({
     key: `boat:${b.key}`, kind: 'boat', boat: b.key, price: b.price, needs: { reach: b.reach },
   })),
-  ...FITTINGS.map((f) => ({ key: `fit:${f.key}`, kind: 'fitting', fitting: f.key, price: f.price, needs: f.needs || {} })),
+  ...UPGRADES.map((u) => ({ key: `up:${u.key}`, kind: 'upgrade', upgrade: u.key, price: u.price, needs: u.needs || {} })),
 ];
 
 /** Which kinds each shop sells. */
 export const SHOPS = {
   tradingpost: ['lesson', 'chart', 'pet'],
-  boatyard: ['boat', 'fitting'],
+  boatyard: ['boat', 'upgrade'],
 };
 
 export const itemByKey = (key) => CATALOGUE.find((i) => i.key === key) || null;
@@ -269,16 +268,10 @@ export function purchase(profile, key) {
   if (!state.affordable) return { ok: false, reason: 'short' };
   profile.buy(item.key, item.price);
   const e = profile.economy;
-  if (item.kind === 'boat') {
-    e.boat = item.boat;
-    fillBerths(profile);
-  } else if (item.kind === 'pet') {
-    fillBerths(profile);
-  } else if (item.kind === 'fitting') {
-    const f = fittingByKey(item.fitting);
-    if (f.slot === 'lantern') e.lantern = true;
-    else e[f.slot] = f.key;
-  }
+  if (item.kind === 'boat') e.boat = item.boat;
+  // A new boat, a new companion or a spare cabin can each free a berth for
+  // somebody waiting at the landing.
+  if (item.kind === 'boat' || item.kind === 'pet' || item.kind === 'upgrade') fillBerths(profile);
   profile.save();
   return { ok: true };
 }
@@ -352,6 +345,23 @@ export function currentBoat(profile) {
   return owned[owned.length - 1];
 }
 
+/** Whether a fitting is on your boat. */
+export function ownsUpgrade(profile, key) {
+  return profile.owns(`up:${key}`);
+}
+
+/** How many companions come to the table: the boat's berths and any cabin. */
+export function boatBerths(profile) {
+  return currentBoat(profile).berths
+    + UPGRADES.filter((u) => ownsUpgrade(profile, u.key)).reduce((n, u) => n + u.berths, 0);
+}
+
+/** The strongbox's share: the boat's own, and a heavier box if fitted. */
+export function boatBonus(profile) {
+  return currentBoat(profile).bonus
+    + UPGRADES.filter((u) => ownsUpgrade(profile, u.key)).reduce((n, u) => n + u.bonus, 0);
+}
+
 /** Take another boat you own out. The crew that does not fit stays ashore. */
 export function sailBoat(profile, key) {
   if (!ownsBoat(profile, key)) return false;
@@ -366,7 +376,7 @@ export function sailBoat(profile, key) {
  * are on the crew list, as many as the boat has berths for.
  */
 export function crewAboard(profile) {
-  const berths = currentBoat(profile).berths;
+  const berths = boatBerths(profile);
   const crew = Array.isArray(profile.economy.crew) ? profile.economy.crew : [];
   return crew
     .filter((key, i) => crew.indexOf(key) === i && profile.owns(`pet:${key}`))
@@ -388,7 +398,7 @@ export function crewAshore(profile) {
  */
 export function fillBerths(profile) {
   const e = profile.economy;
-  const berths = currentBoat(profile).berths;
+  const berths = boatBerths(profile);
   const aboard = crewAboard(profile).map((c) => c.key);
   for (const c of ownedCompanions(profile)) {
     if (aboard.length >= berths) break;
@@ -402,7 +412,7 @@ export function toggleCrew(profile, key) {
   if (!profile.owns(`pet:${key}`)) return false;
   const e = profile.economy;
   const aboard = crewAboard(profile).map((c) => c.key);
-  const berths = currentBoat(profile).berths;
+  const berths = boatBerths(profile);
   if (aboard.includes(key)) {
     e.crew = aboard.filter((k) => k !== key);
   } else {
@@ -412,36 +422,6 @@ export function toggleCrew(profile, key) {
   }
   profile.save();
   return true;
-}
-
-/** Whether a fitting is yours. */
-export function ownsFitting(profile, key) {
-  return profile.owns(`fit:${key}`);
-}
-
-/**
- * Put a fitting on, or take it off. Paint and flag are one of each; taking
- * the paint off goes back to the brass the yard sends every boat out in.
- */
-export function wearFitting(profile, key, on = true) {
-  const f = fittingByKey(key);
-  if (!f || !ownsFitting(profile, key)) return false;
-  const e = profile.economy;
-  if (f.slot === 'lantern') e.lantern = !!on;
-  else e[f.slot] = on ? f.key : null;
-  profile.save();
-  return true;
-}
-
-/** How the boat on the map is dressed. */
-export function boatLook(profile) {
-  const e = profile.economy;
-  return {
-    boat: currentBoat(profile).key,
-    paint: e.paint && ownsFitting(profile, e.paint) ? e.paint : null,
-    flag: e.flag && ownsFitting(profile, e.flag) ? e.flag : null,
-    lantern: !!e.lantern && ownsFitting(profile, 'lantern'),
-  };
 }
 
 /**

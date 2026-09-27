@@ -30,12 +30,12 @@ const STORAGE_KEY = 'poker-trainer.profile.v1';
  * The purse of pearls and what has been bought with it.
  *
  * `version` marks how far the save has been brought up to date: 1 is the
- * change to a bought curriculum, 2 the boatyard. Each step runs once.
+ * change to a bought curriculum, 2 the boatyard, 3 the end of paint and
+ * flags. Each step runs once.
  *
- * `boat` is the boat you sail, `crew` the companions aboard it, and `paint`,
- * `flag` and `lantern` how it is dressed.
+ * `boat` is the boat you sail and `crew` the companions aboard it.
  */
-const ECONOMY_VERSION = 2;
+const ECONOMY_VERSION = 3;
 const emptyEconomy = () => ({
   version: ECONOMY_VERSION,
   pearls: 0,
@@ -44,10 +44,22 @@ const emptyEconomy = () => ({
   owned: [...STARTER],
   boat: 'rowboat',
   crew: [],
-  paint: null,
-  flag: null,
-  lantern: false,
 });
+
+/**
+ * What the paint, the flags and the lantern cost, for paying them back.
+ * Kept here, not on a shelf: nothing sells them any more.
+ */
+const RETIRED_FITTINGS = {
+  'fit:paint-red': 60,
+  'fit:paint-green': 60,
+  'fit:paint-blue': 60,
+  'fit:paint-white': 90,
+  'fit:flag-pennant': 40,
+  'fit:flag-pearl': 70,
+  'fit:flag-spade': 70,
+  'fit:lantern': 50,
+};
 
 /** How many recent unaided attempts at one hand, in one checkpoint, to remember. */
 const RANGE_HAND_WINDOW = 5;
@@ -264,6 +276,28 @@ export class Profile {
     // no purse at all is one from before the economy, not a new one.
     if (!stored || !(stored.version >= 1)) this.data.economy = { ...emptyEconomy(), version: 1 };
     if (this.data.economy.version < 2) this.migrateBoatyard();
+    if (this.data.economy.version < 3) this.migrateFittings();
+  }
+
+  /**
+   * Paint, flags and the lantern came off the shelves: the reader did not
+   * want anything for sale that does nothing. Whatever was paid for them
+   * goes back into the purse, as if they had never been bought.
+   */
+  migrateFittings() {
+    const e = this.data.economy;
+    let back = 0;
+    e.owned = e.owned.filter((key) => {
+      if (!(key in RETIRED_FITTINGS)) return true;
+      back += RETIRED_FITTINGS[key];
+      return false;
+    });
+    e.pearls += back;
+    e.spent = Math.max(0, (e.spent || 0) - back);
+    delete e.paint;
+    delete e.flag;
+    delete e.lantern;
+    e.version = 3;
   }
 
   /**
@@ -282,10 +316,7 @@ export class Profile {
     if (earned !== 'rowboat' && !e.owned.includes(`boat:${earned}`)) e.owned.push(`boat:${earned}`);
     e.boat = won ? 'flagship' : earned;
     e.crew = Array.isArray(e.crew) ? e.crew : [];
-    e.paint = e.paint || null;
-    e.flag = e.flag || null;
-    e.lantern = !!e.lantern;
-    e.version = ECONOMY_VERSION;
+    e.version = 2;
     fillBerths(this);
   }
 

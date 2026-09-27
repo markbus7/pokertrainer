@@ -12,7 +12,7 @@ import { el, fmt, toast } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import * as audio from '../audio/engine.js';
-import { itemByKey, itemState, purchase, companionByKey, fittingByKey } from '../state/economy.js';
+import { itemByKey, itemState, purchase, companionByKey, upgradeByKey } from '../state/economy.js';
 import { boatByKey } from '../data/characters.js';
 import { moduleMeta } from '../data/curriculum.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
@@ -40,7 +40,7 @@ export function itemName(item) {
     return t('{name} the {kind}', { name: c.name, kind: t(c.kind).toLowerCase() });
   }
   if (item.kind === 'boat') return t(boatByKey(item.boat).name);
-  if (item.kind === 'fitting') return t(fittingByKey(item.fitting).name);
+  if (item.kind === 'upgrade') return t(upgradeByKey(item.upgrade).name);
   return item.key;
 }
 

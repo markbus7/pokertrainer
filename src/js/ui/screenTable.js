@@ -46,7 +46,7 @@ import { svgNode, lampNode } from './place.js';
 import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
 import {
-  ownsLesson, LESSON_PRICES, crewAboard, currentBoat, strongbox, decisionPearls, handPearls, EARN,
+  ownsLesson, LESSON_PRICES, crewAboard, boatBonus, strongbox, decisionPearls, handPearls, EARN,
 } from '../state/economy.js';
 import { lockedChapter } from './screenDrill.js';
 import { helpDrawer, companionTitle } from './companions.js';
@@ -844,11 +844,12 @@ export function renderTable(ctx, params = {}) {
   }
 
   /**
-   * The boat's share of what the table just paid: a tenth of a pearl on a
-   * skiff, a fifth on a launch, carried over until it adds up to a whole one.
+   * The strongbox's share of what the table just paid — a tenth of a pearl
+   * on a skiff, a fifth on a launch, more with a heavier box fitted — carried
+   * over until it adds up to a whole one.
    */
   function fromTheStrongbox(amount) {
-    const { extra, carry } = strongbox(session.boatCarry, amount, currentBoat(profile).bonus);
+    const { extra, carry } = strongbox(session.boatCarry, amount, boatBonus(profile));
     session.boatCarry = carry;
     session.pearls.boat += extra;
     return extra;
