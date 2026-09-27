@@ -1631,6 +1631,74 @@ await step('the front door is the river, with you on it', async () => {
   if (!/Study first/.test(shut)) throw new Error('the stop does not point at the lesson that beats its boss');
 });
 
+await step('every place is on the chart, and no sign covers another', async () => {
+  // The reader asked for the lessons, the charts and the tables to be part
+  // of the map rather than a menu beside it. Every place is a sign on the
+  // chart, each takes you where it says, and on a desktop or a phone no sign
+  // sits on top of another.
+  const signs = () => page.evaluate(() => {
+    const plates = [...document.querySelectorAll('.river-map .map-stop, .river-map .map-place')];
+    const boxes = plates.map((n) => ({ name: n.querySelector('.map-name, .map-place-name')?.textContent, r: n.getBoundingClientRect() }));
+    const hits = [];
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i].r;
+        const b = boxes[j].r;
+        if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) hits.push(`${boxes[i].name} / ${boxes[j].name}`);
+      }
+    }
+    const scroller = document.querySelector('.map-scroller').getBoundingClientRect();
+    const here = document.querySelector('.map-stop.is-here').getBoundingClientRect();
+    return {
+      count: plates.length,
+      places: document.querySelectorAll('.river-map .place').length,
+      hits,
+      hereInView: here.left >= scroller.left - 1 && here.right <= scroller.right + 1,
+    };
+  });
+  for (const [w, h] of [[1280, 900], [390, 844]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
+    const seen = await signs();
+    if (seen.count !== 14 || seen.places !== 6) throw new Error(`${seen.count} signs and ${seen.places} places at ${w}px, expected 14 and 6`);
+    if (seen.hits.length) throw new Error(`signs on top of each other at ${w}px: ${seen.hits.join(', ')}`);
+    // On a phone the chart is wider than the screen; it opens on your boat.
+    if (!seen.hereInView) throw new Error(`the stop you are at is scrolled out of sight at ${w}px`);
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  // Dutch names run longer than the English ones; the signs have to fit
+  // either way. Switched back in a finally, so a failure here does not leave
+  // every later step reading Dutch.
+  const switchTo = async (lang) => {
+    await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(300);
+    await page.click('.ledger-button');
+    await page.waitForTimeout(250);
+    const chip = await page.$(`.lang-chip:not(.active):has-text("${lang}")`);
+    if (chip) { await chip.click(); await page.waitForTimeout(400); }
+  };
+  try {
+    await switchTo('NL');
+    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
+    const dutch = await signs();
+    if (dutch.hits.length) throw new Error(`Dutch signs on top of each other: ${dutch.hits.join(', ')}`);
+  } finally {
+    await switchTo('EN');
+  }
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+  for (const [place, route] of [['school', 'train'], ['pilothouse', 'ranges'], ['tradingpost', 'store'], ['saloon', 'play']]) {
+    await page.click(`.map-place.place-${place}`);
+    await page.waitForTimeout(400);
+    if (!new RegExp(`#${route}\\b`).test(page.url())) throw new Error(`the ${place} sign went to ${page.url()}`);
+    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(400);
+  }
+});
+
 await step('a stop seats you across from the one who owns it, and takes the seat out of the purse', async () => {
   await page.goto(`${BASE}/#stop?at=nl10`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);

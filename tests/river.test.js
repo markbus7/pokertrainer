@@ -6,7 +6,10 @@ import {
 import { PROFILES } from '../src/js/engine/bots.js';
 import { NL } from '../src/js/i18n/nl.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
-import { MAP, stopPoint, riverGeometry, LANDMARKS, BOAT_ART, mapSvg } from '../src/js/ui/riverArt.js';
+import { LANDMARKS, BOAT_ART } from '../src/js/ui/riverArt.js';
+import {
+  WORLD, STOP_POINTS, PLACES, WATER_NAMES, worldGeometry, worldSvg, voyage, isDry,
+} from '../src/js/ui/worldMap.js';
 import { PORTRAIT_KEYS } from '../src/js/ui/portraits.js';
 import { riverState, stopStatus } from '../src/js/ui/screenRiver.js';
 import { Profile } from '../src/js/state/profile.js';
@@ -107,44 +110,94 @@ describe('the river: the race is the pass mark, told as a race', () => {
   });
 });
 
-describe('the river: the map is drawn where the stops are', () => {
+describe('the river: the chart is drawn where things are', () => {
+  it('has a place on the chart for every stop', () => {
+    equal(STOP_POINTS.length, VENUES.length, 'a stop has nowhere to stand');
+  });
+
   it('keeps every stop on dry land, clear of the water', () => {
-    const { xAt, widthAt } = riverGeometry();
-    for (const v of VENUES) {
-      const p = stopPoint(v.index);
-      const gap = Math.abs(p.x - xAt(p.y)) - widthAt(p.y) / 2;
-      // A landmark is drawn about 80 across, so its centre needs 40 of land.
-      assert(gap > 44, `${v.name} sits ${gap.toFixed(0)} from the water — its drawing would be in the river`);
-      assert(p.x > 50 && p.x < MAP.W - 50, `${v.name} is drawn off the edge of the map`);
-      assert(p.y > 100 && p.y < MAP.H - 100, `${v.name} is off the top or bottom of the map`);
+    VENUES.forEach((v, i) => {
+      const p = STOP_POINTS[i];
+      assert(p.x > 60 && p.x < WORLD.W - 60 && p.y > 60 && p.y < WORLD.H - 60, `${v.name} is drawn off the edge of the chart`);
+      // A landmark is drawn about 80 across; the last is the Commodore's
+      // boat at anchor between the mouths, so it only has to be out of the sea.
+      const pad = i === VENUES.length - 1 ? 0 : 44;
+      assert(isDry(p.x, p.y, pad), `${v.name} is drawn in the water`);
+    });
+  });
+
+  it('puts every other place on land too — except the steamer, which is afloat', () => {
+    for (const place of PLACES) {
+      if (place.key === 'pilothouse') {
+        assert(!isDry(place.x, place.y), 'the pilot house steamer should be laid up on the oxbow, not on land');
+        continue;
+      }
+      assert(isDry(place.x, place.y, 44), `${place.name} is drawn in the water`);
     }
   });
 
-  it('alternates the banks, so no two name plates stack up', () => {
-    for (let i = 1; i < VENUES.length; i++) {
-      assert(stopPoint(i).side !== stopPoint(i - 1).side, `stops ${i - 1} and ${i} share a bank`);
-      assert(stopPoint(i).y - stopPoint(i - 1).y >= 140, `stops ${i - 1} and ${i} are drawn on top of each other`);
+  it('sends each place to a screen the app has', () => {
+    const routes = new Set(['train', 'play', 'ranges', 'lab', 'gauntlet', 'store']);
+    equal(new Set(PLACES.map((p) => p.key)).size, PLACES.length, 'two places share a key');
+    for (const place of PLACES) {
+      assert(routes.has(place.route), `${place.name} leads nowhere`);
+      assert(LANDMARKS[place.landmark], `${place.name} has no drawing`);
     }
   });
 
-  it('runs the river down the map without doubling back', () => {
-    // xAt() assumes the river only ever flows down the page; a loop would
-    // put a stop's jetty on the wrong stretch of water.
-    const { center } = riverGeometry();
+  it('runs the river east without doubling back', () => {
+    // yAt() assumes the river only ever flows east; a loop would put a
+    // stop's jetty on the wrong stretch of water.
+    const { center } = worldGeometry();
     for (let i = 1; i < center.length; i++) {
-      assert(center[i][1] >= center[i - 1][1], `the river turns back upstream at sample ${i}`);
+      assert(center[i][0] >= center[i - 1][0], `the river turns back upstream at sample ${i}`);
     }
   });
 
-  it('draws the boat you have at the stop you are at', () => {
+  it('sails from any stop to any other along the water, without jumping', () => {
+    for (const [from, to] of [[0, 7], [7, 0], [2, 3], [5, 1]]) {
+      const path = voyage(from, to);
+      assert(path.length >= 2, `no way from ${from} to ${to}`);
+      for (let i = 1; i < path.length; i++) {
+        const step = Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
+        assert(step < 60, `the boat jumps ${step.toFixed(0)} between ${from} and ${to}`);
+      }
+      for (const [x, y] of path) assert(!isDry(x, y), `the boat runs aground at ${x.toFixed(0)},${y.toFixed(0)} between ${from} and ${to}`);
+    }
+    const there = voyage(0, 7);
+    const back = voyage(7, 0);
+    equal(there[0].join(), back[back.length - 1].join(), 'the way back ends somewhere else');
+  });
+
+  it('draws the boat you have at the stop you are at, and every place', () => {
     for (const boat of [...BOATS, FLAGSHIP]) assert(BOAT_ART[boat.key], `the ${boat.key} is never drawn`);
-    const svg = mapSvg({
+    const svg = worldSvg({
       here: 2, best: 3, open: 3, beaten: new Set([0, 1]), boat: 'skiff', landmarks: VENUES.map((v) => v.landmark),
     });
-    equal((svg.match(/class="landmark/g) || []).length, VENUES.length, 'a stop is missing from the map');
+    equal((svg.match(/class="landmark/g) || []).length, VENUES.length, 'a stop is missing from the chart');
     equal((svg.match(/class="landmark here/g) || []).length, 1, 'more than one stop claims to be where you are');
+    equal((svg.match(/class="place"/g) || []).length, PLACES.length, 'a place is missing from the chart');
     assert(/class="your-boat"/.test(svg), 'your boat is not on the water');
-    assert(!/#[0-9a-f]{6}/i.test(svg), 'the map paints a colour of its own instead of the room\'s');
+    assert(!/#[0-9a-f]{6}\b/i.test(svg), 'the chart paints a colour of its own instead of the room\'s');
+  });
+
+  it('letters the waters, in Dutch as well', () => {
+    const svg = worldSvg({
+      here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: VENUES.map((v) => v.landmark),
+    });
+    for (const n of WATER_NAMES) {
+      assert(svg.includes(n.text.toUpperCase()), `${n.text} is not lettered on the chart`);
+      assert(NL[n.text], `${n.text} has no Dutch`);
+    }
+    setLang('nl');
+    try {
+      const nl = worldSvg({
+        here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: VENUES.map((v) => v.landmark),
+      });
+      assert(nl.includes(NL['The Long River'].toUpperCase()), 'the Dutch chart still says The Long River');
+    } finally {
+      setLang('en');
+    }
   });
 });
 

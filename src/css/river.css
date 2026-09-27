@@ -716,16 +716,11 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
 .map-art .land { fill: var(--map-land); }
 .map-art .field { fill: var(--map-land-2); opacity: 0.8; }
 .map-art .furrow { fill: none; stroke: var(--map-land-3); stroke-width: 1; opacity: 0.7; }
-.map-art .river, .map-art .sea { fill: var(--map-water); }
-.map-art .bank { fill: none; stroke: var(--map-land-2); stroke-width: 2.6; stroke-linejoin: round; }
 .map-art .current { fill: none; stroke: var(--map-water-2); stroke-width: 1.2; stroke-dasharray: 2 10; opacity: 0.55; }
 .map-art .ripple, .boat-art .ripple, .map-art .sea-waves {
   fill: none; stroke: var(--map-water-2); stroke-width: 1.2; stroke-linecap: round; opacity: 0.75;
 }
 .map-art .reeds { fill: none; stroke: var(--map-land-3); stroke-width: 1.1; stroke-linecap: round; }
-.map-art .tree-shade { fill: rgba(0, 0, 0, 0.22); }
-.map-art .tree-trunk { fill: none; stroke: var(--map-ink-dim); stroke-width: 1; }
-.map-art .tree-crown { fill: var(--map-land-2); stroke: var(--map-ink-dim); stroke-width: 0.8; }
 .map-art .route {
   fill: none; stroke: var(--map-glow); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 0.1 7;
 }
@@ -876,7 +871,7 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
 .boat-head { display: flex; gap: var(--s-3); align-items: center; }
 .boat-pic { flex: none; line-height: 0; }
 .boat-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
-.keepsakes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-top: var(--s-3); }
+.keepsakes { display: grid; grid-template-columns: repeat(8, minmax(0, 40px)); gap: 6px; margin-top: var(--s-3); }
 .keepsake {
   aspect-ratio: 1;
   display: grid;
@@ -2749,3 +2744,129 @@ body.focus #toasts { bottom: max(18px, env(safe-area-inset-bottom)); }
   .help-section { padding: var(--s-2); gap: var(--s-2); }
   .help-face .portrait { width: 32px; height: 32px; }
 }
+
+/* ================================================================
+   The world chart: the whole river system in one look
+   ================================================================ */
+
+.world-layout { display: block; }
+.world-layout .river-chart { max-width: 1320px; }
+.river-below {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+  margin: var(--s-5) auto 0;
+  max-width: 1320px;
+  align-items: start;
+}
+.river-side { display: grid; gap: var(--s-4); align-content: start; }
+@media (min-width: 900px) { .river-below { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+
+/* Wider than a phone: the chart scrolls sideways, the way a map is dragged. */
+.map-scroller {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  border-radius: 14px;
+}
+.river-map.world { min-width: 1040px; container-type: inline-size; }
+@media (min-width: 900px) { .river-map.world { min-width: 0; } }
+
+/* Land: mountains with a shaded flank and snow, woods, and a darker rim. */
+.world-art .hill { fill: var(--map-land-2); stroke: var(--map-ink-dim); stroke-width: 0.8; stroke-opacity: 0.35; stroke-linejoin: round; }
+.world-art .hill-shade { fill: rgba(0, 0, 0, 0.22); }
+.world-art .hill-snow { fill: rgba(255, 255, 255, 0.3); }
+.world-art .tree-shade { fill: rgba(0, 0, 0, 0.26); }
+.world-art .tree-crown { fill: var(--map-tree); }
+.world-art .tree-lit { fill: var(--map-tree-hi); }
+.world-art .cypress { fill: var(--map-tree); stroke: var(--map-tree-hi); stroke-width: 0.8; }
+.world-art .vignette-clear { stop-color: rgba(0, 0, 0, 0); }
+.world-art .vignette-edge { stop-color: rgba(0, 0, 0, 0.3); }
+.world-art .vignette, .world-art .sea-glow { pointer-events: none; }
+.world-art .sea-near { stop-color: var(--map-water-2); stop-opacity: 0.06; }
+.world-art .sea-far { stop-color: var(--map-water-2); stop-opacity: 0.38; }
+
+/* Water, laid down three times: a band of sand, a wet edge, the water. */
+.world-art .water-sand { fill: var(--map-sand); stroke: var(--map-sand); stroke-width: 14; stroke-linejoin: round; }
+.world-art .water-edge { fill: none; stroke: var(--map-water-2); stroke-width: 5; stroke-linejoin: round; stroke-opacity: 0.6; }
+.world-art .water { fill: var(--map-water); stroke: none; }
+.world-art .water-line { fill: none; stroke: var(--map-water-2); stroke-width: 0.9; opacity: 0.3; }
+.world-art .sea-line { fill: none; stroke: var(--map-water-2); stroke-width: 1.1; }
+.world-art .sea-line.l0 { opacity: 0.5; }
+.world-art .sea-line.l1 { opacity: 0.34; }
+.world-art .sea-line.l2 { opacity: 0.22; }
+.world-art .sea-line.l3 { opacity: 0.12; }
+.world-art .water-name {
+  fill: var(--map-ink-dim);
+  font-family: var(--font-print);
+  font-style: italic;
+  letter-spacing: 0.24em;
+  opacity: 0.85;
+}
+.world-art .sea-name { fill: var(--map-water-2); letter-spacing: 0.7em; opacity: 1; }
+
+.world-art .road { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.6; stroke-dasharray: 5 4; stroke-linecap: round; opacity: 0.55; }
+.world-art .bridge-deck { fill: var(--map-sand); }
+.world-art .bridge-rail { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.2; }
+.world-art .light-beam { fill: var(--map-glow); opacity: 0.18; animation: beam 5s ease-in-out infinite; }
+@keyframes beam { 0%, 100% { opacity: 0.08; } 50% { opacity: 0.26; } }
+.world-art .serpent-body { stroke-width: 2.4; }
+.world-art .birds { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.2; stroke-linecap: round; }
+.world-art .clouds ellipse { fill: rgba(255, 255, 255, 0.05); }
+.world-art .scale-ink { fill: none; stroke: var(--map-ink); stroke-width: 1.2; }
+.world-art .scale-fill { fill: var(--map-ink); }
+.world-art .scale-text { fill: var(--map-ink); font-family: var(--font-print); font-size: 11px; letter-spacing: 0.2em; text-anchor: middle; }
+.world-art .border-ticks { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.2; }
+.world-art .chart-border { fill: none; stroke: var(--map-ink-dim); stroke-width: 2; }
+.world-art .place { cursor: pointer; transition: filter 200ms; }
+.world-art .place:hover { filter: brightness(1.2); }
+@media (prefers-reduced-motion: reduce) { .world-art .light-beam { animation: none; } }
+
+/* North-bank plates hang above their drawing. */
+.map-stop.north { transform: translate(-50%, -100%); }
+.map-stop.north:hover { transform: translate(-50%, -100%) translateY(-2px); }
+/* The plates grow and shrink with the chart, so they sit the same way on
+   it at every size. */
+.river-map.world .map-stop, .river-map.world .map-place { font-size: clamp(9px, 1.06cqi, 12.5px); }
+.river-map.world .map-stop { min-width: 8.5em; max-width: 14em; padding: 0.35em 0.7em 0.45em; gap: 0.1em; }
+.river-map.world .map-name { font-size: 1.36em; }
+.river-map.world .map-meta { font-size: 0.9em; }
+
+/* The places off the main river: a smaller wooden sign under each. */
+.map-place {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: max-content;
+  max-width: 15em;
+  padding: 0.25em 0.75em 0.35em;
+  border-radius: 5px;
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1), var(--wood-2));
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  border: 1px solid var(--brass-lo);
+  color: var(--on-wood);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 120ms;
+}
+.map-place:hover { transform: translateX(-50%) translateY(-2px); }
+.map-place:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.map-place-name { font-family: var(--font-print); font-weight: 700; font-size: 1.08em; line-height: 1.15; }
+.map-place-meta { font-size: 0.9em; opacity: 0.85; display: inline-flex; align-items: center; gap: 0.3em; }
+.map-place .pearl { width: 0.95em !important; height: 0.95em !important; }
+.map-place.can-buy { animation: can-buy 2.4s ease-in-out infinite; }
+@keyframes can-buy {
+  0%, 100% { box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--brass-lo); }
+  50% { box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), 0 0 0 3px var(--brass), 0 0 16px var(--brass); }
+}
+.place-new { color: var(--brass-hi); font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .map-place.can-buy { animation: none; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), 0 0 0 2px var(--brass); } }

@@ -4550,4 +4550,24 @@ export const NL = {
 
   'Only {total} decisions to go on — too few to say much. Sit longer next time and I can tell you more.':
     'Maar {total} beslissingen om op af te gaan — te weinig om veel te zeggen. Blijf de volgende keer langer zitten, dan kan ik je meer vertellen.',
+
+  /* ---- v3.1: the chart of the whole river ---- */
+  'Eight tables from Mud Landing to the delta, and everything on the water between':
+    'Acht tafels van Modderkade tot de delta, en alles wat daartussen aan het water ligt',
+  'School Creek': 'Schoolkreek',
+  'Gold Creek': 'Goudkreek',
+  'Black River': 'Zwarte Rivier',
+  'The Delta': 'De Delta',
+  'The Gulf': 'De Golf',
+  Leagues: 'Mijlen',
+  'The Saloon': 'De Saloon',
+  'The Racing Chute': 'De Racegeul',
+  'Spend pearls': 'Parels uitgeven',
+  '{n} of {total} chapters yours': '{n} van {total} hoofdstukken van jou',
+  '{n} of {total} charts yours': '{n} van {total} charts van jou',
+  'The counter is open': 'De balie is open',
+  'Needs the Pot Odds chapter': 'Vraagt het hoofdstuk Pot Odds',
+  'Beat the Belle for pearls': 'Versla de Belle voor parels',
+  'Free play, pearls a hand': 'Vrij spel, parels per hand',
+  'Something to buy': 'Iets te koop',
 };
