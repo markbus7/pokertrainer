@@ -2357,6 +2357,33 @@ await step('the boatyard sells a bigger boat, and it takes more of the crew to t
   if (!/skiff/.test(card.name) || card.faces !== 2) throw new Error(`the river shows ${card.name} with ${card.faces} aboard`);
 });
 
+await step('on a phone, the cards under the map stack in order and scroll with the page', async () => {
+  // Reported from a phone: scrolling past the map, the boat card slid over
+  // the card for the stop you are moored at. The boat's column had kept a
+  // rule from the old layout that pinned it while the page scrolled, and
+  // put it above the stop's card. And an empty berth drew as a tall oval.
+  await page.setViewportSize({ width: 390, height: 844 });
+  try {
+    await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
+    const below = await page.evaluate(() => {
+      const top = (sel) => document.querySelector(sel).getBoundingClientRect().top + window.scrollY;
+      const pinned = [...document.querySelectorAll('.river-below, .river-below *')]
+        .filter((n) => ['sticky', 'fixed'].includes(getComputedStyle(n).position)).map((n) => n.className);
+      const ring = document.querySelector('.boat-card .berth.open, .boat-card .berth.taken').getBoundingClientRect();
+      return { here: top('.here-card'), boat: top('.boat-card'), study: top('.study-line'), pinned, ring: [ring.width, ring.height] };
+    });
+    if (below.pinned.length) throw new Error(`pinned under the map: ${below.pinned.join(', ')}`);
+    if (!(below.here < below.boat && below.boat < below.study)) {
+      throw new Error(`the cards stack out of order: stop at ${below.here}, boat at ${below.boat}, study line at ${below.study}`);
+    }
+    if (Math.abs(below.ring[0] - below.ring[1]) > 1) throw new Error(`a berth draws ${below.ring[0]} by ${below.ring[1]}, not round`);
+  } finally {
+    await page.setViewportSize({ width: 1280, height: 900 });
+  }
+});
+
 await step('the lessons and the charts are places on the map, and there are no tabs', async () => {
   // The reader asked for the lessons and the ranges to be part of the map
   // rather than two tabs. The school is School Creek, with every chapter a

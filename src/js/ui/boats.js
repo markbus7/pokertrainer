@@ -33,7 +33,7 @@ export function crewStrip(profile, { size = 34 } = {}) {
     const c = aboard[i];
     slots.push(c
       ? el('span.berth.taken', { title: `${c.name} · ${t(c.kind)}` }, svgNode(portraitSvg(c.key, { size }), 'berth-face'))
-      : el('span.berth.empty', { title: t('An empty berth'), style: { width: `${size}px`, height: `${size}px` } }));
+      : el('span.berth.open', { title: t('An empty berth'), style: { width: `${size}px`, height: `${size}px` } }));
   }
   return el('div.crew-strip', { 'aria-label': t('{n} of {total} berths taken', { n: aboard.length, total: boat.berths }) }, slots);
 }
