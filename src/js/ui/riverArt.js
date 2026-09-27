@@ -310,6 +310,46 @@ export const LANDMARKS = {
     <path class="ink" d="M36 2V-18"/>
     <path class="mark ink" d="M36 -18l10 3-10 3z"/>`,
 
+  // A false-fronted office on the main street, with its scales out front.
+  assay: () => `
+    <path class="ground" d="M-44 18h88"/>
+    <path class="wall ink" d="M-28 18V-4h42v22z"/>
+    <path class="wall ink" d="M-32 -4V-25h50v21z"/>
+    <path class="roof ink" d="M-34 -25h54v-3h-54z"/>
+    <rect class="mark ink" x="-24" y="-21" width="34" height="9"/>
+    <path class="ink" d="M-19 -16.5h24"/>
+    <path class="roof ink" d="M-33 -4h52l4 5h-60z"/>
+    <path class="ink" d="M-30 1v17M16 1v17"/>
+    <rect class="glow" x="-24" y="4" width="8" height="9"/>
+    <rect class="glow" x="4" y="4" width="7" height="9"/>
+    <path class="ink" d="M-24 8.5h8M4 8.5h7"/>
+    <path class="roof ink" d="M-11 18V5h8v13z"/>
+    <path class="ink" d="M32 18V-10M26 18h12"/>
+    <path class="ink" d="M22 -9h20"/>
+    <circle class="glow ink" cx="32" cy="-11" r="1.6"/>
+    <path class="ink" d="M22 -9l-3 6M22 -9l3 6M42 -9l-3 6M42 -9l3 6"/>
+    <path class="glow ink" d="M17.5 -3h9a4.5 3 0 0 1-9 0zM37.5 -3h9a4.5 3 0 0 1-9 0z"/>`,
+
+  // The start of a race: a pole with the chequered flag, and the Belle
+  // alongside with her boilers already roaring.
+  race: () => `
+    <path class="shallows" d="M-44 16h88v8h-88z"/>
+    <path class="ink" d="M-40 20V-30"/>
+    <path class="mark ink" d="M-40 -30h16v10h-16z"/>
+    <path class="glow" d="M-40 -30h4v5h-4zM-32 -30h4v5h-4zM-36 -25h4v5h-4zM-28 -25h4v5h-4z"/>
+    <g transform="translate(10 0)">
+      <path class="roof ink" d="M-34 10h68l-7 10h-54z"/>
+      <path class="wall ink" d="M-27 10V0h48v10z"/>
+      ${windowsRow(-23, 3, 6, 7.5)}
+      <path class="wall ink" d="M-21 0V-8h34V0z"/>
+      ${windowsRow(-17, -6, 3, 9, 4, 3)}
+      <path class="roof ink" d="M-16 -8v-24h5v24zM-8 -8v-24h5v24z"/>
+      <path class="ink" d="M-18 -32h9M-10 -32h9"/>
+      <path class="smoke" d="M-13.5 -35c-5-4 5-7 0-11s5-6 0-9M-5.5 -35c-5-4 5-7 0-11s5-6 0-9"/>
+      <circle class="wall ink" cx="28" cy="5" r="8"/>
+      <path class="ink" d="M20 5h16M28 -3v16M22.3 -.7l11.4 11.4M33.7 -.7l-11.4 11.4"/>
+    </g>`,
+
   flagship: () => `
     <path class="roof ink" d="M-44 8h88l-11 12h-66z"/>
     <path class="wall ink" d="M-35 8V-2h68v10z"/>

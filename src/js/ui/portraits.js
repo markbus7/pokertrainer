@@ -218,6 +218,31 @@ const PEOPLE = {
       + '<path d="M40 24q6-4 13-3" stroke="#46403a" stroke-width="1.2" fill="none"/>',
   },
 
+  /* ---- the assayer: a pencil through her bun and a loupe in her eye ---- */
+  hattie: {
+    skin: SKIN.tan,
+    ground: '#6a5836',
+    back: '<path d="M35.5 16.5L64.5 24" stroke="#e0b93f" stroke-width="2.3" stroke-linecap="round"/>'
+      + '<path d="M64.5 24l3.2 .9" stroke="#3a2a1a" stroke-width="1.6" stroke-linecap="round"/>'
+      + '<path d="M35.5 16.5l-2.2-.6" stroke="#d98a8a" stroke-width="2.3" stroke-linecap="round"/>'
+      + '<circle cx="50" cy="21" r="7.4" fill="#2a1f1a"/>'
+      + '<path d="M45 19q5-4 10 0M46 23q4 2.5 8 0" stroke="#43342b" stroke-width="1" fill="none"/>',
+    body: shoulders('#2f4a3a')
+      + '<path d="M42 64V74Q50 78 58 74V64Z" fill="#f1ece0"/>'
+      + '<path d="M42 67.5h16" stroke="#d9d2c2" stroke-width=".8"/>'
+      + '<path d="M45.5 73.5l4.5 3.2 4.5-3.2-1 5.5-3.5-2-3.5 2z" fill="#1b1a1f"/>'
+      + '<path d="M40 71L45 100M60 71L55 100" stroke="#243a2d" stroke-width="1.6"/>'
+      + '<circle cx="50" cy="86" r="1.4" fill="#d9b44a"/><circle cx="50" cy="93" r="1.4" fill="#d9b44a"/>',
+    hair: '<path d="M33.5 46C31 27 69 27 66.5 46C64 35 57 30.5 50 30.5S36 35 33.5 46Z" fill="#2a1f1a"/>'
+      + '<path d="M50 30.5v4.5" stroke="#1a130f" stroke-width="1.1"/>'
+      + '<path d="M38 38q5-5 11-6M62 38q-5-5-11-6" stroke="#43342b" stroke-width="1" fill="none"/>',
+    face: { mouth: 'flat', brow: '#2a1f1a' },
+    front: '<circle cx="56.5" cy="46" r="5" fill="#1d1a18"/>'
+      + '<circle cx="56.5" cy="46" r="3.4" fill="#8fb3c9" fill-opacity=".6" stroke="#b9a15a" stroke-width="1"/>'
+      + '<circle cx="55.3" cy="44.8" r="1" fill="#fff" opacity=".75"/>'
+      + '<path d="M61.3 47.5q5 6 3 17" stroke="#b9a15a" stroke-width=".8" fill="none"/>',
+  },
+
   /* ---- the regulars, keyed by the style they play ---- */
   rock: {
     skin: SKIN.tan,

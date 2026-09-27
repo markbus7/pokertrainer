@@ -170,10 +170,60 @@ export const MENTOR = {
   },
   pilot: 'A pilot knows the river by heart: every bend and every snag, at night, with no chart. The charts are the same. First by daylight with the chart on the table, then at dusk with it in the drawer, then at night with nothing but what you remember.',
   shoals: 'These are your shoals — the hands you keep running aground on. Sound them until they are charted, and they come off this list on their own.',
+  // The records: the log of hands, the chart room, the almanac.
+  log: 'Every pilot keeps a log. Write down where you ran aground, and you will not run aground there twice. The ones you lost and played right go in too — they are the proof that losing and misplaying are different things.',
+  charts: 'These are the charts, drawn out by daylight. Study them here; the pilot house is where you learn them well enough to leave them in the drawer.',
+  almanac: 'Every trade on the river has its own words, and the tables have more than most. When one stops you, it is in here.',
   right: ['That is it.', 'Good. Again.', 'Right, and no hesitation.', 'Clean.', 'Just so.'],
   wrong: ['Not quite. Look again.', 'No — here is the catch.', 'Easy mistake. Read why.', 'Careful. This one bites.'],
   asks: 'Silas asks',
   table: 'At your shoulder',
+};
+
+/**
+ * The assayer, who keeps the Lab.
+ *
+ * An assay office weighs what comes over the counter and puts an exact
+ * figure on it, which is what the Lab asks of you: the price, the bet that
+ * offers it, the call — worked out and entered, never picked from a list.
+ * Her verdicts are about weight because a figure that is nearly right is,
+ * at a table, simply wrong.
+ */
+export const ASSAYER = {
+  key: 'hattie',
+  name: 'Hattie Quill',
+  short: 'Hattie',
+  title: 'Assayer',
+  hello: 'Everything that crosses this counter gets weighed. Bring me figures, not feelings — a guess is no use to anybody at a table.',
+  right: ['Weighs true.', 'Exact. Next.', 'That figure passes.', 'Sound as gold.'],
+  wrong: ['Short weight. See why.', 'That figure will not pass.', 'Close is not a price.', 'Weigh it again.'],
+  done: {
+    high: 'Good figures, all of them honest. I have booked each one to come back just as it starts to fade.',
+    mid: 'Mostly sound. The ones that came up light are booked to come back soonest.',
+    low: 'Too much of it came up light. Read the working under each miss, then weigh them again.',
+  },
+};
+
+/**
+ * The race, which is what the Gauntlet is on the river.
+ *
+ * Ten questions from everything you have unlocked, against Captain Rourke's
+ * Belle. The Belle's pace IS the pass mark: she makes seven and a half
+ * reaches in the time you answer ten, so eight right beats her to the
+ * landing and seven does not. Nothing about the run changes — the race is
+ * a way of seeing the score while it is being made.
+ *
+ * Rourke talks while he races, and the lines are his side of it: sour when
+ * you gain on him, pleased with himself when you snag.
+ */
+export const RACE = {
+  rival: 'rourke',
+  boat: 'The Belle',
+  hello: 'Ten reaches of river, and nobody tells you what is round the next bend. Get eight right and you beat the Belle to the landing. Get seven and I will be there waiting.',
+  gaining: ['Hmph. Lucky water.', 'Stoke the boilers, boys!', 'You are gaining. I do not care for it.'],
+  falling: ['Snagged! See you at the landing.', 'Full steam — do try to keep up.', 'That is why you are a passenger.'],
+  won: 'Beaten to the landing by a passenger. Do not get used to it.',
+  lost: 'The Belle takes it again. Come back when your boilers are hotter.',
 };
 
 export const bossFor = (key) => BOSSES[key] || null;

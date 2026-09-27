@@ -19,8 +19,11 @@ import { IDK, dontKnowButton } from './dontKnow.js';
 import { CHARTS } from '../data/ranges.js';
 import { handKey } from '../core/cards.js';
 import * as audio from '../audio/engine.js';
-import { silasSays, silasVerdict, lanterns, xpPop, stamp, svgNode } from './place.js';
-import { portraitSvg } from './portraits.js';
+import {
+  silasSays, silasVerdict, lanterns, xpPop, stamp, says, voiceLine, pickLine, raceStrip, raceMargin, sceneBanner,
+} from './place.js';
+import { RACE, bossFor } from '../data/characters.js';
+import { riverState } from './screenRiver.js';
 
 /** The lesson page for a module, with the drill entry point. */
 /** What the guided lesson actually is, in one line, so the name is not a riddle. */
@@ -219,6 +222,12 @@ export function renderDrill(ctx, params) {
   const endless = params.endless === '1';
   const SESSION_LENGTH = 10;
   const PASS_MARK = 8;
+  // The Gauntlet is run as a race against the Belle, in whatever boat you
+  // have worked your way up to. Her pace is the pass mark.
+  const raceBoat = gauntlet ? riverState(profile).boat.key : null;
+  const tally = () => (gauntlet
+    ? raceStrip(state.results, sessionLength, PASS_MARK, { boat: raceBoat, rival: RACE.boat })
+    : lanterns(state.results, sessionLength));
   const tierBefore = gauntlet ? null : masteryTier(profile, meta.id);
 
   const state = {
@@ -259,7 +268,7 @@ export function renderDrill(ctx, params) {
 
   const finish = () => {
     const pct = state.answered ? state.correct / state.answered : 0;
-    const passed = state.correct >= (gauntlet ? 8 : PASS_MARK);
+    const passed = state.correct >= PASS_MARK;
     if (gauntlet) {
       checkAchievements(profile, { type: 'gauntlet', correct: state.correct, total: state.answered })
         .forEach((a) => toast({ icon: a.icon, title: a.name, desc: a.description }));
@@ -286,21 +295,27 @@ export function renderDrill(ctx, params) {
     mount(header,
       el('div.row',
         el('div',
-          el('h1', { style: { margin: 0 } }, gauntlet ? 'Gauntlet complete' : passed ? 'Session passed' : 'Session complete'),
+          el('h1', { style: { margin: 0 } }, gauntlet
+            ? (passed ? t('You beat the Belle') : t('The Belle got there first'))
+            : passed ? 'Session passed' : 'Session complete'),
           el('div.muted', t('{correct} of {answered} correct — {pct}',
             { correct: state.correct, answered: state.answered, pct: fmt.pct(pct) })
-            + (bounded ? t(' · pass mark was {pass}', { pass: gauntlet ? 8 : PASS_MARK }) : '')),
+            + (bounded ? t(' · pass mark was {pass}', { pass: PASS_MARK }) : '')
+            + (gauntlet ? ` · ${raceMargin(state.correct, PASS_MARK)}` : '')),
         ),
       ),
-      bounded ? lanterns(state.results, sessionLength) : null,
+      bounded ? tally() : null,
     );
 
     mount(body,
       el('div.result-head',
         el('div.stars.big', { 'aria-label': t('{n} of 3 stars', { n: stars }) },
           [0, 1, 2].map((k) => el(`span.star${k < stars ? '.lit' : ''}`, '★'))),
-        stamp(passed ? t('Passed') : t('Keep at it'), passed ? 'good' : 'soft'),
+        stamp(gauntlet ? (passed ? t('Won') : t('Beaten')) : passed ? t('Passed') : t('Keep at it'), passed ? 'good' : 'soft'),
       ),
+      gauntlet
+        ? says(RACE.rival, t(passed ? RACE.won : RACE.lost), { name: t(bossFor(RACE.rival).name), typed: false, size: 60 })
+        : null,
       silasSays(t(verdictText(pct, gauntlet)), { typed: false, size: 60 }),
       el('div.grid.cols-3',
         el('div.stat', el('div.label', 'Score'), el('div.value', `${state.correct}/${state.answered}`)),
@@ -343,11 +358,13 @@ export function renderDrill(ctx, params) {
 
     mount(footer,
       el('button.btn.primary', { onclick: () => go(gauntlet ? 'gauntlet' : 'drill', { module: params.module }) },
-        'Another session'),
+        gauntlet ? t('Race again') : 'Another session'),
       !gauntlet
         ? el('button.btn.ghost', { onclick: () => go('drill', { module: params.module, endless: '1' }) }, 'Endless practice')
         : null,
-      el('button.btn.ghost', { onclick: () => go('train') }, 'Back to the school'),
+      gauntlet
+        ? el('button.btn.ghost', { onclick: () => go('home') }, 'Back to the river')
+        : el('button.btn.ghost', { onclick: () => go('train') }, 'Back to the school'),
     );
     return null;
   };
@@ -401,7 +418,10 @@ export function renderDrill(ctx, params) {
     audio.sfx(wasCorrect ? 'right' : 'wrong');
     state.results.push(wasCorrect);
     // Silas's word on it, chosen once so a redraw does not change his mind.
-    state.verdictLine = key === IDK ? null : silasVerdict(wasCorrect);
+    // In the race it is Rourke calling across the water instead.
+    state.verdictLine = key === IDK ? null
+      : gauntlet ? pickLine(wasCorrect ? RACE.gaining : RACE.falling)
+        : silasVerdict(wasCorrect);
 
     if (wasCorrect) {
       state.correct++;
@@ -440,7 +460,7 @@ export function renderDrill(ctx, params) {
         el('div.row',
           el('span.module-glyph', icon(q.icon, { size: 20 })),
           el('div',
-            el('div', { style: { fontWeight: '650' } }, gauntlet ? 'The Gauntlet' : q.moduleName),
+            el('div.book-title', gauntlet ? t('The Race') : t(q.moduleName)),
             el('div.faint', gauntlet
               ? t('Question {n} of {total} · {module}', { n: state.index, total: queue.length, module: t(q.moduleName) })
               : bounded
@@ -455,7 +475,7 @@ export function renderDrill(ctx, params) {
           el('span.badge', `${state.correct}/${state.answered}`),
         ),
       ),
-      bounded ? lanterns(state.results, sessionLength) : null,
+      bounded ? tally() : null,
     );
 
     const options = el('div.options',
@@ -488,9 +508,7 @@ export function renderDrill(ctx, params) {
       chosen === null ? null : el(`div.feedback.${
         chosen === IDK ? 'skip' : chosen === q.answer ? 'correct' : 'wrong'
       }`,
-        state.verdictLine
-          ? el('div.silas-line', svgNode(portraitSvg('silas', { size: 36 }), 'silas-face'), el('span', state.verdictLine))
-          : null,
+        state.verdictLine ? voiceLine(gauntlet ? RACE.rival : 'silas', state.verdictLine) : null,
         el('div.verdict', chosen === IDK
           ? t("You said you didn't know — here it is.")
           : chosen === q.answer
@@ -531,7 +549,7 @@ export function renderDrill(ctx, params) {
       // is the kind of small friction that stops people checking at all.
       sheet
         ? (state.peeked || state.reviewing
-          ? sheet.node
+          ? el('div.sheet-slip.paper', sheet.node)
           : el('button.btn.sm.ghost.block', {
             style: { marginTop: '14px' },
             onclick: () => {
@@ -668,18 +686,33 @@ function verdictText(pct, gauntlet) {
   return 'This one needs work. Go back to the lesson and drill again; nobody gets this on the first pass.';
 }
 
-/** Module picker for the Gauntlet entry screen. */
+/** The start of the race: the Belle at the pole, Rourke, and what counts. */
 export function renderGauntletIntro(ctx) {
   const { profile, go } = ctx;
   const unlocked = MODULE_META.filter((m) => m.unlockLevel <= profile.level);
-  return el('div.screen',
-    el('div.panel',
-      el('h1', icon('spark', { size: 22 }), t('The Gauntlet')),
+  const rival = bossFor(RACE.rival);
+  return el('div.screen.race-start',
+    sceneBanner({
+      id: 'race', landmark: 'race', kicker: t('At the starting pole'), title: t('The Race'),
+      boat: riverState(profile).boat.key,
+    }),
+    el('div.panel.mentor-card',
+      says(RACE.rival, t(RACE.hello), { name: t(rival.name) }),
+    ),
+    el('div.panel.page.paper.race-card',
+      el('div.page-kicker', t('The Gauntlet')),
+      el('h2', t('Ten reaches, any water')),
       el('p.muted', 'Ten questions drawn at random from every module you have unlocked. You will not know which skill is coming, which is exactly the point — at the table, nobody tells you that this is a pot-odds spot.'),
+      el('div.race-rules',
+        el('div.race-rule', el('span.race-rule-n', '1'), el('span', t('A right answer moves your boat one reach.'))),
+        el('div.race-rule', el('span.race-rule-n', '2'), el('span', t('The Belle keeps a steady pace: seven and a half reaches in ten.'))),
+        el('div.race-rule', el('span.race-rule-n', '8'), el('span', t('Eight right and you are first to the landing.'))),
+      ),
+      el('div.page-kicker', t('The water you might meet')),
       el('div.row', { style: { marginBottom: '16px' } },
         unlocked.map((m) => el('span.badge', icon(m.icon, { size: 13 }), ' ', t(m.name))),
       ),
-      el('button.btn.primary.lg', { onclick: () => go('drill', { mode: 'gauntlet' }) }, 'Begin the run'),
+      el('button.btn.primary.lg.plank', { onclick: () => go('drill', { mode: 'gauntlet' }) }, t('Fire the boilers')),
     ),
   );
 }
