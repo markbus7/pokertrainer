@@ -4639,4 +4639,9 @@ export const NL = {
   'Aboard your boat: comes to the table with you. Ask for help and they chip in.':
     'Aan boord van je boot: gaat mee aan tafel. Vraag om hulp en ze helpen mee.',
   'Waiting at the landing — your boat has no berth free.': 'Wacht op de kade — je boot heeft geen kooi vrij.',
+
+  /* ---- v3.3: the school and the pilot house as regions of the map ---- */
+  "The pilot's channel": 'Het vaarwater van de loods',
+  'Down to the Long River': 'Stroomafwaarts naar de Lange Rivier',
+  'Where you are': 'Waar je bent',
 };

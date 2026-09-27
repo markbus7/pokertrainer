@@ -701,11 +701,18 @@ await step('Enter answers the question and shows the result, the way the button 
     }
   }
 
-  // And a second Enter is still how you move on once you have read it.
+  // And a second Enter is still how you move on once you have read it. The
+  // question's text alone cannot tell: MDF questions come in about fifty
+  // pot-and-bet pairs, so the next one is sometimes worded exactly like the
+  // last. A new question is one with the result gone and an empty answer box.
   await page.keyboard.press('Enter');
   await page.waitForTimeout(400);
-  const next = await readState();
-  if (!next.question || next.question === entered.after.question) {
+  const next = await page.evaluate(() => ({
+    question: document.querySelector('.question')?.textContent || null,
+    feedback: !!document.querySelector('.feedback'),
+    entry: document.querySelector('.drill-entry-input')?.value ?? null,
+  }));
+  if (!next.question || next.feedback || next.entry !== '') {
     throw new Error('a second Enter no longer advances to the next question');
   }
   console.log('      Enter and the button both grade in place; Enter again moves on');
@@ -1713,13 +1720,13 @@ await step('a stop seats you across from the one who owns it, and takes the seat
     faces: document.querySelectorAll('.seat-face').length,
     speech: document.querySelector('.seat-speech')?.textContent || '',
     purse: document.querySelector('.purse')?.textContent || '',
-    dock: getComputedStyle(document.querySelector('.dock')).display,
+    back: !!document.querySelector('#topbar .crest.back'),
   }));
   if (table.place !== 'The Ferry') throw new Error(`the table is at ${table.place}`);
   if (!/Hollis/.test(table.boss)) throw new Error(`the owner is not at the table: ${table.boss}`);
   if (table.faces !== 5) throw new Error(`${table.faces} faces at a six-handed table`);
   if (!/crossings/.test(table.speech)) throw new Error('the owner sat there without a word');
-  if (table.dock !== 'none') throw new Error('the dock is still up in the middle of a hand');
+  if (!table.back) throw new Error('there is no way back to the river from the table');
   await page.waitForTimeout(1500);
   const purse = await page.textContent('.purse');
   if (!/\$402/.test(purse)) throw new Error(`the seat was not paid for: ${purse}`);
@@ -2346,20 +2353,65 @@ await step('the boatyard sells a bigger boat, and it takes more of the crew to t
   if (!/skiff/.test(card.name) || card.faces !== 2) throw new Error(`the river shows ${card.name} with ${card.faces} aboard`);
 });
 
+await step('the lessons and the charts are places on the map, and there are no tabs', async () => {
+  // The reader asked for the lessons and the ranges to be part of the map
+  // rather than two tabs. The school is School Creek, with every chapter a
+  // stop on the water; the pilot house is a channel with every chart a mark
+  // on it; each runs out into the Long River, and the rail's crest is the
+  // way back from anywhere.
+  if (await page.$('.dock, .dock-item')) throw new Error('the tabs are still there');
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+  await page.click('.map-place.place-school');
+  await page.waitForTimeout(500);
+  const creek = await page.evaluate(() => ({
+    route: location.hash,
+    stops: document.querySelectorAll('.creek-trail > .trail-stop').length,
+    water: document.querySelectorAll('.creek-trail > .trail-stop > .creek-bend').length,
+    head: !!document.querySelector('.creek-head .creek-spring'),
+    mouth: !!document.querySelector('.creek-mouth .creek-home'),
+    back: document.querySelector('#topbar .crest.back')?.textContent || '',
+  }));
+  if (!/#train/.test(creek.route)) throw new Error(`the school sign went to ${creek.route}`);
+  if (creek.stops !== 12 || creek.water !== 12) throw new Error(`${creek.stops} chapters and ${creek.water} bends of water on the creek, expected 12 of each`);
+  if (!creek.head || !creek.mouth) throw new Error('the creek has no spring or no mouth');
+  if (!/river/i.test(creek.back)) throw new Error(`the rail offers no way back to the river: "${creek.back}"`);
+  await page.click('.creek-home');
+  await page.waitForTimeout(400);
+  if (!/#home/.test(page.url())) throw new Error(`the creek's mouth went to ${page.url()}`);
+
+  await page.click('.map-place.place-pilothouse');
+  await page.waitForTimeout(500);
+  const channel = await page.evaluate(() => ({
+    route: location.hash,
+    marks: document.querySelectorAll('.creek-trail > .channel-stop .rung-row').length,
+    water: document.querySelectorAll('.creek-trail > .channel-stop > .creek-bend').length,
+  }));
+  if (!/#ranges/.test(channel.route)) throw new Error(`the pilot house sign went to ${channel.route}`);
+  if (channel.marks !== 8 || channel.water !== 8) throw new Error(`${channel.marks} charts and ${channel.water} bends on the channel, expected 8 of each`);
+  await page.click('#topbar .crest');
+  await page.waitForTimeout(400);
+  if (!/#home/.test(page.url())) throw new Error(`the crest went to ${page.url()}`);
+});
+
 await step('the language switch turns the whole app Dutch and persists', async () => {
   await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
 
-  const englishNav = await page.$$eval('.dock-item', (n) => n.map((x) => x.textContent.trim()));
-  if (!englishNav.includes('Lessons')) throw new Error(`expected English nav, got ${englishNav}`);
+  const englishBack = (await page.textContent('#topbar .crest')).trim();
+  if (!/The river/.test(englishBack)) throw new Error(`expected the way back to read "The river", got ${englishBack}`);
 
   await page.click('.ledger-button');
   await page.waitForTimeout(250);
+  const englishNav = await page.$$eval('.ledger-item .ledger-label', (n) => n.map((x) => x.textContent.trim()));
+  if (!englishNav.includes('Lessons')) throw new Error(`expected English nav, got ${englishNav}`);
   await page.click('.lang-chip:not(.active)');
   await page.waitForTimeout(400);
 
-  const dutchNav = await page.$$eval('.dock-item', (n) => n.map((x) => x.textContent.trim()));
+  const dutchNav = await page.$$eval('.ledger-item .ledger-label', (n) => n.map((x) => x.textContent.trim()));
   if (!dutchNav.includes('Lessen')) throw new Error(`nav did not switch: ${dutchNav}`);
+  const dutchBack = (await page.textContent('#topbar .crest')).trim();
+  if (!/De rivier/.test(dutchBack)) throw new Error(`the way back is still English: ${dutchBack}`);
   const ledger = await page.textContent('.ledger');
   if (!/Instellingen/.test(ledger) || !/Muziek/.test(ledger)) throw new Error('the ledger is still English');
   await page.keyboard.press('Escape');
