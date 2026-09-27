@@ -9,8 +9,10 @@
  * that earns pearls faster and carries the help the chapters unlock, and the
  * shipwright only sells a boat to somebody who has taken theirs that far.
  *
- * The small things are here too: a coat of paint, a flag, a lantern for the
- * bow. They do nothing at the table; they make the boat on the map yours.
+ * The fittings are here too, and each does one thing at the table on
+ * whatever boat you sail: a spare cabin takes one more companion, a heavier
+ * strongbox adds a tenth more pearls. Nothing here is only for show — the
+ * reader asked for nothing on a shelf that does nothing.
  */
 
 import { el } from './dom.js';
@@ -18,8 +20,8 @@ import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { BOATS, FLAGSHIP, SHIPWRIGHT } from '../data/characters.js';
 import {
-  CATALOGUE, FITTINGS, SHOPS, itemState, itemByKey, currentBoat, ownsBoat, sailBoat, boatLook,
-  crewAboard, crewAshore, toggleCrew, ownsFitting, wearFitting, ownedCompanions,
+  CATALOGUE, UPGRADES, SHOPS, itemState, itemByKey, currentBoat, ownsBoat, sailBoat,
+  crewAboard, crewAshore, toggleCrew, ownsUpgrade, ownedCompanions, boatBerths, boatBonus,
 } from '../state/economy.js';
 import { sceneBanner, says, svgNode } from './place.js';
 import { boatSvg } from './riverArt.js';
@@ -31,7 +33,6 @@ import * as audio from '../audio/engine.js';
 export function renderBoatyard(ctx) {
   const { profile, go } = ctx;
   const redraw = () => go('boatyard', { at: Date.now() });
-  const look = boatLook(profile);
   const boat = currentBoat(profile);
 
   // Amos reads the purse the way Delphine does: somebody who cannot afford
@@ -44,7 +45,7 @@ export function renderBoatyard(ctx) {
       : SHIPWRIGHT.hello;
 
   return el('div.screen.boatyard',
-    sceneBanner({ id: 'boatyard', landmark: 'boatyard', kicker: t('On Gold Creek, below the diggings'), title: t('The Boatyard'), boat: look }),
+    sceneBanner({ id: 'boatyard', landmark: 'boatyard', kicker: t('On Gold Creek, below the diggings'), title: t('The Boatyard'), boat: boat.key }),
     el('div.panel.mentor-card',
       says(SHIPWRIGHT.key, t(line), { name: SHIPWRIGHT.name }),
       el('div.store-purse',
@@ -58,11 +59,11 @@ export function renderBoatyard(ctx) {
     /* ---- the boat you sail, and who is aboard ---- */
     el('div.panel.page.paper.yard-yours',
       el('div.yard-yours-head',
-        svgNode(boatSvg(look, { width: 180 }), 'yard-boat-pic'),
+        svgNode(boatSvg(boat.key, { width: 180 }), 'yard-boat-pic'),
         el('div',
           el('div.page-kicker', t('You are sailing')),
           el('h2.yard-boat-name', t(boat.name)),
-          el('div.faint', boatPerks(boat)),
+          el('div.faint', boatPerks({ berths: boatBerths(profile), bonus: boatBonus(profile) })),
         ),
       ),
       crewPanel(profile, go, redraw),
@@ -72,14 +73,14 @@ export function renderBoatyard(ctx) {
     el('div.panel.page.paper.shelf.shelf-boat',
       el('div.panel-title', el('h2', t('Boats on the slip'))),
       el('p.muted', t('A bigger boat carries more companions to the table, and its strongbox adds a share to every pearl the tables pay for hands and decisions. Amos only sells a boat to somebody who has taken theirs that far down the river.')),
-      el('div.yard-boats', [...BOATS, FLAGSHIP].map((b) => boatCard(b, profile, look, go, redraw))),
+      el('div.yard-boats', [...BOATS, FLAGSHIP].map((b) => boatCard(b, profile, go, redraw))),
     ),
 
-    /* ---- paint, flags and a lantern ---- */
-    el('div.panel.page.paper.shelf.shelf-fitting',
-      el('div.panel-title', el('h2', t('Paint and flags'))),
-      el('p.muted', t('They do nothing at the table. They make the boat on the map yours.')),
-      el('div.yard-fittings', FITTINGS.map((f) => fittingRow(f, profile, look, go, redraw))),
+    /* ---- fittings: each one does something at the table ---- */
+    el('div.panel.page.paper.shelf.shelf-upgrade',
+      el('div.panel-title', el('h2', t('Fittings'))),
+      el('p.muted', t('Each one does one thing at the table, on whatever boat you sail.')),
+      el('div.yard-fittings', UPGRADES.map((u) => upgradeRow(u, profile, go, redraw))),
     ),
   );
 }
@@ -96,12 +97,12 @@ function crewPanel(profile, go, redraw) {
       el('button.btn.sm.ghost', { onclick: () => go('store') }, icon('store', { size: 14 }), ' ', t('The Trading Post')),
     );
   }
-  const full = aboard.length >= boat.berths;
+  const full = aboard.length >= boatBerths(profile);
   const face = (c) => svgNode(portraitSvg(c.key, { size: 40 }), 'crew-face');
   return el('div.yard-crew',
     el('div.yard-crew-head',
       el('strong', t('Aboard')),
-      el('span.faint', t('{n} of {total} berths taken', { n: aboard.length, total: boat.berths })),
+      el('span.faint', t('{n} of {total} berths taken', { n: aboard.length, total: boatBerths(profile) })),
     ),
     el('div.crew-list',
       aboard.map((c) => el('div.crew-row.aboard',
@@ -125,8 +126,8 @@ function crewPanel(profile, go, redraw) {
   );
 }
 
-/** One boat on the slip: drawn as you would sail it, with what it does. */
-function boatCard(b, profile, look, go, redraw) {
+/** One boat on the slip, with what it does. */
+function boatCard(b, profile, go, redraw) {
   const sailing = currentBoat(profile).key === b.key;
   const owned = ownsBoat(profile, b.key);
   let action;
@@ -141,7 +142,7 @@ function boatCard(b, profile, look, go, redraw) {
     action = buyControl(profile, `boat:${b.key}`, { go, onBought: () => { audio.sfx('whistle'); redraw(); }, label: t('Buy her') });
   }
   return el(`div.yard-boat${sailing ? '.sailing' : ''}${owned ? '.owned' : ''}`,
-    svgNode(boatSvg({ ...look, boat: b.key }, { width: 132 }), 'yard-boat-art'),
+    svgNode(boatSvg(b.key, { width: 132 }), 'yard-boat-art'),
     el('div.yard-boat-text',
       el('div.yard-boat-title', t(b.name)),
       el('div.faint', boatPerks(b)),
@@ -150,31 +151,17 @@ function boatCard(b, profile, look, go, redraw) {
   );
 }
 
-/** One fitting: a small drawing of your boat wearing it, and the button. */
-function fittingRow(f, profile, look, go, redraw) {
-  const owned = ownsFitting(profile, f.key);
-  const worn = f.slot === 'lantern' ? look.lantern : look[f.slot] === f.key;
-  const preview = { ...look, [f.slot]: f.slot === 'lantern' ? true : f.key };
-  let action;
-  if (owned) {
-    action = el('div.row',
-      worn ? el('span.badge.green', icon('check', { size: 13 }), ' ', t('On your boat')) : null,
-      el('button.btn.sm.ghost', {
-        onclick: () => { wearFitting(profile, f.key, !worn); audio.sfx('click'); redraw(); },
-      }, worn ? t('Take it off') : t('Put it on')),
-    );
-  } else {
-    action = buyControl(profile, `fit:${f.key}`, { go, onBought: redraw });
-  }
-  return el(`div.shelf-row.yard-fitting${owned ? '.owned' : ''}`,
-    svgNode(boatSvg(preview, { width: 104 }), 'fitting-art'),
+/** One fitting: what it does, and the button — or that it is fitted. */
+function upgradeRow(u, profile, go, redraw) {
+  const fitted = ownsUpgrade(profile, u.key);
+  return el(`div.shelf-row.yard-upgrade${fitted ? '.owned' : ''}`,
+    el('span.module-glyph', icon(u.key === 'cabin' ? 'paw' : 'pearl', { size: 18 })),
     el('div.shelf-text',
-      el('div.shelf-name', t(f.name)),
-      el('div.faint', f.slot === 'paint' ? t('A coat of paint for the hull')
-        : f.slot === 'flag' ? t('A flag to fly')
-          : t('A lamp at the bow, for the night reaches')),
+      el('div.shelf-name', t(u.name)),
+      el('div.faint', t(u.does)),
     ),
-    el('div.shelf-buy', action),
+    el('div.shelf-buy', fitted
+      ? el('span.badge.green', icon('check', { size: 13 }), ' ', t('Fitted'))
+      : buyControl(profile, `up:${u.key}`, { go, onBought: redraw })),
   );
 }
-

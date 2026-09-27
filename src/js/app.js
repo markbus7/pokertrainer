@@ -83,7 +83,7 @@ const LEDGER = [
       { route: 'home', label: 'The river', icon: 'river', note: 'Eight tables down to the delta' },
       { route: 'play', label: 'Free table', icon: 'cards', note: 'Six-handed, with no bankroll at stake' },
       { route: 'store', label: 'The Trading Post', icon: 'store', note: 'Spend your pearls: chapters, charts, companions' },
-      { route: 'boatyard', label: 'The Boatyard', icon: 'anchor', note: 'Better boats, and paint and flags for yours' },
+      { route: 'boatyard', label: 'The Boatyard', icon: 'anchor', note: 'Better boats, and fittings that earn their keep' },
     ],
   },
   {

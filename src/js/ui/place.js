@@ -229,10 +229,10 @@ export function raceMargin(correct, passMark) {
   return correct >= passMark ? t('won by {margin}', { margin: lengths }) : t('lost by {margin}', { margin: lengths });
 }
 
-function racerNode(look, className) {
+function racerNode(key, className) {
   // Drawn facing left on the map; turned round here, since the race runs
-  // left to right and a boat goes bow first. Yours is dressed as you left it.
-  const art = className === 'you' ? yourBoat(look) : `<g class="${className}">${(BOAT_ART[look] || BOAT_ART.rowboat)()}</g>`;
+  // left to right and a boat goes bow first.
+  const art = className === 'you' ? yourBoat(key) : `<g class="${className}">${(BOAT_ART[key] || BOAT_ART.rowboat)()}</g>`;
   return svgNode(`<svg viewBox="-30 -34 60 46" width="64" height="49" aria-hidden="true"><g transform="scale(-1 1)">${art}</g></svg>`, 'racer');
 }
 

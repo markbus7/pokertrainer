@@ -29,7 +29,7 @@ import { WORLD, stopAt, PLACES, worldSvg, voyage } from './worldMap.js';
 import { portraitSvg } from './portraits.js';
 import { svgNode } from './place.js';
 import {
-  ownedModules, ownsLesson, ownsChart, somethingToBuy, currentBoat, boatLook, crewAboard,
+  ownedModules, ownsLesson, ownsChart, somethingToBuy, currentBoat, boatBerths, boatBonus,
 } from '../state/economy.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
 import { pearls } from './shop.js';
@@ -54,7 +54,9 @@ export function riverState(profile) {
     beaten: new Set(VENUES.filter((v) => beatenKeys.has(v.key)).map((v) => v.index)),
     beatenKeys,
     boat: currentBoat(profile),
-    look: boatLook(profile),
+    // What the boat carries and pays with its fittings, not just its hull.
+    berths: boatBerths(profile),
+    bonus: boatBonus(profile),
     wonRiver,
   };
 }
@@ -105,7 +107,7 @@ function placeStatus(place, profile) {
     case 'race': return t('Beat the Belle for pearls');
     case 'tradingpost': return null;
     case 'saloon': return t('Free play, pearls a hand');
-    case 'boatyard': return t('Boats, paint and flags');
+    case 'boatyard': return t('Boats and fittings');
     default: return null;
   }
 }
@@ -135,7 +137,6 @@ function riverMap(state, profile, go) {
     open: state.open,
     beaten: state.beaten,
     boat: state.boat.key,
-    look: state.look,
     landmarks: VENUES.map((v) => v.landmark),
   });
   // The drawings answer taps as well as their name plates do.
@@ -196,11 +197,11 @@ function boatCard(state, profile, go) {
   const got = VENUES.filter((v) => state.beaten.has(v.index)).length;
   return el('div.panel.boat-card',
     el('div.boat-head',
-      svgNode(boatSvg(state.look, { width: 112 }), 'boat-pic'),
+      svgNode(boatSvg(state.boat.key, { width: 112 }), 'boat-pic'),
       el('div',
         el('div.here-kicker', t('Your boat')),
         el('div.boat-name', t(state.boat.name)),
-        el('div.faint.boat-perks', boatPerks(state.boat)),
+        el('div.faint.boat-perks', boatPerks({ berths: state.berths, bonus: state.bonus })),
       ),
     ),
     el('div.boat-crew',

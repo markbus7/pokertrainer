@@ -192,7 +192,7 @@ export function creekHead({ kicker, title, landmark, extra = null }) {
  * The bottom of a region: the water running out into the Long River, your
  * boat at the jetty, and the way back to the big chart.
  */
-export function creekMouth({ go, look }) {
+export function creekMouth({ go, boat }) {
   return el('div.creek-mouth',
     el('div.creek-row.creek-last',
       el('div.creek-cell.side'),
@@ -200,7 +200,7 @@ export function creekMouth({ go, look }) {
       el('div.creek-cell.side'),
     ),
     el('div.creek-river',
-      svgNode(`<svg class="creek-river-boat" viewBox="-34 -36 68 50" aria-hidden="true"><g class="bob">${yourBoat(look)}</g></svg>`, 'creek-boat'),
+      svgNode(`<svg class="creek-river-boat" viewBox="-34 -36 68 50" aria-hidden="true"><g class="bob">${yourBoat(boat)}</g></svg>`, 'creek-boat'),
       el('button.btn.plank.creek-home', { onclick: () => go('home') }, icon('river', { size: 18 }), ' ', t('Down to the Long River')),
     ),
   );
