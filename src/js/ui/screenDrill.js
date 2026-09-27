@@ -22,8 +22,11 @@ import * as audio from '../audio/engine.js';
 import {
   silasSays, silasVerdict, lanterns, xpPop, stamp, says, voiceLine, pickLine, raceStrip, raceMargin, sceneBanner,
 } from './place.js';
-import { RACE, bossFor } from '../data/characters.js';
+import { RACE, bossFor, MENTOR } from '../data/characters.js';
 import { riverState } from './screenRiver.js';
+import { ownsLesson, ownedModules, itemByKey, itemState, EARN } from '../state/economy.js';
+import { buyControl, pearls, pearlPop } from './shop.js';
+import { RANKS } from '../state/profile.js';
 
 /** The lesson page for a module, with the drill entry point. */
 /** What the guided lesson actually is, in one line, so the name is not a riddle. */
@@ -129,9 +132,50 @@ function medallion(meta) {
   );
 }
 
+/**
+ * A chapter that is still on the shelf: its title page, what it costs, and
+ * either the button that buys it or what stands in the way. Every route into
+ * a chapter lands here until it is bought — the lesson, the drill and the
+ * guided lesson alike — so there is one place that explains the price.
+ */
+export function lockedChapter(ctx, meta) {
+  const { profile, go } = ctx;
+  const item = itemByKey(`lesson:${meta.id}`);
+  const state = itemState(profile, item);
+  const rankGate = state.missing.find((m) => m.key === 'level');
+  const line = rankGate
+    ? t(MENTOR.shelfRank, { rank: t(RANKS[meta.unlockLevel - 1].name) })
+    : state.affordable ? t(MENTOR.shelfReady) : t(MENTOR.shelf);
+  return el('div.screen.chapter.on-shelf',
+    el('div.panel.page.paper.chapter-head',
+      el('div.chapter-title-row',
+        el('span.medallion.shelved', { 'aria-hidden': 'true' },
+          el('span.medallion-face', icon('lock', { size: 24 })),
+          el('span.medallion-num', String(chapterOf(meta.id))),
+        ),
+        el('div',
+          el('div.chapter-kicker', t('Chapter {n}', { n: chapterOf(meta.id) })),
+          el('h1.sign', meta.name),
+          el('div.tagline', meta.tagline),
+        ),
+      ),
+      el('div.shelf-buy',
+        buyControl(profile, item.key, { go, onBought: () => go('learn', { module: meta.id }) }),
+      ),
+    ),
+    el('div.panel.mentor-card', silasSays(line, { typed: false })),
+    el('div.row',
+      el('button.btn.primary', { onclick: () => go('store') }, icon('pearl', { size: 16 }), ' ', t('The Trading Post')),
+      el('button.btn.ghost', { onclick: () => go('play') }, t('Play for pearls')),
+      el('button.btn.ghost', { onclick: () => go('train') }, 'Back to the school'),
+    ),
+  );
+}
+
 export function renderLearn(ctx, params) {
   const meta = moduleMeta(params.module);
   if (!meta) return el('div.empty', 'Unknown module.');
+  if (!ownsLesson(ctx.profile, meta.id)) return lockedChapter(ctx, meta);
   const { profile, go } = ctx;
   const stats = profile.drillStats(meta.id);
   const acc = profile.accuracy(meta.id);
@@ -210,10 +254,13 @@ export function renderDrill(ctx, params) {
   const gauntlet = params.mode === 'gauntlet';
   const meta = gauntlet ? null : moduleMeta(params.module);
   if (!gauntlet && !meta) return el('div.empty', 'Unknown module.');
+  if (!gauntlet && !ownsLesson(ctx.profile, meta.id)) return lockedChapter(ctx, meta);
 
   const { profile, rng, go } = ctx;
   const difficulty = difficultyForLevel(profile.level);
-  const queue = gauntlet ? generateGauntlet(rng, profile.level, 10) : [];
+  // The race asks about the chapters you own: a question from a chapter
+  // still on the shelf would be a test of something nobody has taught you.
+  const queue = gauntlet ? generateGauntlet(rng, profile.level, 10, ownedModules(profile).map((m) => m.id)) : [];
 
   // A session used to run forever, so there was no moment of having finished
   // and no target to aim at. It is now a fixed length with a stated pass mark,
@@ -291,6 +338,10 @@ export function renderDrill(ctx, params) {
     const stars = state.answered && state.correct === state.answered ? 3
       : passed ? 2 : pct >= 0.6 ? 1 : 0;
     if (passed) audio.sfx('fanfare');
+    // Beating the Belle pays — the one place away from a card table that
+    // does, because it is the one place nobody tells you which skill is next.
+    const prize = gauntlet && passed ? profile.earnPearls(EARN.raceWon) : 0;
+    if (prize) pearlPop(prize);
 
     mount(header,
       el('div.row',
@@ -315,6 +366,9 @@ export function renderDrill(ctx, params) {
       ),
       gauntlet
         ? says(RACE.rival, t(passed ? RACE.won : RACE.lost), { name: t(bossFor(RACE.rival).name), typed: false, size: 60 })
+        : null,
+      prize
+        ? el('div.race-prize', pearls(prize, { className: 'big' }), el('span', t('in pearls for beating the Belle')))
         : null,
       silasSays(t(verdictText(pct, gauntlet)), { typed: false, size: 60 }),
       el('div.grid.cols-3',
@@ -689,7 +743,7 @@ function verdictText(pct, gauntlet) {
 /** The start of the race: the Belle at the pole, Rourke, and what counts. */
 export function renderGauntletIntro(ctx) {
   const { profile, go } = ctx;
-  const unlocked = MODULE_META.filter((m) => m.unlockLevel <= profile.level);
+  const unlocked = ownedModules(profile);
   const rival = bossFor(RACE.rival);
   return el('div.screen.race-start',
     sceneBanner({

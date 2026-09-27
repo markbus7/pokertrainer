@@ -34,9 +34,13 @@ const settled = (level) => {
   return p;
 };
 
+// A reader who has bought every chapter: these tests are about which one to
+// study, not about which ones are for sale.
+const OWNS_ALL = { version: 1, pearls: 0, earned: 0, spent: 0, owned: MODULE_META.map((m) => `lesson:${m.id}`) };
+
 const fresh = () => {
   const memory = new Map();
-  return new Profile({}, {
+  return new Profile({ economy: OWNS_ALL }, {
     getItem: (k) => (memory.has(k) ? memory.get(k) : null),
     setItem: (k, v) => memory.set(k, String(v)),
     removeItem: (k) => memory.delete(k),

@@ -257,7 +257,11 @@ const SOLID_BAR = 0.75;
  *   reason is one of: 'untouched', 'thin', 'lesson', 'weakest', 'fresh'
  */
 export function nextUp(profile) {
-  const unlocked = unlockedModules(profile.level);
+  // The chapters you can open. Once the course is bought rather than handed
+  // out by rank, recommending a chapter still on the shelf would send the
+  // reader to a price tag; the shelf has its own line for that.
+  const unlocked = unlockedModules(profile.level)
+    .filter((m) => typeof profile.canStudy !== 'function' || profile.canStudy(m.id));
   if (!unlocked.length) return null;
   const statsOf = (m) => profile.drillStats(m.id);
   // Read the same recent answers the tiers do. Scoring lifetime totals left

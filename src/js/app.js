@@ -30,6 +30,9 @@ import { renderTable } from './ui/screenTable.js';
 import { renderReview } from './ui/screenReview.js';
 import { renderStats, renderCharts, renderGlossary } from './ui/screenStats.js';
 import { renderLevels } from './ui/screenLevels.js';
+import { renderStore } from './ui/screenStore.js';
+import { renderReport } from './ui/screenReport.js';
+import { pearl } from './ui/shop.js';
 import * as audio from './audio/engine.js';
 
 /**
@@ -58,6 +61,8 @@ const ROUTES = {
   glossary: { render: renderGlossary, dock: 'ledger', title: 'The Almanac' },
   stats: { render: renderStats, dock: 'ledger', title: 'Your Cabin' },
   levels: { render: renderLevels, dock: 'ledger', title: 'Your Papers' },
+  store: { render: renderStore, dock: 'ledger', title: 'The Trading Post' },
+  report: { render: renderReport, dock: 'play', title: 'Silas\'s notes' },
 };
 
 /** The four places you go most, and the ledger for the rest. */
@@ -85,11 +90,13 @@ const LEDGER = [
     items: [
       { route: 'home', label: 'The river', icon: 'river', note: 'Eight tables down to the delta' },
       { route: 'play', label: 'Free table', icon: 'cards', note: 'Six-handed, with no bankroll at stake' },
+      { route: 'store', label: 'The Trading Post', icon: 'store', note: 'Spend your pearls: chapters, charts, companions' },
     ],
   },
   {
     title: 'Records',
     items: [
+      { route: 'report', label: 'Silas\'s notes', icon: 'notes', note: 'What he saw at your last sittings' },
       { route: 'review', label: 'The Log', icon: 'review', note: 'Hand review: the hands worth a second look' },
       { route: 'charts', label: 'The Chart Room', icon: 'charts', note: 'Every range chart, by seat' },
       { route: 'glossary', label: 'The Almanac', icon: 'glossary', note: 'Glossary: every word the tables use' },
@@ -330,6 +337,11 @@ function drawHud() {
       el('span.crest-name', 'Poker Trainer'),
     ),
     purse(),
+    el('button.pearl-chip', {
+      onclick: () => go('store'),
+      title: t('Your pearls. The tables pay them; the Trading Post takes them.'),
+      'aria-label': t('{n} pearls — the Trading Post', { n: profile.pearls }),
+    }, pearl(18), el('span.pearl-count', fmt.chips(profile.pearls))),
     el('button.rank-chip', {
       onclick: () => go('levels'),
       title: `${rank.blurb} — click to see what the next rank asks for`,

@@ -23,7 +23,7 @@ import { requiredEquity, potOddsRatio, spr } from '../core/odds.js';
 import { sizingContext, potFraction, clampRaise, sizingOffers } from '../core/betSizing.js';
 import { evaluateHand, describeScore, shortCategoryName, categoryOf, CAT } from '../core/evaluator.js';
 import { judgeSpot } from '../core/coach.js';
-import { conceptOf, isUnlocked } from '../core/spotConcept.js';
+import { conceptOf } from '../core/spotConcept.js';
 import { moduleMeta, MODULE_META } from '../data/curriculum.js';
 import { lessonTable } from '../data/lessonTables.js';
 import {
@@ -45,6 +45,13 @@ import { bossFor, MENTOR } from '../data/characters.js';
 import { svgNode, lampNode } from './place.js';
 import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
+import {
+  ownsLesson, LESSON_PRICES, ownedCompanions, decisionPearls, handPearls, EARN,
+} from '../state/economy.js';
+import { lockedChapter } from './screenDrill.js';
+import { helpDrawer, companionTitle } from './companions.js';
+import { pearlPop, pearls as pearlsNode } from './shop.js';
+import { buildReport, keepReport } from '../state/sessionReport.js';
 
 const BOT_DELAY = 620;
 
@@ -136,6 +143,12 @@ export function renderTable(ctx, params = {}) {
   // game — a header promising a lesson that was not there.
   const lessonMeta = lesson && params.lesson ? moduleMeta(params.lesson) : null;
 
+  // A lesson table is part of the chapter, so it is only dealt to somebody
+  // who owns the chapter.
+  if (params.lesson && moduleMeta(params.lesson) && !ownsLesson(profile, params.lesson)) {
+    return lockedChapter(ctx, moduleMeta(params.lesson));
+  }
+
   if (params.lesson && !lesson) {
     const meta = moduleMeta(params.lesson);
     return el('div.screen', el('div.panel',
@@ -157,6 +170,14 @@ export function renderTable(ctx, params = {}) {
     ));
   }
   const seats = lesson ? lesson.seats : 6;
+
+  // Free play is the table. Silas at your shoulder, grading every decision
+  // out loud, is a choice the reader makes with the switch in the header —
+  // except at a lesson table, where the teaching is the point of sitting.
+  const liveCoach = () => Boolean(lesson) || Boolean(profile.settings.liveCoach);
+  // Which opponents you can read by their label: all of them with Silas
+  // talking, and with the hound — who reads people for a living — on your side.
+  const showTags = () => liveCoach() || profile.owns('pet:hound');
 
   const opponents = pickOpponents(seats - 1, rng);
   // At a stop, the person who owns its table is sitting at it. They play the
@@ -247,6 +268,17 @@ export function renderTable(ctx, params = {}) {
     boardHeard: 0,
     // Hands dealt silently while a lesson looks for its spot make no noise.
     quiet: false,
+    // Help, asked for on this decision only: whether the drawer is open, which
+    // companion it opened on, and whether this decision has been helped at
+    // all — which costs it its pearl and its credit.
+    helpOpen: false,
+    helpFocus: null,
+    helped: false,
+    // Silas's notes: every decision as graded, whether or not he said so.
+    graded: [],
+    pearls: { hands: 0, decisions: 0, bonus: 0 },
+    savedHandIds: [],
+    showLog: false,
   };
   // The same object, not a copy: the opponents read what the reader does.
   table.readerMemory = session.readerMemory;
@@ -259,6 +291,14 @@ export function renderTable(ctx, params = {}) {
   // takes the book's ink.
   const coachHost = el('div.coach.paper');
   const lessonNoteHost = el('div');
+  // Under the felt: the help button, your companions, what this sitting has
+  // paid so far — and the drawer they open.
+  const trayHost = el('div.tray-host');
+  const helpHost = el('div.help-host');
+  const coachToggle = el('button.btn.sm.ghost.coach-toggle', { onclick: () => setLiveCoach(!profile.settings.liveCoach) });
+  const wrap = el(`div.table-wrap${liveCoach() ? '.with-coach' : '.free-play'}`,
+    el('div.table-main', el('div.saloon-stage', lampNode(), feltHost), actionHost, trayHost, helpHost),
+    liveCoach() ? coachHost : null);
   const root = el('div.screen',
     el('div.spread.table-head', { style: { marginBottom: '14px' } },
       grind
@@ -274,6 +314,7 @@ export function renderTable(ctx, params = {}) {
         ),
       el('div.row',
         !grind && !lesson ? variantSwitcher(variantKey, go) : null,
+        lesson ? null : coachToggle,
         lesson
           ? el('button.btn.sm.ghost', { onclick: () => go('walkthrough', { module: params.lesson }) },
             t('Read the lesson'))
@@ -285,11 +326,27 @@ export function renderTable(ctx, params = {}) {
     // that stops on the flop is not the game — saying so is the difference
     // between a simplification and a lie.
     lesson ? lessonNoteHost : null,
-    el('div.table-wrap.with-coach',
-      el('div', el('div.saloon-stage', lampNode(), feltHost), actionHost),
-      coachHost),
+    wrap,
   );
   root.classList.add('saloon');
+
+  /** Silas out loud, or free play: flipped in place, mid-session. */
+  function setLiveCoach(on) {
+    profile.updateSettings({ liveCoach: on });
+    wrap.classList.toggle('free-play', !on);
+    wrap.classList.toggle('with-coach', on);
+    if (on && !coachHost.isConnected) wrap.appendChild(coachHost);
+    if (!on && coachHost.isConnected) coachHost.remove();
+    draw();
+  }
+  function drawCoachToggle() {
+    const on = Boolean(profile.settings.liveCoach);
+    mount(coachToggle, icon(on ? 'coach' : 'help', { size: 14 }), ' ',
+      on ? t('Silas: at my shoulder') : t('Silas: quiet'));
+    coachToggle.title = on
+      ? t('Silas grades every decision as you make it. Click for free play.')
+      : t('Free play: Silas says nothing unless you ask, and leaves notes for when you get up.');
+  }
 
   ctx.onLeave = () => {
     session.cancelled = true;
@@ -517,7 +574,9 @@ export function renderTable(ctx, params = {}) {
 
     if (actor.isHero) {
       session.snapshot = takeSnapshot();
-      session.read = readPrompt();
+      // Asking for a read before the buttons is the coach talking. In free
+      // play nobody stops you to ask.
+      session.read = liveCoach() ? readPrompt() : null;
 
       // In a lesson, the hero is played for them through every decision the
       // lesson has not taught yet, and handed back the moment its own spot
@@ -530,6 +589,9 @@ export function renderTable(ctx, params = {}) {
 
       // A new decision is a new chance to work it out yourself.
       session.peeked = false;
+      session.helped = false;
+      session.helpOpen = false;
+      session.helpFocus = null;
       sound('nudge');
       draw();
       return null;
@@ -577,15 +639,19 @@ export function renderTable(ctx, params = {}) {
    * a drill answer — nobody told you which skill it was — so it counts the
    * same way, under the name the coach gave it.
    */
-  function recordLearning(verdict) {
+  function recordLearning(verdict, helped = false) {
     const id = verdict.concept.id;
     const right = verdict.level !== 'bad';
-    profile.recordDrill(id, right);
-    review(profile, id, right);
     const meta = moduleMeta(id);
-    session.learned.push({ id, name: meta ? meta.name : id, right });
+    session.learned.push({ id, name: meta ? meta.name : id, right, helped });
     session.decisions.total++;
     if (right) session.decisions.right++;
+    // A decision made with help still happened, and still shows in the hand
+    // — but it is not evidence of what you know, the same rule every drill
+    // applies to an answer read off the chart.
+    if (helped) return;
+    profile.recordDrill(id, right);
+    review(profile, id, right);
     // Getting it right at a table is worth more than getting it right in a
     // drill, and getting it wrong still teaches — so it is never zero.
     profile.addXp(right ? 12 : 4);
@@ -645,7 +711,28 @@ export function renderTable(ctx, params = {}) {
     watch(session.readerMemory, { facingBet: snap.toCall > 0, action: action.type });
     const verdict = judgeSpot({ ...snap, action: action.type, amount: action.amount });
     session.verdict = verdict;
-    recordLearning(verdict);
+    const helped = session.helped || session.peeked;
+    recordLearning(verdict, helped);
+    // Into Silas's notes, said out loud or not; and the pearl, if it earned one.
+    session.graded.push({
+      skill: verdict.concept.id,
+      level: verdict.level,
+      street: table.street,
+      action: action.type,
+      helped,
+      head: verdict.head,
+      costBb: verdict.cost ? verdict.cost / bigBlind : 0,
+      hand: table.handNumber,
+      handId: null,
+    });
+    const earned = lesson ? 0 : decisionPearls({ level: verdict.level, street: table.street, action: action.type, helped });
+    if (earned) {
+      session.pearls.decisions += earned;
+      profile.earnPearls(earned);
+      pearlPop(earned, trayHost);
+    }
+    session.helpOpen = false;
+    session.helpFocus = null;
     // Only the lesson's own spots count toward the run. A hand where the
     // autopilot handed you a decision that belongs to another module would
     // otherwise be marked against a lesson that never asked it.
@@ -709,6 +796,18 @@ export function renderTable(ctx, params = {}) {
       profile.data.handsPlayed++;
       profile.save();
     }
+    // A pearl for the hand — more at the stops further down the river. A
+    // lesson table pays in XP only: it is a chapter, not a game.
+    if (!lesson) {
+      const paid = profile.earnPearls(handPearls(room ? room.index : null));
+      session.pearls.hands += paid;
+      if (paid) pearlPop(paid, trayHost);
+    }
+    // The notes point at the replay of any hand that was kept.
+    if (session.savedHand) {
+      session.savedHandIds.push(session.savedHand.id);
+      for (const d of session.graded) if (d.hand === table.handNumber) d.handId = session.savedHand.id;
+    }
 
     // The river runs out loud if everybody was all in before it was dealt.
     boardSound();
@@ -739,6 +838,22 @@ export function renderTable(ctx, params = {}) {
 
   }
 
+  /** Silas's notes on the sitting, written the moment you get up. */
+  function writeReport(cash = null) {
+    if (lesson || !stats.hands) return null;
+    const report = buildReport({
+      place: grind
+        ? { kind: 'stop', key: room.key, name: room.name, label: room.label }
+        : { kind: 'practice', key: 'practice', name: 'Silas\'s practice table' },
+      stats,
+      graded: session.graded,
+      pearls: session.pearls,
+      savedHands: session.savedHandIds,
+      cash,
+    });
+    return keepReport(profile, report);
+  }
+
   function leave() {
     session.cancelled = true;
     clearTimeout(session.timer);
@@ -763,13 +878,18 @@ export function renderTable(ctx, params = {}) {
       // have been, and its owner gives you something to remember it by.
       const spent = session.buyInsUsed * stake.buyIn;
       const took = cashOut - stake.buyIn >= stake.buyIn && profile.noteResidentBeaten(room.key);
+      // Taking somebody's table is the biggest thing the river pays for.
+      if (took) session.pearls.bonus += profile.earnPearls(EARN.tableTaken);
       const after = took ? 'took' : cashOut > spent ? 'up' : cashOut < spent ? 'down' : 'even';
-      go('stop', { at: room.key, after });
+      const notes = writeReport({ spent, back: cashOut });
+      go('stop', notes === null ? { at: room.key, after } : { at: room.key, after, notes });
       return;
     } else if (stats.hands) {
       profile.recordSession({ hands: stats.hands, profitBb: stats.profitBb, stake: 'practice', endedAt: Date.now() });
     }
-    go('home');
+    const notes = writeReport();
+    if (notes !== null) go('report', { i: notes });
+    else go('home');
   }
 
   /** Mounts the rebuy panel only. Never calls draw(): drawActions routes here. */
@@ -832,7 +952,122 @@ export function renderTable(ctx, params = {}) {
     drawLessonNote();
     drawFelt();
     drawActions();
-    drawCoach();
+    if (liveCoach()) drawCoach();
+    drawTray();
+    drawHelp();
+    if (!lesson) drawCoachToggle();
+  }
+
+  const isHeroTurn = () => Boolean(table.actor && table.actor.isHero && !table.handOver && session.handStarted);
+
+  /** Open help on this decision — from the button, or from one companion. */
+  function openHelp(focus = null) {
+    if (!isHeroTurn() || !session.snapshot) return;
+    session.helped = true;
+    session.helpOpen = true;
+    session.helpFocus = focus;
+    sound('page');
+    draw();
+  }
+
+  /**
+   * The tray under the felt: the help button, your companions, and what this
+   * sitting has paid so far. The hand log folds away here in free play,
+   * where there is no coach panel for it to live in.
+   */
+  function drawTray() {
+    const owned = ownedCompanions(profile);
+    const yourTurn = isHeroTurn();
+    const total = session.pearls.hands + session.pearls.decisions + session.pearls.bonus;
+    mount(trayHost, el('div.companion-tray',
+      el(`button.btn.help-btn${session.helped ? '.used' : ''}`, {
+        disabled: !yourTurn,
+        onclick: () => openHelp(null),
+        title: t('Help with this decision. It costs the decision its pearl.'),
+      }, icon('help', { size: 18 }), ' ', t('Help')),
+      el('div.tray-pets',
+        owned.map((c) => el('button.tray-pet', {
+          disabled: !yourTurn,
+          title: companionTitle(c.key),
+          'aria-label': companionTitle(c.key),
+          onclick: () => openHelp(c.key),
+        }, svgNode(portraitSvg(c.key, { size: 38 }), 'tray-face'))),
+        owned.length ? null : el('button.tray-pet.empty', {
+          title: t('Companions from the Trading Post sit here'),
+          onclick: () => go('store'),
+        }, icon('paw', { size: 16 })),
+      ),
+      lesson ? null : el('span.tray-pearls', { title: t('Pearls this sitting') }, pearlsNode(total)),
+      liveCoach() ? null : el('button.btn.sm.ghost.tray-log', {
+        onclick: () => { session.showLog = !session.showLog; draw(); },
+      }, icon('clipboard', { size: 14 }), ' ', session.showLog ? t('Hide the log') : t('Hand log')),
+    ));
+    if (!liveCoach() && session.showLog) {
+      trayHost.appendChild(el('div.log.tray-log-body', session.logLines.slice().reverse().map((l) =>
+        el(`div${l.isStreet ? '.street-line' : ''}`, l.line))));
+    }
+  }
+
+  /** The drawer, for as long as this decision is open. */
+  function drawHelp() {
+    if (!session.helpOpen || !isHeroTurn() || !session.snapshot) return mount(helpHost);
+    const snap = session.snapshot;
+    const spot = lesson && lesson.coachNote ? { id: params.lesson, why: lesson.coachNote } : conceptOf(snap);
+    return mount(helpHost, helpDrawer({
+      owned: ownedCompanions(profile),
+      snap,
+      spot,
+      handText: hero.hole.length && table.board.length
+        ? describeScore(evaluateHand(hero.hole, table.board, table.variant), table.variant.shortDeck)
+        : t('{hand}, before the flop', { hand: hero.hole.length === 2 ? handKey(hero.hole) : cardsToString(hero.hole) }),
+      opponents: table.contestants.filter((p) => !p.isHero).map((p) => {
+        const profileOf = p.profile ? getProfile(p.profile) : null;
+        const isBoss = p.id === bossId;
+        return {
+          name: p.name,
+          style: profileOf ? profileOf.style : '',
+          read: isBoss ? boss.read : profileOf ? profileOf.counter : '',
+          adjusted: profileOf ? Boolean(adaptationNote(profileOf, session.readerMemory, table.readerLevel)) : false,
+        };
+      }),
+      bestAction: () => bestAction(snap),
+      focus: session.helpFocus,
+      onClose: () => { session.helpOpen = false; draw(); },
+    }));
+  }
+
+  /**
+   * What Silas would do: every legal action graded the way the coach grades
+   * the one you pick, and the best of them. Ties go to the quieter action —
+   * a check before a bet, a call before a raise — since the grader calls them
+   * equal and the quieter one risks less.
+   */
+  function bestAction(snap) {
+    const legal = table.legalActions(hero);
+    const raiseSpec = legal.find((a) => a.type === 'raise' || a.type === 'bet');
+    const candidates = [];
+    for (const a of legal) {
+      if (a.type === 'check') candidates.push({ type: 'check', label: t('check') });
+      if (a.type === 'call') candidates.push({ type: 'call', label: t('call {amount}', { amount: fmt.chips(snap.toCall) }) });
+    }
+    if (raiseSpec) {
+      const context = sizingContext(table, hero, raiseSpec);
+      for (const f of [0.33, 0.75]) {
+        const amount = clampRaise(raiseSpec, potFraction(context, f));
+        const label = raiseSpec.type === 'bet'
+          ? t('bet {amount}', { amount: fmt.chips(amount) })
+          : t('raise to {amount}', { amount: fmt.chips(amount) });
+        if (!candidates.some((c) => c.amount === amount)) candidates.push({ type: raiseSpec.type, amount, label });
+      }
+    }
+    if (legal.some((a) => a.type === 'fold') && snap.toCall > 0) candidates.push({ type: 'fold', label: t('fold') });
+    const rank = { good: 2, ok: 1, bad: 0 };
+    let best = null;
+    for (const c of candidates) {
+      const verdict = judgeSpot({ ...snap, action: c.type, amount: c.amount });
+      if (!best || rank[verdict.level] > rank[best.verdict.level]) best = { ...c, verdict };
+    }
+    return best;
   }
 
   function drawFelt() {
@@ -849,7 +1084,7 @@ export function renderTable(ctx, params = {}) {
         lastAction: p.lastAction,
         hole: p.hole,
         isHero: p.isHero,
-        tag: !p.isHero && p.profile ? getProfile(p.profile).tag : null,
+        tag: !p.isHero && p.profile && showTags() ? getProfile(p.profile).tag : null,
         wonPot: table.handOver && p.wonThisHand > 0,
         portrait: faces[p.id] || null,
         boss: p.id === bossId,
@@ -1004,12 +1239,17 @@ export function renderTable(ctx, params = {}) {
           ? el('div.spread',
               el('div',
                 el('div', { style: { fontWeight: '650' } }, resultHeadline(result, table)),
-                el('div.faint', `You ${result.net[HERO_ID] >= 0 ? 'won' : 'lost'} ${fmt.chips(Math.abs(result.net[HERO_ID]))} chips this hand.`),
+                el('div.faint', result.net[HERO_ID] >= 0
+                  ? t('You won {n} chips this hand.', { n: fmt.chips(Math.abs(result.net[HERO_ID])) })
+                  : t('You lost {n} chips this hand.', { n: fmt.chips(Math.abs(result.net[HERO_ID])) })),
               ),
               el('div.row',
                 // Straight from the hand you just misplayed into the replay of
                 // it: this is the moment the spot is still in your head.
-                session.savedHand
+                // In free play the verdict is Silas's to give when you get up,
+                // and a button that only appears after a mistake would give it
+                // away hand by hand.
+                session.savedHand && liveCoach()
                   ? el('button.btn.lg.ghost', {
                       onclick: () => go('review', { hand: session.savedHand.id }),
                     }, 'Review this hand')
@@ -1248,8 +1488,9 @@ export function renderTable(ctx, params = {}) {
               // Pointing at a chapter the reader cannot open is worse than
               // useless unless it says so. A quarter of the spots at level
               // two land here.
-              spotMeta && !isUnlocked(spot.id, profile.level, MODULE_META)
-                ? el('div.faint', t('You unlock this one at level {n}.', { n: spotMeta.unlockLevel }))
+              spotMeta && !ownsLesson(profile, spot.id)
+                ? el('div.faint', t('That chapter is on the shelf at the Trading Post — {n} pearls.',
+                  { n: LESSON_PRICES[spot.id] }))
                 : null,
             ),
           )

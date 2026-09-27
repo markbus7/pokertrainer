@@ -173,6 +173,7 @@ function prologue(state, profile, rerender) {
     el('p.said', t('The Long River runs from Mud Landing down to the delta. At every stop there is a card table, and somebody who owns it. At the end sits the Commodore, who owns most of the rest.')),
     el('p.said', t('You have {money} and a borrowed rowboat. Every seat is paid out of that purse, and a stop further down will only have you once the purse can stand its stakes.', { money: fmt.money(state.bankroll) })),
     el('p.said', t('Beat the one who owns a table and they give you something to remember them by. Lose the purse and the house stakes you back in — and writes it down.')),
+    el('p.said', t('The tables pay in pearls, too: one for every hand, one more for every hand played well. Pearls buy your lessons, your charts and your companions at the Trading Post — so the first thing to do is play.')),
     el('button.btn.primary.plank', {
       onclick: () => {
         profile.data.seenPrologue = true;

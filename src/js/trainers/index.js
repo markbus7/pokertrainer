@@ -70,8 +70,8 @@ export function difficultyForLevel(level) {
  * This is the mode that actually proves you have learned something, because
  * you do not know which skill each question will test.
  */
-export function generateGauntlet(rng, level, count = 10) {
-  const modules = unlockedModules(level).map((m) => m.id).filter((id) => GENERATORS[id]);
+export function generateGauntlet(rng, level, count = 10, only = null) {
+  const modules = (only || unlockedModules(level).map((m) => m.id)).filter((id) => GENERATORS[id]);
   if (!modules.length) return [];
   const difficulty = difficultyForLevel(level);
   const questions = [];

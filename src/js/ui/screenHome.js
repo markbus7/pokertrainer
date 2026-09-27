@@ -25,6 +25,8 @@ import { handSummary } from '../state/handHistory.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
 import { MENTOR } from '../data/characters.js';
 import { sceneBanner, silasSays } from './place.js';
+import { ownsLesson, ownedModules, nextPurchase, LESSON_PRICES } from '../state/economy.js';
+import { buyControl, pearls } from './shop.js';
 
 const RANGE_KEYS = CHECKPOINTS.map((c) => c.key);
 
@@ -70,6 +72,7 @@ export function renderHome(ctx) {
           el('span.faint', describeProgress(profile, recommended.id)),
         ),
       ),
+      shelfLine(profile, go),
     ),
 
     el('div.school-floor',
@@ -77,10 +80,11 @@ export function renderHome(ctx) {
       el('section.course',
         el('div.course-head',
           el('h2.sign', t('The course')),
-          el('span.faint', t('{n} of {total} unlocked', {
-            n: MODULE_META.filter((m) => m.unlockLevel <= profile.level).length,
+          el('span.faint', t('{n} of {total} yours', {
+            n: ownedModules(profile).length,
             total: MODULE_META.length,
           })),
+          el('span.course-purse', pearls(profile.pearls)),
         ),
         el('ol.trail',
           MODULE_META.map((meta, i) => chapter(meta, i, profile, go, recommended.id)),
@@ -172,7 +176,7 @@ function record(profile) {
  * concept at the right moment — a schedule nobody is shown is just a record.
  */
 function duePanel(profile, go) {
-  const unlocked = MODULE_META.filter((m) => m.unlockLevel <= profile.level);
+  const unlocked = ownedModules(profile);
   const started = unlocked.filter((m) => hasStudied(profile, m.id));
   if (!started.length) return null;
 
@@ -306,11 +310,35 @@ function statTile(label, value, sub = '') {
   );
 }
 
+/**
+ * The next chapter on the shelf, under Silas's recommendation: what it costs,
+ * how far the purse is from it, and the button when it is not far at all.
+ * Absent when the rank allows nothing new — the certificate beside it already
+ * says what the next rank asks for.
+ */
+function shelfLine(profile, go) {
+  const next = nextPurchase(profile);
+  if (!next) return null;
+  const meta = MODULE_META.find((m) => m.id === next.item.module);
+  return el('div.shelf-line',
+    el('span.shelf-what',
+      icon('store', { size: 16 }),
+      el('span', t('Next on the shelf: {module}', { module: t(meta.name) })),
+    ),
+    buyControl(profile, next.item.key, { go, onBought: () => go('learn', { module: meta.id }) }),
+  );
+}
+
 /** Stars for a tier: none to start, one learning, two solid, three mastered. */
 const STARS = { untouched: 0, learning: 1, solid: 2, mastered: 3 };
 
 function chapter(meta, index, profile, go, recommendedId) {
-  const locked = meta.unlockLevel > profile.level;
+  const rankLocked = meta.unlockLevel > profile.level && !ownsLesson(profile, meta.id);
+  // On the shelf: the rank allows it and it has not been bought. It opens,
+  // onto its price, rather than sitting shut like a chapter the rank does
+  // not reach yet.
+  const shelved = !rankLocked && !ownsLesson(profile, meta.id);
+  const locked = rankLocked || shelved;
   // Silas names one chapter; without a marker on the trail the reader has
   // to match a name against twelve, several of which read "Learning".
   const isNext = !locked && meta.id === recommendedId;
@@ -320,13 +348,13 @@ function chapter(meta, index, profile, go, recommendedId) {
   const goal = locked ? null : nextTierGoal(profile, meta.id);
   const stars = STARS[tier] || 0;
 
-  return el(`li.trail-stop${locked ? '.locked' : ''}${isNext ? '.is-next' : ''}.tier-${tier}`,
+  return el(`li.trail-stop${locked ? '.locked' : ''}${shelved ? '.shelved' : ''}${isNext ? '.is-next' : ''}.tier-${tier}`,
     el(`button.module-tile${locked ? '.locked' : ''}${isNext ? '.next-up' : ''}`, {
-      disabled: locked,
-      onclick: () => !locked && go('learn', { module: meta.id }),
+      disabled: rankLocked,
+      onclick: () => !rankLocked && go('learn', { module: meta.id }),
     },
       el('span.medallion', { 'aria-hidden': 'true' },
-        el('span.medallion-face', locked ? icon('lock', { size: 22 }) : icon(meta.icon, { size: 24 })),
+        el('span.medallion-face', rankLocked ? icon('lock', { size: 22 }) : shelved ? icon('store', { size: 22 }) : icon(meta.icon, { size: 24 })),
         el('span.medallion-num', String(index + 1)),
       ),
       el('span.chapter-card.paper',
@@ -339,15 +367,19 @@ function chapter(meta, index, profile, go, recommendedId) {
         el('span.tagline', meta.tagline),
         el('span.chapter-badges',
           isNext ? el('span.badge.next-badge', t('DO THIS NEXT')) : null,
-          locked
+          shelved ? el('span.badge.price-badge', pearls(LESSON_PRICES[meta.id])) : null,
+          rankLocked
             ? el('span.badge', t('Level {level}', { level: meta.unlockLevel }))
+            : shelved ? null
             : tier !== 'untouched'
               ? el(`span.badge${tierInfo.tone ? `.${tierInfo.tone}` : ''}`, tierInfo.icon, ' ', t(tierInfo.name))
               : null,
         ),
-        el('span.mastery', locked
+        el('span.mastery', rankLocked
           ? t('Unlocks at {rank}', { rank: t(RANKS[meta.unlockLevel - 1].name) })
-          : scoreLine(profile, meta.id)),
+          : shelved
+            ? t('On the shelf at the Trading Post')
+            : scoreLine(profile, meta.id)),
         // What is still missing, not what the target is. A tile that reads
         // "90%" next to "Solid at 15 questions at 75%" looks like a hand
         // already met: the count is the half that is short.
