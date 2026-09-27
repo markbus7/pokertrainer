@@ -7,169 +7,11 @@
  * tokens. That is what lets one drawing be the river by moonlight, at dusk,
  * in the bayou green and by day without four copies of it.
  *
- * Split from the screens so the geometry can be checked without a browser:
- * where each stop sits, where the river runs past it, and that the two never
- * overlap are plain arithmetic.
+ * The drawings live here — each stop's landmark, each boat, the scene at a
+ * stop — and worldMap.js lays them out on the chart of the whole river.
  */
 
-/** The map's own coordinate space. The page scales it to fit. */
-export const MAP = { W: 400, H: 1410, top: 184, gap: 150 };
-
-const STOPS = 8;
-
-/** Where stop `i` stands, and which bank it is on (-1 left, 1 right). */
-export function stopPoint(i) {
-  const side = i % 2 === 0 ? -1 : 1;
-  return { x: side < 0 ? 104 : 296, y: MAP.top + i * MAP.gap, side };
-}
-
-/** The river swings away from each stop's bank to leave it room. */
-const knots = () => [
-  [214, -40],
-  [224, 70],
-  ...Array.from({ length: STOPS }, (_, i) => {
-    const { y, side } = stopPoint(i);
-    return [side < 0 ? 236 : 164, y];
-  }),
-  [214, 1326],
-  [206, 1450],
-];
-
-/** Width of the river at height y: a creek at the top, wide at the delta. */
-const widthAt = (y) => 34 + Math.max(0, Math.min(1, y / 1270)) * 40;
-
-/** Catmull-Rom through the knots, sampled evenly in parameter. */
-function sampleCenterline(perSegment = 40) {
-  const k = knots();
-  const out = [];
-  for (let s = 0; s < k.length - 1; s++) {
-    const p0 = k[Math.max(0, s - 1)];
-    const p1 = k[s];
-    const p2 = k[s + 1];
-    const p3 = k[Math.min(k.length - 1, s + 2)];
-    for (let j = 0; j < perSegment; j++) {
-      const t = j / perSegment;
-      const t2 = t * t;
-      const t3 = t2 * t;
-      const f = (a, b, c, d) => 0.5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
-      out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
-    }
-  }
-  out.push(k[k.length - 1]);
-  return out;
-}
-
-let cached = null;
-
-/** The river as the page needs it: centreline, both banks, and a lookup. */
-export function riverGeometry() {
-  if (cached) return cached;
-  const center = sampleCenterline();
-  const left = [];
-  const right = [];
-  center.forEach(([x, y], i) => {
-    const [ax, ay] = center[Math.max(0, i - 1)];
-    const [bx, by] = center[Math.min(center.length - 1, i + 1)];
-    const len = Math.hypot(bx - ax, by - ay) || 1;
-    const nx = -(by - ay) / len;
-    const ny = (bx - ax) / len;
-    const half = widthAt(y) / 2;
-    left.push([x - nx * half, y - ny * half]);
-    right.push([x + nx * half, y + ny * half]);
-  });
-  /** Centreline x at height y (the river never doubles back on itself). */
-  const xAt = (y) => {
-    for (let i = 1; i < center.length; i++) {
-      if (center[i][1] >= y) {
-        const [x0, y0] = center[i - 1];
-        const [x1, y1] = center[i];
-        return x0 + ((y - y0) / ((y1 - y0) || 1)) * (x1 - x0);
-      }
-    }
-    return center[center.length - 1][0];
-  };
-  cached = { center, left, right, xAt, widthAt };
-  return cached;
-}
-
-/* ------------------------------------------------------------------ *
- * A small deterministic scatter, so the trees do not move on a redraw
- * ------------------------------------------------------------------ */
-
-function seeded(seed) {
-  let s = seed >>> 0;
-  return () => {
-    s = (s + 0x6d2b79f5) >>> 0;
-    let x = s;
-    x = Math.imul(x ^ (x >>> 15), x | 1);
-    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
-    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 const f1 = (n) => Math.round(n * 10) / 10;
-const pts = (list) => list.map(([x, y]) => `${f1(x)} ${f1(y)}`).join(' L');
-
-/** Keep scenery off the water, the stops, their name plates and the title. */
-function clearOfEverything(x, y, pad) {
-  const { xAt } = riverGeometry();
-  if (y < 128) return false;
-  if (y > 1306) return false;
-  if (Math.abs(x - xAt(y)) < widthAt(y) / 2 + pad) return false;
-  for (let i = 0; i < STOPS; i++) {
-    const s = stopPoint(i);
-    if (Math.abs(x - s.x) < 58 + pad && y > s.y - 52 - pad && y < s.y + 92 + pad) return false;
-  }
-  return true;
-}
-
-function scenery() {
-  const rnd = seeded(1890);
-  const trees = [];
-  const fields = [];
-  const reeds = [];
-  const ripples = [];
-  const { center, xAt } = riverGeometry();
-
-  for (let n = 0; n < 900 && trees.length < 150; n++) {
-    const x = 10 + rnd() * 380;
-    const y = 128 + rnd() * 1180;
-    if (!clearOfEverything(x, y, 10)) continue;
-    const r = 4 + rnd() * 4;
-    trees.push(`<g class="tree" transform="translate(${f1(x)} ${f1(y)})">`
-      + `<ellipse class="tree-shade" cx="2" cy="${f1(r + 1.5)}" rx="${f1(r * 0.9)}" ry="1.6"/>`
-      + `<path class="tree-trunk" d="M0 ${f1(r * 0.5)}V${f1(r + 1.5)}"/>`
-      + `<circle class="tree-crown" r="${f1(r)}"/></g>`);
-  }
-
-  for (let n = 0; n < 400 && fields.length < 14; n++) {
-    const x = 20 + rnd() * 330;
-    const y = 150 + rnd() * 1140;
-    if (!clearOfEverything(x, y, 36) || !clearOfEverything(x + 40, y + 20, 14)) continue;
-    const w = 26 + rnd() * 14;
-    const rows = [];
-    for (let k = 3; k < 22; k += 4) rows.push(`M${f1(x)} ${f1(y + k)}h${f1(w)}`);
-    fields.push(`<path class="field" d="M${f1(x)} ${f1(y)}h${f1(w)}l6 22h-${f1(w)}z"/>`
-      + `<path class="furrow" d="${rows.join('')}"/>`);
-  }
-
-  for (let i = 8; i < center.length - 8; i += 3) {
-    const [, y] = center[i];
-    if (y < 128 || y > 1300) continue;
-    if (rnd() < 0.55) continue;
-    const side = rnd() < 0.5 ? -1 : 1;
-    const x = xAt(y) + side * (widthAt(y) / 2 + 2);
-    reeds.push(`M${f1(x)} ${f1(y)}v-6M${f1(x + 2.5)} ${f1(y + 1)}v-5M${f1(x - 2.5)} ${f1(y + 1)}v-4`);
-  }
-
-  for (let i = 6; i < center.length - 4; i += 7) {
-    const [, y] = center[i];
-    const x = xAt(y) + (rnd() - 0.5) * widthAt(y) * 0.5;
-    ripples.push(`M${f1(x - 6)} ${f1(y)}q3 -3 6 0t6 0`);
-  }
-
-  return { trees: trees.join(''), fields: fields.join(''), reeds: reeds.join(''), ripples: ripples.join('') };
-}
 
 /* ------------------------------------------------------------------ *
  * The landmarks, one per stop, drawn around (0,0) in about 80 x 64
@@ -350,6 +192,22 @@ export const LANDMARKS = {
       <path class="ink" d="M20 5h16M28 -3v16M22.3 -.7l11.4 11.4M33.7 -.7l-11.4 11.4"/>
     </g>`,
 
+  // The saloon by the landing: a false front, a balcony rail, swinging
+  // doors, and a hitching post outside.
+  saloon: () => `
+    <path class="ground" d="M-42 18h84"/>
+    <path class="wall ink" d="M-30 18V-6h56v24z"/>
+    <path class="wall ink" d="M-34 -6V-27h64v21z"/>
+    <path class="roof ink" d="M-36 -27h68v-3h-68z"/>
+    <rect class="mark ink" x="-25" y="-23" width="46" height="9"/>
+    <path class="ink" d="M-19 -18.5h34"/>
+    <path class="roof ink" d="M-35 -6h66v3h-66z"/>
+    <path class="ink" d="M-33 -3v-7M-21 -3v-7M-9 -3v-7M3 -3v-7M15 -3v-7M27 -3v-7M-33 -10h60"/>
+    <rect class="glow" x="-26" y="3" width="8" height="8"/>
+    <rect class="glow" x="14" y="3" width="8" height="8"/>
+    <path class="roof ink" d="M-8 17v-10h7v10zM1 17v-10h7v10z"/>
+    <path class="ink" d="M32 18v-11M42 18v-11M30 9h14"/>`,
+
   // A general store on stilts where two rivers meet: a porch, barrels, a
   // board over the door and a flag to find it by.
   tradingpost: () => `
@@ -471,80 +329,4 @@ export function sceneSvg({ id, landmark, orbLeft = false, boat = null, arriving 
 export function landmarkSvg(key, { width = 240 } = {}) {
   const art = (LANDMARKS[key] || LANDMARKS.landing)();
   return `<svg class="landmark-art" viewBox="-48 -50 96 78" width="${width}" aria-hidden="true">${art}</svg>`;
-}
-
-/* ------------------------------------------------------------------ *
- * The whole map
- * ------------------------------------------------------------------ */
-
-/**
- * @param {object} state
- *   here   index of the stop you are at
- *   best   index of the furthest stop reached
- *   open   highest index your bankroll opens
- *   beaten set of stop indexes whose boss is beaten
- *   boat   key into BOAT_ART
- *   landmarks  landmark key per stop index
- */
-export function mapSvg({ here, best, open, beaten, boat, landmarks }) {
-  const { W, H } = MAP;
-  const { center, left, right, xAt } = riverGeometry();
-  const sc = scenery();
-
-  const riverPath = `M${pts(left)} L${pts([...right].reverse())}Z`;
-  const bankPath = (side) => `M${pts(side)}`;
-
-  // The way you have come: down the middle of the river to the furthest stop.
-  const travelledTo = MAP.top + best * MAP.gap;
-  const route = center.filter(([, y]) => y > 60 && y <= travelledTo);
-  const ahead = center.filter(([, y]) => y >= travelledTo && y < 1320);
-
-  const sea = 'M0 1314 C40 1304 70 1326 110 1316 S180 1300 214 1310 S300 1326 340 1312 S390 1306 400 1314 V1410 H0Z';
-
-  const stops = landmarks.map((key, i) => {
-    const s = stopPoint(i);
-    const shut = i > open && i > best;
-    // From the side of the drawing that faces the water, out to the near
-    // bank and a few planks into the river, where a boat can tie up.
-    const toward = -s.side;
-    const from = s.x + toward * 30;
-    const to = xAt(s.y + 10) - toward * (widthAt(s.y) / 2) + toward * 9;
-    const jetty = `M${f1(from)} ${s.y + 10}H${f1(to)}`;
-    const cls = ['landmark', shut ? 'shut' : '', i === here ? 'here' : '', beaten.has(i) ? 'beaten' : ''].filter(Boolean).join(' ');
-    return `<path class="jetty" d="${jetty}"/>`
-      + `<g class="${cls}" data-index="${i}" transform="translate(${s.x} ${s.y})">`
-      + (i === here ? '<ellipse class="here-glow" cx="0" cy="2" rx="47" ry="33"/><ellipse class="here-ring" cx="0" cy="2" rx="47" ry="33"/>' : '')
-      + (LANDMARKS[key] || LANDMARKS.landing)()
-      + '</g>';
-  }).join('');
-
-  const hereStop = stopPoint(here);
-  const boatX = xAt(hereStop.y + 8) + hereStop.side * 6;
-  const boatArt = (BOAT_ART[boat] || BOAT_ART.rowboat)();
-
-  // A compass rose, as every chart has, tucked into the top right.
-  const compass = `<g class="compass" transform="translate(346 70)">`
-    + '<circle class="compass-ring" r="22"/><circle class="compass-ring" r="17"/>'
-    + '<path class="compass-star" d="M0 -26L4 -4L0 0L-4 -4zM0 26L4 4L0 0L-4 4z"/>'
-    + '<path class="compass-star dim" d="M-26 0L-4 -4L0 0L-4 4zM26 0L4 -4L0 0L4 4z"/>'
-    + '<text class="compass-n" x="0" y="-30">N</text></g>';
-
-  return `<svg class="map-art" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMin meet" role="img" aria-hidden="true">
-    <rect class="land" x="0" y="0" width="${W}" height="${H}"/>
-    <g class="fields">${sc.fields}</g>
-    <path class="river" d="${riverPath}"/>
-    <path class="bank" d="${bankPath(left)}"/>
-    <path class="bank" d="${bankPath(right)}"/>
-    <path class="current" d="M${pts(center.filter(([, y]) => y < 1320))}"/>
-    <path class="ripple" d="${sc.ripples}"/>
-    <path class="sea" d="${sea}"/>
-    <path class="sea-waves" d="M20 1350q8 -5 16 0t16 0M120 1370q8 -5 16 0t16 0M250 1356q8 -5 16 0t16 0M320 1384q8 -5 16 0t16 0M60 1390q8 -5 16 0t16 0"/>
-    <path class="reeds" d="${sc.reeds}"/>
-    <g class="trees">${sc.trees}</g>
-    ${ahead.length > 1 ? `<path class="route-ahead" d="M${pts(ahead)}"/>` : ''}
-    ${route.length > 1 ? `<path class="route" d="M${pts(route)}"/>` : ''}
-    ${stops}
-    <g class="your-boat" transform="translate(${f1(boatX)} ${hereStop.y + 8})"><g class="bob"><g class="you">${boatArt}</g></g></g>
-    ${compass}
-  </svg>`;
 }

@@ -11,6 +11,11 @@
  * Money is still the only thing that moves you down it — the climb poker
  * actually makes you make — and every stop still says its NL label, because
  * the point of all this is to play the real stakes, not to learn a story.
+ *
+ * Since 3.1 it is the whole country, not one strip of it: the school, the
+ * pilot house, the saloon, the assay office, the racing chute and the
+ * Trading Post stand on the creeks and bends around the main river, each a
+ * sign that says what is waiting there and takes you in.
  */
 
 import { el, fmt } from './dom.js';
@@ -18,10 +23,14 @@ import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { VENUES, venueFor, roomYouCanAfford } from '../data/venues.js';
 import { bossFor, boatFor } from '../data/characters.js';
-import { nextUp, moduleMeta } from '../data/curriculum.js';
-import { MAP, mapSvg, stopPoint, boatSvg, riverGeometry } from './riverArt.js';
+import { nextUp, moduleMeta, MODULE_META } from '../data/curriculum.js';
+import { boatSvg } from './riverArt.js';
+import { WORLD, stopAt, PLACES, worldSvg, voyage } from './worldMap.js';
 import { portraitSvg } from './portraits.js';
 import { svgNode } from './place.js';
+import { ownedModules, ownsLesson, ownsChart, CATALOGUE, itemState } from '../state/economy.js';
+import { CHECKPOINTS } from '../data/rangeLadder.js';
+import { pearls } from './shop.js';
 import * as audio from '../audio/engine.js';
 
 export { svgNode };
@@ -58,13 +67,16 @@ export function stopStatus(venue, state) {
 }
 
 function stopPlate(venue, state, go) {
-  const p = stopPoint(venue.index);
+  const p = stopAt(venue.index);
   const status = stopStatus(venue, state);
   const boss = bossFor(venue.boss);
   const never = venue.index > state.best && status.key === 'shut';
-  return el(`button.map-stop.is-${status.key}${never ? '.far' : ''}${state.beaten.has(venue.index) ? '.taken' : ''}`, {
+  // North-bank plates hang above their drawing and south-bank ones below,
+  // so a plate never lies across the river it belongs to.
+  const north = p.side < 0;
+  return el(`button.map-stop.is-${status.key}${never ? '.far' : ''}${state.beaten.has(venue.index) ? '.taken' : ''}${north ? '.north' : ''}`, {
     dataset: { key: venue.key },
-    style: { left: `${(p.x / MAP.W) * 100}%`, top: `${((p.y + 30) / MAP.H) * 100}%` },
+    style: { left: `${(p.x / WORLD.W) * 100}%`, top: `${((north ? p.y - 40 : p.y + 24) / WORLD.H) * 100}%` },
     onclick: () => { audio.sfx('click'); go('stop', { at: venue.key }); },
     'aria-label': `${t(venue.name)}, ${venue.label}: ${status.text}`,
   },
@@ -77,11 +89,50 @@ function stopPlate(venue, state, go) {
   );
 }
 
-function riverMap(state, go) {
-  const chart = el('div.river-map', {
-    style: { aspectRatio: `${MAP.W} / ${MAP.H}` },
+/** What each place off the main river says on its plate. */
+function placeStatus(place, profile) {
+  switch (place.key) {
+    case 'school': return t('{n} of {total} chapters yours', { n: ownedModules(profile).length, total: MODULE_META.length });
+    case 'pilothouse': {
+      const charts = CHECKPOINTS.filter((c) => c.kind !== 'exam');
+      return t('{n} of {total} charts yours', { n: charts.filter((c) => ownsChart(profile, c.key)).length, total: charts.length });
+    }
+    case 'assay': return ownsLesson(profile, 'pot-odds') ? t('The counter is open') : t('Needs the Pot Odds chapter');
+    case 'race': return t('Beat the Belle for pearls');
+    case 'tradingpost': return null;
+    case 'saloon': return t('Free play, pearls a hand');
+    default: return null;
+  }
+}
+
+/** Whether the Trading Post has anything on its shelves you could buy now. */
+function somethingToBuy(profile) {
+  return CATALOGUE.some((item) => {
+    const state = itemState(profile, item);
+    return state.ready && state.affordable;
   });
-  chart.innerHTML = mapSvg({
+}
+
+function placePlate(place, profile, go) {
+  const status = placeStatus(place, profile);
+  const canBuy = place.key === 'tradingpost' && somethingToBuy(profile);
+  return el(`button.map-place.place-${place.key}${canBuy ? '.can-buy' : ''}`, {
+    style: { left: `${(place.x / WORLD.W) * 100}%`, top: `${((place.y + 26) / WORLD.H) * 100}%` },
+    onclick: () => { audio.sfx('click'); go(place.route); },
+    'aria-label': `${t(place.name)} — ${t(place.label)}`,
+  },
+    el('span.map-place-name', t(place.name)),
+    place.key === 'tradingpost'
+      ? el('span.map-place-meta', pearls(profile.pearls), canBuy ? el('span.place-new', t('Something to buy')) : null)
+      : el('span.map-place-meta', status),
+  );
+}
+
+function riverMap(state, profile, go) {
+  const chart = el('div.river-map.world', {
+    style: { aspectRatio: `${WORLD.W} / ${WORLD.H}` },
+  });
+  chart.innerHTML = worldSvg({
     here: state.here.index,
     best: state.best,
     open: state.open,
@@ -97,8 +148,18 @@ function riverMap(state, go) {
       go('stop', { at: v.key });
     });
   });
+  chart.querySelectorAll('.place').forEach((g) => {
+    g.addEventListener('click', () => {
+      const place = PLACES.find((x) => x.key === g.dataset.place);
+      audio.sfx('click');
+      if (place) go(place.route);
+    });
+  });
   for (const v of VENUES) chart.appendChild(stopPlate(v, state, go));
-  return chart;
+  for (const place of PLACES) chart.appendChild(placePlate(place, profile, go));
+  // On a narrow screen the chart is wider than the page and scrolls sideways,
+  // the way a map is dragged; on a wide one the scroller simply fits.
+  return el('div.map-scroller', chart);
 }
 
 /** Where you are, who owns the table, and the way to it. */
@@ -189,18 +250,11 @@ function prologue(state, profile, rerender) {
  * The boat, steaming from one stop to another down the middle of the river,
  * with the page following it. Then it ties up at the stop.
  */
-function sail(chart, fromIndex, toIndex, onArrive) {
-  const boat = chart.querySelector('.your-boat');
+function sail(scroller, fromIndex, toIndex, onArrive) {
+  const boat = scroller.querySelector('.your-boat');
   const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!boat || still || fromIndex === toIndex) return onArrive();
-  const { center, xAt } = riverGeometry();
-  const a = stopPoint(fromIndex);
-  const b = stopPoint(toIndex);
-  const y0 = a.y + 8;
-  const y1 = b.y + 8;
-  const between = center.filter(([, y]) => y > Math.min(y0, y1) && y < Math.max(y0, y1));
-  if (y1 < y0) between.reverse();
-  const path = [[xAt(y0) + a.side * 6, y0], ...between, [xAt(y1) + b.side * 6, y1]];
+  const path = voyage(fromIndex, toIndex);
   const lengths = [0];
   for (let i = 1; i < path.length; i++) {
     lengths.push(lengths[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
@@ -224,15 +278,26 @@ function sail(chart, fromIndex, toIndex, onArrive) {
     const eased = k < 0.5 ? 2 * k * k : 1 - ((-2 * k + 2) ** 2) / 2;
     const [x, y] = at(eased * total);
     boat.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
-    // Keep the boat in view, easing after it rather than snapping.
+    // Keep the boat in view, easing after it rather than snapping — across
+    // the chart when it is wider than the screen, and down the page.
     const r = boat.getBoundingClientRect();
+    const box = scroller.getBoundingClientRect();
+    const offX = r.left + r.width / 2 - (box.left + box.width / 2);
+    if (Math.abs(offX) > 40) scroller.scrollLeft += offX * 0.12;
     const off = r.top + r.height / 2 - window.innerHeight / 2;
-    if (Math.abs(off) > 40) window.scrollTo(0, window.scrollY + off * 0.12);
+    if (Math.abs(off) > 60) window.scrollTo(0, window.scrollY + off * 0.08);
     if (k < 1) requestAnimationFrame(frame);
     else setTimeout(onArrive, 250);
   };
   requestAnimationFrame(frame);
   return null;
+}
+
+/** Scroll the chart sideways so a stop sits in the middle of the view. */
+function centreOn(scroller, index) {
+  if (scroller.scrollWidth <= scroller.clientWidth) return;
+  const p = stopAt(index);
+  scroller.scrollLeft = (p.x / WORLD.W) * scroller.scrollWidth - scroller.clientWidth / 2;
 }
 
 export function renderRiver(ctx) {
@@ -241,21 +306,23 @@ export function renderRiver(ctx) {
   const screen = el('div.screen.river-screen');
   const rerender = () => go('home');
 
-  const map = riverMap(state, go);
+  const map = riverMap(state, profile, go);
   if (!profile.data.seenPrologue) screen.append(prologue(state, profile, rerender));
   screen.append(
-    el('div.river-layout',
-      el('div.river-side',
-        hereCard(state, profile, go),
-        boatCard(state),
-        studyLine(profile, go),
-      ),
+    el('div.river-layout.world-layout',
       el('div.river-chart',
         el('div.cartouche',
           el('h2.sign', t('The Long River')),
-          el('div.cartouche-sub', t('Eight tables from Mud Landing to the delta')),
+          el('div.cartouche-sub', t('Eight tables from Mud Landing to the delta, and everything on the water between')),
         ),
         map,
+      ),
+      el('div.river-below',
+        hereCard(state, profile, go),
+        el('div.river-side',
+          boatCard(state),
+          studyLine(profile, go),
+        ),
       ),
     ),
   );
@@ -267,22 +334,15 @@ export function renderRiver(ctx) {
     // The trip is taken once; the back button should not replay it.
     history.replaceState(null, '', '#home');
     requestAnimationFrame(() => {
-      const plate = map.querySelector(`.map-stop[data-key="${VENUES[from] ? VENUES[from].key : ''}"]`);
-      if (plate && typeof plate.scrollIntoView === 'function') {
-        plate.scrollIntoView({ block: 'center', behavior: 'instant' in window ? 'instant' : 'auto' });
-      }
+      centreOn(map, from);
       sail(map, from, to, () => go('stop', { at: VENUES[to].key, arrived: 1 }));
     });
     return screen;
   }
 
-  // Bring your own stop into view once the page has laid out, the way a map
-  // opens on where you are rather than on the top-left corner.
-  requestAnimationFrame(() => {
-    const plate = map.querySelector('.map-stop.is-here');
-    if (plate && state.here.index > 1 && typeof plate.scrollIntoView === 'function') {
-      plate.scrollIntoView({ block: 'center', behavior: 'instant' in window ? 'instant' : 'auto' });
-    }
-  });
+  // Open the chart on where you are rather than on its west edge — which on
+  // a phone, where the chart scrolls sideways, is the difference between
+  // seeing your boat and not.
+  requestAnimationFrame(() => centreOn(map, state.here.index));
   return screen;
 }
