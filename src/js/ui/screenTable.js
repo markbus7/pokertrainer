@@ -46,7 +46,7 @@ import { svgNode, lampNode } from './place.js';
 import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
 import {
-  ownsLesson, LESSON_PRICES, ownedCompanions, decisionPearls, handPearls, EARN,
+  ownsLesson, LESSON_PRICES, crewAboard, currentBoat, strongbox, decisionPearls, handPearls, EARN,
 } from '../state/economy.js';
 import { lockedChapter } from './screenDrill.js';
 import { helpDrawer, companionTitle } from './companions.js';
@@ -177,7 +177,7 @@ export function renderTable(ctx, params = {}) {
   const liveCoach = () => Boolean(lesson) || Boolean(profile.settings.liveCoach);
   // Which opponents you can read by their label: all of them with Silas
   // talking, and with the hound — who reads people for a living — on your side.
-  const showTags = () => liveCoach() || profile.owns('pet:hound');
+  const showTags = () => liveCoach() || crewAboard(profile).some((c) => c.key === 'hound');
 
   const opponents = pickOpponents(seats - 1, rng);
   // At a stop, the person who owns its table is sitting at it. They play the
@@ -276,7 +276,9 @@ export function renderTable(ctx, params = {}) {
     helped: false,
     // Silas's notes: every decision as graded, whether or not he said so.
     graded: [],
-    pearls: { hands: 0, decisions: 0, bonus: 0 },
+    pearls: { hands: 0, decisions: 0, bonus: 0, boat: 0 },
+    // What the boat's strongbox still owes, a fraction of a pearl at a time.
+    boatCarry: 0,
     savedHandIds: [],
     showLog: false,
   };
@@ -728,8 +730,9 @@ export function renderTable(ctx, params = {}) {
     const earned = lesson ? 0 : decisionPearls({ level: verdict.level, street: table.street, action: action.type, helped });
     if (earned) {
       session.pearls.decisions += earned;
-      profile.earnPearls(earned);
-      pearlPop(earned, trayHost);
+      const extra = fromTheStrongbox(earned);
+      profile.earnPearls(earned + extra);
+      pearlPop(earned + extra, trayHost);
     }
     session.helpOpen = false;
     session.helpFocus = null;
@@ -799,9 +802,11 @@ export function renderTable(ctx, params = {}) {
     // A pearl for the hand — more at the stops further down the river. A
     // lesson table pays in XP only: it is a chapter, not a game.
     if (!lesson) {
-      const paid = profile.earnPearls(handPearls(room ? room.index : null));
+      const paid = handPearls(room ? room.index : null);
       session.pearls.hands += paid;
-      if (paid) pearlPop(paid, trayHost);
+      const extra = fromTheStrongbox(paid);
+      profile.earnPearls(paid + extra);
+      pearlPop(paid + extra, trayHost);
     }
     // The notes point at the replay of any hand that was kept.
     if (session.savedHand) {
@@ -836,6 +841,17 @@ export function renderTable(ctx, params = {}) {
 
     draw();
 
+  }
+
+  /**
+   * The boat's share of what the table just paid: a tenth of a pearl on a
+   * skiff, a fifth on a launch, carried over until it adds up to a whole one.
+   */
+  function fromTheStrongbox(amount) {
+    const { extra, carry } = strongbox(session.boatCarry, amount, currentBoat(profile).bonus);
+    session.boatCarry = carry;
+    session.pearls.boat += extra;
+    return extra;
   }
 
   /** Silas's notes on the sitting, written the moment you get up. */
@@ -976,9 +992,9 @@ export function renderTable(ctx, params = {}) {
    * where there is no coach panel for it to live in.
    */
   function drawTray() {
-    const owned = ownedCompanions(profile);
+    const owned = crewAboard(profile);
     const yourTurn = isHeroTurn();
-    const total = session.pearls.hands + session.pearls.decisions + session.pearls.bonus;
+    const total = session.pearls.hands + session.pearls.decisions + session.pearls.bonus + session.pearls.boat;
     mount(trayHost, el('div.companion-tray',
       el(`button.btn.help-btn${session.helped ? '.used' : ''}`, {
         disabled: !yourTurn,
@@ -993,8 +1009,8 @@ export function renderTable(ctx, params = {}) {
           onclick: () => openHelp(c.key),
         }, svgNode(portraitSvg(c.key, { size: 38 }), 'tray-face'))),
         owned.length ? null : el('button.tray-pet.empty', {
-          title: t('Companions from the Trading Post sit here'),
-          onclick: () => go('store'),
+          title: t('Companions aboard your boat sit here'),
+          onclick: () => go('boatyard'),
         }, icon('paw', { size: 16 })),
       ),
       lesson ? null : el('span.tray-pearls', { title: t('Pearls this sitting') }, pearlsNode(total)),
@@ -1014,7 +1030,7 @@ export function renderTable(ctx, params = {}) {
     const snap = session.snapshot;
     const spot = lesson && lesson.coachNote ? { id: params.lesson, why: lesson.coachNote } : conceptOf(snap);
     return mount(helpHost, helpDrawer({
-      owned: ownedCompanions(profile),
+      owned: crewAboard(profile),
       snap,
       spot,
       handText: hero.hole.length && table.board.length

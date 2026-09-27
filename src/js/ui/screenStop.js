@@ -32,7 +32,7 @@ function scene(venue, state, arrived) {
     id: venue.key,
     landmark: venue.landmark,
     orbLeft: venue.index % 2 === 1,
-    boat: here ? state.boat.key : null,
+    boat: here ? state.look : null,
     arriving: arrived,
   });
   return el('div.scene',

@@ -262,6 +262,29 @@ const PEOPLE = {
       + '<circle cx="66" cy="56" r="3.2" fill="none" stroke="#e0b64a" stroke-width="1.7"/>',
   },
 
+  /* ---- the shipwright: a flat cap, grey whiskers, a pencil behind his ear
+     and a leather apron over his shirt ---- */
+  amos: {
+    skin: SKIN.light,
+    ground: '#4a5d6e',
+    body: shoulders('#3f5f7f')
+      + '<path d="M40 70L50 80L60 70" stroke="#2f4a66" stroke-width="1.4" fill="none"/>'
+      + '<path d="M37 76h26l3 24H34z" fill="#8a5a33"/>'
+      + '<path d="M37 76L41 66M63 76L59 66" stroke="#6e4526" stroke-width="2.4" stroke-linecap="round"/>'
+      + '<circle cx="39.5" cy="78.5" r="1.3" fill="#d9b44a"/><circle cx="60.5" cy="78.5" r="1.3" fill="#d9b44a"/>'
+      + '<path d="M43 88h14v8H43z" fill="#76492a"/><path d="M47 88v-4" stroke="#b9a15a" stroke-width="1.2"/>',
+    hair: '<path d="M33 50C31 42 33 37 36 36L38 52Z" fill="#b8b2a6"/><path d="M67 50C69 42 67 37 64 36L62 52Z" fill="#b8b2a6"/>',
+    face: { mouth: 'smile', brow: '#9a948a' },
+    front: '<path d="M34 47C33 60 39 65 44 61L42 50Z" fill="#c4beb2"/>'
+      + '<path d="M66 47C67 60 61 65 56 61L58 50Z" fill="#c4beb2"/>'
+      + '<path d="M43.5 56.5q6.5 3.4 13 0" stroke="#aaa498" stroke-width="2.4" fill="none" stroke-linecap="round"/>'
+      + '<path d="M33 39C32 25 68 24 68 36C60 33 42 33 33 39Z" fill="#5d5a50"/>'
+      + '<path d="M33 39C45 33.5 63 33.5 75 38.5C67 42 45 42.5 33 39Z" fill="#48463e"/>'
+      + '<path d="M40 30q10-4 20-1" stroke="#6f6c60" stroke-width="1.1" fill="none"/>'
+      + '<path d="M63.5 44.5l6.5-9.5" stroke="#e0b93f" stroke-width="2.2" stroke-linecap="round"/>'
+      + '<path d="M70 35l1.3-1.9" stroke="#3a2a1a" stroke-width="1.6" stroke-linecap="round"/>',
+  },
+
   /* ---- the regulars, keyed by the style they play ---- */
   rock: {
     skin: SKIN.tan,

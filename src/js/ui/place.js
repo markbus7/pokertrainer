@@ -11,7 +11,7 @@
 
 import { el } from './dom.js';
 import { t } from '../i18n/index.js';
-import { sceneSvg, BOAT_ART } from './riverArt.js';
+import { sceneSvg, BOAT_ART, yourBoat } from './riverArt.js';
 import { portraitSvg } from './portraits.js';
 import { icon } from './icons.js';
 import { MENTOR } from '../data/characters.js';
@@ -229,11 +229,11 @@ export function raceMargin(correct, passMark) {
   return correct >= passMark ? t('won by {margin}', { margin: lengths }) : t('lost by {margin}', { margin: lengths });
 }
 
-function racerNode(key, className) {
-  const art = (BOAT_ART[key] || BOAT_ART.rowboat)();
+function racerNode(look, className) {
   // Drawn facing left on the map; turned round here, since the race runs
-  // left to right and a boat goes bow first.
-  return svgNode(`<svg viewBox="-30 -34 60 46" width="64" height="49" aria-hidden="true"><g class="${className}" transform="scale(-1 1)">${art}</g></svg>`, 'racer');
+  // left to right and a boat goes bow first. Yours is dressed as you left it.
+  const art = className === 'you' ? yourBoat(look) : `<g class="${className}">${(BOAT_ART[look] || BOAT_ART.rowboat)()}</g>`;
+  return svgNode(`<svg viewBox="-30 -34 60 46" width="64" height="49" aria-hidden="true"><g transform="scale(-1 1)">${art}</g></svg>`, 'racer');
 }
 
 /** The lamp over a table: a brass shade on a cord, and the light it throws. */

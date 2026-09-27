@@ -14,7 +14,7 @@ import { t } from '../i18n/index.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
 import { TRADER } from '../data/characters.js';
-import { CATALOGUE, COMPANIONS, itemState } from '../state/economy.js';
+import { CATALOGUE, COMPANIONS, SHOPS, itemState, crewAboard } from '../state/economy.js';
 import { sceneBanner, says, svgNode } from './place.js';
 import { portraitSvg } from './portraits.js';
 import { buyControl, pearls, itemName } from './shop.js';
@@ -31,7 +31,7 @@ export function renderStore(ctx) {
 
   // Delphine's greeting reads the purse: a customer who cannot afford the
   // cheapest thing they are allowed to buy is told where pearls come from.
-  const ready = CATALOGUE.filter((i) => itemState(profile, i).ready);
+  const ready = CATALOGUE.filter((i) => SHOPS.tradingpost.includes(i.kind) && itemState(profile, i).ready);
   const cheapest = ready.reduce((min, i) => Math.min(min, i.price), Infinity);
   const line = ready.length && profile.pearls < cheapest ? TRADER.poor : TRADER.hello;
 
@@ -104,7 +104,11 @@ function companionCard(item, profile, go, redraw) {
       el('div.companion-name', c.name, el('span.companion-kind', ` · ${t(c.kind)}`)),
       el('div.companion-does', t(c.does)),
       state.owned
-        ? el('div.companion-with', icon('paw', { size: 14 }), ' ', t('Comes to the table with you. Ask for help and they chip in.'))
+        ? crewAboard(profile).some((x) => x.key === c.key)
+          ? el('div.companion-with', icon('paw', { size: 14 }), ' ', t('Aboard your boat: comes to the table with you. Ask for help and they chip in.'))
+          : el('div.companion-ashore',
+            el('span', icon('anchor', { size: 14 }), ' ', t('Waiting at the landing — your boat has no berth free.')),
+            el('button.btn.sm.ghost', { onclick: () => go('boatyard') }, t('To the boatyard')))
         : el('div.companion-buy', buyControl(profile, item.key, { go, onBought: redraw })),
     ),
   );

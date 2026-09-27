@@ -542,6 +542,17 @@
   --pearl: #efe8dc;
   --pearl-rose: #efd3d6;
   --pearl-lo: #a79d90;
+
+  /* Boat paint and flags from the boatyard: bought colours, so the same
+     colours in every room. */
+  --paint-red: #b0392e;
+  --paint-green: #3f7a4f;
+  --paint-blue: #2e4f86;
+  --paint-white: #f1ead9;
+  --paint-gilt: #d4a93c;
+  --flag-black: #1c1a1f;
+  --flag-blue: #2e4f86;
+  --flag-white: #f6f1e6;
 }
 
 :root {

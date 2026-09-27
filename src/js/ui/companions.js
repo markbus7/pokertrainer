@@ -30,7 +30,7 @@ import { portraitSvg } from './portraits.js';
 
 /**
  * @param {object} h
- * @param {Array} h.owned        companions owned, from ownedCompanions()
+ * @param {Array} h.owned        companions aboard your boat, from crewAboard()
  * @param {object} h.snap        the decision snapshot (lessonRunner.snapshotOf)
  * @param {object} h.spot        conceptOf(snap): {id, why}
  * @param {string} h.handText    your hand, described
@@ -51,7 +51,7 @@ export function helpDrawer(h) {
     h.owned.length
       ? null
       : el('div.faint.help-more', icon('paw', { size: 14 }), ' ',
-        t('Companions from the Trading Post add more here: the price, the chart, your outs, the table\'s habits.')),
+        t('Companions aboard your boat add more here: the price, the chart, your outs, the table\'s habits.')),
   );
   if (h.focus) {
     requestAnimationFrame(() => {

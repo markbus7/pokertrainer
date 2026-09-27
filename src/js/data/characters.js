@@ -251,26 +251,54 @@ export const TRADER = {
 export const bossFor = (key) => BOSSES[key] || null;
 
 /**
- * Which boat you have, read off how far down the river you have been.
+ * The shipwright, who builds and sells boats at the yard below Fisher's Rest.
  *
- * Nothing buys it: bankroll stays bankroll, because spending the roll on a
- * boat would teach the one habit the bankroll lesson exists to stop. The
- * boat is a picture of the climb, not a purchase — and the last one is the
- * Commodore's, which nothing but beating him gets you.
+ * He takes pearls, like everybody off the tables — never the bankroll, which
+ * is for the tables and which the Bankroll chapter exists to protect — and he
+ * only sells a boat to somebody who has taken their own that far down the
+ * river: a steam launch is no use to a man who has never left Mud Landing.
+ */
+export const SHIPWRIGHT = {
+  key: 'amos',
+  name: 'Amos Leary',
+  short: 'Amos',
+  title: 'Shipwright',
+  hello: 'Every boat on this river came off my slip. A bigger one carries more friends and a heavier strongbox — pearls on the plank and she is yours.',
+  poor: 'Nothing on the slip for a light purse. Go and play some hands; I will still be here, and so will the boats.',
+  far: 'You have not been far enough down the river for this one yet. Take what you have to the next stop and come back.',
+  thanks: ['She will see you to the delta.', 'Mind the snags.', 'Built to last. Try not to sink her.', 'A fine boat for a fine player.'],
+};
+
+/**
+ * The boats. The first is borrowed; the rest are built at the yard and paid
+ * for in pearls, and each is only sold to somebody whose boat has already
+ * reached `reach` — the index of a stop. The last is the Commodore's, which
+ * nothing but beating him gets you.
+ *
+ * What a boat does is what a player notices at the table: `berths` is how
+ * many companions come aboard with you (the rest wait at the landing), and
+ * `bonus` is the share the boat's strongbox adds on top of every pearl the
+ * tables pay for hands and decisions.
  */
 export const BOATS = [
-  { key: 'rowboat', name: 'A borrowed rowboat', from: 0 },
-  { key: 'skiff', name: 'A sailing skiff', from: 2 },
-  { key: 'launch', name: 'A steam launch', from: 4 },
-  { key: 'sternwheeler', name: 'A sternwheeler', from: 6 },
+  { key: 'rowboat', name: 'A borrowed rowboat', price: 0, reach: 0, berths: 1, bonus: 0 },
+  { key: 'skiff', name: 'A sailing skiff', price: 150, reach: 1, berths: 2, bonus: 0.1 },
+  { key: 'launch', name: 'A steam launch', price: 450, reach: 2, berths: 3, bonus: 0.2 },
+  { key: 'sternwheeler', name: 'A sternwheeler', price: 1000, reach: 4, berths: 5, bonus: 0.35 },
 ];
 
-export const FLAGSHIP = { key: 'flagship', name: 'The Commodore\'s flagship' };
+export const FLAGSHIP = { key: 'flagship', name: 'The Commodore\'s flagship', price: 0, reach: 7, berths: 6, bonus: 0.5 };
 
-/** `bestIndex`: the furthest stop reached. `wonRiver`: the Commodore is beaten. */
-export function boatFor(bestIndex, wonRiver = false) {
-  if (wonRiver) return FLAGSHIP;
-  let boat = BOATS[0];
-  for (const b of BOATS) if (bestIndex >= b.from) boat = b;
-  return boat;
+export const boatByKey = (key) => (key === FLAGSHIP.key ? FLAGSHIP : BOATS.find((b) => b.key === key) || null);
+
+/**
+ * The boat a save from before the boatyard had been given for how far it had
+ * got. Kept so that nobody who had already earned a boat loses it: the
+ * boatyard sells the next one, not the one you already sail.
+ */
+export function boatEarnedBy(bestIndex) {
+  if (bestIndex >= 6) return 'sternwheeler';
+  if (bestIndex >= 4) return 'launch';
+  if (bestIndex >= 2) return 'skiff';
+  return 'rowboat';
 }

@@ -271,7 +271,7 @@ export function renderDrill(ctx, params) {
   const PASS_MARK = 8;
   // The Gauntlet is run as a race against the Belle, in whatever boat you
   // have worked your way up to. Her pace is the pass mark.
-  const raceBoat = gauntlet ? riverState(profile).boat.key : null;
+  const raceBoat = gauntlet ? riverState(profile).look : null;
   const tally = () => (gauntlet
     ? raceStrip(state.results, sessionLength, PASS_MARK, { boat: raceBoat, rival: RACE.boat })
     : lanterns(state.results, sessionLength));
@@ -748,7 +748,7 @@ export function renderGauntletIntro(ctx) {
   return el('div.screen.race-start',
     sceneBanner({
       id: 'race', landmark: 'race', kicker: t('At the starting pole'), title: t('The Race'),
-      boat: riverState(profile).boat.key,
+      boat: riverState(profile).look,
     }),
     el('div.panel.mentor-card',
       says(RACE.rival, t(RACE.hello), { name: t(rival.name) }),
