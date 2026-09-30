@@ -55,7 +55,7 @@ export function buildReport({ place, stats, graded, pearls, savedHands = [], cas
 
   const summary = stats.summary();
   const leaks = leakReport(stats);
-  const total = (pearls.hands || 0) + (pearls.decisions || 0) + (pearls.bonus || 0) + (pearls.boat || 0);
+  const total = (pearls.hands || 0) + (pearls.decisions || 0) + (pearls.bonus || 0) + (pearls.boat || 0) + (pearls.bounty || 0);
 
   return {
     at,
@@ -63,7 +63,9 @@ export function buildReport({ place, stats, graded, pearls, savedHands = [], cas
     hands: summary.hands,
     profitBb: Math.round(summary.profitBb * 10) / 10,
     cash,
-    pearls: { hands: pearls.hands || 0, decisions: pearls.decisions || 0, bonus: pearls.bonus || 0, boat: pearls.boat || 0, total },
+    pearls: {
+      hands: pearls.hands || 0, decisions: pearls.decisions || 0, bonus: pearls.bonus || 0, boat: pearls.boat || 0, bounty: pearls.bounty || 0, total,
+    },
     decisions: { total: own, sound, helped, bySkill },
     worst,
     savedHands: savedHands.slice(-10),

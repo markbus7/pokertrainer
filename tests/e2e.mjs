@@ -2345,6 +2345,10 @@ await step('the boatyard sells a bigger boat, and it takes more of the crew to t
   await page.waitForSelector('.companion-tray', { timeout: 5000 });
   const pets = await page.$$eval('.tray-pet:not(.empty)', (n) => n.length);
   if (pets !== 2) throw new Error(`${pets} companions at the table, expected the two aboard`);
+  // And every opponent carries a bounty you can see, the way the keys sit on
+  // the players in Governor of Poker.
+  const bounties = await page.$$eval('.seat:not(.hero) .seat-bounty', (n) => n.map((x) => x.textContent.trim()));
+  if (bounties.length !== 5 || bounties.some((b) => b !== '5')) throw new Error(`the practice table's bounties read: ${bounties.join(', ')}`);
 
   // And the river shows the boat you sail, with its crew.
   await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });

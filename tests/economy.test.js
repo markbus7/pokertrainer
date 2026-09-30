@@ -4,6 +4,7 @@ import {
   CATALOGUE, COMPANIONS, LESSON_PRICES, EARN, handPearls, decisionPearls, itemByKey, itemState,
   purchase, ownsLesson, ownedModules, nextPurchase, missingFor,
   currentBoat, crewAboard, crewAshore, toggleCrew, strongbox, somethingToBuy, boatBerths, boatBonus, UPGRADES,
+  seatBounty, bountyPaid,
 } from '../src/js/state/economy.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
 import { buildReport, strongestAndWeakest, keepReport, reportsOf, KEEP_REPORTS } from '../src/js/state/sessionReport.js';
@@ -292,5 +293,28 @@ describe('economy: boats are bought at the boatyard, and carry the crew', () => 
     assert(somethingToBuy(p, 'tradingpost'), 'a hundred and twenty pearls buys Pot Odds, and the Trading Post does not say so');
     const poor = at('nl5', { pearls: 10 });
     assert(!somethingToBuy(poor, 'boatyard') && !somethingToBuy(poor, 'tradingpost'), 'a shop lights up for a purse that cannot pay');
+  });
+});
+
+describe('economy: every player carries a bounty, paid on how the hand was played', () => {
+  it('puts more on players further down the river, and the most on the owner', () => {
+    equal(seatBounty(null), 5, 'a regular at the practice table');
+    equal(seatBounty(0), 5);
+    equal(seatBounty(7), 15);
+    equal(seatBounty(0, true), 25);
+    equal(seatBounty(7, true), 50);
+    for (let i = 1; i < 8; i++) {
+      assert(seatBounty(i) >= seatBounty(i - 1) && seatBounty(i, true) >= seatBounty(i - 1, true), `stop ${i} carries less than the one before`);
+      assert(seatBounty(i, true) > seatBounty(i), `the owner at stop ${i} carries no more than a regular`);
+    }
+  });
+
+  it('pays all of it for a hand played right, half for one mistake, nothing for two', () => {
+    equal(bountyPaid(20, 0), 20);
+    equal(bountyPaid(20, 1), 10);
+    equal(bountyPaid(5, 1), 3, 'half of an odd bounty rounds up');
+    equal(bountyPaid(20, 2), 0);
+    equal(bountyPaid(20, 4), 0);
+    equal(bountyPaid(0, 0), 0, 'a bounty already taken pays nothing');
   });
 });

@@ -4637,4 +4637,17 @@ export const NL = {
   'Room for one more companion at the table, on whatever boat you sail.': 'Plaats voor één maatje meer aan tafel, op welke boot je ook vaart.',
   "A tenth more pearls at the tables, on top of your boat's own share.": 'Een tiende meer parels aan de tafels, bovenop wat je boot zelf al geeft.',
   Fitted: 'Aangebracht',
+
+  /* ---- v3.5: bounties ---- */
+  '{n} pearls for knocking {name} out': '{n} parels als je {name} uitschakelt',
+  'You knocked {name} out and took the bounty: {n} pearls.': 'Je schakelde {name} uit en pakte de premie: {n} parels.',
+  'You knocked {name} out, but one decision in that hand was a mistake: half the bounty, {n} pearls.':
+    'Je schakelde {name} uit, maar één beslissing in die hand was een fout: de halve premie, {n} parels.',
+  'You knocked {name} out, but with {n} mistakes in that hand. No bounty for a lucky card.':
+    'Je schakelde {name} uit, maar met {n} fouten in die hand. Geen premie voor een gelukskaart.',
+  'Bounty: {n} pearls': 'Premie: {n} parels',
+  'No bounty': 'Geen premie',
+  Bounties: 'Premies',
+  'A bounty for every player you knock out: all of it if you played the hand right, half with one mistake, nothing with two.':
+    'Een premie voor elke speler die je uitschakelt: alles als je de hand goed speelde, de helft bij één fout, niets bij twee.',
 };

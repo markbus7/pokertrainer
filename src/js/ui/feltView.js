@@ -13,6 +13,8 @@
 import { el, fmt } from './dom.js';
 import { cardEl, cardRow, hiddenCards } from './cardView.js';
 import { portraitSvg } from './portraits.js';
+import { t } from '../i18n/index.js';
+import { pearl } from './shop.js';
 
 /**
  * A few chips, stacked: one for a blind, up to five for a big bet, so the
@@ -87,6 +89,8 @@ export function renderFelt(state) {
         ),
         el('div.seat-stack', p.sittingOut ? 'sitting out' : fmt.chips(p.stack)),
         el('div.seat-pos', p.position),
+        // What they carry: pearls for whoever knocks them out.
+        p.bounty > 0 ? el('div.seat-bounty', { title: t('{n} pearls for knocking {name} out', { n: p.bounty, name: p.name }) }, pearl(12), String(p.bounty)) : null,
       ),
       p.committed > 0 ? el('div.seat-bet', chipStack(p.committed, bigBlind), fmt.chips(p.committed)) : null,
       p.seat === button ? el('div.table-marker.dealer', 'D') : null,

@@ -293,7 +293,7 @@ export function renderRangeRun(ctx) {
     });
     if (result.cleared) {
       audio.sfx('fanfare');
-      toast({ icon: 'check', title: t('{name} is in your head', { name: t(checkpoint.name) }),
+      toast({ icon: '✅', title: t('{name} is in your head', { name: t(checkpoint.name) }),
         desc: t('No chart, on the clock, and you still knew it.'), duration: 7000 });
     }
     draw(result, coverage);
