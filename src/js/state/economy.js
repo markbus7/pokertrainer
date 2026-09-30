@@ -62,6 +62,35 @@ export function handPearls(stopIndex = null) {
 }
 
 /**
+ * The pearls each opponent carries: a bounty for knocking them out, the way
+ * every player at a Governor of Poker table has something to take off them.
+ * Regulars carry more further down the river; the owner of a table carries
+ * the most. A bounty is there once per sitting — busted and refilled, a
+ * player sits back down with nothing on them.
+ *
+ * @param {number|null} stopIndex  0 … 7 down the river, or null at the practice table
+ * @param {boolean} owner           the one who owns the table
+ */
+export function seatBounty(stopIndex = null, owner = false) {
+  const i = stopIndex == null || stopIndex < 0 ? 0 : stopIndex;
+  return owner ? 25 + Math.round((i * 25) / 7) : 5 + Math.round((i * 10) / 7);
+}
+
+/**
+ * What a bounty pays, by how the hand that took it was played. Busting
+ * somebody is a result, and results are luck as much as skill; the bounty is
+ * paid on the decisions that got the money in. Every decision sound: all of
+ * it. One mistake — or one decision made with help — halves it. Two, and a
+ * lucky card does not get paid for.
+ */
+export function bountyPaid(bounty, mistakes) {
+  if (!(bounty > 0)) return 0;
+  if (mistakes <= 0) return bounty;
+  if (mistakes === 1) return Math.ceil(bounty / 2);
+  return 0;
+}
+
+/**
  * Whether a graded decision earns its pearl.
  *
  * Folding before the flop is the default rather than a decision anybody has

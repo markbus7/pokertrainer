@@ -47,10 +47,11 @@ import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
 import {
   ownsLesson, LESSON_PRICES, crewAboard, boatBonus, strongbox, decisionPearls, handPearls, EARN,
+  seatBounty, bountyPaid,
 } from '../state/economy.js';
 import { lockedChapter } from './screenDrill.js';
 import { helpDrawer, companionTitle } from './companions.js';
-import { pearlPop, pearls as pearlsNode } from './shop.js';
+import { pearl, pearlPop, pearls as pearlsNode } from './shop.js';
 import { buildReport, keepReport } from '../state/sessionReport.js';
 
 const BOT_DELAY = 620;
@@ -276,7 +277,10 @@ export function renderTable(ctx, params = {}) {
     helped: false,
     // Silas's notes: every decision as graded, whether or not he said so.
     graded: [],
-    pearls: { hands: 0, decisions: 0, bonus: 0, boat: 0 },
+    pearls: { hands: 0, decisions: 0, bonus: 0, boat: 0, bounty: 0 },
+    // The pearls each opponent carries, taken once by knocking them out.
+    bounties: {},
+    stacksAtStart: {},
     // What the boat's strongbox still owes, a fraction of a pearl at a time.
     boatCarry: 0,
     savedHandIds: [],
@@ -287,6 +291,12 @@ export function renderTable(ctx, params = {}) {
   if (grind) profile.setBankroll(profile.data.bankroll - buyInCost);
 
   const hero = table.player(HERO_ID);
+  // A lesson table is a chapter, not a game: nobody there carries anything.
+  if (!lesson) {
+    for (const p of table.players) {
+      if (!p.isHero) session.bounties[p.id] = seatBounty(room ? room.index : null, p.id === bossId);
+    }
+  }
   const feltHost = el('div');
   const actionHost = el('div');
   // Silas's notebook, beside the table: paper, so everything he writes in it
@@ -407,6 +417,8 @@ export function renderTable(ctx, params = {}) {
 
     table.startHand();
     stats.startHand();
+    // Who had chips when the cards were dealt, so a bust is counted once.
+    session.stacksAtStart = Object.fromEntries(table.players.map((p) => [p.id, p.stack + p.committed]));
     session.recorder = new HandRecorder(table, HERO_ID, {
       source: grind ? 'grind' : 'play',
       stake: grind ? stake.key : null,
@@ -807,6 +819,7 @@ export function renderTable(ctx, params = {}) {
       const extra = fromTheStrongbox(paid);
       profile.earnPearls(paid + extra);
       pearlPop(paid + extra, trayHost);
+      collectBounties(result);
     }
     // The notes point at the replay of any hand that was kept.
     if (session.savedHand) {
@@ -841,6 +854,39 @@ export function renderTable(ctx, params = {}) {
 
     draw();
 
+  }
+
+  /**
+   * Take the bounty off anybody you knocked out this hand: a player who sat
+   * down with chips, has none now, and was in a pot you won. It pays on how
+   * you played the hand, not on the card that fell — all of it with every
+   * decision sound, half with one mistake or one helped decision, nothing
+   * with two. Either way the bounty is gone: they are bust, and whoever
+   * busted them — you or another seat — took it off them.
+   */
+  function collectBounties(result) {
+    const heroWon = (result.payouts[HERO_ID] || 0) > 0;
+    const mine = session.graded.filter((d) => d.hand === table.handNumber);
+    const mistakes = mine.filter((d) => d.level === 'bad' || d.helped).length;
+    for (const p of table.players) {
+      const bounty = session.bounties[p.id] || 0;
+      if (p.isHero || !bounty || p.stack > 0 || !(session.stacksAtStart[p.id] > 0)) continue;
+      session.bounties[p.id] = 0;
+      const shared = heroWon && result.pots.some((pot) => pot.eligible.includes(p.id) && pot.eligible.includes(HERO_ID));
+      if (!shared) continue;
+      const paid = bountyPaid(bounty, mistakes);
+      if (paid) {
+        session.pearls.bounty += profile.earnPearls(paid);
+        pearlPop(paid, trayHost);
+      }
+      const line = mistakes === 0
+        ? t('You knocked {name} out and took the bounty: {n} pearls.', { name: p.name, n: paid })
+        : mistakes === 1
+          ? t('You knocked {name} out, but one decision in that hand was a mistake: half the bounty, {n} pearls.', { name: p.name, n: paid })
+          : t('You knocked {name} out, but with {n} mistakes in that hand. No bounty for a lucky card.', { name: p.name, n: mistakes });
+      log(line, true);
+      toast({ icon: paid ? pearl(22) : '⚠️', title: paid ? t('Bounty: {n} pearls', { n: paid }) : t('No bounty'), desc: line });
+    }
   }
 
   /**
@@ -995,7 +1041,7 @@ export function renderTable(ctx, params = {}) {
   function drawTray() {
     const owned = crewAboard(profile);
     const yourTurn = isHeroTurn();
-    const total = session.pearls.hands + session.pearls.decisions + session.pearls.bonus + session.pearls.boat;
+    const total = session.pearls.hands + session.pearls.decisions + session.pearls.bonus + session.pearls.boat + session.pearls.bounty;
     mount(trayHost, el('div.companion-tray',
       el(`button.btn.help-btn${session.helped ? '.used' : ''}`, {
         disabled: !yourTurn,
@@ -1105,6 +1151,7 @@ export function renderTable(ctx, params = {}) {
         wonPot: table.handOver && p.wonThisHand > 0,
         portrait: faces[p.id] || null,
         boss: p.id === bossId,
+        bounty: session.bounties[p.id] || 0,
         speech: session.speech && session.speech.id === p.id ? session.speech.text : null,
       })),
       heroSeat: hero.seat,

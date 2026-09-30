@@ -52,6 +52,7 @@ export function renderStore(ctx) {
       el('ul.lesson-points',
         el('li', el('span', t('A pearl for every hand you play at a table — more at the stops further down the river.'))),
         el('li', el('span', t('One more for every sound decision you make without asking for help.'))),
+        el('li', el('span', t('A bounty for every player you knock out: all of it if you played the hand right, half with one mistake, nothing with two.'))),
         el('li', el('span', t('A hundred for taking a table from the one who owns it, and twenty-five for beating the Belle in the race.'))),
       ),
       el('div.faint', t('Drills and lessons pay in XP, not pearls: the purse is filled at the tables, where nobody tells you which skill a spot is testing.')),
