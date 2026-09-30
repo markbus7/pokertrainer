@@ -181,9 +181,9 @@ function renderLadder(profile, current, next) {
     ),
     el('div.faint', { style: { marginBottom: '10px', fontSize: 'var(--t-sm)' } },
       'Tap any rank you have reached to see what it took.'),
-    // Drawn top down from the highest rank, the way a ladder is climbed:
-    // where you are going above you, where you started at the foot.
-    el('div.rank-ladder', [...RANKS].reverse().map((rank) => ladderRow(profile, rank, current, next))),
+    // Read from the first rank down, the way the reader asked for it: where
+    // you started at the top, the next rank below it, the far ones last.
+    el('div.rank-ladder', RANKS.map((rank) => ladderRow(profile, rank, current, next))),
   );
 }
 
