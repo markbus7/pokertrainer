@@ -2670,6 +2670,43 @@ await step('no screen is half in English when the app is in Dutch', async () => 
   console.log(`      ${routes.length} screens checked in both languages`);
 });
 
+await step('the table is playable on an iPad on its side, a phone, and a phone on its side', async () => {
+  // A reader on an iPad in landscape (about 1000 x 585 under Safari's bars)
+  // got a felt 290px across with the seat plates piled on top of each other:
+  // the felt was shrunk to fit the height and the plates were not. These are
+  // the screens a table has to work on, checked with a hand dealt.
+  const report = [];
+  for (const [w, h] of [[1000, 585], [1180, 740], [390, 844], [844, 340]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.felt', { timeout: 5000 });
+    await page.click('button:has-text("Deal me in")');
+    await page.waitForSelector('.action-buttons button', { timeout: 20000 });
+    await page.waitForTimeout(300);
+    const m = await page.evaluate(() => {
+      const felt = document.querySelector('.felt').getBoundingClientRect();
+      const plates = [...document.querySelectorAll('.seat .seat-plate')].map((n) => n.getBoundingClientRect());
+      let hits = 0;
+      for (let i = 0; i < plates.length; i++) {
+        for (let j = i + 1; j < plates.length; j++) {
+          const a = plates[i];
+          const b = plates[j];
+          if (a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2) hits++;
+        }
+      }
+      const fold = document.querySelector('.action-buttons .btn.danger, .action-buttons button').getBoundingClientRect();
+      return { feltW: Math.round(felt.width), hits, foldOnScreen: fold.bottom <= innerHeight && fold.top >= 0 };
+    });
+    report.push(`${w}x${h}: felt ${m.feltW}px`);
+    if (m.hits) throw new Error(`${m.hits} seat plates on top of each other at ${w}x${h}`);
+    if (m.feltW < (w > 700 ? 420 : 300)) throw new Error(`the felt is ${m.feltW}px across at ${w}x${h}`);
+    if (!m.foldOnScreen) throw new Error(`the buttons are off the screen at ${w}x${h}`);
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  console.log(`      ${report.join(', ')}; no plates overlap, the buttons in view`);
+});
+
 await step('layout holds up on phone and tablet viewports', async () => {
   // iPad first, then iPhone, then desktop — the order this actually gets
   // used in. Checks the three things that break on touch and are invisible

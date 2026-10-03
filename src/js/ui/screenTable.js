@@ -316,7 +316,7 @@ export function renderTable(ctx, params = {}) {
     el('div.table-main', el('div.saloon-stage', lampNode(), feltHost), actionHost, trayHost, helpHost),
     liveCoach() ? coachHost : null);
   const root = el('div.screen',
-    el('div.spread.table-head', { style: { marginBottom: '14px' } },
+    el('div.spread.table-head',
       grind
         ? el('div.row',
           el('h1.sign.table-place', { style: { margin: 0 } }, t(room.name)),
