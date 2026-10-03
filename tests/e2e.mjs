@@ -71,6 +71,18 @@ await page.addInitScript((owned) => {
     localStorage.setItem(key, JSON.stringify(raw));
   } catch { /* a test that breaks storage on purpose breaks this too */ }
 }, VETERAN_OWNS);
+// Auto-deal is on by default, which is right for a player and a race for a test
+// that clicks "Deal next hand" a moment after the hand ends. So every step runs
+// with it off, except the one that tests it and asks for the way it ships.
+await page.addInitScript(() => {
+  try {
+    if (localStorage.getItem('e2e.autodeal') === '1') return;
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    raw.settings = { ...(raw.settings || {}), autoDeal: false };
+    localStorage.setItem(key, JSON.stringify(raw));
+  } catch { /* a test that breaks storage on purpose breaks this too */ }
+});
 const veteran = async (on) => {
   await page.evaluate((flag) => localStorage.setItem('e2e.veteran', flag ? '1' : '0'), on);
 };
@@ -2705,6 +2717,111 @@ await step('the table is playable on an iPad on its side, a phone, and a phone o
   }
   await page.setViewportSize({ width: 1280, height: 900 });
   console.log(`      ${report.join(', ')}; no plates overlap, the buttons in view`);
+});
+
+await step('the table deals the next hand by itself, and a switch turns that off', async () => {
+  // At a table you are playing, the next hand comes out on its own after a
+  // beat to see how the last one ended. It ships on, it can be switched off
+  // right where the Deal button is, and the choice is kept.
+  await veteran(false);
+  await page.evaluate(() => {
+    localStorage.setItem('e2e.autodeal', '1');
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    raw.settings = { ...(raw.settings || {}), liveCoach: false };
+    delete raw.settings.autoDeal;           // a save from before the switch existed
+    localStorage.setItem(key, JSON.stringify(raw));
+  });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.felt', { timeout: 5000 });
+
+  const bar = () => page.textContent('.action-bar').then((x) => x.replace(/\s+/g, ' ').trim()).catch(() => '');
+  const chip = () => page.$eval('.auto-deal-chip', (n) => ({ text: n.textContent.trim(), on: n.getAttribute('aria-checked') }));
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).settings.autoDeal);
+  const playToEnd = async () => {
+    const deadline = Date.now() + 90000;
+    while (Date.now() < deadline) {
+      if (/Deal next hand/.test(await bar())) return;
+      if (/out of chips/i.test(await bar())) {
+        const topUp = await page.$('.action-bar .btn.primary');
+        if (topUp) await topUp.click().catch(() => {});
+        continue;
+      }
+      const band = await page.$('.read-bands .btn');
+      if (band) { await band.click().catch(() => {}); continue; }
+      const btn = (await page.$('.action-buttons .btn.danger')) || (await page.$('.action-buttons .btn.success'));
+      if (btn) await btn.click().catch(() => {});
+      await page.waitForTimeout(150);
+    }
+    throw new Error('a hand never finished');
+  };
+  const dealtByItself = async (ms) => {
+    const t0 = Date.now();
+    while (/Deal next hand/.test(await bar()) && Date.now() - t0 < ms) await page.waitForTimeout(100);
+    return { dealt: !/Deal next hand/.test(await bar()), after: Date.now() - t0 };
+  };
+
+  // On for a save that never had the switch, and the first hand is still yours to ask for.
+  const first = await chip();
+  if (first.on !== 'true' || !/on/.test(first.text)) throw new Error(`the switch is not on by default: ${JSON.stringify(first)}`);
+  if (!/Deal me in/.test(await bar())) throw new Error('the first hand was not left to the player');
+  await page.click('button:has-text("Deal me in")');
+
+  // A hand ends: the count runs, the button fills, and the next hand comes by itself.
+  await playToEnd();
+  const note = await page.$eval('.auto-deal-count', (n) => n.textContent);
+  if (!/Next hand in \d+s/.test(note)) throw new Error(`the countdown reads "${note}"`);
+  if (!(await page.$('.deal-button.counting .deal-fill'))) throw new Error('the Deal button does not fill as it counts');
+  const auto = await dealtByItself(9000);
+  if (!auto.dealt) throw new Error('nine seconds after the hand, the next one had not been dealt');
+  if (auto.after < 1000) throw new Error(`the next hand came after ${auto.after}ms, before the result could be read`);
+
+  // Switched off during the countdown, nothing is dealt however long we wait.
+  await playToEnd();
+  await page.click('.auto-deal-chip');
+  const off = await chip();
+  if (off.on !== 'false' || !/off/.test(off.text)) throw new Error(`the switch did not turn off: ${JSON.stringify(off)}`);
+  if (await page.$('.auto-deal-count')) throw new Error('the countdown kept running after the switch was turned off');
+  await page.waitForTimeout(5000);
+  if (!/Deal next hand/.test(await bar())) throw new Error('a hand was dealt with auto-deal switched off');
+  if ((await saved()) !== false) throw new Error('turning it off was not saved');
+
+  // Switched back on between hands, it starts counting at once.
+  await page.click('.auto-deal-chip');
+  if (!(await page.$('.auto-deal-count'))) throw new Error('turning it on between hands did not start the countdown');
+  const again = await dealtByItself(9000);
+  if (!again.dealt) throw new Error('the next hand was not dealt after turning auto-deal back on');
+
+  // Off, and kept: a reload still has it off, on the bar before the first hand.
+  await playToEnd();
+  await page.click('.auto-deal-chip');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.auto-deal-chip', { timeout: 5000 });
+  const kept = await chip();
+  if (kept.on !== 'false') throw new Error(`the choice was not kept across a reload: ${JSON.stringify(kept)}`);
+
+  // A lesson table is a chapter, not a game: no switch, nothing dealt for you.
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#play?lesson=hand-rankings`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.felt', { timeout: 5000 });
+  if (await page.$('.auto-deal-chip')) throw new Error('a lesson table offers auto-deal');
+
+  // Back to the way every other step runs: by hand.
+  await page.evaluate(() => {
+    localStorage.setItem('e2e.autodeal', '0');
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    raw.settings = { ...(raw.settings || {}), autoDeal: false };
+    delete raw.settings.liveCoach;          // the veteran seeding puts Silas back
+    localStorage.setItem(key, JSON.stringify(raw));
+  });
+  await veteran(true);
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  console.log(`      on by default; the next hand came after ${auto.after}ms; off stays off for 5s; back on deals again; the choice survives a reload`);
 });
 
 await step('layout holds up on phone and tablet viewports', async () => {

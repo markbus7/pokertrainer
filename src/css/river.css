@@ -3161,3 +3161,56 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
   .catch-pic svg { max-height: 64px; }
   .catch-water-meta { align-items: flex-start; }
 }
+
+/* ---------------- Auto-deal ----------------
+   The switch sits under the result, where the Deal button is, because that is
+   the moment you want it off. While the table counts down, the button fills
+   from the left as the seconds go. Colours: the bar's own wood text and
+   brass, and black for the fill, which is a shade over the gold. */
+.auto-deal-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; }
+.auto-deal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 11px 3px 9px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: transparent;
+  color: var(--on-wood);
+  opacity: 0.8;
+  font: inherit;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+.auto-deal-chip:hover { opacity: 1; }
+.auto-deal-chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.auto-deal-chip.on {
+  opacity: 1;
+  border-color: var(--brass);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--brass-hi);
+}
+.auto-deal-chip .icon { flex: none; }
+.auto-deal-count {
+  font-size: var(--t-xs);
+  color: var(--on-wood);
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+.deal-button { position: relative; overflow: hidden; }
+.deal-label { position: relative; }
+.deal-fill {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 220ms linear;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .deal-fill { transition: none; }
+}

@@ -44,6 +44,7 @@ import { IDK, dontKnowButton } from './dontKnow.js';
 import { bossFor, MENTOR } from '../data/characters.js';
 import { svgNode, lampNode } from './place.js';
 import { fishSvg } from './fishArt.js';
+import { autoDealEnabled, autoDealDelay, autoDealReady, countdown } from '../state/autoDeal.js';
 import { bites, landed, weighIn, speciesOf } from '../data/fish.js';
 import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
@@ -264,6 +265,9 @@ export function renderTable(ctx, params = {}) {
     // endless table: without a last hand there is no moment where anyone
     // says how it went.
     run: lesson ? startRun(params.lesson) : null,
+    // The countdown to the next hand, when the table deals itself:
+    // { total, started, timer } while it runs, null otherwise.
+    autoDeal: null,
     // What somebody at the table is saying, and for how long.
     speech: null,
     speechTimer: null,
@@ -366,6 +370,7 @@ export function renderTable(ctx, params = {}) {
 
   ctx.onLeave = () => {
     session.cancelled = true;
+    stopCountdown();
     clearTimeout(session.timer);
     clearTimeout(session.speechTimer);
   };
@@ -413,6 +418,7 @@ export function renderTable(ctx, params = {}) {
 
   function startHand() {
     if (session.cancelled) return;
+    stopCountdown();
     // A lesson is not a bankroll test. Busting out of one would end the
     // teaching over a variance run, so the seat is simply refilled.
     if (lesson && hero.stack <= 0) hero.stack = startingStack;
@@ -868,6 +874,8 @@ export function renderTable(ctx, params = {}) {
     };
     checkAchievements(profile, events).forEach((a) => toast({ icon: a.icon, title: a.name, desc: a.description }));
 
+    // Armed before the draw, so the bar is drawn with its countdown running.
+    armAutoDeal(result);
     draw();
 
   }
@@ -979,6 +987,7 @@ export function renderTable(ctx, params = {}) {
 
   function leave() {
     session.cancelled = true;
+    stopCountdown();
     clearTimeout(session.timer);
     if (grind) {
       const cashOut = (hero.stack / (bigBlind * 100)) * stake.buyIn;
@@ -1013,6 +1022,94 @@ export function renderTable(ctx, params = {}) {
     const notes = writeReport();
     if (notes !== null) go('report', { i: notes });
     else go('home');
+  }
+
+  /* ---------------- auto-deal ---------------- */
+
+  /**
+   * The next hand, dealt for you. At a table you are playing, the result
+   * gets a moment on screen — longer after a showdown, longer again with
+   * Silas giving his verdicts — and then the cards come out, the way a dealer
+   * would. The button still deals at once; the switch is kept in the profile
+   * so a table is the way you left it, and lives next to the button because
+   * the moment you want it off is the moment it is counting down.
+   *
+   * The first hand of a sitting is always yours to ask for, and so is the
+   * one after a bust: sitting down, and buying back in, are decisions.
+   */
+  function stopCountdown() {
+    if (session.autoDeal) clearInterval(session.autoDeal.timer);
+    session.autoDeal = null;
+  }
+
+  function armAutoDeal(result) {
+    stopCountdown();
+    const ready = autoDealReady({
+      on: autoDealEnabled(profile.settings),
+      lesson: Boolean(lesson),
+      cancelled: session.cancelled,
+      heroBust: hero.stack <= 0,
+    });
+    if (!ready) return;
+    const total = autoDealDelay({ showdown: result.reason === 'showdown', coaching: liveCoach() });
+    session.autoDeal = { total, started: Date.now(), timer: setInterval(autoDealTick, 200) };
+  }
+
+  function autoDealTick() {
+    const wait = session.autoDeal;
+    if (!wait) return;
+    if (session.cancelled) { stopCountdown(); return; }
+    // Nobody is watching a hidden tab, so the result is kept for when they
+    // are back: the count starts again from the top instead of dealing a hand
+    // into a page that is not on screen.
+    if (typeof document !== 'undefined' && document.hidden) { wait.started = Date.now(); return; }
+    const now = countdown(wait);
+    if (now.left <= 0) { startHand(); return; }
+    paintCountdown(now);
+  }
+
+  /** Move the bar and the number on what is already on screen. */
+  function paintCountdown(now) {
+    const fill = actionHost.querySelector('.deal-fill');
+    if (fill) fill.style.transform = `scaleX(${now.progress.toFixed(3)})`;
+    const note = actionHost.querySelector('.auto-deal-count');
+    if (note) note.textContent = t('Next hand in {n}s', { n: now.seconds });
+  }
+
+  /** The switch. Turned on between hands, it starts counting at once. */
+  function setAutoDeal(on) {
+    profile.updateSettings({ autoDeal: on });
+    if (!on) stopCountdown();
+    else if (table.result && table.handOver && !session.handStarted) armAutoDeal(table.result);
+    sound('click');
+    drawActions();
+  }
+
+  /** The switch, and — while it counts — what it is counting down to. */
+  function autoDealRow() {
+    if (lesson) return null;
+    const on = autoDealEnabled(profile.settings);
+    const wait = session.autoDeal;
+    return el('div.auto-deal-row',
+      el(`button.auto-deal-chip${on ? '.on' : ''}`, {
+        role: 'switch',
+        'aria-checked': on ? 'true' : 'false',
+        title: on
+          ? 'Auto-deal is on: the next hand is dealt for you. Click to deal each hand yourself.'
+          : 'Auto-deal is off: press the button for each hand. Click to have the next hand dealt for you.',
+        onclick: () => setAutoDeal(!on),
+      }, icon('repeat', { size: 13 }), on ? t('Auto-deal: on') : t('Auto-deal: off')),
+      wait ? el('span.auto-deal-count', t('Next hand in {n}s', { n: countdown(wait).seconds })) : null,
+    );
+  }
+
+  /** The deal button: while the table counts down, it fills as it goes. */
+  function dealNextButton() {
+    const wait = session.autoDeal;
+    return el(`button.btn.primary.lg.deal-button${wait ? '.counting' : ''}`, { onclick: startHand },
+      wait ? el('span.deal-fill', { style: { transform: `scaleX(${countdown(wait).progress.toFixed(3)})` } }) : null,
+      el('span.deal-label', 'Deal next hand'),
+    );
   }
 
   /** Mounts the rebuy panel only. Never calls draw(): drawActions routes here. */
@@ -1367,6 +1464,7 @@ export function renderTable(ctx, params = {}) {
                 el('div.faint', result.net[HERO_ID] >= 0
                   ? t('You won {n} chips this hand.', { n: fmt.chips(Math.abs(result.net[HERO_ID])) })
                   : t('You lost {n} chips this hand.', { n: fmt.chips(Math.abs(result.net[HERO_ID])) })),
+                autoDealRow(),
               ),
               el('div.row',
                 // Straight from the hand you just misplayed into the replay of
@@ -1379,11 +1477,14 @@ export function renderTable(ctx, params = {}) {
                       onclick: () => go('review', { hand: session.savedHand.id }),
                     }, 'Review this hand')
                   : null,
-                el('button.btn.primary.lg', { onclick: startHand }, 'Deal next hand'),
+                dealNextButton(),
               ),
             )
           : el('div.spread',
-              el('div.muted', 'Ready when you are.'),
+              el('div',
+                el('div.muted', 'Ready when you are.'),
+                autoDealRow(),
+              ),
               el('button.btn.primary.lg', { onclick: startHand }, 'Deal me in'),
             ),
       ));

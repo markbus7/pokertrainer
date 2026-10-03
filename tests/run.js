@@ -10,6 +10,7 @@ const modules = [
   './economy.test.js',
   './audio.test.js',
   './fish.test.js',
+  './autoDeal.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',
