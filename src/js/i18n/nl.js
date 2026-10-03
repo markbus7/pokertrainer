@@ -4650,4 +4650,15 @@ export const NL = {
   Bounties: 'Premies',
   'A bounty for every player you knock out: all of it if you played the hand right, half with one mistake, nothing with two.':
     'Een premie voor elke speler die je uitschakelt: alles als je de hand goed speelde, de helft bij één fout, niets bij twee.',
+  // v3.6 — music styles
+  'Music style': 'Muziekstijl',
+  'Soft piano': 'Zachte piano',
+  'Felt on the hammers, a little slower. Easy to listen to for an hour.':
+    'Vilt op de hamers, iets langzamer. Een uur lang prettig om naar te luisteren.',
+  'Honky-tonk': 'Honky-tonk',
+  'The boat\'s old upright: bright, quick and a little out of tune.':
+    'De oude piano van de boot: helder, vlot en een beetje vals.',
+  'Calm water': 'Kalm water',
+  'Long, slow chords and the odd soft note. Barely there.':
+    'Lange, trage akkoorden en af en toe een zachte noot. Nauwelijks hoorbaar.',
 };

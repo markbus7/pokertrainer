@@ -16,11 +16,12 @@
  * that is simply not played, and music asked for before that waits for it.
  */
 
-import { TUNES, renderTune } from './tunes.js';
+import { TUNES, arrange, styleFor, DEFAULT_STYLE } from './tunes.js';
 
 const state = {
   sfx: true,
   music: true,
+  style: DEFAULT_STYLE,
   unlocked: false,
   wanted: null,   // the track the current screen asks for
   playing: null,  // the track actually running
@@ -30,8 +31,10 @@ let ctx = null;
 let master = null;
 let sfxBus = null;
 let musicBus = null;
+let musicTone = null;
 let noise = null;
-let track = null; // { key, gain, events, beats, beatDur, loopStart, idx, timer }
+let track = null; // { key, style, gain, events, beats, beatDur, loopStart, idx, timer }
+let preview = null; // a few bars played when a style is picked on a quiet screen
 
 const supported = () => typeof window !== 'undefined'
   && (typeof window.AudioContext === 'function' || typeof window.webkitAudioContext === 'function');
@@ -60,12 +63,12 @@ function build() {
 
   // The piano sits behind everything and is rolled off at the top, so it
   // reads as a room with a piano in it rather than a piano in your ear.
-  const tone = ctx.createBiquadFilter();
-  tone.type = 'lowpass';
-  tone.frequency.value = 3400;
+  musicTone = ctx.createBiquadFilter();
+  musicTone.type = 'lowpass';
+  musicTone.frequency.value = styleFor(state.style).brightness;
   musicBus = ctx.createGain();
   musicBus.gain.value = state.music ? 0.36 : 0;
-  musicBus.connect(tone).connect(master);
+  musicBus.connect(musicTone).connect(master);
 
   noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
   const data = noise.getChannelData(0);
@@ -84,10 +87,11 @@ export function unlock() {
   return true;
 }
 
-/** Apply the reader's switches. Either may be left out. */
-export function configure({ sfx, music } = {}) {
+/** Apply the reader's switches and music style. Any may be left out. */
+export function configure({ sfx, music, style } = {}) {
   if (typeof sfx === 'boolean') state.sfx = sfx;
   if (typeof music === 'boolean') state.music = music;
+  if (typeof style === 'string') state.style = styleFor(style).key;
   if (ctx) {
     const now = ctx.currentTime;
     sfxBus.gain.setTargetAtTime(state.sfx ? 0.85 : 0, now, 0.05);
@@ -120,6 +124,7 @@ export function audioState() {
     music: state.music,
     wanted: state.wanted,
     playing: state.playing,
+    style: state.style,
     context: ctx ? ctx.state : 'none',
   };
 }
@@ -130,31 +135,53 @@ export function audioState() {
 
 function syncMusic() {
   if (!ctx || !state.unlocked) return;
+  musicTone.frequency.setTargetAtTime(styleFor(state.style).brightness, ctx.currentTime, 0.3);
   const want = state.music ? state.wanted : null;
-  if (want === state.playing) return;
+  if (want === state.playing && (!track || track.style === state.style)) return;
   if (track) fadeOut(track);
+  if (preview && (want || !state.music)) { fadeOut(preview); preview = null; }
   track = null;
   state.playing = null;
   if (want) {
-    track = startTrack(want);
+    track = startTrack(want, state.style);
     state.playing = want;
   }
 }
 
-function startTrack(key) {
+/**
+ * Let the reader hear a style they just picked, on a screen that is quiet
+ * on purpose: a few bars of the river tune, then gone. A screen with music
+ * of its own needs none — the change is already playing.
+ */
+export function previewStyle() {
+  if (!ctx || !state.unlocked || !state.music || track) return false;
+  if (preview) fadeOut(preview);
+  const t = startTrack('river', state.style);
+  preview = t;
+  setTimeout(() => {
+    if (preview !== t) return;
+    fadeOut(t);
+    preview = null;
+  }, 7000);
+  return true;
+}
+
+function startTrack(key, style) {
   const tune = TUNES[key];
-  const { events, beats } = renderTune(tune);
+  const { events, beats, bpm } = arrange(tune, style);
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(0.0001, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(1, ctx.currentTime + 1.2);
   gain.connect(musicBus);
   const t = {
     key,
+    style,
+    voice: VOICES[styleFor(style).key],
     ctx,
     gain,
     events,
     beats,
-    beatDur: 60 / tune.bpm,
+    beatDur: 60 / bpm,
     loopStart: ctx.currentTime + 0.15,
     idx: 0,
     timer: null,
@@ -176,7 +203,7 @@ function schedule(t) {
     const e = t.events[t.idx];
     const when = t.loopStart + e.at * t.beatDur;
     if (when > horizon) break;
-    if (when >= ctx.currentTime - 0.02) pianoNote(t.gain, when, e, t.beatDur);
+    if (when >= ctx.currentTime - 0.02) t.voice(t.gain, when, e, t.beatDur);
     t.idx++;
     if (t.idx >= t.events.length) {
       t.idx = 0;
@@ -187,6 +214,7 @@ function schedule(t) {
 
 function fadeOut(t) {
   clearInterval(t.timer);
+  if (t.ctx !== ctx) return;
   const now = ctx.currentTime;
   t.gain.gain.cancelScheduledValues(now);
   t.gain.gain.setValueAtTime(Math.max(t.gain.gain.value, 0.0001), now);
@@ -236,6 +264,108 @@ function pianoNote(out, time, e, beatDur) {
   a.stop(end + 0.02);
   b.stop(end + 0.02);
 }
+
+/**
+ * The felt piano. A sine at pitch with a little triangle under it for body,
+ * through a filter that starts warm and closes as the note dies — which is
+ * what a hammer with felt on it does, and what makes it gentle: there is no
+ * click at the front and no glassy overtone ringing on after it. No detune;
+ * this one has been tuned.
+ */
+const SOFT = {
+  melody: { level: 0.11, ring: 1.6 },
+  chord: { level: 0.032, ring: 0.8 },
+  bass: { level: 0.11, ring: 1.5 },
+};
+
+function softNote(out, time, e, beatDur) {
+  const v = SOFT[e.part];
+  const held = Math.max(0.15, e.dur * beatDur);
+  const end = time + Math.min(v.ring, held + 0.4);
+  const f = freq(e.midi);
+
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, time);
+  g.gain.exponentialRampToValueAtTime(v.level, time + 0.02);
+  g.gain.exponentialRampToValueAtTime(v.level * 0.45, time + 0.35);
+  g.gain.exponentialRampToValueAtTime(0.0001, end);
+  g.connect(out);
+
+  const felt = ctx.createBiquadFilter();
+  felt.type = 'lowpass';
+  felt.Q.value = 0.5;
+  felt.frequency.setValueAtTime(Math.min(f * 3, 1800), time);
+  felt.frequency.exponentialRampToValueAtTime(Math.max(f * 1.3, 220), end);
+  felt.connect(g);
+
+  const a = ctx.createOscillator();
+  a.type = 'sine';
+  a.frequency.value = f;
+  const b = ctx.createOscillator();
+  b.type = 'triangle';
+  b.frequency.value = f;
+  const bLevel = ctx.createGain();
+  bLevel.gain.value = 0.2;
+  a.connect(felt);
+  b.connect(bLevel).connect(felt);
+  a.start(time);
+  b.start(time);
+  a.stop(end + 0.02);
+  b.stop(end + 0.02);
+}
+
+/**
+ * "Calm water": every note swells in rather than being struck. The pad is
+ * two triangles a few cents apart under a low filter, so it moves slowly
+ * against itself; the low root is a plain sine; the glow is a soft bell on
+ * top that fades over a couple of seconds.
+ */
+const CALM = {
+  pad: { level: 0.032 },
+  deep: { level: 0.065 },
+  glow: { level: 0.07 },
+};
+
+function calmNote(out, time, e, beatDur) {
+  const v = CALM[e.part];
+  const f = freq(e.midi);
+  const g = ctx.createGain();
+  g.connect(out);
+  let end;
+  if (e.part === 'glow') {
+    end = time + 2.6;
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.exponentialRampToValueAtTime(v.level, time + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, end);
+  } else {
+    const held = e.dur * beatDur;
+    const swell = Math.min(0.9, held * 0.4);
+    end = time + held + 1.6;
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.exponentialRampToValueAtTime(v.level, time + swell);
+    g.gain.setValueAtTime(v.level, time + held);
+    g.gain.exponentialRampToValueAtTime(0.0001, end);
+  }
+
+  const soft = ctx.createBiquadFilter();
+  soft.type = 'lowpass';
+  soft.Q.value = 0.3;
+  soft.frequency.value = e.part === 'glow' ? 1600 : 900;
+  soft.connect(g);
+
+  const voices = e.part === 'pad' ? [['triangle', 4], ['triangle', -4]] : [['sine', 0]];
+  for (const [type, detune] of voices) {
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.value = f;
+    o.detune.value = detune;
+    o.connect(soft);
+    o.start(time);
+    o.stop(end + 0.02);
+  }
+}
+
+const VOICES = { soft: softNote, honky: pianoNote, calm: calmNote };
 
 /* ------------------------------------------------------------------ *
  * Effects
@@ -449,7 +579,7 @@ export function sfx(name) {
  * Render an effect or some music offline and report its level, so a test
  * can check nothing clips without anybody having to listen.
  */
-export async function measure(kind, name, seconds = 2) {
+export async function measure(kind, name, seconds = 2, style = DEFAULT_STYLE) {
   const Offline = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   const saved = { ctx, master, sfxBus, musicBus, noise };
   const off = new Offline(1, Math.ceil(44100 * seconds), 44100);
@@ -462,7 +592,10 @@ export async function measure(kind, name, seconds = 2) {
   sfxBus.connect(master);
   musicBus = off.createGain();
   musicBus.gain.value = 0.36;
-  musicBus.connect(master);
+  const rolloff = off.createBiquadFilter();
+  rolloff.type = 'lowpass';
+  rolloff.frequency.value = styleFor(style).brightness;
+  musicBus.connect(rolloff).connect(master);
   noise = off.createBuffer(1, off.sampleRate, off.sampleRate);
   const data = noise.getChannelData(0);
   for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
@@ -470,12 +603,12 @@ export async function measure(kind, name, seconds = 2) {
     if (kind === 'sfx') {
       RECIPES[name](sfxBus, 0.01);
     } else {
-      const tune = TUNES[name];
-      const { events } = renderTune(tune);
-      const beatDur = 60 / tune.bpm;
+      const { events, bpm } = arrange(TUNES[name], style);
+      const beatDur = 60 / bpm;
+      const voice = VOICES[styleFor(style).key];
       for (const e of events) {
         const when = e.at * beatDur;
-        if (when < seconds) pianoNote(musicBus, when, e, beatDur);
+        if (when < seconds) voice(musicBus, when, e, beatDur);
       }
     }
     const buffer = await off.startRendering();
@@ -483,7 +616,7 @@ export async function measure(kind, name, seconds = 2) {
     let peak = 0;
     let sum = 0;
     for (const s of samples) { const a = Math.abs(s); if (a > peak) peak = a; sum += s * s; }
-    return { peak, rms: Math.sqrt(sum / samples.length) };
+    return { peak, rms: Math.sqrt(sum / samples.length), samples };
   } finally {
     ({ ctx, master, sfxBus, musicBus, noise } = saved);
   }

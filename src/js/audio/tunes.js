@@ -100,6 +100,42 @@ export const PARLOUR_VAMP = {
 
 export const TUNES = { river: RIVER_RAG, table: PARLOUR_VAMP };
 
+/**
+ * Three ways to play the same music, picked in the ledger. The old upright
+ * was the only one for a long time, and its hammers were sharp: a reader
+ * playing for an hour heard every note as a tap on the glass. So the default
+ * is now the same tunes on a felt piano, and the upright is a choice.
+ *
+ * `tempo` scales the tune's own speed; `brightness` is where the music bus
+ * rolls the top off, in Hz.
+ */
+export const STYLES = {
+  soft: {
+    key: 'soft',
+    name: 'Soft piano',
+    blurb: 'Felt on the hammers, a little slower. Easy to listen to for an hour.',
+    tempo: 0.88,
+    brightness: 2200,
+  },
+  honky: {
+    key: 'honky',
+    name: 'Honky-tonk',
+    blurb: 'The boat\'s old upright: bright, quick and a little out of tune.',
+    tempo: 1,
+    brightness: 3400,
+  },
+  calm: {
+    key: 'calm',
+    name: 'Calm water',
+    blurb: 'Long, slow chords and the odd soft note. Barely there.',
+    tempo: 0.6,
+    brightness: 1500,
+  },
+};
+export const DEFAULT_STYLE = 'soft';
+
+export const styleFor = (key) => STYLES[key] || STYLES[DEFAULT_STYLE];
+
 /** The lowest octave the stride bass may use, and the chord's register. */
 const BASS_FLOOR = midi('E2');
 const CHORD_FLOOR = midi('G3');
@@ -146,4 +182,46 @@ export function renderTune(tune) {
   });
   events.sort((a, b) => a.at - b.at);
   return { events, beats: tune.bars.length * 4 };
+}
+
+/**
+ * The pads for "Calm water": the same changes, each chord held for as long
+ * as it lasts instead of struck, with the root underneath and — where the
+ * tune has one — the first note of each half bar left ringing on top. The
+ * stride and the syncopation are gone; what is left is the harmony moving.
+ */
+function renderPads(tune) {
+  const events = [];
+  tune.bars.forEach((b, i) => {
+    const start = i * 4;
+    const len = 4 / b.chords.length;
+    b.chords.forEach((name, half) => {
+      const pcs = CHORDS[name];
+      if (!pcs) throw new Error(`Unknown chord ${name} in bar ${i + 1}`);
+      const t0 = start + half * len;
+      events.push({ at: t0, dur: len, midi: place(pcs[0], BASS_FLOOR), part: 'deep' });
+      for (const pc of pcs) events.push({ at: t0, dur: len, midi: place(pc, CHORD_FLOOR), part: 'pad' });
+    });
+    if (tune.melodyless) return;
+    let pos = 0;
+    for (const token of b.melody.split(' ')) {
+      const [name, len] = token.split(':');
+      if (name !== 'r' && (pos === 0 || pos === 4)) {
+        events.push({ at: start + pos / 2, dur: 2, midi: midi(name), part: 'glow' });
+      }
+      pos += Number(len);
+    }
+  });
+  events.sort((a, b) => a.at - b.at);
+  return { events, beats: tune.bars.length * 4 };
+}
+
+/**
+ * A tune as a style plays it: its notes, its length in beats, and its speed.
+ * The two pianos play the written notes; "Calm water" plays the pads.
+ */
+export function arrange(tune, styleKey = DEFAULT_STYLE) {
+  const style = styleFor(styleKey);
+  const { events, beats } = style.key === 'calm' ? renderPads(tune) : renderTune(tune);
+  return { events, beats, bpm: tune.bpm * style.tempo };
 }

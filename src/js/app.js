@@ -35,6 +35,7 @@ import { renderBoatyard } from './ui/screenBoatyard.js';
 import { renderReport } from './ui/screenReport.js';
 import { pearl } from './ui/shop.js';
 import * as audio from './audio/engine.js';
+import { STYLES, styleFor } from './audio/tunes.js';
 
 /**
  * `music` is the track a screen plays ('river', 'table', or none); `focus`
@@ -382,6 +383,28 @@ function soundSwitch(key, label, iconName) {
   );
 }
 
+/**
+ * How the music is played: three styles of the same tunes. Picking one on a
+ * screen with music changes it in place; on a quiet screen it plays a few
+ * bars, so the choice is made by ear rather than by name.
+ */
+function musicStylePicker() {
+  const current = styleFor(profile.settings.musicStyle).key;
+  return el('div.music-styles', { role: 'radiogroup', 'aria-label': t('Music style') },
+    Object.values(STYLES).map((style) => el(`button.music-style${style.key === current ? '.active' : ''}`, {
+      role: 'radio',
+      'aria-checked': style.key === current ? 'true' : 'false',
+      onclick: () => {
+        profile.updateSettings({ musicStyle: style.key });
+        audio.previewStyle();
+      },
+    },
+      el('span.music-style-name', t(style.name)),
+      el('span.music-style-blurb', t(style.blurb)),
+    )),
+  );
+}
+
 function ledgerItem(item, activeRoute) {
   const here = item.route === activeRoute;
   return el(`button.ledger-item${here ? '.active' : ''}`, {
@@ -439,6 +462,7 @@ function drawLedger({ entering = false } = {}) {
           el('div.setting', el('span.setting-label', t('Look')), themePicker()),
           soundSwitch('sound', 'Sound effects', 'speaker'),
           soundSwitch('music', 'Music', 'note'),
+          profile.settings.music !== false ? musicStylePicker() : null,
           el('button.version-chip', {
             onclick: () => { ledgerOpen = false; go('stats'); },
             title: 'Which build you are running — click for details and an update check',
@@ -503,6 +527,7 @@ window.addEventListener('hashchange', () => { ledgerOpen = false; render(); });
 const applySound = () => audio.configure({
   sfx: profile.settings.sound !== false,
   music: profile.settings.music !== false,
+  style: profile.settings.musicStyle,
 });
 applySound();
 for (const type of ['pointerdown', 'keydown']) {
