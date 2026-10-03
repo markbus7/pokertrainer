@@ -221,7 +221,7 @@ const emptyProfile = () => ({
   // sync: pick Dutch and Daylight on the iPad and the iPhone matches,
   // without setting either twice.
   settings: {
-    sound: true, music: true, coach: true, fourColour: false, autoMuck: true,
+    sound: true, music: true, musicStyle: 'soft', coach: true, fourColour: false, autoMuck: true,
     lang: 'en', theme: DEFAULT_THEME,
     // Silas talking you through every hand is a choice now, not the table.
     // Off, the table is free play: he stays quiet until you ask, and his

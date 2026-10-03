@@ -2983,3 +2983,29 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
   .creek-row.card-left .rung-card, .creek-row.card-right .rung-card { grid-column: 2; }
 }
 .creek-home, .boat-yard-link, .companion-ashore .btn, .yard-crew .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+
+/* Music style: three ways to play the same tunes, under the music switch. */
+.music-styles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 var(--s-2) var(--s-2) 44px;
+}
+.music-style {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 6px 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.music-style:hover { background: rgba(0, 0, 0, 0.05); }
+.music-style.active { background: rgba(0, 0, 0, 0.07); border-color: var(--ink-rule); box-shadow: inset 3px 0 0 var(--brass-lo); }
+.music-style-name { font-weight: 700; font-size: var(--t-sm); }
+.music-style-blurb { font-size: var(--t-xs); color: var(--ink-dim); line-height: 1.35; }

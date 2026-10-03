@@ -2428,6 +2428,41 @@ await step('the lessons and the charts are places on the map, and there are no t
   if (!/#home/.test(page.url())) throw new Error(`the crest went to ${page.url()}`);
 });
 
+await step('the music has three styles, picked in the ledger, soft by default', async () => {
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(300);
+  await page.click('.ledger-button');
+  await page.waitForTimeout(250);
+  const musicSwitch = page.locator('.switch', { hasText: 'Music' });
+  const wasOn = (await musicSwitch.getAttribute('aria-checked')) === 'true';
+  if (!wasOn) { await musicSwitch.click(); await page.waitForTimeout(200); }
+  const names = await page.$$eval('.music-style-name', (n) => n.map((x) => x.textContent.trim()));
+  if (names.join('|') !== 'Soft piano|Honky-tonk|Calm water') throw new Error(`styles offered: ${names}`);
+  const style = () => page.evaluate(async () => {
+    const { Profile } = await import('/src/js/state/profile.js');
+    const { audioState } = await import('/src/js/audio/engine.js');
+    return { saved: Profile.load().settings.musicStyle, engine: audioState().style,
+      checked: document.querySelector('.music-style[aria-checked="true"] .music-style-name').textContent };
+  });
+  const before = await style();
+  if (before.checked !== 'Soft piano' || before.engine !== 'soft') throw new Error(`default is not the soft piano: ${JSON.stringify(before)}`);
+  await page.click('.music-style:has-text("Honky-tonk")');
+  await page.waitForTimeout(200);
+  const after = await style();
+  if (after.saved !== 'honky' || after.engine !== 'honky' || after.checked !== 'Honky-tonk') {
+    throw new Error(`picking the upright did not take: ${JSON.stringify(after)}`);
+  }
+  await page.click('.music-style:has-text("Soft piano")');
+  await page.waitForTimeout(200);
+  // With the music off there is nothing to pick a style for.
+  await page.locator('.switch', { hasText: 'Music' }).click();
+  await page.waitForTimeout(200);
+  if (await page.$('.music-styles')) throw new Error('the style picker stays with the music off');
+  if (wasOn) { await page.locator('.switch', { hasText: 'Music' }).click(); await page.waitForTimeout(200); }
+  await page.keyboard.press('Escape');
+  console.log(`      offered ${names.join(', ')}; the choice is saved and reaches the engine`);
+});
+
 await step('the language switch turns the whole app Dutch and persists', async () => {
   await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
