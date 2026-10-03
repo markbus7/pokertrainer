@@ -137,7 +137,7 @@ describe('the river: the chart is drawn where things are', () => {
   });
 
   it('sends each place to a screen the app has', () => {
-    const routes = new Set(['train', 'play', 'ranges', 'lab', 'gauntlet', 'store', 'boatyard']);
+    const routes = new Set(['train', 'play', 'ranges', 'lab', 'gauntlet', 'store', 'boatyard', 'catchbook']);
     equal(new Set(PLACES.map((p) => p.key)).size, PLACES.length, 'two places share a key');
     for (const place of PLACES) {
       assert(routes.has(place.route), `${place.name} leads nowhere`);

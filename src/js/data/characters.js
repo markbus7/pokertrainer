@@ -270,6 +270,23 @@ export const SHIPWRIGHT = {
 };
 
 /**
+ * Maggie Doyle keeps the bait and tackle shop on the pier at Fisher's Rest,
+ * and the Catch Book on its counter. She has fished this river for forty
+ * years and plays cards the way she fishes: patiently, and only for the
+ * ones worth landing.
+ */
+export const ANGLER = {
+  key: 'maggie',
+  name: 'Maggie Doyle',
+  short: 'Maggie',
+  title: 'Keeper of the Catch Book',
+  hello: 'Every fish in this river is a hand somebody played right. Play the spot well at a real table and it is yours — no help, no lessons, no luck.',
+  empty: 'Nothing in the book with your name on it yet. The shallows by Mud Landing are full of perch: open from the button with a hand the chart likes, and you will have your first.',
+  some: 'Not a bad start. The big ones live further down the river — the better the tables, the deeper the water.',
+  full: 'Every page filled. I have kept this book thirty years and never seen that. Sit down; the coffee is on me.',
+};
+
+/**
  * The boats. The first is borrowed; the rest are built at the yard and paid
  * for in pearls, and each is only sold to somebody whose boat has already
  * reached `reach` — the index of a stop. The last is the Commodore's, which

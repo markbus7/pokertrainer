@@ -73,6 +73,7 @@ export function renderReport(ctx) {
         part(t('Sound decisions'), report.pearls.decisions),
         report.pearls.bonus ? part(t('Taking the table'), report.pearls.bonus) : null,
         report.pearls.bounty ? part(t('Bounties'), report.pearls.bounty) : null,
+        report.pearls.catches ? part(t('The Catch Book'), report.pearls.catches) : null,
         report.pearls.boat ? part(t('Your boat\'s strongbox'), report.pearls.boat) : null,
       ),
       el('div.faint', t('A pearl for every hand, one more for every sound decision you made without asking.')),

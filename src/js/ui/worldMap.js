@@ -177,6 +177,7 @@ export const PLACES = [
   { key: 'race', route: 'gauntlet', landmark: 'race', x: 862, y: 640, name: 'The Racing Chute', label: 'The Race' },
   { key: 'tradingpost', route: 'store', landmark: 'tradingpost', x: 1070, y: 290, name: 'The Trading Post', label: 'Spend pearls' },
   { key: 'boatyard', route: 'boatyard', landmark: 'boatyard', x: 550, y: 556, name: 'The Boatyard', label: 'Boats and fittings' },
+  { key: 'tackle', route: 'catchbook', landmark: 'tackle', x: 250, y: 600, name: 'The Catch Book', label: 'Every fish is a spot played right' },
 ];
 
 /**

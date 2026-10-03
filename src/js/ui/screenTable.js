@@ -43,6 +43,8 @@ import { checkAchievements } from '../state/achievements.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
 import { bossFor, MENTOR } from '../data/characters.js';
 import { svgNode, lampNode } from './place.js';
+import { fishSvg } from './fishArt.js';
+import { bites, landed, weighIn, speciesOf } from '../data/fish.js';
 import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
 import {
@@ -277,7 +279,9 @@ export function renderTable(ctx, params = {}) {
     helped: false,
     // Silas's notes: every decision as graded, whether or not he said so.
     graded: [],
-    pearls: { hands: 0, decisions: 0, bonus: 0, boat: 0, bounty: 0 },
+    pearls: { hands: 0, decisions: 0, bonus: 0, boat: 0, bounty: 0, catches: 0 },
+    // The Catch Book: fish hooked this hand, waiting on how it ends.
+    hooked: [],
     // The pearls each opponent carries, taken once by knocking them out.
     bounties: {},
     stacksAtStart: {},
@@ -435,6 +439,7 @@ export function renderTable(ctx, params = {}) {
     session.learned = [];
     session.namedThisHand = false;
     session.playedByReader = false;
+    session.hooked = [];
     log(t('— Hand #{n} —', { n: table.handNumber }), true);
     session.boardHeard = 0;
     sound('shuffle');
@@ -546,6 +551,7 @@ export function renderTable(ctx, params = {}) {
     session.learned = [];
     session.namedThisHand = false;
     session.playedByReader = false;
+    session.hooked = [];
     log(t('— Hand #{n} —', { n: table.handNumber }), true);
   }
 
@@ -739,6 +745,15 @@ export function renderTable(ctx, params = {}) {
       hand: table.handNumber,
       handId: null,
     });
+    // The Catch Book: a spot played right hooks the fish that lives in it.
+    // Some only come in if the hand ends the right way; endHand says.
+    if (!lesson) {
+      const caughtHere = bites({
+        street: table.street, action: action.type, concept: verdict.concept.id, level: verdict.level,
+        helped, position: snap.position, firstIn: snap.firstIn, toCall: snap.toCall,
+      }, room ? room.index : null);
+      for (const key of caughtHere) session.hooked.push({ key, pot: snap.pot });
+    }
     const earned = lesson ? 0 : decisionPearls({ level: verdict.level, street: table.street, action: action.type, helped });
     if (earned) {
       session.pearls.decisions += earned;
@@ -820,6 +835,7 @@ export function renderTable(ctx, params = {}) {
       profile.earnPearls(paid + extra);
       pearlPop(paid + extra, trayHost);
       collectBounties(result);
+      landFish(landed(session.hooked.map((h) => h.key), { heroWon: won, showdown }), potTotal);
     }
     // The notes point at the replay of any hand that was kept.
     if (session.savedHand) {
@@ -874,6 +890,8 @@ export function renderTable(ctx, params = {}) {
       session.bounties[p.id] = 0;
       const shared = heroWon && result.pots.some((pot) => pot.eligible.includes(p.id) && pot.eligible.includes(HERO_ID));
       if (!shared) continue;
+      // The legend of the Catch Book: an owner knocked out by a clean hand.
+      if (p.id === bossId && mistakes === 0) session.hooked.push({ key: 'pike', pot: 0 });
       const paid = bountyPaid(bounty, mistakes);
       if (paid) {
         session.pearls.bounty += profile.earnPearls(paid);
@@ -887,6 +905,48 @@ export function renderTable(ctx, params = {}) {
       log(line, true);
       toast({ icon: paid ? pearl(22) : '⚠️', title: paid ? t('Bounty: {n} pearls', { n: paid }) : t('No bounty'), desc: line });
     }
+  }
+
+  /**
+   * Bring in what the hand landed: into the Catch Book, weighed by the pot
+   * it came out of — the pot as it stood when you made the decision, or for
+   * a fish only the ending lands (a bluff, a hero call, the pike) the pot
+   * you won. The first of a kind pays its water's pearls and says so
+   * out loud; a new record says so too; an ordinary catch is a line in the
+   * log, because a minnow for every good fold would be a toast every hand.
+   */
+  function landFish(keys, finalPot) {
+    const where = room ? room.name : 'The Saloon';
+    for (const key of keys) {
+      const species = speciesOf(key);
+      const atDecision = Math.max(0, ...session.hooked.filter((h) => h.key === key).map((h) => h.pot || 0));
+      const lb = weighIn(species.land || species.special ? finalPot : atDecision, bigBlind);
+      const got = profile.landCatch(key, { weight: lb, where });
+      if (!got) continue;
+      const fish = t(species.name);
+      const weight = lb.toFixed(1);
+      if (got.reward) {
+        session.pearls.catches += got.reward;
+        pearlPop(got.reward, trayHost);
+      }
+      log(got.first
+        ? t('New in the Catch Book: a {fish}, {lb} lb.', { fish, lb: weight })
+        : got.record
+          ? t('A record {fish}: {lb} lb.', { fish, lb: weight })
+          : t('Caught a {fish}, {lb} lb.', { fish, lb: weight }), true);
+      // A record is news when it is a real step up; a few ounces is a line in the log.
+      const bigRecord = got.record && lb - got.previous >= 1;
+      if (got.first || bigRecord) {
+        toast({
+          icon: svgNode(fishSvg(species, { width: 44 }), 'toast-fish'),
+          title: got.first ? t('New catch: {fish}', { fish }) : t('Record catch: {fish}', { fish }),
+          desc: got.first
+            ? t('{lb} lb, and {n} pearls for the first of its kind. It is in the Catch Book.', { lb: weight, n: got.reward })
+            : t('{lb} lb, the biggest you have landed.', { lb: weight }),
+        });
+      }
+    }
+    session.hooked = [];
   }
 
   /**
@@ -1041,7 +1101,8 @@ export function renderTable(ctx, params = {}) {
   function drawTray() {
     const owned = crewAboard(profile);
     const yourTurn = isHeroTurn();
-    const total = session.pearls.hands + session.pearls.decisions + session.pearls.bonus + session.pearls.boat + session.pearls.bounty;
+    const total = session.pearls.hands + session.pearls.decisions + session.pearls.bonus + session.pearls.boat + session.pearls.bounty
+      + session.pearls.catches;
     mount(trayHost, el('div.companion-tray',
       el(`button.btn.help-btn${session.helped ? '.used' : ''}`, {
         disabled: !yourTurn,
