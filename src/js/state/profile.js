@@ -23,6 +23,7 @@ import { STAKES } from './stats.js';
 import { STARTER, LESSON_PRICES, fillBerths } from './economy.js';
 import { boatEarnedBy } from '../data/characters.js';
 import { VENUES, venueFor } from '../data/venues.js';
+import { logCatch } from '../data/fish.js';
 
 const STORAGE_KEY = 'poker-trainer.profile.v1';
 
@@ -217,6 +218,8 @@ const emptyProfile = () => ({
   lifetimeProfitBb: 0,
   sessions: [],
   economy: emptyEconomy(),
+  // The Catch Book: species key -> { count, best (lb), where, first }.
+  catchBook: {},
   // lang and theme both live in settings so they travel with the cloud
   // sync: pick Dutch and Daylight on the iPad and the iPhone matches,
   // without setting either twice.
@@ -505,6 +508,25 @@ export class Profile {
   }
 
   get pearls() { return this.economy.pearls; }
+
+  /** The Catch Book, made safe to write to whatever a save held. */
+  get catchBook() {
+    const b = this.data.catchBook;
+    if (!b || typeof b !== 'object' || Array.isArray(b)) this.data.catchBook = {};
+    return this.data.catchBook;
+  }
+
+  /**
+   * Land a fish: into the book, and the first of its kind pays the water's
+   * reward. Returns what logCatch reported, or null for an unknown species.
+   */
+  landCatch(key, details) {
+    const result = logCatch(this.catchBook, key, details);
+    if (!result) return null;
+    if (result.reward) this.earnPearls(result.reward);
+    else this.save();
+    return result;
+  }
 
   owns(key) { return this.economy.owned.includes(key); }
 

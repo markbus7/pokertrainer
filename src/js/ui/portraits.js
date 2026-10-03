@@ -285,6 +285,26 @@ const PEOPLE = {
       + '<path d="M70 35l1.3-1.9" stroke="#3a2a1a" stroke-width="1.6" stroke-linecap="round"/>',
   },
 
+  /* ---- the angler: a wide oilskin hat with a fly hooked in the band, a
+     long grey braid, and a checked shirt under her wader straps ---- */
+  maggie: {
+    skin: SKIN.olive,
+    ground: '#3f5a4c',
+    body: shoulders('#8a3b32')
+      + '<path d="M26 82h48M22 90h56M30 74v26M42 70v30M58 70v30M70 74v26" stroke="#6e2d26" stroke-width="1.6"/>'
+      + '<path d="M38 71v29M62 71v29" stroke="#4d5a3a" stroke-width="5"/>'
+      + '<circle cx="38" cy="80" r="1.6" fill="#c9b48a"/><circle cx="62" cy="80" r="1.6" fill="#c9b48a"/>',
+    back: '<path d="M64 46C72 58 70 74 66 90" stroke="#a9a59c" stroke-width="5.5" fill="none" stroke-linecap="round"/>'
+      + '<path d="M66 60l3 2M65 68l3 2M66 76l3 2M66 84l3 2" stroke="#8d897f" stroke-width="1.2"/>',
+    hair: '<path d="M33.5 48C32 38 38 31 50 31C62 31 68 38 66.5 48C63 40 57 37 50 37C43 37 37 40 33.5 48Z" fill="#b5b0a6"/>',
+    face: { mouth: 'smile', brow: '#8d897f' },
+    front: '<path d="M18 37C30 30 70 30 82 37C76 41 24 41 18 37Z" fill="#7a6a3c"/>'
+      + '<path d="M32 35C32 20 68 20 68 35C58 31 42 31 32 35Z" fill="#8c7b48"/>'
+      + '<path d="M33 33.5C44 30.5 56 30.5 67 33.5" stroke="#5d5130" stroke-width="2.4" fill="none"/>'
+      + '<path d="M59 30.5l4-3.5 1.5 4.5z" fill="#d8573a"/><path d="M63 27l2-2" stroke="#e8c84a" stroke-width="1.2"/>'
+      + '<path d="M44 52q-1.5 1 0 2M56 52q1.5 1 0 2" stroke="#a97a52" stroke-width=".9" fill="none"/>',
+  },
+
   /* ---- the regulars, keyed by the style they play ---- */
   rock: {
     skin: SKIN.tan,

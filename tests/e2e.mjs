@@ -1669,7 +1669,7 @@ await step('every place is on the chart, and no sign covers another', async () =
     await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(600);
     const seen = await signs();
-    if (seen.count !== 15 || seen.places !== 7) throw new Error(`${seen.count} signs and ${seen.places} places at ${w}px, expected 15 and 7`);
+    if (seen.count !== 16 || seen.places !== 8) throw new Error(`${seen.count} signs and ${seen.places} places at ${w}px, expected 16 and 8`);
     if (seen.hits.length) throw new Error(`signs on top of each other at ${w}px: ${seen.hits.join(', ')}`);
     // On a phone the chart is wider than the screen; it opens on your boat.
     if (!seen.hereInView) throw new Error(`the stop you are at is scrolled out of sight at ${w}px`);
@@ -2385,6 +2385,57 @@ await step('on a phone, the cards under the map stack in order and scroll with t
   } finally {
     await page.setViewportSize({ width: 1280, height: 900 });
   }
+});
+
+await step('the Catch Book is on the map, and a spot played right lands its fish', async () => {
+  // Start from an empty book, so the first catch is a first.
+  await page.evaluate(async () => {
+    const { Profile } = await import('/src/js/state/profile.js');
+    const p = Profile.load();
+    p.data.catchBook = {};
+    p.save();
+  });
+  await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.map-place.place-tackle', { timeout: 5000 });
+  const plate = (await page.textContent('.map-place.place-tackle')).replace(/\s+/g, ' ').trim();
+  if (!/0 of 13 fish caught/.test(plate)) throw new Error(`the map plate reads "${plate}"`);
+  await page.click('.map-place.place-tackle');
+  await page.waitForSelector('.catchbook', { timeout: 5000 });
+  const cards = await page.$$eval('.catch-card', (n) => n.length);
+  const shadows = await page.$$eval('.catch-card .fish-art.unknown', (n) => n.length);
+  if (cards !== 13 || shadows !== 13) throw new Error(`${cards} pages, ${shadows} of them shadows, in an empty book`);
+  const waters = await page.$$eval('.catch-water h2', (n) => n.map((x) => x.textContent.trim()));
+  if (waters.join('|') !== 'The Shallows|The Channel|Deep Water|The Delta|Legends') throw new Error(`waters: ${waters}`);
+
+  // Fold rubbish under the gun at the practice table until a good fold
+  // lands a Patient Minnow.
+  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.felt', { timeout: 5000 });
+  await page.click('button:has-text("Deal me in")');
+  const book = () => page.evaluate(async () => {
+    const { Profile } = await import('/src/js/state/profile.js');
+    return Profile.load().data.catchBook;
+  });
+  const deadline = Date.now() + 90000;
+  while (Date.now() < deadline && !(await book()).minnow) {
+    const bar = await page.textContent('.action-bar').catch(() => '');
+    if (/Deal next hand/.test(bar)) { await page.click('button:has-text("Deal next hand")').catch(() => {}); await page.waitForTimeout(250); continue; }
+    if (/out of chips/i.test(bar)) { const b = await page.$('.action-bar .btn.primary'); if (b) await b.click().catch(() => {}); continue; }
+    const band = await page.$('.read-bands .btn');
+    if (band) { await band.click().catch(() => {}); continue; }
+    const btn = (await page.$('.action-buttons .btn.danger')) || (await page.$('.action-buttons .btn.success'));
+    if (btn) await btn.click().catch(() => {});
+    await page.waitForTimeout(200);
+  }
+  const caught = await book();
+  if (!caught.minnow) throw new Error('a minute and a half of good folds landed no minnow');
+  if (!(caught.minnow.best >= 0.5) || caught.minnow.where !== 'The Saloon') throw new Error(`the catch was logged wrong: ${JSON.stringify(caught.minnow)}`);
+
+  await page.goto(`${BASE}/#catchbook`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.catch-card.caught', { timeout: 5000 });
+  const name = (await page.textContent('.catch-card.caught .catch-name')).trim();
+  if (name !== 'Patient Minnow') throw new Error(`the book shows ${name} as caught`);
+  console.log(`      13 shadows in an empty book; a good fold landed a ${caught.minnow.best} lb minnow, and the book shows it`);
 });
 
 await step('the lessons and the charts are places on the map, and there are no tabs', async () => {

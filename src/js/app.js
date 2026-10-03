@@ -32,6 +32,7 @@ import { renderStats, renderCharts, renderGlossary } from './ui/screenStats.js';
 import { renderLevels } from './ui/screenLevels.js';
 import { renderStore } from './ui/screenStore.js';
 import { renderBoatyard } from './ui/screenBoatyard.js';
+import { renderCatchBook } from './ui/screenCatchBook.js';
 import { renderReport } from './ui/screenReport.js';
 import { pearl } from './ui/shop.js';
 import * as audio from './audio/engine.js';
@@ -64,6 +65,7 @@ const ROUTES = {
   levels: { render: renderLevels, title: 'Your Papers' },
   store: { render: renderStore, title: 'The Trading Post' },
   boatyard: { render: renderBoatyard, title: 'The Boatyard', music: 'river' },
+  catchbook: { render: renderCatchBook, title: 'The Catch Book', music: 'river' },
   report: { render: renderReport, title: 'Silas\'s notes' },
 };
 
@@ -85,6 +87,7 @@ const LEDGER = [
       { route: 'play', label: 'Free table', icon: 'cards', note: 'Six-handed, with no bankroll at stake' },
       { route: 'store', label: 'The Trading Post', icon: 'store', note: 'Spend your pearls: chapters, charts, companions' },
       { route: 'boatyard', label: 'The Boatyard', icon: 'anchor', note: 'Better boats, and fittings that earn their keep' },
+      { route: 'catchbook', label: 'The Catch Book', icon: 'fish', note: 'Every fish is a spot played right' },
     ],
   },
   {

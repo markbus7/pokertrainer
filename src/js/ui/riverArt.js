@@ -226,6 +226,21 @@ export const LANDMARKS = {
     <path class="ink" d="M14 -12v10"/>
     <path class="mark ink" d="M36 -26l9 3-9 3z"/>`,
 
+  // The bait and tackle shop: a shack at the end of a pier, a carved fish
+  // hung out for a sign, and a rod leaning on the rail with its line in.
+  tackle: () => `
+    <path class="shallows" d="M-46 16h92v8h-92z"/>
+    <path class="ink" d="M-30 24V12M-14 24V12M2 24V12M18 24V12M34 24V12"/>
+    <path class="roof ink" d="M-36 12h74v-3h-74z"/>
+    <path class="wall ink" d="M-28 9V-12h32V9z"/>
+    <path class="roof ink" d="M-32 -12L-12 -27L8 -12z"/>
+    <rect class="glow" x="-23" y="-6" width="7" height="7"/>
+    <path class="roof ink" d="M-8 9v-12h8v12z"/>
+    <path class="ink" d="M4 -9h12M12 -9v3"/>
+    <path class="mark ink" d="M5 -2q7 -5 13 0q-6 5 -13 0zM18 -2l5 -4v8z"/>
+    <path class="ink" d="M26 9L44 -30"/>
+    <path class="ink" d="M44 -30q5 22 -1 46"/>`,
+
   // A general store on stilts where two rivers meet: a porch, barrels, a
   // board over the door and a flag to find it by.
   tradingpost: () => `

@@ -4661,4 +4661,135 @@ export const NL = {
   'Calm water': 'Kalm water',
   'Long, slow chords and the odd soft note. Barely there.':
     'Lange, trage akkoorden en af en toe een zachte noot. Nauwelijks hoorbaar.',
+  // v3.7 — the Catch Book
+  'The Shallows':
+    'Het Ondiepe',
+  'Mud Landing, Fisher\'s Rest and the Saloon. The preflop basics.':
+    'Mud Landing, Fisher\'s Rest en de Saloon. De basis voor de flop.',
+  'The Channel':
+    'De Vaargeul',
+  'The Ferry and Cotton Row. Draws, prices and the 3-bet.':
+    'The Ferry en Cotton Row. Draws, prijzen en de 3-bet.',
+  'Deep Water':
+    'Diep Water',
+  'The Belle and the Grand Hotel. Bluffs, bluff-catchers and value.':
+    'The Belle en het Grand Hotel. Bluffs, bluff-catchers en value.',
+  'The Gilded Barge and Delta Crown. The big decisions.':
+    'The Gilded Barge en Delta Crown. De grote beslissingen.',
+  'Legends':
+    'Legendes',
+  'Caught anywhere on the river, by very few.':
+    'Overal op de rivier te vangen, door heel weinigen.',
+  'Steal Perch':
+    'Steelbaars',
+  'Open-raise first in from the cutoff, the button or the small blind, with a hand the chart opens.':
+    'Open als eerste met een raise vanaf de cutoff, de button of de small blind, met een hand die de chart opent.',
+  'Patient Minnow':
+    'Geduldig Visje',
+  'Fold before the flop a hand the chart says to fold.':
+    'Fold voor de flop een hand die volgens de chart weg moet.',
+  'Blind Bream':
+    'Blinde Brasem',
+  'Defend the big blind against an open — call or 3-bet a hand the chart plays.':
+    'Verdedig de big blind tegen een open: call of 3-bet een hand die de chart speelt.',
+  'C-Bet Carp':
+    'C-bet Karper',
+  'Raise before the flop, then make a continuation bet on a board that suits it.':
+    'Raise voor de flop en maak daarna een continuation bet op een board dat erbij past.',
+  'Drawing Trout':
+    'Trekkende Forel',
+  'Call a bet with a draw when the outs pay for the price.':
+    'Call een bet met een draw als de outs de prijs betalen.',
+  'Pot-Odds Eel':
+    'Pot-odds Aal',
+  'Fold to a bet with nothing made when the price is too high.':
+    'Fold op een bet zonder gemaakte hand als de prijs te hoog is.',
+  '3-Bet Walleye':
+    '3-bet Snoekbaars',
+  'Re-raise an open before the flop with a hand the chart 3-bets.':
+    'Herraise een open voor de flop met een hand die de chart 3-bet.',
+  'Bluff-Catcher Bass':
+    'Bluff-catcher Baars',
+  'Call a bet after the flop with a hand that only beats a bluff, when the price says defend.':
+    'Call een bet na de flop met een hand die alleen een bluf verslaat, als de prijs zegt: verdedigen.',
+  'Bluffing Gar':
+    'Bluffende Beensnoek',
+  'Bet with nothing to show down after the flop — and have everybody fold.':
+    'Bet na de flop met niets om te laten zien, en laat iedereen folden.',
+  'Value Muskie':
+    'Value Muskie',
+  'Bet or raise for value on the turn or the river when you are well ahead.':
+    'Bet of raise voor value op de turn of de river als je ruim voor staat.',
+  'Commitment Sturgeon':
+    'Commitment Steur',
+  'Face a bet with the stack barely bigger than the pot, and make the right call or fold.':
+    'Krijg een bet tegen je met een stack die amper groter is dan de pot, en maak de juiste call of fold.',
+  'Hero-Call Catfish':
+    'Hero-call Meerval',
+  'Call a river bet the price allows with a hand that only beats a bluff — and win at showdown.':
+    'Call een river-bet die de prijs toelaat met een hand die alleen een bluf verslaat, en win bij de showdown.',
+  'The Golden Pike':
+    'De Gouden Snoek',
+  'Knock a table\'s owner out of their seat, with every decision in that hand sound.':
+    'Schakel de eigenaar van een tafel uit, met elke beslissing in die hand goed.',
+  'Maggie Doyle':
+    'Maggie Doyle',
+  'Keeper of the Catch Book':
+    'Hoedster van het Vangstboek',
+  'Every fish in this river is a hand somebody played right. Play the spot well at a real table and it is yours — no help, no lessons, no luck.':
+    'Elke vis in deze rivier is een hand die iemand goed speelde. Speel de spot goed aan een echte tafel en hij is van jou: geen hulp, geen lessen, geen geluk.',
+  'Nothing in the book with your name on it yet. The shallows by Mud Landing are full of perch: open from the button with a hand the chart likes, and you will have your first.':
+    'Nog niets in het boek op jouw naam. Het ondiepe bij Mud Landing zit vol baars: open vanaf de button met een hand die de chart goedvindt, en je hebt je eerste.',
+  'Not a bad start. The big ones live further down the river — the better the tables, the deeper the water.':
+    'Geen slecht begin. De grote zitten verder stroomafwaarts: hoe beter de tafels, hoe dieper het water.',
+  'Every page filled. I have kept this book thirty years and never seen that. Sit down; the coffee is on me.':
+    'Elke bladzijde gevuld. Ik houd dit boek al dertig jaar bij en heb dat nooit gezien. Ga zitten, de koffie is van mij.',
+  'On the pier at Fisher\'s Rest':
+    'Op de steiger bij Fisher\'s Rest',
+  'The Catch Book':
+    'Het Vangstboek',
+  '{n} of {total} caught':
+    '{n} van {total} gevangen',
+  'Fish are caught by playing a spot right at a real table: no help, no lesson tables, no mistakes. The first of each kind pays pearls.':
+    'Vissen vang je door een spot goed te spelen aan een echte tafel: geen hulp, geen lestafels, geen fouten. De eerste van elke soort levert parels op.',
+  'Go fishing':
+    'Ga vissen',
+  '{n} of {total}':
+    '{n} van {total}',
+  'First catch pays':
+    'Eerste vangst levert',
+  'Your boat has not reached these waters. They start at {stop}.':
+    'Je boot heeft dit water nog niet bereikt. Het begint bij {stop}.',
+  'Caught {n}×':
+    '{n}× gevangen',
+  'Best {lb} lb':
+    'Grootste {lb} pond',
+  'at {place}':
+    'bij {place}',
+  'Not caught yet':
+    'Nog niet gevangen',
+  'Bait: ':
+    'Aas: ',
+  'The chapter':
+    'Het hoofdstuk',
+  '{n} of {total} fish caught':
+    '{n} van {total} vissen gevangen',
+  'Every fish is a spot played right':
+    'Elke vis is een goed gespeelde spot',
+  'New in the Catch Book: a {fish}, {lb} lb.':
+    'Nieuw in het Vangstboek: een {fish}, {lb} pond.',
+  'A record {fish}: {lb} lb.':
+    'Een record-{fish}: {lb} pond.',
+  'Caught a {fish}, {lb} lb.':
+    'Een {fish} gevangen, {lb} pond.',
+  'New catch: {fish}':
+    'Nieuwe vangst: {fish}',
+  'Record catch: {fish}':
+    'Recordvangst: {fish}',
+  '{lb} lb, and {n} pearls for the first of its kind. It is in the Catch Book.':
+    '{lb} pond, en {n} parels voor de eerste van zijn soort. Hij staat in het Vangstboek.',
+  '{lb} lb, the biggest you have landed.':
+    '{lb} pond, de grootste die je ooit binnenhaalde.',
+  'The first of every fish in the Catch Book: each one is a spot played right at a real table.':
+    'De eerste van elke vis in het Vangstboek: elke vis is een spot die je goed speelde aan een echte tafel.',
 };

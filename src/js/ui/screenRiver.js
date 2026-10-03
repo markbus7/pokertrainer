@@ -35,6 +35,7 @@ import { CHECKPOINTS } from '../data/rangeLadder.js';
 import { pearls } from './shop.js';
 import { boatPerks, crewStrip } from './boats.js';
 import * as audio from '../audio/engine.js';
+import { bookProgress } from '../data/fish.js';
 
 export { svgNode };
 
@@ -108,6 +109,10 @@ function placeStatus(place, profile) {
     case 'tradingpost': return null;
     case 'saloon': return t('Free play, pearls a hand');
     case 'boatyard': return t('Boats and fittings');
+    case 'tackle': {
+      const p = bookProgress(profile.catchBook);
+      return t('{n} of {total} fish caught', { n: p.caught, total: p.total });
+    }
     default: return null;
   }
 }

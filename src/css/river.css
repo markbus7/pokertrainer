@@ -3009,3 +3009,102 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 .music-style.active { background: rgba(0, 0, 0, 0.07); border-color: var(--ink-rule); box-shadow: inset 3px 0 0 var(--brass-lo); }
 .music-style-name { font-weight: 700; font-size: var(--t-sm); }
 .music-style-blurb { font-size: var(--t-xs); color: var(--ink-dim); line-height: 1.35; }
+
+/* ---------------- The Catch Book ----------------
+   Fish are ink on the page, the way a naturalist's plate is: the body takes
+   the paper's own darker tone, the marks and lines the ink. A fish not yet
+   caught is only its shadow. The Golden Pike is the one drawn in brass. */
+.fish-art { display: block; overflow: visible; }
+.fish-art .fish-body { fill: var(--paper-2); stroke: var(--ink); stroke-width: 0.9; stroke-linejoin: round; }
+.fish-art .fish-fin { fill: var(--paper); stroke: var(--ink); stroke-width: 0.7; stroke-linejoin: round; }
+.fish-art .fish-mark { fill: var(--ink); opacity: 0.55; }
+.fish-art .fish-mark.soft { opacity: 0.25; }
+.fish-art .fish-line { fill: none; stroke: var(--ink); stroke-width: 0.7; stroke-linecap: round; }
+.fish-art .fish-line.thin { stroke-width: 0.4; opacity: 0.6; }
+.fish-art .fish-eye { fill: var(--paper); stroke: var(--ink); stroke-width: 0.6; }
+.fish-art .fish-pupil { fill: var(--ink); }
+.fish-art.golden .fish-body { fill: var(--brass); }
+.fish-art.golden .fish-fin { fill: var(--brass-lo); }
+.fish-art .fish-crown { fill: var(--brass); stroke: var(--ink); stroke-width: 0.6; }
+.fish-art.unknown .fish-body,
+.fish-art.unknown .fish-fin { fill: var(--ink); stroke: none; opacity: 0.16; }
+
+.catch-tally {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+  margin-top: var(--s-3);
+}
+.catch-tally-n { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); }
+.catch-tally .faint { flex-basis: 100%; }
+.catch-bar {
+  flex: 1;
+  min-width: 140px;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+.catch-bar-fill { display: block; height: 100%; background: var(--brass); border-radius: 99px; }
+
+.catch-water-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-2) var(--s-4);
+  margin-bottom: var(--s-3);
+}
+.catch-water-head h2 { margin: 0; }
+.catch-water-head p { margin: 2px 0 0; }
+.catch-water-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.catch-count { font-family: var(--font-print); font-weight: 700; font-size: var(--t-lg); }
+.catch-unreached { display: flex; align-items: center; gap: 6px; color: var(--ink-dim); font-style: italic; margin: 0 0 var(--s-3); }
+.catch-tally .btn { display: inline-flex; align-items: center; gap: 6px; }
+.catch-water.unreached .catch-card:not(.caught) { opacity: 0.7; }
+
+.catch-grid { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.catch-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--s-3);
+  border: 1px solid var(--ink-rule);
+  border-radius: 8px;
+  background: var(--paper);
+}
+.catch-card.caught { background: var(--paper-2); }
+.catch-pic { align-self: stretch; display: flex; justify-content: center; align-items: center; height: 84px; line-height: 0; margin-bottom: var(--s-1); }
+.catch-pic svg { max-width: 100%; max-height: 84px; width: auto; height: auto; }
+.catch-name { margin: 0; font-family: var(--font-print); font-size: var(--t-md); }
+.catch-record { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: var(--t-sm); font-weight: 600; }
+.catch-bait { margin: 2px 0 0; font-size: var(--t-sm); color: var(--ink-dim); line-height: 1.4; }
+.catch-bait strong { color: var(--ink); }
+.catch-chapter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 4px 0 0;
+  background: none;
+  border: 0;
+  color: var(--brass-lo);
+  font: inherit;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+.catch-chapter:hover { text-decoration: underline; }
+
+/* A fish in a toast sits on the toast's own paper. */
+.toast .toast-fish { line-height: 0; }
+
+@media (max-width: 640px) {
+  .catch-grid { grid-template-columns: 1fr 1fr; gap: var(--s-2); }
+  .catch-card { padding: var(--s-2); }
+  .catch-pic { height: 64px; }
+  .catch-pic svg { max-height: 64px; }
+  .catch-water-meta { align-items: flex-start; }
+}
