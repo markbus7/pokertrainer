@@ -230,6 +230,8 @@ const emptyProfile = () => ({
     // Off, the table is free play: he stays quiet until you ask, and his
     // notes on the session are waiting when you get up.
     liveCoach: false,
+    // The next hand dealt for you at a real table. On unless switched off.
+    autoDeal: true,
   },
 });
 

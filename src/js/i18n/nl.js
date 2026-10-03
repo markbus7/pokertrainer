@@ -4792,4 +4792,15 @@ export const NL = {
     '{lb} pond, de grootste die je ooit binnenhaalde.',
   'The first of every fish in the Catch Book: each one is a spot played right at a real table.':
     'De eerste van elke vis in het Vangstboek: elke vis is een spot die je goed speelde aan een echte tafel.',
+  // v3.8 — auto-deal
+  'Auto-deal: on':
+    'Automatisch delen: aan',
+  'Auto-deal: off':
+    'Automatisch delen: uit',
+  'Next hand in {n}s':
+    'Volgende hand over {n}s',
+  'Auto-deal is on: the next hand is dealt for you. Click to deal each hand yourself.':
+    'Automatisch delen staat aan: de volgende hand wordt voor je gedeeld. Klik om elke hand zelf te delen.',
+  'Auto-deal is off: press the button for each hand. Click to have the next hand dealt for you.':
+    'Automatisch delen staat uit: druk voor elke hand op de knop. Klik om de volgende hand voor je te laten delen.',
 };
