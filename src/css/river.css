@@ -1088,6 +1088,19 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 
 .table-place { font-family: var(--font-sign); font-weight: 400; font-size: clamp(24px, 5vw, 32px); }
 .table-owner { font-family: var(--font-print); font-style: italic; color: var(--text-dim); }
+.table-head { margin-bottom: 14px; }
+
+/* On a phone, or any screen short on height, the table's heading gives its
+   room to the table: the line under the name goes, the name and the
+   buttons shrink, so the felt and the buttons fit on the screen together
+   instead of Fold and Call starting below the bottom of it. */
+@media (max-width: 700px), (max-height: 860px) and (orientation: landscape) {
+  .table-head { margin-bottom: 8px; gap: 6px 10px; }
+  .table-head .row { gap: 6px; }
+  .table-head .table-owner { display: none; }
+  .table-head .table-place { font-size: clamp(20px, 4.6vw, 26px); }
+  .table-head .btn.sm { min-height: 32px; padding: 4px 10px; }
+}
 
 /* A brass line between the wooden rail and the cloth. */
 .felt {
@@ -2449,14 +2462,54 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 
 /* Free play gives the table the whole width — but a felt as wide as the
    page is taller than the screen, and the buttons fall off the bottom. So
-   it is held to a size where table, buttons and tray all fit in one look. */
+   it is held to a size where table, buttons and tray all fit in one look.
+
+   Never below the size its six seats need, though. Held to the screen's
+   height and nothing else, an iPad on its side (about 640px of page under
+   Safari's bars) got a felt 290px across with 150px seat plates piled on
+   top of each other, and a phone on its side got a felt 20px across.
+   Short screens are handled below by moving the buttons beside the table
+   instead of shrinking the table under them. */
 .table-wrap.free-play { grid-template-columns: 1fr; max-width: 980px; margin: 0 auto; }
-.table-wrap.free-play .saloon-stage .felt { max-width: min(100%, calc((100vh - 420px) * 1.6)); margin: 0 auto; }
+.table-wrap.free-play .saloon-stage .felt { max-width: min(100%, max(600px, calc((100vh - 420px) * 1.6))); margin: 0 auto; }
 @media (max-width: 1320px) {
-  .table-wrap.free-play .saloon-stage .felt { max-width: min(100%, calc((100vh - 420px) * 1.333)); }
+  .table-wrap.free-play .saloon-stage .felt { max-width: min(100%, max(560px, calc((100vh - 420px) * 1.333))); }
 }
 @media (max-width: 700px) {
   .table-wrap.free-play .saloon-stage .felt { max-width: 100%; }
+}
+
+/* Wide but short — a tablet or a laptop in landscape, a phone on its side:
+   there is room across and none down, so the buttons and the tray go beside
+   the table rather than under it, and the felt takes the height it has. */
+@media (min-width: 701px) and (max-height: 860px) and (orientation: landscape) {
+  .table-wrap.free-play { max-width: 1400px; }
+  .table-wrap.free-play .table-main {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr);
+    column-gap: var(--s-4);
+    row-gap: var(--s-3);
+    align-items: start;
+  }
+  .table-wrap.free-play .saloon-stage { grid-column: 1; grid-row: 1 / span 4; }
+  .table-wrap.free-play .table-main > :not(.saloon-stage) { grid-column: 2; min-width: 0; }
+  .table-wrap.free-play .saloon-stage .felt { max-width: min(100%, max(520px, calc((100vh - 230px) * 1.333))); }
+
+  /* With Silas talking, his panel joins the buttons in that column. The
+     table's own wrapper steps aside (display: contents) so the felt, the
+     buttons, the tray and Silas can all be laid out on the one grid. */
+  .table-wrap.with-coach {
+    grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr);
+    column-gap: var(--s-4);
+    row-gap: var(--s-3);
+    align-items: start;
+  }
+  .table-wrap.with-coach .table-main { display: contents; }
+  .table-wrap.with-coach .saloon-stage { grid-column: 1; grid-row: 1 / span 5; }
+  .table-wrap.with-coach .table-main > :not(.saloon-stage),
+  .table-wrap.with-coach > :not(.table-main) { grid-column: 2; min-width: 0; }
+  .table-wrap.with-coach .saloon-stage .felt { max-width: min(100%, max(520px, calc((100vh - 230px) * 1.333))); margin: 0 auto; }
+  .table-wrap.with-coach .coach { position: static; max-height: none; }
 }
 .table-main { min-width: 0; }
 .companion-tray {
