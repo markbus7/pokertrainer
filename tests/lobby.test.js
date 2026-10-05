@@ -12,7 +12,7 @@ import { describe, it, assert, equal } from './harness.js';
 import {
   lobbyFor, lobbyStats, softness, chosenRank, TEMPLATES, SOFT, LOBBY_SEATS, TABLE_IDS, OWNER_TABLE, RIVAL_FROM,
 } from '../src/js/state/lobby.js';
-import { PROFILES, getProfile, profileAt } from '../src/js/engine/bots.js';
+import { PROFILES, WANDERER_PROFILES, getProfile, profileAt } from '../src/js/engine/bots.js';
 import { createTable } from '../src/js/engine/table.js';
 import { makeRng } from '../src/js/core/rng.js';
 import { Profile } from '../src/js/state/profile.js';
@@ -45,7 +45,7 @@ describe('the lobby: what is offered at a stop', () => {
         equal(tables.map((t) => t.id).join(), TABLE_IDS.join());
         for (const t of tables) {
           equal(t.styles.length, LOBBY_SEATS - 1, `${stop.key} ${t.id} has ${t.styles.length} others`);
-          assert(t.styles.every((k) => PROFILES[k]), `${t.id} seats a style that does not exist`);
+          assert(t.styles.every((k) => PROFILES[k] || WANDERER_PROFILES[k]), `${t.id} seats a style that does not exist`);
         }
         const owner = tables.find((t) => t.id === OWNER_TABLE);
         assert(owner.owner && owner.styles[0] === stop.resident, `${stop.key}: the owner is not at the owner's table`);

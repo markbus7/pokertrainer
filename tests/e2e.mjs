@@ -91,6 +91,9 @@ const veteran = async (on) => {
 };
 
 await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+// The first visit writes a save of its own (the contracts it posted, and the
+// defaults beside them). The veteran is made from nothing, not from that.
+await page.evaluate(() => localStorage.removeItem('poker-trainer.profile.v1'));
 await veteran(true);
 await page.reload({ waitUntil: 'networkidle' });
 
@@ -3183,6 +3186,142 @@ await step('the stop has three tables with numbers, and the Rival sits at one of
     const dutch = await text('.rival-block');
     if (!/Nog een zwerver/.test(dutch) || /watching|drifter/.test(dutch)) throw new Error(`the Rival's card in Dutch reads "${dutch}"`);
     console.log(`      three tables with numbers, the owner at one; a side game counts a sitting and Silas ranks the choice; Nell is tagged at one table, introduces herself and counted ${saved.memory.facedBet} bets; Dutch`);
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('Silas posts contracts, today\'s question keeps a streak, and a stranger passes through', async () => {
+  // Three contracts on the map, drawn from the reader's own skills and paid
+  // when done at a table; three questions a day that count once and keep a
+  // streak; and a stranger at a side game for a few sittings, met once.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const post = await ctx.newPage();
+  post.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
+  post.on('console', (m) => { if (m.type() === 'error' && !/raw\.githubusercontent|ERR_CONNECTION|Failed to load resource/.test(m.text())) errors.push(m.text()); });
+  const text = async (sel) => (await post.textContent(sel).catch(() => '') || '').replace(/\s+/g, ' ').trim();
+  const profile = () => post.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')));
+  const seed = (patch) => post.evaluate((p) => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    localStorage.setItem(key, JSON.stringify({ ...raw, ...p, settings: { ...(raw.settings || {}), sound: false, music: false, autoDeal: true, ...(p.settings || {}) } }));
+  }, patch);
+  const OWNED = ['hand-rankings', 'pot-odds', 'outs', 'preflop', 'position', 'cbet'].map((id) => `lesson:${id}`);
+  const WALKED = ['hand-rankings', 'pot-odds', 'outs', 'preflop', 'position', 'cbet'];
+  try {
+    await post.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    await seed({
+      seenPrologue: true,
+      walkthroughs: WALKED,
+      economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: OWNED },
+      career: { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: [], played: { nl2: 5 } },
+    });
+    await post.reload({ waitUntil: 'domcontentloaded' });
+    await post.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await post.waitForSelector('.contracts-card', { timeout: 8000 });
+
+    // Three contracts, each with a purse; today's question is waiting.
+    const rows = await post.$$eval('.contracts .contract', (n) => n.map((x) => x.textContent.replace(/\s+/g, ' ').trim()));
+    if (rows.length !== 3) throw new Error(`${rows.length} contracts posted: ${rows.join(' | ')}`);
+    if (!rows.every((r) => /Make|Play|Land/.test(r) && /0 of/.test(r))) throw new Error(`the contracts read ${rows.join(' | ')}`);
+    const daily = await text('.daily-card');
+    if (!/Today's question/.test(daily) || !/Answer today's three/.test(daily) || !/0\s*day/.test(daily)) throw new Error(`today's question reads "${daily}"`);
+
+    // Answer today's three: they count once, the streak starts, and a second go pays nothing.
+    const before = (await profile()).economy.pearls;
+    await post.click('.daily-card .btn.primary');
+    await post.waitForSelector('.options .option', { timeout: 8000 });
+    if (!/Today's question/.test(await text('.book-bar'))) throw new Error('the set does not say it is today\'s');
+    for (let i = 0; i < 3; i++) {
+      await post.waitForSelector('.options .option:not([disabled])', { timeout: 8000 });
+      await post.click('.options .option:not([disabled]) >> nth=0');
+      await post.waitForSelector('.options .option[disabled]', { timeout: 5000 });
+      await post.keyboard.press('Enter');
+      await post.waitForTimeout(150);
+    }
+    await post.waitForSelector('.daily-prize', { timeout: 8000 });
+    const prize = await text('.daily-prize');
+    if (!/1 days in a row|1 day/.test(prize) && !/for today's set\. 1 days/.test(prize)) throw new Error(`the day's prize reads "${prize}"`);
+    const after = await profile();
+    if (after.daily.streak !== 1 || after.daily.days !== 1 || !(after.economy.pearls > before)) throw new Error(`the day was kept as ${JSON.stringify(after.daily)}, pearls ${before} → ${after.economy.pearls}`);
+    await post.click('.result-head ~ * button:has-text("Back to the river"), button:has-text("Back to the river")');
+    await post.waitForSelector('.daily-card', { timeout: 5000 });
+    if (!/Done for today/.test(await text('.daily-card'))) throw new Error('the card does not say today is done');
+    await post.click('.daily-card .btn.primary');
+    await post.waitForSelector('.options .option', { timeout: 8000 });
+    for (let i = 0; i < 3; i++) {
+      await post.click('.options .option:not([disabled]) >> nth=0');
+      await post.keyboard.press('Enter');
+      await post.waitForTimeout(150);
+    }
+    await post.waitForSelector('.daily-prize', { timeout: 8000 });
+    if (!/pays nothing/.test(await text('.daily-prize'))) throw new Error(`a second go the same day reads "${await text('.daily-prize')}"`);
+    if ((await profile()).daily.days !== 1) throw new Error('a second go the same day counted');
+
+    // A contract is done at a table: a sound preflop decision, and the purse is paid.
+    await seed({ contracts: { active: [{ id: 't0', kind: 'sound', skill: 'preflop', need: 1, have: 0, reward: 30 }], issued: 7, done: 0 } });
+    await post.reload({ waitUntil: 'domcontentloaded' });
+    await post.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+    await post.waitForSelector('.felt', { timeout: 5000 });
+    const pearlsBefore = (await profile()).economy.pearls;
+    await post.click('button:has-text("Deal me in")');
+    const until = Date.now() + 120000;
+    while (Date.now() < until && (await profile()).contracts.done < 1) {
+      const bar = (await post.textContent('.action-bar').catch(() => '')) || '';
+      if (/Deal next hand/.test(bar)) await post.click('button:has-text("Deal next hand")').catch(() => {});
+      else {
+        const read = await post.$('.read-bands .btn');
+        const btn = read || (await post.$('.action-buttons .btn.danger')) || (await post.$('.action-buttons .btn:not(.primary):not(.danger)'));
+        if (btn) await btn.click().catch(() => {});
+      }
+      await post.waitForTimeout(150);
+    }
+    const paid = await profile();
+    if (paid.contracts.done < 1) throw new Error('a sound preflop decision never finished the contract');
+    if (!(paid.economy.pearls >= pearlsBefore + 30)) throw new Error(`the contract paid ${paid.economy.pearls - pearlsBefore} pearls, not 30 or more`);
+    if (paid.contracts.active.length !== 3) throw new Error(`${paid.contracts.active.length} contracts on the board after one was finished`);
+
+    // A stranger at a side game: tagged in the lobby, met once as a scene, and the card says how to beat them.
+    await post.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    const found = await post.evaluate(async () => {
+      const m = await import('/src/js/state/lobby.js');
+      const stop = (await import('/src/js/data/venues.js')).VENUES[3];
+      for (let s = 0; s < 120; s++) {
+        const l = m.lobbyFor(stop, s);
+        if (l.wanderer) return { s, key: l.wanderer.key, table: l.wanderer.table };
+      }
+      return null;
+    });
+    if (!found) throw new Error('no stranger in a hundred and twenty sittings at the fourth stop');
+    await seed({
+      walkthroughs: [...WALKED, 'mdf'],
+      economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: OWNED },
+      career: { venue: 'nl25', best: 'nl25', busted: 0, staked: 0, beaten: ['nl2', 'nl5', 'nl10'], played: { nl2: 60, nl5: 60, nl10: 60 }, sittings: found.s },
+      bankroll: 2000,
+    });
+    await post.reload({ waitUntil: 'domcontentloaded' });
+    await post.goto(`${BASE}/#stop?at=nl25`, { waitUntil: 'domcontentloaded' });
+    await post.waitForSelector('.lobby-card', { timeout: 8000 });
+    const tag = await post.$$eval('.lobby-tag.wanderer', (n) => n.map((x) => x.textContent.trim()));
+    if (tag.length !== 1 || !/is here/.test(tag[0])) throw new Error(`the stranger's tag reads ${tag}`);
+    const card = await text('.wanderer-block');
+    if (!/Passing through/.test(card) || !/How to beat/.test(card) || !/twice an owner/.test(card)) throw new Error(`the stranger's card reads "${card}"`);
+    await post.click(`.lobby-card:has(.lobby-tag.wanderer) .btn`);
+    await post.waitForSelector('.felt', { timeout: 5000 });
+    await post.click('button:has-text("Deal me in")');
+    await post.waitForSelector('.toast', { timeout: 8000 });
+    if (!/sits down/.test(await text('#toasts'))) throw new Error(`the scene reads "${await text('#toasts')}"`);
+    const saved = await profile();
+    if (!saved.scenes || !saved.scenes[`wanderer-${found.key}`]) throw new Error('the stranger\'s scene was not marked as seen');
+
+    // And all of it in Dutch.
+    await seed({ settings: { lang: 'nl' } });
+    await post.reload({ waitUntil: 'domcontentloaded' });
+    await post.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await post.waitForSelector('.contracts-card', { timeout: 8000 });
+    const dutch = await text('.post-panel');
+    if (!/opdrachten/i.test(dutch) || /Jobs from|Answer today/.test(dutch)) throw new Error(`the post panel in Dutch reads "${dutch.slice(0, 200)}"`);
+    console.log(`      three contracts, one paid at a table; today's three counted once, streak 1, second go paid nothing; ${found.key} met as a scene at ${found.table}; Dutch`);
   } finally {
     await ctx.close();
   }

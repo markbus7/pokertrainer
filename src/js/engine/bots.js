@@ -154,9 +154,71 @@ export const PROFILES = {
 
 export const PROFILE_KEYS = Object.keys(PROFILES);
 
+/**
+ * People passing through (data/wanderers.js): each one an extreme of one of
+ * the six styles, so the leak is large and the lesson is the same one turned
+ * all the way up. Kept apart from PROFILES so the drills, the practice tables
+ * and every list of "the six styles" stay six.
+ */
+export const WANDERER_PROFILES = {
+  // A calling station who will pay to see anything.
+  hale: {
+    ...PROFILES.station,
+    key: 'hale',
+    name: 'Hale',
+    style: 'The Cattle Buyer',
+    openPct: 0.3,
+    defendPct: 0.8,
+    aggression: 0.1,
+    bluff: 0.01,
+    callDown: 0.97,
+    respect: 0.4,
+    callPrice: 0.2,
+    adapts: 0,
+    blurb: 'Pays to see every card, and has never folded a pair.',
+    tell: 'He calls with anything and almost never raises.',
+    counter: 'Never bluff him. Bet every good hand for value, three streets, as big as you dare.',
+  },
+  // A maniac who has not checked since Natchez.
+  dixie: {
+    ...PROFILES.maniac,
+    key: 'dixie',
+    name: 'Dixie',
+    style: 'The Riverboat Gambler',
+    openPct: 0.8,
+    threeBetPct: 0.3,
+    aggression: 0.95,
+    bluff: 0.7,
+    callDown: 0.5,
+    respect: 0.5,
+    adapts: 0,
+    blurb: 'Bets and raises with everything, and most of it is nothing.',
+    tell: 'Huge bets, over and over, with nothing at all.',
+    counter: 'Tighten up, call down lighter than feels safe, and let her bluff off her stack into your good hands.',
+  },
+  // A nit who bets only when it is over.
+  josiah: {
+    ...PROFILES.rock,
+    key: 'josiah',
+    name: 'Josiah',
+    style: 'The Preacher',
+    openPct: 0.06,
+    defendPct: 0.05,
+    threeBetPct: 0.015,
+    aggression: 0.2,
+    bluff: 0,
+    callDown: 0.15,
+    respect: 1.5,
+    adapts: 0,
+    blurb: 'One hand in twenty, and only the best of them.',
+    tell: 'When he bets, he has it.',
+    counter: 'Steal his blinds all night, and fold the moment he puts real money in.',
+  },
+};
+
 export function getProfile(key) {
   if (key && typeof key === 'object') return key;   // already a profile, adapted or not
-  return PROFILES[key] || PROFILES.tag;
+  return PROFILES[key] || WANDERER_PROFILES[key] || PROFILES.tag;
 }
 
 /**

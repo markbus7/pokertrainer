@@ -15,6 +15,7 @@ const modules = [
   './journey.test.js',
   './match.test.js',
   './lobby.test.js',
+  './post.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',
