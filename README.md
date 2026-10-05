@@ -116,6 +116,18 @@ rematch is worth playing for the star you do not have. The first win takes the
 table. A short scene tells you what each stop is like the first time you tie
 up there.
 
+Every stop runs three games, and a lobby that shows a few numbers for each:
+how many players see the flop, how many pots are raised, how big the average
+pot is, and who is sitting there. One is the owner's table, where the table is
+taken; the other two are side games with nobody in charge, good for building a
+roll. Which game to sit in is the cheapest edge in poker, and nobody tells you
+which is soft — Silas says afterwards how your choice ranked. From the second
+city on, Nell Corbin, another drifter in a borrowed boat, sits at one of the
+three some visits. She keeps count of how often you fold to a bet, and unlike
+the tables' regulars she remembers between sittings: fold too much and she
+bluffs you more, call too much and she stops. Her card on the stop's screen says
+what she has made of you so far.
+
 Pearls are what the tables pay for hands you play through and decisions you
 get right — folding before the flop is the default and pays nothing, and a
 table with fewer than six players pays half. The practice table can be dealt

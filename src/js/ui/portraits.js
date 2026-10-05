@@ -243,6 +243,25 @@ const PEOPLE = {
       + '<path d="M61.3 47.5q5 6 3 17" stroke="#b9a15a" stroke-width=".8" fill="none"/>',
   },
 
+  /* ---- the rival: a patched coat, a red scarf, a newsboy cap pulled low ---- */
+  nell: {
+    skin: SKIN.olive,
+    ground: '#4a4f66',
+    back: '<path d="M31 54C26 33 36 24 50 24C64 24 74 33 69 54C66 45 63 41 50 41C37 41 34 45 31 54Z" fill="#7a3a22"/>',
+    body: shoulders('#6a5a44')
+      + '<rect x="19" y="82" width="10" height="9" rx="1" fill="#9a4b3c" transform="rotate(-8 24 86)"/>'
+      + '<path d="M20 86h8M24 83v6" stroke="#d9c9a8" stroke-width=".7" stroke-dasharray="1.2 1.2" transform="rotate(-8 24 86)"/>'
+      + '<rect x="66" y="78" width="9" height="9" rx="1" fill="#3f6a7a" transform="rotate(10 70 82)"/>'
+      + '<path d="M40 68Q50 78 60 68L58 78Q50 86 42 78Z" fill="#b8423a"/>'
+      + '<path d="M42 72q8 5 16 0" stroke="#8f2f2a" stroke-width="1.2" fill="none"/>',
+    hair: '<path d="M33.5 44C33 30 67 30 66.5 44C63 38 56 35 50 35S37 38 33.5 44Z" fill="#7a3a22"/>',
+    face: { mouth: 'smirk', brow: '#4a2412' },
+    front: '<path d="M32 37C31 21 69 21 68 37C58 33 42 33 32 37Z" fill="#3f6a7a"/>'
+      + '<path d="M32 37q-9 1-11 6q12-1 22-3z" fill="#2f5260"/>'
+      + '<path d="M36 30q14-6 28 0" stroke="#5a8a9a" stroke-width="1" fill="none"/>'
+      + '<circle cx="50" cy="24" r="1.7" fill="#2f5260"/>',
+  },
+
   /* ---- the trader: a madras tignon, gold hoops, and a shawl ---- */
   delphine: {
     skin: SKIN.brown,

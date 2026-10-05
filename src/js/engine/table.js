@@ -38,6 +38,9 @@ export class Table {
       stack: p.stack ?? 200,
       isHero: !!p.isHero,
       profile: p.profile || null,
+      // What this player has noticed about the reader, when it is theirs alone
+      // and not the table's (the Rival remembers between sittings).
+      memory: p.memory || null,
       seat: i,
       hole: [],
       committed: 0,

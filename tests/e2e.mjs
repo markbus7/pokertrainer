@@ -3066,6 +3066,128 @@ await step('the road says what to do next, a city at a time', async () => {
   }
 });
 
+await step('the stop has three tables with numbers, and the Rival sits at one of them and remembers', async () => {
+  // Every stop offers three games and says how many players see the flop, how
+  // many pots are raised and how big they are; the owner is at one of them.
+  // From the second city on a Rival sits at one of the three some visits, and
+  // keeps count of how you fold between sittings.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const lob = await ctx.newPage();
+  lob.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
+  lob.on('console', (m) => { if (m.type() === 'error' && !/raw\.githubusercontent|ERR_CONNECTION|Failed to load resource/.test(m.text())) errors.push(m.text()); });
+  const text = async (sel) => (await lob.textContent(sel).catch(() => '') || '').replace(/\s+/g, ' ').trim();
+  const profile = () => lob.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')));
+  const seed = (patch) => lob.evaluate((p) => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    localStorage.setItem(key, JSON.stringify({ ...raw, ...p, settings: { ...(raw.settings || {}), sound: false, music: false, autoDeal: false, ...(p.settings || {}) } }));
+  }, patch);
+  const career = (sittings) => ({ venue: 'nl5', best: 'nl5', busted: 0, staked: 0, beaten: ['nl2'], played: { nl2: 40, nl5: 10 }, sittings });
+  try {
+    await lob.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    const { withRival, without } = await lob.evaluate(async () => {
+      const m = await import('/src/js/state/lobby.js');
+      const stop = (await import('/src/js/data/venues.js')).VENUES[1];
+      let withRival = null;
+      let without = null;
+      for (let s = 0; s < 60 && (withRival === null || without === null); s++) {
+        if (m.lobbyFor(stop, s).rival) { if (withRival === null) withRival = s; } else if (without === null) without = s;
+      }
+      return { withRival, without };
+    });
+    if (withRival === null || without === null) throw new Error(`no lobby with and without the Rival in sixty sittings: ${withRival} ${without}`);
+
+    // A visit without her: three tables, one with the owner, three numbers on each.
+    await seed({ walkthroughs: ['hand-rankings', 'pot-odds'], career: career(without) });
+    await lob.reload({ waitUntil: 'domcontentloaded' });
+    await lob.goto(`${BASE}/#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+    await lob.waitForSelector('.lobby-card', { timeout: 5000 });
+    if ((await lob.$$('.lobby-card')).length !== 3) throw new Error('the lobby is not three tables');
+    if ((await lob.$$('.lobby-card.owner')).length !== 1) throw new Error('there is not exactly one owner\'s table');
+    const stats = await lob.$$eval('.lobby-card .lobby-stat .v', (n) => n.map((x) => x.textContent.trim()));
+    if (stats.length !== 9 || !stats.slice(0, 2).every((v) => /^\d+%$/.test(v)) || !/^\d+ bb$/.test(stats[2])) throw new Error(`the lobby numbers read ${stats}`);
+    if (await lob.$('.lobby-tag.rival')) throw new Error('the Rival is at a table she is not at');
+    if (await lob.$('.rival-block')) throw new Error('a Rival nobody has met is on the screen');
+    const owner = await text('.lobby-card.owner');
+    if (!/Owner: Tilly/.test(owner) || !/The owner's table/.test(owner) || !/beat Tilly in a duel/.test(owner)) throw new Error(`the owner's table reads "${owner}"`);
+    const sides = await lob.$$eval('.lobby-card:not(.owner) h4', (n) => n.map((x) => x.textContent.trim()));
+    if (sides.join() !== 'The back room,The corner game') throw new Error(`the side games are ${sides}`);
+
+    // Sit at a side game: its own name over the felt, five others, and the sitting is counted when you leave.
+    await lob.click('.lobby-card:not(.owner) .btn');
+    await lob.waitForSelector('.felt', { timeout: 5000 });
+    const head = await text('.table-head');
+    if (!/The back room|The corner game/.test(head) || /Tilly's table/.test(head)) throw new Error(`a side game's header reads "${head}"`);
+    if ((await lob.$$('.felt .seat')).length !== 6) throw new Error('a side game is not six-handed');
+    await lob.click('button:has-text("Deal me in")');
+    await lob.waitForSelector('.action-buttons button', { timeout: 20000 });
+    // One hand to the end, so there is something for Silas to write down.
+    const handDone = Date.now() + 60000;
+    while (Date.now() < handDone && !/Deal next hand/.test((await lob.textContent('.action-bar').catch(() => '')) || '')) {
+      const btn = (await lob.$('.action-buttons .btn.danger')) || (await lob.$('.action-buttons .btn:not(.primary):not(.danger)'));
+      if (btn) await btn.click().catch(() => {});
+      await lob.waitForTimeout(120);
+    }
+    await lob.click('.table-head button:has-text("Cash out")');
+    await lob.waitForSelector('.stop-screen', { timeout: 8000 });
+    if ((await profile()).career.sittings !== without + 1) throw new Error('a finished sitting was not counted');
+
+    // Silas says how the table was chosen.
+    await lob.click('.stop-notes');
+    await lob.waitForSelector('.notes-envelope', { timeout: 5000 });
+    await lob.click('.notes-envelope');
+    await lob.waitForSelector('.notes-choice', { timeout: 5000 });
+    if (!/of the 3 tables/.test(await text('.notes-choice'))) throw new Error(`the table choice reads "${await text('.notes-choice')}"`);
+
+    // A visit with her: she is tagged at one table, and the screen has her card.
+    await seed({ career: career(withRival) });
+    await lob.reload({ waitUntil: 'domcontentloaded' });
+    await lob.goto(`${BASE}/#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+    await lob.waitForSelector('.lobby-card', { timeout: 5000 });
+    const tags = await lob.$$eval('.lobby-tag.rival', (n) => n.map((x) => x.textContent.trim()));
+    if (tags.join() !== 'Nell is here') throw new Error(`the Rival tag reads ${tags}`);
+    const tease = await text('.rival-block');
+    if (!/Nell Corbin/.test(tease) || !/not a regular/.test(tease)) throw new Error(`the Rival's card before you have met reads "${tease}"`);
+    if ((await lob.$$('.lobby-card .lobby-face.rival')).length !== 1) throw new Error('the Rival is not in exactly one seat');
+
+    // Sit with her: she introduces herself once, her name is on a seat, and she counts.
+    await lob.click('.lobby-card:has(.lobby-tag.rival) .btn');
+    await lob.waitForSelector('.felt', { timeout: 5000 });
+    if (!/Nell/.test(await text('.felt'))) throw new Error('nobody at the table is called Nell');
+    await lob.click('button:has-text("Deal me in")');
+    await lob.waitForSelector('.toast', { timeout: 8000 });
+    if (!/Nell Corbin sits down/.test(await text('#toasts'))) throw new Error(`the toast reads "${await text('#toasts')}"`);
+    const deadline = Date.now() + 90000;
+    let faced = 0;
+    while (Date.now() < deadline && faced < 3) {
+      const bar = (await lob.textContent('.action-bar').catch(() => '')) || '';
+      if (/Deal next hand/.test(bar)) { await lob.click('button:has-text("Deal next hand")').catch(() => {}); }
+      else {
+        const btn = (await lob.$('.action-buttons .btn.danger')) || (await lob.$('.action-buttons .btn:not(.primary):not(.danger)'));
+        if (btn) await btn.click().catch(() => {});
+      }
+      faced = ((await profile()).rival || { memory: { facedBet: 0 } }).memory.facedBet;
+      await lob.waitForTimeout(120);
+    }
+    const saved = (await profile()).rival;
+    if (saved.met !== 1 || saved.memory.facedBet < 3) throw new Error(`the Rival has met you ${saved.met} times and counted ${saved.memory.facedBet} bets`);
+    await lob.click('.table-head button:has-text("Cash out")');
+    await lob.waitForSelector('.rival-block', { timeout: 8000 });
+    const after = await text('.rival-block');
+    if (!/Still watching you/.test(after) || !/mix it up/.test(after)) throw new Error(`the Rival's card after a sitting reads "${after}"`);
+
+    // And her card speaks Dutch.
+    await seed({ settings: { lang: 'nl' } });
+    await lob.reload({ waitUntil: 'domcontentloaded' });
+    await lob.waitForSelector('.rival-block', { timeout: 5000 });
+    const dutch = await text('.rival-block');
+    if (!/Nog een zwerver/.test(dutch) || /watching|drifter/.test(dutch)) throw new Error(`the Rival's card in Dutch reads "${dutch}"`);
+    console.log(`      three tables with numbers, the owner at one; a side game counts a sitting and Silas ranks the choice; Nell is tagged at one table, introduces herself and counted ${saved.memory.facedBet} bets; Dutch`);
+  } finally {
+    await ctx.close();
+  }
+});
+
 /** Play hands of a duel by shoving or calling until `n` have been dealt, or it ends; says whether the log saw the blinds rise. */
 async function playOutHands(page, n) {
   let dealt = 0;

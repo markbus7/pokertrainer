@@ -31,8 +31,9 @@ export const SKILL_SAMPLE = 2;
  * @param {{hands:number, decisions:number, bonus:number, boat?:number}} s.pearls  `boat` is the strongbox's share
  * @param {Array<string>} s.savedHands  ids of hands kept in the Log this sitting
  * @param {{spent:number, back:number}|null} s.cash  at a stop: what the seats cost and what came back
+ * @param {{rank:number, of:number, best:boolean}|null} s.choice  where the table sat at ranks for softness among the lobby's three
  */
-export function buildReport({ place, stats, graded, pearls, savedHands = [], cash = null, at = Date.now() }) {
+export function buildReport({ place, stats, graded, pearls, savedHands = [], cash = null, choice = null, at = Date.now() }) {
   const bySkill = {};
   let sound = 0;
   let helped = 0;
@@ -64,6 +65,7 @@ export function buildReport({ place, stats, graded, pearls, savedHands = [], cas
     hands: summary.hands,
     profitBb: Math.round(summary.profitBb * 10) / 10,
     cash,
+    choice: choice ? { rank: choice.rank, of: choice.of, best: Boolean(choice.best) } : null,
     pearls: {
       hands: pearls.hands || 0, decisions: pearls.decisions || 0, bonus: pearls.bonus || 0, boat: pearls.boat || 0, bounty: pearls.bounty || 0, catches: pearls.catches || 0, total,
     },

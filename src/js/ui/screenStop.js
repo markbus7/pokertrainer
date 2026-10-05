@@ -27,6 +27,9 @@ import { MENTOR } from '../data/characters.js';
 import { gatedBy, duelStatus } from '../state/journey.js';
 import { starPearls, LEVEL_HANDS, STAR_SHARE } from '../state/match.js';
 import { storyFor } from '../data/story.js';
+import { lobbyFor, RIVAL_FROM } from '../state/lobby.js';
+import { readOn as rivalRead } from '../state/rival.js';
+import { RIVAL, RIVAL_NOTES } from '../data/rival.js';
 import { roadList, opensLine, goalText } from './roadView.js';
 
 /** The place itself: sky, the far bank, the water, and the stop drawn big. */
@@ -114,14 +117,8 @@ function tableBlock(venue, state, profile, go) {
 
   let action;
   if (here && canSit) {
-    action = el('div.stop-actions',
-      el('button.btn.primary.plank.lg', {
-        onclick: () => {
-          audio.sfx('chips');
-          profile.setBankroll(state.bankroll, venue.key);
-          go('play', { mode: 'grind' });
-        },
-      }, t('Take a seat — {money}', { money: fmt.money(venue.entry) })),
+    action = el('div.stop-actions.lobby-wrap',
+      lobbyCards(venue, state, profile, go),
       study,
     );
   } else if (here) {
@@ -249,6 +246,95 @@ function duelBlock(venue, state, profile, go) {
   );
 }
 
+/** A face and a name, small: who is in a seat at a table in the lobby. */
+function lobbyFace(name, portrait, { rival = false, owner = false } = {}) {
+  return el(`span.lobby-face${rival ? '.rival' : ''}${owner ? '.owner' : ''}`, { title: name },
+    svgNode(portraitSvg(portrait, { size: 34 }), 'lobby-portrait'),
+    el('span.lobby-name', name));
+}
+
+/**
+ * One table in the lobby: who is at it, the three numbers a lobby shows, and
+ * the way to sit down. What the numbers mean is Silas's to teach and the
+ * reader's to work out — nobody tells them which table is the soft one.
+ */
+function lobbyCard(table, venue, lobby, { state, profile, go }) {
+  const boss = bossFor(venue.boss);
+  const faces = table.styles.map((key, i) => {
+    if (table.owner && i === 0) return lobbyFace(boss.short, boss.key, { owner: true });
+    if (table.rivalSeat === i) return lobbyFace(RIVAL.short, RIVAL.key, { rival: true });
+    return lobbyFace(getProfile(key).name, key);
+  });
+  return el(`article.lobby-card${table.owner ? '.owner' : ''}`,
+    el('div.lobby-card-head',
+      el('h4', t(table.name)),
+      table.owner
+        ? el('span.lobby-tag.owner', t('Owner: {name}', { name: boss.short }))
+        : el('span.lobby-tag', t('No owner')),
+      lobby.rival === table.id ? el('span.lobby-tag.rival', t('{name} is here', { name: RIVAL.short })) : null,
+    ),
+    el('div.lobby-faces', faces),
+    el('div.lobby-stats',
+      el('span.lobby-stat', { title: t('Players who see the flop, out of every hundred hands dealt') },
+        el('span.k', t('See the flop')), el('span.v', `${table.stats.flop}%`)),
+      el('span.lobby-stat', { title: t('How many pots are raised before the flop') },
+        el('span.k', t('Raised pots')), el('span.v', `${table.stats.raised}%`)),
+      el('span.lobby-stat', { title: t('The average pot, in big blinds') },
+        el('span.k', t('Average pot')), el('span.v', t('{n} bb', { n: table.stats.pot }))),
+    ),
+    table.owner
+      ? el('p.faint.lobby-note', t('Double your buy-in here, or beat {name} in a duel, and the table is yours.', { name: boss.short }))
+      : el('p.faint.lobby-note', t('Nobody owns this game, so there is no table to take. A place to build your roll.')),
+    el(`button.btn${table.owner ? '.primary.plank' : '.ghost'}`, {
+      onclick: () => {
+        audio.sfx('chips');
+        profile.setBankroll(state.bankroll, venue.key);
+        go('play', { mode: 'grind', table: table.id });
+      },
+    }, t('Take a seat — {money}', { money: fmt.money(venue.entry) })),
+  );
+}
+
+/** The three tables at a stop. */
+function lobbyCards(venue, state, profile, go) {
+  const lobby = lobbyFor(venue, profile.sittings);
+  return el('div.lobby',
+    el('p.lobby-hint', t('Three games are running. The numbers are what a lobby shows: pick the game, then take the seat.')),
+    el('div.lobby-grid', lobby.tables.map((table) => lobbyCard(table, venue, lobby, { state, profile, go }))),
+  );
+}
+
+/**
+ * Nell, on the stop's screen: whether she is here, and what she has made of
+ * you so far. Her tally is the same one the tables' regulars keep, but she
+ * keeps it between sittings, and says so.
+ */
+function rivalBlock(venue, profile) {
+  if (venue.index < RIVAL_FROM) return null;
+  const lobby = lobbyFor(venue, profile.sittings);
+  const here = lobby.tables.find((x) => x.id === lobby.rival);
+  const { met, memory } = profile.rival;
+  if (!met && !here) return null;
+  const read = rivalRead(memory);
+  const pct = read.pct;
+  return el('div.panel.rival-block',
+    el('div.rival-head',
+      svgNode(portraitSvg(RIVAL.key, { size: 64 }), 'rival-portrait'),
+      el('div',
+        el('div.here-kicker', t(RIVAL.title)),
+        el('h3.rival-name', RIVAL.name),
+        el('div.faint', here
+          ? t('She is at {table} today.', { table: t(here.name) })
+          : met ? t('She is not at this stop today.') : ''),
+      ),
+    ),
+    met
+      ? el('p.rival-read', t(RIVAL_NOTES[read.kind], { n: read.n, pct: pct == null ? 0 : pct }))
+      : el('p.rival-read.faint', t('Somebody is sitting at {table} who is not a regular. Sit down and find out.', { table: t(here.name) })),
+    el('p.faint', t(RIVAL_NOTES.explain)),
+  );
+}
+
 /** What you took from this table, if you took it. */
 function keepsakeBlock(venue, state) {
   if (!state.beaten.has(venue.index)) return null;
@@ -370,6 +456,7 @@ export function renderStop(ctx, params = {}) {
       tableBlock(venue, state, profile, go),
       keepsakeBlock(venue, state),
     ),
+    rivalBlock(venue, profile),
     duelBlock(venue, state, profile, go),
     roadBlock(venue, state, go),
     neighbours(venue, go),

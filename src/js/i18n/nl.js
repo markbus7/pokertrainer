@@ -4940,8 +4940,8 @@ export const NL = {
     'Wat te doen bij {place}',
 
   /* ---- v3.11: duels, stars, and the story ---- */
-  'Double your buy-in at the table, or beat them in a duel.':
-    'Verdubbel je inkoop aan de tafel, of versla ze in een duel.',
+  'Double your buy-in at their table, or beat them in a duel.':
+    'Verdubbel je inkoop aan hun tafel, of versla ze in een duel.',
   'Win the duel with {n} stars':
     'Win het duel met {n} sterren',
   'Not yet':
@@ -5066,4 +5066,96 @@ export const NL = {
     'Al twintig jaar heeft niemand me om een duel gevraagd. Ga zitten. Laten we zien wat de rivier van je heeft gemaakt.',
   'Nobody here is going to give you anything. Come back when you have earned it.':
     'Hier geeft niemand je iets. Kom terug als je het verdiend hebt.',
+
+  /* ---- v3.12: the lobby, and the Rival ---- */
+  'The owner\'s table':
+    'De tafel van de eigenaar',
+  'The back room':
+    'De achterkamer',
+  'The corner game':
+    'Het spel in de hoek',
+  '{name} sits down':
+    '{name} gaat zitten',
+  'Doubled up at {table}':
+    'Verdubbeld bij {table}',
+  'Nobody owns a side game, so there is no table to take. {name}\'s table is the one that is yours to win.':
+    'Een bijspel is van niemand, dus er is geen tafel af te nemen. De tafel van {name} is degene die je kunt winnen.',
+  'Owner: {name}':
+    'Eigenaar: {name}',
+  'No owner':
+    'Geen eigenaar',
+  '{name} is here':
+    '{name} is er',
+  'Players who see the flop, out of every hundred hands dealt':
+    'Spelers die de flop zien, per honderd gedeelde handen',
+  'See the flop':
+    'Flop zien',
+  'How many pots are raised before the flop':
+    'Hoeveel potten er voor de flop worden geraised',
+  'Raised pots':
+    'Geraisede potten',
+  'The average pot, in big blinds':
+    'De gemiddelde pot, in big blinds',
+  'Average pot':
+    'Gemiddelde pot',
+  '{n} bb':
+    '{n} bb',
+  'Double your buy-in here, or beat {name} in a duel, and the table is yours.':
+    'Verdubbel hier je inkoop, of versla {name} in een duel, en de tafel is van jou.',
+  'Nobody owns this game, so there is no table to take. A place to build your roll.':
+    'Niemand is eigenaar van dit spel, dus er is geen tafel af te nemen. Een plek om je bankroll op te bouwen.',
+  'Three games are running. The numbers are what a lobby shows: pick the game, then take the seat.':
+    'Er lopen drie spellen. De cijfers zijn wat een lobby laat zien: kies het spel, en neem dan de stoel.',
+  'She is at {table} today.':
+    'Ze zit vandaag bij {table}.',
+  'She is not at this stop today.':
+    'Ze is vandaag niet bij deze halte.',
+  'Somebody is sitting at {table} who is not a regular. Sit down and find out.':
+    'Bij {table} zit iemand die geen vaste gast is. Ga zitten en ontdek wie.',
+  'You sat at the softest of the {n} tables. That is worth more than any one hand you played.':
+    'Je zat aan de zachtste van de {n} tafels. Dat is meer waard dan welke hand dan ook die je speelde.',
+  'You sat at the toughest of the {n} tables. Same hands, same skill, and a thinner game: look at how many players see the flop before you sit down.':
+    'Je zat aan de zwaarste van de {n} tafels. Dezelfde handen, dezelfde kunde, en een armer spel: kijk hoeveel spelers de flop zien voordat je gaat zitten.',
+  'You sat at the second softest of the {n} tables. Look for the one where more players see the flop and fewer raise.':
+    'Je zat aan de op één na zachtste van de {n} tafels. Zoek de tafel waar meer spelers de flop zien en minder spelers raisen.',
+
+  /* The Rival, Nell Corbin. */
+  'Nell Corbin':
+    'Nell Corbin',
+  'Another drifter':
+    'Nog een zwerver',
+  'A woman in a patched coat is at the table, shuffling a deck one-handed. She looks up, and you recognise the rowboat tied behind her: it is the twin of yours. "Silas has told me about you," she says. "He told me about me, too. We shall see which of us listened."':
+    'Aan de tafel zit een vrouw in een gelapte jas die met één hand een stok kaarten schudt. Ze kijkt op, en je herkent de roeiboot achter haar: de tweelingbroer van de jouwe. "Silas heeft me over jou verteld," zegt ze. "Over mij heeft hij jou ook verteld. We zullen zien wie van ons heeft geluisterd."',
+  'Back again. I have been counting.':
+    'Weer terug. Ik heb zitten tellen.',
+  'Same river, same boat. Let us see who learned more.':
+    'Dezelfde rivier, dezelfde boot. Laten we zien wie meer heeft geleerd.',
+  'I remember how you played last time.':
+    'Ik weet nog hoe je de vorige keer speelde.',
+  'You fold more than you think. I wrote it down.':
+    'Je past vaker dan je denkt. Ik heb het opgeschreven.',
+  'I read you like a chart. Pity about that.':
+    'Ik lees je als een chart. Jammer voor je.',
+  'Another pot for the notebook.':
+    'Weer een pot voor het notitieboekje.',
+  'Lucky. I will remember that.':
+    'Geluk. Dat onthoud ik.',
+  'Hm. You are not folding as much as you were.':
+    'Hm. Je past niet meer zo vaak als eerst.',
+  'You changed something. Good. Do it again and I will change too.':
+    'Je hebt iets veranderd. Goed. Doe het nog eens en ik verander ook.',
+  'You have been folding to my bets, so I am making more of them.':
+    'Je past voor mijn bets, dus ik doe er meer.',
+  'You keep calling me down, so I have stopped bluffing at you. Be careful what that costs you.':
+    'Je blijft me uitcallen, dus ik ben gestopt met bluffen tegen je. Pas op wat dat je kost.',
+  'Nell keeps a tally of how often you fold when she bets, and she does not forget between sittings. Fold too much and she bluffs you more; call too much and she bluffs less and values harder. The answer is not to do the opposite. It is to mix it up: sometimes you call, sometimes you fold, and she cannot tell which.':
+    'Nell houdt bij hoe vaak je past als zij bet, en ze vergeet het niet tussen twee sessies. Pas je te vaak, dan bluft ze meer tegen je; call je te vaak, dan bluft ze minder en bet ze strakker voor value. Het antwoord is niet het tegenovergestelde doen. Het is mixen: soms call je, soms pas je, en zij kan niet zien wanneer.',
+  'Still watching you: {n} bets seen so far. She needs a few more before she will change anything.':
+    'Ze kijkt nog: {n} bets gezien tot nu toe. Ze heeft er nog een paar nodig voordat ze iets verandert.',
+  'You fold to {pct}% of the bets she has seen ({n}). She is bluffing you more now.':
+    'Je past voor {pct}% van de bets die ze heeft gezien ({n}). Ze bluft je nu vaker.',
+  'You fold to only {pct}% of the bets she has seen ({n}). She has stopped bluffing at you.':
+    'Je past maar voor {pct}% van de bets die ze heeft gezien ({n}). Ze is gestopt met bluffen tegen je.',
+  'You fold to {pct}% of the bets she has seen ({n}). That is about even, and gives her nothing to work with.':
+    'Je past voor {pct}% van de bets die ze heeft gezien ({n}). Dat is ongeveer gelijk, en geeft haar niets om mee te werken.',
 };

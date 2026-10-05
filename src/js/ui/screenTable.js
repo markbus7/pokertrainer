@@ -30,7 +30,10 @@ import {
   snapshotOf, autopilotAction, playUntilMySpot, captureRange, tableReadRange,
 } from '../core/lessonRunner.js';
 import { READ_BANDS, nearestBand, marginFor } from '../core/handRead.js';
-import { emptyMemory, watch, adaptationNote } from '../engine/adapt.js';
+import { emptyMemory, watch, adaptationNote, ADAPT_FULL } from '../engine/adapt.js';
+import { lobbyFor, chosenRank } from '../state/lobby.js';
+import { remember as rivalRemembers, readOn as rivalRead } from '../state/rival.js';
+import { RIVAL } from '../data/rival.js';
 import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
@@ -218,19 +221,29 @@ export function renderTable(ctx, params = {}) {
   // talking, and with the hound — who reads people for a living — on your side.
   const showTags = () => liveCoach() || crewAboard(profile).some((c) => c.key === 'hound');
 
-  const opponents = pickOpponents(seats - 1, rng);
-  // At a stop, the person who owns its table is sitting at it. They play the
-  // style the stop was built around — the boss is a face and a voice on one
-  // of the engine's six players, not a seventh — so their seat takes that
-  // style's place and their name.
+  // At a stop, the person who owns its table is sitting at it — at the owner's
+  // table, one of three the lobby offers. They play the style the stop was
+  // built around: the boss is a face and a voice on one of the engine's six
+  // players, not a seventh, so their seat takes that style's place and name.
   const room = duel ? duelStop : grind ? venueFor(profile.career.venue) : null;
   const boss = room ? bossFor(room.boss) : null;
-  if ((grind || duel) && !opponents.includes(room.resident)) opponents[0] = room.resident;
+  // Which of the stop's tables this is. The same lobby the stop screen showed:
+  // it is made from the stop and the count of sittings, not from a die.
+  const lobby = grind ? lobbyFor(room, profile.sittings) : null;
+  const seat = lobby ? lobby.tables.find((x) => x.id === params.table) || lobby.tables[0] : null;
+  const ownerHere = duel || !seat || seat.owner;
+  const opponents = duel ? [room.resident] : seat ? seat.styles.slice() : pickOpponents(seats - 1, rng);
   const story = duel ? storyFor(room.key) : null;
-  const bossIndex = boss ? opponents.indexOf(room.resident) : -1;
+  const bossIndex = boss && ownerHere ? 0 : -1;
   const bossId = bossIndex >= 0 ? `bot${bossIndex}` : null;
-  // Whose face each seat wears: the boss's own, or the style's regular.
-  const faces = Object.fromEntries(opponents.map((key, i) => [`bot${i}`, i === bossIndex ? boss.key : key]));
+  // The Rival, if she is at this table: one seat, and a memory that is hers
+  // and lasts between sittings.
+  const rivalIndex = seat && seat.rivalSeat !== undefined ? seat.rivalSeat : -1;
+  const rivalId = rivalIndex >= 0 ? `bot${rivalIndex}` : null;
+  const rivalMemory = rivalId ? profile.rival.memory : null;
+  const firstMeeting = rivalId ? profile.noteRivalMet() : false;
+  // Whose face each seat wears: the boss's own, the Rival's, or the style's regular.
+  const faces = Object.fromEntries(opponents.map((key, i) => [`bot${i}`, i === bossIndex ? boss.key : i === rivalIndex ? RIVAL.key : key]));
   const table = createTable({
     variant: variantKey,
     smallBlind: bigBlind / 2,
@@ -241,7 +254,13 @@ export function renderTable(ctx, params = {}) {
       { id: HERO_ID, name: 'You', stack: startingStack, isHero: true },
       ...opponents.map((key, i) => {
         const p = getProfile(key);
-        return { id: `bot${i}`, name: i === bossIndex ? boss.short : p.name, stack: startingStack, profile: key };
+        return {
+          id: `bot${i}`,
+          name: i === bossIndex ? boss.short : i === rivalIndex ? RIVAL.short : p.name,
+          stack: startingStack,
+          profile: key,
+          memory: i === rivalIndex ? rivalMemory : null,
+        };
       }),
     ],
   });
@@ -307,6 +326,8 @@ export function renderTable(ctx, params = {}) {
     matchHands: 0,
     matchLevel: -1,
     matchOver: null,
+    // Whether the Rival has said hello this sitting.
+    rivalGreeted: false,
     // The countdown to the next hand, when the table deals itself:
     // { total, started, timer } while it runs, null otherwise.
     autoDeal: null,
@@ -348,7 +369,7 @@ export function renderTable(ctx, params = {}) {
   const pays = !lesson && !duel;
   if (pays) {
     for (const p of table.players) {
-      if (!p.isHero) session.bounties[p.id] = seatBounty(room ? room.index : null, p.id === bossId);
+      if (!p.isHero) session.bounties[p.id] = seatBounty(room ? room.index : null, p.id === bossId || p.id === rivalId);
     }
   }
   const feltHost = el('div');
@@ -380,7 +401,7 @@ export function renderTable(ctx, params = {}) {
         ? el('div.row',
           el('h1.sign.table-place', { style: { margin: 0 } }, t(room.name)),
           el('span.scene-stake', room.label),
-          el('span.table-owner', t('{name}\'s table', { name: boss.short })),
+          el('span.table-owner', ownerHere ? t('{name}\'s table', { name: boss.short }) : t(seat.name)),
         )
         : el('div.row',
           el('h1.sign.table-place', { style: { margin: 0 } }, lessonMeta ? t(lessonMeta.name) : t('Silas\'s practice table')),
@@ -475,6 +496,18 @@ export function renderTable(ctx, params = {}) {
   }
 
   /**
+   * The Rival says hello over the first hand of a sitting. The very first
+   * time the two of you meet it is a scene, not a line.
+   */
+  function greetTheRival() {
+    session.rivalGreeted = true;
+    if (firstMeeting) {
+      toast({ icon: '🧢', title: t('{name} sits down', { name: RIVAL.name }), desc: t(RIVAL.intro), duration: 11000 });
+    }
+    say(rivalId, t(pick(RIVAL.hello)), 4200);
+  }
+
+  /**
    * The blind clock: each hand of a duel is dealt at the blinds its place in
    * the match calls for, and the first hand of a new level says so out loud.
    */
@@ -505,6 +538,7 @@ export function renderTable(ctx, params = {}) {
     if (table.players.filter((p) => p.stack > 0).length < 2) return topUpBots();
 
     if (duel) advanceBlinds();
+    if (rivalId && !session.rivalGreeted) greetTheRival();
     table.startHand();
     stats.startHand();
     // Who had chips when the cards were dealt, so a bust is counted once.
@@ -818,6 +852,8 @@ export function renderTable(ctx, params = {}) {
     // price. Read off the snapshot, which says what was in front of the
     // reader at the moment they chose.
     watch(session.readerMemory, { facingBet: snap.toCall > 0, action: action.type });
+    // The Rival counts too, and what she counts is kept.
+    if (rivalMemory) rivalRemembers(rivalMemory, { facingBet: snap.toCall > 0, action: action.type });
     const verdict = judgeSpot({ ...snap, action: action.type, amount: action.amount });
     session.verdict = verdict;
     const helped = session.helped || session.peeked;
@@ -951,6 +987,14 @@ export function renderTable(ctx, params = {}) {
       else if (bossShowed && won) say(bossId, t(pick(boss.sore)));
     }
 
+    // The Rival has her own opinion of a big pot, said less often than the owner's.
+    if (rivalId && !session.speech) {
+      const rivalWon = (result.payouts[rivalId] || 0) > 0;
+      const rivalShowed = showdown && result.showdown.some((s) => s.id === rivalId);
+      if (rivalWon && (rivalShowed || potTotal >= table.bigBlind * 20) && Math.random() < 0.5) say(rivalId, t(pick(RIVAL.brag)));
+      else if (rivalShowed && won && Math.random() < 0.5) say(rivalId, t(pick(RIVAL.sore)));
+    }
+
     const heroShow = result.showdown.find((s) => s.id === HERO_ID);
     const events = {
       type: 'hand',
@@ -1078,13 +1122,14 @@ export function renderTable(ctx, params = {}) {
     if (lesson || !stats.hands) return null;
     const report = buildReport({
       place: grind
-        ? { kind: 'stop', key: room.key, name: room.name, label: room.label }
+        ? { kind: 'stop', key: room.key, name: room.name, label: room.label, table: seat.id }
         : { kind: 'practice', key: 'practice', name: 'Silas\'s practice table' },
       stats,
       graded: session.graded,
       pearls: session.pearls,
       savedHands: session.savedHandIds,
       cash,
+      choice: grind ? chosenRank(lobby.tables, seat.id) : null,
     });
     return keepReport(profile, report);
   }
@@ -1122,9 +1167,19 @@ export function renderTable(ctx, params = {}) {
       // have been, and its owner gives you something to remember it by.
       const spent = session.buyInsUsed * stake.buyIn;
       // Doubling the buy-in takes the table, and the owner's purse with it.
-      const { first: took, purse } = cashOut - stake.buyIn >= stake.buyIn
+      // Only at the owner's table: a side game has nobody to take it from.
+      const doubled = cashOut - stake.buyIn >= stake.buyIn;
+      const { first: took, purse } = doubled && ownerHere
         ? takeTable(profile, room.index)
         : { first: false, purse: 0 };
+      if (doubled && !ownerHere && !profile.career.beaten.includes(room.key)) {
+        toast({
+          icon: '🪑',
+          title: t('Doubled up at {table}', { table: t(seat.name) }),
+          desc: t('Nobody owns a side game, so there is no table to take. {name}\'s table is the one that is yours to win.', { name: boss.short }),
+        });
+      }
+      profile.noteSitting();
       // Taking somebody's table is the biggest thing the river pays for.
       if (took) session.pearls.bonus += profile.earnPearls(EARN.tableTaken);
       const after = took ? 'took' : cashOut > spent ? 'up' : cashOut < spent ? 'down' : 'even';
@@ -1372,6 +1427,17 @@ export function renderTable(ctx, params = {}) {
     if (!lesson) drawCoachToggle();
   }
 
+  /**
+   * What this opponent has noticed about the reader, if it has changed how
+   * they play. The Rival goes by her own memory and is always awake; everyone
+   * else shares the table's, and wakes with the reader's rank.
+   */
+  function noticeOf(p) {
+    if (!p.profile) return null;
+    const note = adaptationNote(getProfile(p.profile), p.memory || session.readerMemory, p.memory ? ADAPT_FULL : table.readerLevel);
+    return note && p.id === rivalId ? { ...note, name: RIVAL.short } : note;
+  }
+
   const isHeroTurn = () => Boolean(table.actor && table.actor.isHero && !table.handOver && session.handStarted);
 
   /** Open help on this decision — from the button, or from one companion. */
@@ -1442,7 +1508,7 @@ export function renderTable(ctx, params = {}) {
           name: p.name,
           style: profileOf ? profileOf.style : '',
           read: isBoss ? boss.read : profileOf ? profileOf.counter : '',
-          adjusted: profileOf ? Boolean(adaptationNote(profileOf, session.readerMemory, table.readerLevel)) : false,
+          adjusted: profileOf ? Boolean(noticeOf(p)) : false,
         };
       }),
       bestAction: () => bestAction(snap),
@@ -1872,7 +1938,7 @@ export function renderTable(ctx, params = {}) {
     // not a lesson, it is a table that got harder for no visible reason.
     const adjusted = table.contestants
       .filter((p) => !p.isHero && p.profile)
-      .map((p) => adaptationNote(getProfile(p.profile), session.readerMemory, table.readerLevel))
+      .map((p) => noticeOf(p))
       .filter(Boolean);
 
     mount(coachHost,
