@@ -3715,6 +3715,43 @@ await step('a duel with the owner of a table: the blinds climb, it ends, the sta
   }
 });
 
+await step('the rail says which build this is, on a desktop and on a phone', async () => {
+  // "Do I have the right one?" has to be a glance. The version was inside the
+  // ledger; it is now on the rail of every screen, under the crest, and the
+  // name beside it is hidden on a phone but the version is not.
+  const { readFileSync } = await import('node:fs');
+  const want = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const vp = await ctx.newPage();
+  vp.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
+  try {
+    for (const [label, size, hash] of [['desktop', { width: 1280, height: 800 }, '#home'], ['desktop room', { width: 1280, height: 800 }, '#train'],
+      ['iPad', { width: 820, height: 1180 }, '#home'], ['phone', { width: 390, height: 844 }, '#home'], ['phone, in a room', { width: 390, height: 844 }, '#train'],
+      ['phone on its side', { width: 844, height: 390 }, '#home']]) {
+      await vp.setViewportSize(size);
+      await vp.goto(`${BASE}/${hash}`, { waitUntil: 'domcontentloaded' });
+      await vp.waitForSelector('.crest-version', { timeout: 8000 });
+      const seen = await vp.evaluate(() => {
+        const el = document.querySelector('.crest-version');
+        const r = el.getBoundingClientRect();
+        const style = getComputedStyle(el);
+        return {
+          text: el.textContent.trim(), visible: style.display !== 'none' && style.visibility !== 'hidden' && r.width > 0 && r.height > 0,
+          inside: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, overflow: document.documentElement.scrollWidth > innerWidth + 1,
+          size: parseFloat(style.fontSize),
+        };
+      });
+      if (seen.text !== `v${want}`) throw new Error(`${label}: the rail says "${seen.text}" and package.json says v${want}`);
+      if (!seen.visible || !seen.inside) throw new Error(`${label}: the version is not on screen (${JSON.stringify(seen)})`);
+      if (seen.overflow) throw new Error(`${label}: the rail made the page scroll sideways`);
+      if (seen.size < 8) throw new Error(`${label}: the version is ${seen.size}px, too small to read`);
+    }
+    console.log(`      v${want} under the crest on a desktop, an iPad, a phone and a phone on its side; nothing scrolls sideways`);
+  } finally {
+    await ctx.close();
+  }
+});
+
 await step('layout holds up on phone and tablet viewports', async () => {
   // iPad first, then iPhone, then desktop — the order this actually gets
   // used in. Checks the three things that break on touch and are invisible

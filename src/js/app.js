@@ -18,7 +18,7 @@ import { renderStop } from './ui/screenStop.js';
 import { renderRangeLadder, renderRangeRun, renderRangeWeak } from './ui/screenRangeTrainer.js';
 import { Profile } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
-import { VERSION, checkForUpdate } from './version.js';
+import { VERSION, BUILT, checkForUpdate } from './version.js';
 import { THEMES, applyTheme, isTheme, themeFor, DEFAULT_THEME } from './data/themes.js';
 import { t, setLang, getLang, LANGUAGES } from './i18n/index.js';
 import { makeRng } from './core/rng.js';
@@ -330,10 +330,15 @@ function drawHud() {
   mount($('#topbar'),
     el(`button.crest${onRiver ? '' : '.back'}`, {
       onclick: () => go('home'),
-      title: t('Back to the river'),
-      'aria-label': t('Back to the river'),
+      // The build is on the rail of every screen, so "do I have the right one?"
+      // is a glance and not a trip through the ledger. The title has the date.
+      title: `${t('Back to the river')} · v${VERSION} (${BUILT})`,
+      'aria-label': `${t('Back to the river')}, v${VERSION}`,
     },
-      el('span.crest-disc', { 'aria-hidden': 'true' }, onRiver ? '♠' : icon('river', { size: 20 })),
+      el('span.crest-mark',
+        el('span.crest-disc', { 'aria-hidden': 'true' }, onRiver ? '♠' : icon('river', { size: 20 })),
+        el('span.crest-version', { 'aria-hidden': 'true' }, `v${VERSION}`),
+      ),
       el('span.crest-name', onRiver ? 'Poker Trainer' : t('The river')),
     ),
     purse(),

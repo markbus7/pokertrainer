@@ -278,6 +278,20 @@ h2 { font-size: var(--t-lg); }
   cursor: pointer;
   min-width: 0;
 }
+/* The disc with the build under it: which version this is, on every screen,
+   including a phone where the name is hidden. */
+.crest-mark { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: none; }
+.crest-version {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--on-wood);
+  opacity: 0.74;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
 .crest-disc {
   display: grid;
   place-items: center;
