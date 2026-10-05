@@ -24,6 +24,7 @@ import { HAND_STRENGTH, STRENGTH_RANK } from '../data/handStrength.js';
 import { CHARTS } from '../data/ranges.js';
 import { makeRng } from '../core/rng.js';
 import { adaptProfile, ADAPT_FULL } from './adapt.js';
+import { shortStackMove } from './pushfold.js';
 
 /** The rank at which an opponent is fully awake: what somebody who is always watching plays as. */
 const FULL_ATTENTION = ADAPT_FULL;
@@ -309,6 +310,25 @@ function preflopDecision({ table, player, profile, legal, rng, toCall, pot, canC
   // from the size of the bet, because a 4bb open into a limped pot and a 4bb
   // three-bet are the same number and very much not the same decision.
   const raises = table.raisesThisStreet || 0;
+
+  /* ---- a tournament, and a short stack: push or fold ------------- */
+  if (table.pushFold && !table.variant.omaha) {
+    const move = shortStackMove({
+      stackBb: (player.stack + player.committed) / bb,
+      percentile,
+      posFactor,
+      facing: raises > 0,
+      price: toCall > 0 ? toCall / (pot + toCall) : 0,
+      canCheck,
+      profile,
+    });
+    if (move === 'push' && raiseSpec) return { ...raiseTo(legal, raiseSpec.type, raiseSpec.max), note: 'push' };
+    if (move === 'push' && pickLegal(legal, 'call')) return { type: 'call', note: 'push' };
+    if (move === 'call' && pickLegal(legal, 'call')) return { type: 'call', note: 'call a shove' };
+    if (move === 'check' && canCheck) return { type: 'check' };
+    if (move === 'fold') return canCheck ? { type: 'check' } : { type: 'fold' };
+    // 'push' with nothing to push into, or null (a deep stack): the ordinary bot.
+  }
 
   /* ---- nobody has raised: open, limp or fold --------------------- */
   if (raises === 0) {

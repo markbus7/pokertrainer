@@ -3501,3 +3501,15 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 .daily-streak { display: flex; align-items: baseline; gap: 8px; margin: var(--s-2) 0 var(--s-3); }
 .daily-streak-n { font-family: var(--font-print); font-size: var(--t-2xl, 2rem); font-weight: 700; color: var(--brass-lo); }
 @media (max-width: 640px) { .contract { grid-template-columns: 1fr; } .contract-side { flex-direction: row; align-items: center; justify-content: space-between; } }
+
+/* ---- The Regatta ------------------------------------------------------- */
+.regatta-block { display: grid; gap: var(--s-2); }
+.regatta-block .panel-title { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.regatta-block .panel-title h3 { display: flex; align-items: center; gap: 8px; }
+.regatta-trophies { font-size: var(--t-lg); letter-spacing: 2px; }
+.match-field { display: inline-flex; align-items: center; gap: 6px; color: var(--text-dim); }
+.match-money { color: var(--brass-hi); font-weight: 700; }
+.regatta-money { display: flex; align-items: baseline; gap: var(--s-3); justify-content: center; }
+.regatta-net { font-family: var(--mono); font-size: var(--t-xl); font-weight: 700; }
+.regatta-net.up { color: var(--green, #3ecf8e); }
+.regatta-net.down { color: var(--red, #e8826f); }

@@ -140,6 +140,16 @@ card, a riverboat gambler who has not checked since Natchez, a preacher who bets
 only when it is over — and sits at a side game for three sittings. Each is an
 extreme of one of the styles, with a purse on them worth twice an owner's.
 
+From the second city on there is a Regatta at every stop: a six-player
+tournament, 1,500 chips each, the blinds climbing every six hands until one
+player has everything. The entry is a seat's price, it comes out of the bankroll
+before the first card, and the whole pool is paid back to the top three (half,
+three tenths, a fifth) with no rake, so a player no better than the field breaks
+even. Players who go out are placed, a finish in the money pays pearls the first
+time it is reached, and a win is a trophy at that stop. With a prize list a chip
+you lose is worth more than a chip you win, and most of it is decided with a
+short stack, where the bots shove or fold the way a short stack does.
+
 Pearls are what the tables pay for hands you play through and decisions you
 get right — folding before the flop is the default and pays nothing, and a
 table with fewer than six players pays half. The practice table can be dealt

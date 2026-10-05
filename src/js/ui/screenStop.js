@@ -26,6 +26,7 @@ import { pearls } from './shop.js';
 import { MENTOR } from '../data/characters.js';
 import { gatedBy, duelStatus } from '../state/journey.js';
 import { starPearls, LEVEL_HANDS, STAR_SHARE } from '../state/match.js';
+import { START_STACK, LEVEL_HANDS as REGATTA_LEVEL_HANDS, payouts as regattaPayouts } from '../state/regatta.js';
 import { storyFor } from '../data/story.js';
 import { lobbyFor, RIVAL_FROM } from '../state/lobby.js';
 import { readOn as rivalRead } from '../state/rival.js';
@@ -364,6 +365,43 @@ function wandererBlock(venue, profile) {
   );
 }
 
+/**
+ * The Regatta at this stop: a six-player tournament, the top three paid. The
+ * entry is a seat's price and the pool is paid back in full, so a player no
+ * better than the field breaks even. Only from where the boat is moored, the
+ * way a seat is.
+ */
+function regattaBlock(venue, state, profile, go) {
+  if (venue.index < 1 || venue.index !== state.here.index) return null;
+  const record = profile.regattaRecord(venue.key);
+  const prizes = regattaPayouts(venue.entry);
+  const canEnter = state.bankroll >= venue.entry;
+  return el('div.panel.regatta-block',
+    el('div.panel-title', el('h3', icon('anchor', { size: 16 }), t('The Regatta')),
+      record.wins ? el('span.regatta-trophies', { title: t('Won {n}', { n: record.wins }) }, '🏆'.repeat(Math.min(record.wins, 5))) : null),
+    el('p.faint', t('Six players, {chips} chips each, the blinds climbing every {n} hands until one has everything. The top three are paid, and the whole pool is paid back: nobody takes a rake.',
+      { chips: START_STACK, n: REGATTA_LEVEL_HANDS })),
+    el('div.here-facts',
+      el('span.fact', el('span.k', t('Entry')), el('span.v', fmt.money(venue.entry))),
+      el('span.fact', el('span.k', t('First')), el('span.v', fmt.money(prizes[0]))),
+      el('span.fact', el('span.k', t('Second')), el('span.v', fmt.money(prizes[1]))),
+      el('span.fact', el('span.k', t('Third')), el('span.v', fmt.money(prizes[2]))),
+    ),
+    el('p.muted', t('With a prize list, a chip you lose is worth more to you than a chip you win, and the short stack is where it is decided: shove or fold.')),
+    record.entered
+      ? el('div.faint', t('{n} entered, {wins} won, {cashes} in the money. Net {net}.',
+        { n: record.entered, wins: record.wins, cashes: record.cashes, net: `${record.net >= 0 ? '+' : '−'}${fmt.money(Math.abs(record.net))}` }))
+      : null,
+    el('div.stop-actions',
+      el('button.btn.primary.plank', {
+        disabled: !canEnter,
+        onclick: () => { audio.sfx('chips'); go('play', { mode: 'regatta', at: venue.key }); },
+      }, icon('anchor', { size: 16 }), t('Enter the Regatta — {money}', { money: fmt.money(venue.entry) })),
+      canEnter ? null : el('span.faint', t('The entry is {cost} and you have {have}.', { cost: fmt.money(venue.entry), have: fmt.money(state.bankroll) })),
+    ),
+  );
+}
+
 /** What you took from this table, if you took it. */
 function keepsakeBlock(venue, state) {
   if (!state.beaten.has(venue.index)) return null;
@@ -488,6 +526,7 @@ export function renderStop(ctx, params = {}) {
     rivalBlock(venue, profile),
     wandererBlock(venue, profile),
     duelBlock(venue, state, profile, go),
+    regattaBlock(venue, state, profile, go),
     roadBlock(venue, state, go),
     neighbours(venue, go),
   );

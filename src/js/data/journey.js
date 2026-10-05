@@ -26,7 +26,7 @@
 
 /**
  * @typedef {object} Bonus
- * @property {'stars'|'fish'|'chart'|'boat'|'pet'|'race'} kind
+ * @property {'stars'|'regatta'|'fish'|'chart'|'boat'|'pet'|'race'} kind
  * @property {number} [need]   how many, for stars, fish and companions
  * @property {string} [key]    the chart's checkpoint, or the boat's key
  */
@@ -57,7 +57,7 @@ export const ROAD = [
     stop: 'nl10',
     lessons: ['position', 'bankroll'],
     hands: 60,
-    bonus: [{ kind: 'stars', need: 2 }, { kind: 'boat', key: 'skiff' }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'regatta' }, { kind: 'boat', key: 'skiff' }],
   },
   {
     stop: 'nl25',
@@ -69,7 +69,7 @@ export const ROAD = [
     stop: 'nl50',
     lessons: ['mdf'],
     hands: 100,
-    bonus: [{ kind: 'stars', need: 2 }, { kind: 'race', need: 1 }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'regatta' }, { kind: 'race', need: 1 }],
   },
   {
     stop: 'nl100',
@@ -81,7 +81,7 @@ export const ROAD = [
     stop: 'nl200',
     lessons: ['spr'],
     hands: 150,
-    bonus: [{ kind: 'stars', need: 2 }, { kind: 'boat', key: 'launch' }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'regatta' }, { kind: 'boat', key: 'launch' }],
   },
   {
     stop: 'nl500',
