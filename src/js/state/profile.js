@@ -14,6 +14,7 @@
  * nobody tells you which skill the spot is testing.
  */
 
+import { sanitize as sanitizeMemory } from './rival.js';
 import {
   masteryTier, bestTier, tierRank, EVIDENCE_BAR, MASTERY_WINDOW, legacyTier, seedWindow,
 } from './mastery.js';
@@ -603,6 +604,41 @@ export class Profile {
     };
     this.save();
     return { firstWin: won && before.wins === 0, before: before.stars, after: career.duels[key].stars };
+  }
+
+  /** Sittings finished at a stop's tables: the lobby is made from the count. */
+  get sittings() {
+    return Number.isFinite(this.career.sittings) ? this.career.sittings : 0;
+  }
+
+  noteSitting() {
+    this.career.sittings = this.sittings + 1;
+    this.save();
+    return this.career.sittings;
+  }
+
+  /**
+   * The Rival's save: what she has counted of how you fold, and how many times
+   * the two of you have sat down together. Read back as plain numbers.
+   */
+  get rival() {
+    if (!this.data.rival || typeof this.data.rival !== 'object') this.data.rival = {};
+    const r = this.data.rival;
+    // Repaired in place, once: the table holds on to the memory object and
+    // writes to it, so it must stay the same object from one read to the next.
+    if (!r.memory || r.memory.facedBet !== sanitizeMemory(r.memory).facedBet || r.memory.folded !== sanitizeMemory(r.memory).folded) {
+      r.memory = sanitizeMemory(r.memory);
+    }
+    if (!(Number.isFinite(r.met) && r.met >= 0)) r.met = 0;
+    return r;
+  }
+
+  /** The two of you sat down together: the first time is the scene. Returns whether it was the first. */
+  noteRivalMet() {
+    const r = this.rival;
+    r.met += 1;
+    this.save();
+    return r.met === 1;
   }
 
   /** Whether a scene has been read, and marking it read. Scenes are shown once. */

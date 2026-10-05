@@ -3443,3 +3443,44 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 @keyframes duel-star-pop { from { transform: scale(0.2) rotate(-40deg); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .duel-star.on { animation: none; } }
 @media (max-width: 640px) { .match-clock { margin-left: 0; width: 100%; } }
+
+/* ---- The lobby: three tables at a stop, and the Rival ----------------- */
+.lobby { display: grid; gap: var(--s-3); width: 100%; }
+.lobby-hint { margin: 0; color: var(--text-dim); font-size: var(--t-sm); }
+.lobby-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--s-3); }
+.lobby-card {
+  display: flex; flex-direction: column; gap: var(--s-2);
+  padding: var(--s-3);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.18);
+}
+.lobby-card.owner { border-color: var(--brass-lo); background: rgba(0, 0, 0, 0.26); }
+.lobby-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.lobby-card-head h4 { margin: 0; font-size: var(--t-md); flex: 1 1 100%; }
+.lobby-tag { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-faint); }
+.lobby-tag.owner { color: var(--brass-hi); }
+.lobby-tag.rival { color: #e8826f; font-weight: 700; }
+.lobby-faces { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.lobby-face { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; width: 44px; }
+.lobby-face .portrait { width: 34px; height: 34px; }
+.lobby-face.owner .portrait-rim { stroke: var(--brass-hi); }
+.lobby-face.rival .portrait-rim { stroke: #e8826f; }
+.lobby-portrait { line-height: 0; }
+.lobby-name { font-size: 10px; color: var(--text-dim); max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lobby-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.lobby-stat { display: flex; flex-direction: column; padding: 4px 6px; border-left: 1px solid var(--border); }
+.lobby-stat:first-child { border-left: 0; padding-left: 0; }
+.lobby-stat .k { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+.lobby-stat .v { font-family: var(--mono); font-weight: 600; font-size: var(--t-sm); color: var(--gold); white-space: nowrap; }
+.lobby-note { margin: 0; font-size: var(--t-xs); flex: 1; }
+.lobby-card .btn { width: 100%; justify-content: center; }
+.lobby-wrap { flex-direction: column; align-items: stretch; }
+
+.rival-block { display: grid; gap: var(--s-2); }
+.rival-head { display: flex; align-items: center; gap: var(--s-3); }
+.rival-portrait { line-height: 0; flex: none; }
+.rival-name { margin: 0; font-family: var(--font-print); }
+.rival-read { margin: 0; font-weight: 600; }
+.notes-choice { display: flex; align-items: flex-start; gap: 6px; margin: var(--s-2) 0; font-weight: 600; color: var(--ink); }
+.notes-choice .icon { margin-top: 3px; flex: none; }
+

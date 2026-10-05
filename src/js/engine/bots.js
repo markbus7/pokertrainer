@@ -23,7 +23,10 @@ import { requiredEquity } from '../core/odds.js';
 import { HAND_STRENGTH, STRENGTH_RANK } from '../data/handStrength.js';
 import { CHARTS } from '../data/ranges.js';
 import { makeRng } from '../core/rng.js';
-import { adaptProfile } from './adapt.js';
+import { adaptProfile, ADAPT_FULL } from './adapt.js';
+
+/** The rank at which an opponent is fully awake: what somebody who is always watching plays as. */
+const FULL_ATTENTION = ADAPT_FULL;
 
 export const PROFILES = {
   rock: {
@@ -165,6 +168,9 @@ export function getProfile(key) {
  */
 export function profileAt(table, player) {
   const base = getProfile(player.profile);
+  // Somebody with a memory of their own is watching, whatever rank the reader
+  // has reached, and what they remember is not the table's.
+  if (player.memory) return adaptProfile(base, player.memory, FULL_ATTENTION);
   if (!table || !table.readerMemory) return base;
   return adaptProfile(base, table.readerMemory, table.readerLevel || 1);
 }

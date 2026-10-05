@@ -89,7 +89,7 @@ function evaluate(profile, chapter, spec) {
     case 'take': {
       return {
         ...base, text: 'Take {stop} from {boss}', params: { stop: venue.name, boss: bossName(venue) },
-        hint: 'Double your buy-in at the table, or beat them in a duel.', done: beaten,
+        hint: 'Double your buy-in at their table, or beat them in a duel.', done: beaten,
         to: { route: 'stop', params: { at: venue.key }, place: null, stop: venue.key },
       };
     }

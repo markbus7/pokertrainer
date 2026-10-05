@@ -112,6 +112,17 @@ function part(label, n) {
 }
 
 /** The analysis, as Silas writes it. */
+/**
+ * Silas on the table that was chosen. The same hands win more where the
+ * players call too much, and which table that was is something the lobby
+ * showed in numbers; saying how the choice ranked is how it is learned.
+ */
+function choiceLine({ rank, of, best }) {
+  if (best) return t('You sat at the softest of the {n} tables. That is worth more than any one hand you played.', { n: of });
+  if (rank === of) return t('You sat at the toughest of the {n} tables. Same hands, same skill, and a thinner game: look at how many players see the flop before you sit down.', { n: of });
+  return t('You sat at the second softest of the {n} tables. Look for the one where more players see the flop and fewer raise.', { n: of });
+}
+
 function notes(report, profile, go) {
   const { total, sound, helped } = report.decisions;
   const share = total ? sound / total : 0;
@@ -129,6 +140,8 @@ function notes(report, profile, go) {
   return el('div.panel.page.paper.notes',
     el('div.page-kicker', t('Silas\'s notes')),
     silasSays(line, { typed: false, size: 56 }),
+
+    report.choice ? el('p.notes-choice', icon('chip', { size: 15 }), ' ', choiceLine(report.choice)) : null,
 
     strongest || weakest
       ? el('div.notes-pair',
