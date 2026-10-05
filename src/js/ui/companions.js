@@ -132,7 +132,9 @@ function catSays({ snap }) {
     return el('div.help-said', t('Everybody limped or folded to you in the big blind — there is no chart for this one.'));
   }
   return el('div',
-    el('div.help-said', t('Your hand is ringed. Find it and read the colour.')),
+    el('div.help-said', snap.seats != null && snap.seats < 6
+      ? t('The charts are drawn for six players. With fewer at the table everybody plays more hands, so this is the tight end of what you could play. Your hand is ringed.')
+      : t('Your hand is ringed. Find it and read the colour.')),
     rangeGridFor({ seat: snap.position, raiser, hand: handKey(snap.hole) }),
   );
 }

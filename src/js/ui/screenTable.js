@@ -50,7 +50,7 @@ import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
 import {
   ownsLesson, LESSON_PRICES, crewAboard, boatBonus, strongbox, decisionPearls, handPearls, EARN,
-  seatBounty, bountyPaid,
+  seatBounty, bountyPaid, tableShare, scalePearls, playedThrough,
 } from '../state/economy.js';
 import { lockedChapter } from './screenDrill.js';
 import { helpDrawer, companionTitle } from './companions.js';
@@ -112,6 +112,9 @@ function referenceDrawer(session, hero, table, draw) {
         'aria-label': t('Close'),
       }, '×'),
     ),
+    open === 'chart' && table.players.length < 6
+      ? el('div.faint', t('These charts are drawn for six players. With fewer at the table everybody plays more hands, so read them as the tight end of the range.'))
+      : null,
     open === 'chart'
       ? rangeGridFor({ seat, raiser, hand: mine })
       : priceSheet(),
@@ -119,6 +122,20 @@ function referenceDrawer(session, hero, table, draw) {
       + 'gets taken away on purpose.')),
   );
 }
+
+/**
+ * What the hand came to for you, in words. Nothing won and nothing lost is a
+ * thing that happens every time you fold without having put a chip in, and
+ * "you won 0 chips" is not what happened.
+ */
+export function resultLine(net) {
+  if (net > 0) return t('You won {n} chips this hand.', { n: fmt.chips(net) });
+  if (net < 0) return t('You lost {n} chips this hand.', { n: fmt.chips(-net) });
+  return t('No chips won or lost this hand.');
+}
+
+/** How many chairs the practice table can be dealt for. */
+const TABLE_SIZES = [6, 3, 2];
 
 export function renderTable(ctx, params = {}) {
   const grind = params.mode === 'grind';
@@ -173,7 +190,10 @@ export function renderTable(ctx, params = {}) {
       ),
     ));
   }
-  const seats = lesson ? lesson.seats : 6;
+  // Free play can be dealt for fewer: you against one, or against two. The
+  // stops are full tables with somebody who owns them, and a lesson is cut to
+  // whatever it teaches.
+  const seats = lesson ? lesson.seats : (!grind && TABLE_SIZES.includes(Number(params.seats)) ? Number(params.seats) : 6);
 
   // Free play is the table. Silas at your shoulder, grading every decision
   // out loud, is a choice the reader makes with the switch in the header —
@@ -291,6 +311,8 @@ export function renderTable(ctx, params = {}) {
     stacksAtStart: {},
     // What the boat's strongbox still owes, a fraction of a pearl at a time.
     boatCarry: 0,
+    // The same for a short-handed table's half share.
+    shareCarry: 0,
     savedHandIds: [],
     showLog: false,
   };
@@ -329,11 +351,13 @@ export function renderTable(ctx, params = {}) {
         )
         : el('div.row',
           el('h1.sign.table-place', { style: { margin: 0 } }, lessonMeta ? t(lessonMeta.name) : t('Silas\'s practice table')),
-          el('span.scene-stake', lesson ? t('Lesson table') : VARIANTS[variantKey].short),
+          el('span.scene-stake', lesson ? t('Lesson table') : VARIANTS[variantKey].short,
+            !lesson && seats < 6 ? el('span.size-suffix', ` · ${t(SIZE_NAMES[seats])}`) : null),
           lesson ? null : el('span.table-owner', t('No money on it — just hands.')),
         ),
       el('div.row',
-        !grind && !lesson ? variantSwitcher(variantKey, go) : null,
+        !grind && !lesson ? variantSwitcher(variantKey, seats, go) : null,
+        !grind && !lesson ? sizeSwitcher(variantKey, seats, go) : null,
         lesson ? null : coachToggle,
         lesson
           ? el('button.btn.sm.ghost', { onclick: () => go('walkthrough', { module: params.lesson }) },
@@ -653,6 +677,9 @@ export function renderTable(ctx, params = {}) {
    */
   const takeSnapshot = () => snapshotOf(table, hero, {
     rng, aggressor: session.aggressor, opener: session.opener, ranges: session.ranges,
+    // A lesson table is cut to its lesson and teaches the chart's own spots at
+    // whatever size it is; free play is graded for the table it was dealt.
+    seats: lesson ? 6 : seats,
   });
 
 
@@ -756,11 +783,11 @@ export function renderTable(ctx, params = {}) {
     if (!lesson) {
       const caughtHere = bites({
         street: table.street, action: action.type, concept: verdict.concept.id, level: verdict.level,
-        helped, position: snap.position, firstIn: snap.firstIn, toCall: snap.toCall,
+        helped, position: snap.position, firstIn: snap.firstIn, toCall: snap.toCall, seats: lesson ? 6 : seats,
       }, room ? room.index : null);
       for (const key of caughtHere) session.hooked.push({ key, pot: snap.pot });
     }
-    const earned = lesson ? 0 : decisionPearls({ level: verdict.level, street: table.street, action: action.type, helped });
+    const earned = lesson ? 0 : paidForTable(decisionPearls({ level: verdict.level, street: table.street, action: action.type, helped }));
     if (earned) {
       session.pearls.decisions += earned;
       const extra = fromTheStrongbox(earned);
@@ -835,7 +862,10 @@ export function renderTable(ctx, params = {}) {
     // A pearl for the hand — more at the stops further down the river. A
     // lesson table pays in XP only: it is a chapter, not a game.
     if (!lesson) {
-      const paid = handPearls(room ? room.index : null);
+      // A hand you folded before the flop was not played through: folding is
+      // the default, and a table that paid for it paid the most for the least.
+      const played = playedThrough(session.graded.filter((d) => d.hand === table.handNumber));
+      const paid = played ? paidForTable(handPearls(room ? room.index : null)) : 0;
       session.pearls.hands += paid;
       const extra = fromTheStrongbox(paid);
       profile.earnPearls(paid + extra);
@@ -955,6 +985,17 @@ export function renderTable(ctx, params = {}) {
       }
     }
     session.hooked = [];
+  }
+
+  /**
+   * What this table pays for something a full table would pay `amount` for:
+   * a short-handed table pays half, carrying the fraction so half a pearl a
+   * hand is paid in full over two hands rather than rounded away each time.
+   */
+  function paidForTable(amount) {
+    const { paid, carry } = scalePearls(session.shareCarry, amount, tableShare(seats));
+    session.shareCarry = carry;
+    return paid;
   }
 
   /**
@@ -1461,9 +1502,7 @@ export function renderTable(ctx, params = {}) {
           ? el('div.spread',
               el('div',
                 el('div', { style: { fontWeight: '650' } }, resultHeadline(result, table)),
-                el('div.faint', result.net[HERO_ID] >= 0
-                  ? t('You won {n} chips this hand.', { n: fmt.chips(Math.abs(result.net[HERO_ID])) })
-                  : t('You lost {n} chips this hand.', { n: fmt.chips(Math.abs(result.net[HERO_ID])) })),
+                el('div.faint', resultLine(result.net[HERO_ID])),
                 autoDealRow(),
               ),
               el('div.row',
@@ -1929,10 +1968,31 @@ function metric(k, v, tone = '') {
   return el('div.coach-metric', el('span.k', t(k)), el(`span.v${tone ? `.${tone}` : ''}`, v));
 }
 
-function variantSwitcher(current, go) {
+function variantSwitcher(current, seats, go) {
   return el('div.row',
     VARIANT_KEYS.map((key) => el(`button.btn.sm${key === current ? '.primary' : '.ghost'}`, {
-      onclick: () => go('play', { variant: key }),
+      onclick: () => go('play', { variant: key, seats }),
     }, VARIANTS[key].short)),
+  );
+}
+
+const SIZE_NAMES = { 6: 'Full table', 3: '3 players', 2: 'Heads-up' };
+// On a phone the three chips share a row with the variants, so they say less.
+const SIZE_SHORT = { 6: '6', 3: '3', 2: 'HU' };
+const SIZE_BLURBS = {
+  6: 'Six players: the table the charts are drawn for.',
+  3: 'You and two others. Everybody plays more hands, and the pot is rarely multiway for long.',
+  2: 'You against one. The button is also the small blind, and acts first before the flop.',
+};
+
+/** How many are dealt in: a full table, you and two others, or you against one. */
+function sizeSwitcher(variant, seats, go) {
+  return el('div.row.size-switch', { role: 'group', 'aria-label': t('Players at the table') },
+    TABLE_SIZES.map((n) => el(`button.btn.sm${n === seats ? '.primary' : '.ghost'}`, {
+      title: SIZE_BLURBS[n],
+      'aria-pressed': n === seats ? 'true' : 'false',
+      'aria-label': t(SIZE_NAMES[n]),
+      onclick: () => go('play', { variant, seats: n }),
+    }, el('span.size-long', t(SIZE_NAMES[n])), el('span.size-short', SIZE_SHORT[n]))),
   );
 }

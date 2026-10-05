@@ -55,6 +55,23 @@ function face(key) {
  * `boss` (the person who owns this table) and `speech` (a line they are
  * saying right now, shown in a bubble by their seat).
  */
+/**
+ * Which of the felt's six places a seat sits in, counting clockwise from the
+ * hero at the bottom. A full table fills all six. A smaller one spreads what
+ * it has round the oval instead of crowding one side of it: heads-up puts
+ * the other player straight across, three-handed puts them either side of
+ * the top. (Counting round without the spread had both opponents on the
+ * left, hugging the rail with the whole right of the table empty.)
+ *
+ * @param {number} order      places clockwise from the hero, 0 for the hero
+ * @param {number} seatCount  chairs at the table
+ */
+const SPREAD = { 2: [0, 3], 3: [0, 2, 4], 4: [0, 2, 3, 4], 5: [0, 1, 2, 4, 5] };
+export function slotFor(order, seatCount) {
+  const layout = SPREAD[seatCount];
+  return layout ? layout[order] : order;
+}
+
 export function renderFelt(state) {
   const {
     players, heroSeat, seatCount, button, board, pot, street,
@@ -64,7 +81,7 @@ export function renderFelt(state) {
   } = state;
 
   const seats = players.map((p) => {
-    const slot = (p.seat - heroSeat + seatCount) % seatCount;
+    const slot = slotFor((p.seat - heroSeat + seatCount) % seatCount, seatCount);
     const isActing = p.id === actingId;
     const showCards = p.isHero || (reveal && !p.folded);
 
