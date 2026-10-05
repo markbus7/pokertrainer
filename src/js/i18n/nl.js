@@ -5285,4 +5285,72 @@ export const NL = {
     'Eén hand op twintig, en alleen de beste.',
   'When he bets, he has it.':
     'Als hij bet, heeft hij hem.',
+
+  /* ---- v3.14: the Regatta ---- */
+  'The entry is {cost} and you have {have}.':
+    'De inleg is {cost} en je hebt {have}.',
+  'Withdraw':
+    'Opgeven',
+  'Regatta at {place}':
+    'Regatta bij {place}',
+  'Six players, the top three are paid':
+    'Zes spelers, de top drie wordt uitbetaald',
+  'Prizes: {first} / {second} / {third}':
+    'Prijzen: {first} / {second} / {third}',
+  '{n} of {total} left':
+    '{n} van {total} over',
+  'in the money':
+    'in het geld',
+  '{name} is out in {place}':
+    '{name} is eruit als {place}',
+  '{name} is out':
+    '{name} is eruit',
+  'Finished {place}':
+    'Geëindigd als {place}',
+  'You finished {place}':
+    'Je eindigde als {place}',
+  '{money} paid':
+    '{money} uitbetaald',
+  'You won the Regatta':
+    'Je won de Regatta',
+  'You finished {place}, in the money':
+    'Je eindigde als {place}, in het geld',
+  'You finished {place} of {total}':
+    'Je eindigde als {place} van {total}',
+  '{prize} paid on a {entry} entry':
+    '{prize} uitbetaald op een inleg van {entry}',
+  'Nothing paid outside the top three. The entry was {entry}.':
+    'Buiten de top drie wordt niets uitbetaald. De inleg was {entry}.',
+  'Enter again — {money}':
+    'Doe weer mee — {money}',
+  'Not enough for another entry':
+    'Niet genoeg voor nog een inleg',
+  '1st': '1e',
+  '2nd': '2e',
+  '3rd': '3e',
+  '4th': '4e',
+  '5th': '5e',
+  '6th': '6e',
+  'The Regatta':
+    'De Regatta',
+  'Won {n}':
+    '{n} gewonnen',
+  'Six players, {chips} chips each, the blinds climbing every {n} hands until one has everything. The top three are paid, and the whole pool is paid back: nobody takes a rake.':
+    'Zes spelers, elk {chips} chips, en de blinds gaan elke {n} handen omhoog tot één speler alles heeft. De top drie wordt uitbetaald, en de hele pot gaat terug naar de spelers: niemand neemt rake.',
+  'Entry':
+    'Inleg',
+  'With a prize list, a chip you lose is worth more to you than a chip you win, and the short stack is where it is decided: shove or fold.':
+    'Met een prijzenlijst is een chip die je verliest meer waard dan een chip die je wint, en bij de korte stack wordt het beslist: all-in of passen.',
+  '{n} entered, {wins} won, {cashes} in the money. Net {net}.':
+    '{n} keer meegedaan, {wins} gewonnen, {cashes} in het geld. Netto {net}.',
+  'Enter the Regatta — {money}':
+    'Doe mee aan de Regatta — {money}',
+  'Finish in the money at the Regatta':
+    'Eindig in het geld bij de Regatta',
+  'A six-player tournament: the top three are paid.':
+    'Een toernooi voor zes spelers: de top drie wordt uitbetaald.',
+  'Not enough bankroll': 'Niet genoeg bankroll',
+  'First': 'Eerste',
+  'Second': 'Tweede',
+  'Third': 'Derde',
 };

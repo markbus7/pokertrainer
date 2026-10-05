@@ -606,6 +606,43 @@ export class Profile {
     return { firstWin: won && before.wins === 0, before: before.stars, after: career.duels[key].stars };
   }
 
+  /**
+   * How the regattas at a stop have gone: entered, won, finished in the money,
+   * the best place, and what they have made or cost (in money, entry out and
+   * prize in). `best` is 0 until one has been finished.
+   */
+  regattaRecord(key) {
+    const r = (this.career.regattas || {})[key];
+    const n = (x) => (Number.isFinite(x) && x > 0 ? Math.round(x) : 0);
+    return {
+      entered: r ? n(r.entered) : 0,
+      wins: r ? n(r.wins) : 0,
+      cashes: r ? n(r.cashes) : 0,
+      best: r ? n(r.best) : 0,
+      net: r && Number.isFinite(r.net) ? Math.round(r.net * 100) / 100 : 0,
+    };
+  }
+
+  /**
+   * A regatta finished (or was left). `place` is where the reader finished, or
+   * null if they got up before the end; `prize` and `entry` are in money.
+   * Returns the best place before this one, for what a better finish pays.
+   */
+  noteRegatta(key, { place, entry, prize }) {
+    const career = this.career;
+    if (!career.regattas || typeof career.regattas !== 'object') career.regattas = {};
+    const before = this.regattaRecord(key);
+    career.regattas[key] = {
+      entered: before.entered + 1,
+      wins: before.wins + (place === 1 ? 1 : 0),
+      cashes: before.cashes + (place && place <= 3 ? 1 : 0),
+      best: place ? (before.best ? Math.min(before.best, place) : place) : before.best,
+      net: Math.round((before.net + prize - entry) * 100) / 100,
+    };
+    this.save();
+    return { bestBefore: before.best };
+  }
+
   /** Sittings finished at a stop's tables: the lobby is made from the count. */
   get sittings() {
     return Number.isFinite(this.career.sittings) ? this.career.sittings : 0;

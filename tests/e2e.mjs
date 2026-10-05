@@ -3327,6 +3327,108 @@ await step('Silas posts contracts, today\'s question keeps a streak, and a stran
   }
 });
 
+await step('a Regatta: six players, the entry paid up front, the top three paid, and a way out', async () => {
+  // A sit-and-go at a stop: the entry comes out of the bankroll before the
+  // first card, the blinds climb, players go out and are placed, it ends when
+  // the reader is out or has everything, and a prize goes back in.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const reg = await ctx.newPage();
+  reg.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
+  reg.on('console', (m) => { if (m.type() === 'error' && !/raw\.githubusercontent|ERR_CONNECTION|Failed to load resource/.test(m.text())) errors.push(m.text()); });
+  const text = async (sel) => (await reg.textContent(sel).catch(() => '') || '').replace(/\s+/g, ' ').trim();
+  const profile = () => reg.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')));
+  const seed = (patch) => reg.evaluate((p) => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    localStorage.setItem(key, JSON.stringify({ ...raw, ...p, settings: { ...(raw.settings || {}), sound: false, music: false, autoDeal: true, ...(p.settings || {}) } }));
+  }, patch);
+  try {
+    await reg.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    await reg.evaluate(() => localStorage.removeItem('poker-trainer.profile.v1'));
+    await reg.reload({ waitUntil: 'domcontentloaded' });
+    await seed({
+      seenPrologue: true,
+      walkthroughs: ['hand-rankings', 'pot-odds', 'outs', 'preflop', 'position'],
+      economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: ['hand-rankings', 'pot-odds', 'outs', 'preflop', 'position'].map((id) => `lesson:${id}`) },
+      career: { venue: 'nl10', best: 'nl10', busted: 0, staked: 0, beaten: ['nl2', 'nl5'], played: { nl2: 40, nl5: 60, nl10: 5 } },
+      bankroll: 1000,
+    });
+    await reg.reload({ waitUntil: 'domcontentloaded' });
+    await reg.goto(`${BASE}/#stop?at=nl10`, { waitUntil: 'domcontentloaded' });
+    await reg.waitForSelector('.regatta-block', { timeout: 8000 });
+    const block = await text('.regatta-block');
+    if (!/Six players/.test(block) || !/Entry\s*\$10\.00/.test(block) || !/First\s*\$30\.00/.test(block) || !/Third\s*\$12\.00/.test(block)) throw new Error(`the Regatta block reads "${block}"`);
+
+    // Enter and withdraw before a card is dealt: nothing was played, so the entry comes back.
+    const before = (await profile()).bankroll;
+    await reg.click('.regatta-block .btn.primary');
+    await reg.waitForSelector('.felt', { timeout: 8000 });
+    const paid = (await profile()).bankroll;
+    if (Math.abs(before - paid - 10) > 0.001) throw new Error(`the entry took ${before - paid}, not 10`);
+    const clock = await text('.match-banner');
+    if (!/Blinds 25 \/ 50/.test(clock) || !/Level 1 of 11/.test(clock) || !/6 of 6 left/.test(clock)) throw new Error(`the Regatta banner reads "${clock}"`);
+    if ((await reg.$$('.felt .seat')).length !== 6) throw new Error('a Regatta is not six-handed');
+    if (!/Regatta at The Ferry/.test(await text('.table-head'))) throw new Error(`the header reads "${await text('.table-head')}"`);
+    await reg.click('.table-head button:has-text("Withdraw")');
+    await reg.waitForSelector('.stop-screen', { timeout: 8000 });
+    const refunded = await profile();
+    if (Math.abs(refunded.bankroll - before) > 0.001) throw new Error(`withdrawing before a deal left the bankroll at ${refunded.bankroll}, not ${before}`);
+    if (refunded.career.regattas && refunded.career.regattas.nl10) throw new Error('an entry never dealt was counted');
+
+    // Play one to the end by shoving: out, or the last one standing.
+    await reg.waitForSelector('.regatta-block .btn.primary', { timeout: 5000 });
+    await reg.click('.regatta-block .btn.primary');
+    await reg.waitForSelector('.felt', { timeout: 8000 });
+    await reg.click('button:has-text("Deal me in")');
+    const deadline = Date.now() + 240000;
+    while (Date.now() < deadline && !(await reg.$('.regatta-result'))) {
+      const bar = (await reg.textContent('.action-bar').catch(() => '')) || '';
+      if (/Deal next hand/.test(bar)) { await reg.click('button:has-text("Deal next hand")').catch(() => {}); await reg.waitForTimeout(120); continue; }
+      const allIn = await reg.$('.size-presets .size-btn:last-child');
+      if (allIn) {
+        await allIn.click().catch(() => {});
+        const go = await reg.$('.action-buttons .btn.primary');
+        if (go) await go.click().catch(() => {});
+      } else {
+        const btn = (await reg.$('.action-buttons .btn.success')) || (await reg.$('.action-buttons .btn:not(.primary):not(.danger)'));
+        if (btn) await btn.click().catch(() => {});
+      }
+      await reg.waitForTimeout(120);
+    }
+    if (!(await reg.$('.regatta-result'))) throw new Error('the Regatta never finished');
+    const result = await text('.regatta-result');
+    if (!/You (won the Regatta|finished)/.test(result) || !/entry/.test(result) || !/Prizes: \$30\.00 \/ \$18\.00 \/ \$12\.00/.test(result)) throw new Error(`the result reads "${result}"`);
+    const saved = await profile();
+    const rec = saved.career.regattas.nl10;
+    if (rec.entered !== 1 || !(rec.best >= 1 && rec.best <= 6)) throw new Error(`the record is ${JSON.stringify(rec)}`);
+    const expected = before - 10 + (rec.best <= 3 ? [30, 18, 12][rec.best - 1] : 0);
+    if (Math.abs(saved.bankroll - expected) > 0.01) throw new Error(`finishing ${rec.best} left the bankroll at ${saved.bankroll}, expected ${expected}`);
+    if (Math.abs(rec.net - (expected - before)) > 0.01) throw new Error(`the net is ${rec.net}, expected ${expected - before}`);
+
+    // Getting up in the middle gives up the entry: a try at no place.
+    await reg.click('.regatta-result .btn.primary');
+    await reg.waitForSelector('.felt', { timeout: 8000 });
+    await reg.click('button:has-text("Deal me in")');
+    await reg.waitForSelector('.action-buttons button', { timeout: 20000 });
+    const mid = (await profile()).bankroll;
+    await reg.click('.table-head button:has-text("Withdraw")');
+    await reg.waitForSelector('.stop-screen', { timeout: 8000 });
+    const left = await profile();
+    if (left.career.regattas.nl10.entered !== 2 || left.career.regattas.nl10.best !== rec.best) throw new Error(`a withdrawal left ${JSON.stringify(left.career.regattas.nl10)}`);
+    if (Math.abs(left.bankroll - mid) > 0.001) throw new Error('withdrawing mid-game moved the bankroll again');
+
+    // And in Dutch.
+    await seed({ settings: { lang: 'nl' } });
+    await reg.reload({ waitUntil: 'domcontentloaded' });
+    await reg.waitForSelector('.regatta-block', { timeout: 8000 });
+    const dutch = await text('.regatta-block');
+    if (!/De Regatta/.test(dutch) || /Six players|Entry/.test(dutch)) throw new Error(`the Regatta block in Dutch reads "${dutch.slice(0, 160)}"`);
+    console.log(`      entry $10 paid and refunded before a deal; finished ${rec.best} of 6 (net ${rec.net}); a withdrawal gave up the entry; Dutch`);
+  } finally {
+    await ctx.close();
+  }
+});
+
 /** Play hands of a duel by shoving or calling until `n` have been dealt, or it ends; says whether the log saw the blinds rise. */
 async function playOutHands(page, n) {
   let dealt = 0;

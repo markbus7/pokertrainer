@@ -103,6 +103,16 @@ function evaluate(profile, chapter, spec) {
       };
     }
 
+    case 'regatta': {
+      const best = profile.regattaRecord(venue.key).best;
+      return {
+        ...base, text: 'Finish in the money at the Regatta', params: {},
+        done: best >= 1 && best <= 3,
+        to: { route: 'stop', params: { at: venue.key }, place: null, stop: venue.key },
+        hint: 'A six-player tournament: the top three are paid.',
+      };
+    }
+
     case 'fish': {
       const caught = bookProgress(profile.catchBook).caught;
       return {

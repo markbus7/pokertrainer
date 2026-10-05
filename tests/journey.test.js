@@ -76,7 +76,7 @@ describe('the road: the list is sound', () => {
     const charts = new Set(CHECKPOINTS.map((c) => c.key));
     for (const chapter of ROAD) {
       for (const b of chapter.bonus) {
-        assert(['stars', 'fish', 'chart', 'boat', 'pet', 'race'].includes(b.kind), `${b.kind} is not a kind of bonus`);
+        assert(['stars', 'regatta', 'fish', 'chart', 'boat', 'pet', 'race'].includes(b.kind), `${b.kind} is not a kind of bonus`);
         if (b.kind === 'boat') assert(boats.has(b.key), `no boat called ${b.key}`);
         if (b.kind === 'chart') assert(charts.has(b.key), `no chart called ${b.key}`);
       }

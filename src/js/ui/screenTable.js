@@ -54,6 +54,9 @@ import { autoDealEnabled, autoDealDelay, autoDealReady, countdown } from '../sta
 import { takeTable, duelStatus } from '../state/journey.js';
 import { DUEL_LEVELS, MIN_DECISIONS, STAR_SHARE, blindsFor, duelStars, starPearls, duelOver, soundShare } from '../state/match.js';
 import { storyFor } from '../data/story.js';
+import {
+  FIELD, START_STACK, LEVELS as REGATTA_LEVELS, blindsFor as regattaBlinds, payouts as regattaPayouts, prizeFor, placesFor, placePearls, ordinal,
+} from '../state/regatta.js';
 import { bites, landed, weighIn, speciesOf } from '../data/fish.js';
 import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
@@ -161,11 +164,26 @@ export function renderTable(ctx, params = {}) {
       el('button.btn.primary', { onclick: () => go(duel ? 'stop' : 'home', duel ? { at: duelStop.key } : {}) }, t('Back')),
     ));
   }
-  const variantKey = !duel && params.variant && VARIANTS[params.variant] ? params.variant : 'holdem';
+  // A regatta: a six-player tournament at a stop, to the last chip, with the top
+  // three paid. The entry comes out of the bankroll and the prize goes back in.
+  const regattaStop = params.mode === 'regatta' ? VENUES.find((v) => v.key === params.at) || null : null;
+  const regatta = Boolean(regattaStop);
+  if (params.mode === 'regatta' && !regatta) return el('div.screen', el('div.panel', el('h1', t('Not yet')), el('button.btn.primary', { onclick: () => go('home') }, t('Back'))));
+  if (regatta && ctx.profile.data.bankroll < regattaStop.entry) {
+    return el('div.screen', el('div.panel',
+      el('h1', t('Not enough bankroll')),
+      el('p.muted', t('The entry is {cost} and you have {have}.', { cost: fmt.money(regattaStop.entry), have: fmt.money(ctx.profile.data.bankroll) })),
+      el('button.btn.primary', { onclick: () => go('stop', { at: regattaStop.key }) }, t('Back')),
+    ));
+  }
+  // Both a duel and a regatta run on a blind clock and end with somebody holding
+  // the chips; what they share is here, and what they do not is under their own name.
+  const match = duel || regatta;
+  const variantKey = !match && params.variant && VARIANTS[params.variant] ? params.variant : 'holdem';
   const stake = stakeFor(profile.data.stakeKey);
 
-  const bigBlind = 2;
-  const startingStack = bigBlind * 100;
+  const bigBlind = regatta ? REGATTA_LEVELS[0][1] : 2;
+  const startingStack = regatta ? START_STACK : bigBlind * 100;
   const buyInCost = grind ? stake.buyIn : 0;
 
   if (grind && profile.data.bankroll < buyInCost) {
@@ -214,7 +232,7 @@ export function renderTable(ctx, params = {}) {
   // Free play can be dealt for fewer: you against one, or against two. The
   // stops are full tables with somebody who owns them, and a lesson is cut to
   // whatever it teaches.
-  const seats = duel ? 2 : lesson ? lesson.seats : (!grind && TABLE_SIZES.includes(Number(params.seats)) ? Number(params.seats) : 6);
+  const seats = duel ? 2 : regatta ? FIELD : lesson ? lesson.seats : (!grind && TABLE_SIZES.includes(Number(params.seats)) ? Number(params.seats) : 6);
 
   // Free play is the table. Silas at your shoulder, grading every decision
   // out loud, is a choice the reader makes with the switch in the header —
@@ -228,12 +246,12 @@ export function renderTable(ctx, params = {}) {
   // table, one of three the lobby offers. They play the style the stop was
   // built around: the boss is a face and a voice on one of the engine's six
   // players, not a seventh, so their seat takes that style's place and name.
-  const room = duel ? duelStop : grind ? venueFor(profile.career.venue) : null;
+  const room = duel ? duelStop : regatta ? regattaStop : grind ? venueFor(profile.career.venue) : null;
   const boss = room ? bossFor(room.boss) : null;
   // Which of the stop's tables this is. The same lobby the stop screen showed:
   // it is made from the stop and the count of sittings, not from a die.
-  const lobby = grind ? lobbyFor(room, profile.sittings) : null;
-  const seat = lobby ? lobby.tables.find((x) => x.id === params.table) || lobby.tables[0] : null;
+  const lobby = grind || regatta ? lobbyFor(room, profile.sittings) : null;
+  const seat = lobby ? (regatta ? lobby.tables[0] : lobby.tables.find((x) => x.id === params.table) || lobby.tables[0]) : null;
   const ownerHere = duel || !seat || seat.owner;
   const opponents = duel ? [room.resident] : seat ? seat.styles.slice() : pickOpponents(seats - 1, rng);
   const story = duel ? storyFor(room.key) : null;
@@ -271,6 +289,9 @@ export function renderTable(ctx, params = {}) {
       }),
     ],
   });
+
+  // Short stacks in a tournament shove or fold; the ordinary bot has nothing to say at ten big blinds.
+  table.pushFold = regatta;
 
   // Who is watching, and how awake they are. Both live on the table because
   // that is what botAction and the hand-reading engine are handed, and one of
@@ -333,6 +354,9 @@ export function renderTable(ctx, params = {}) {
     matchHands: 0,
     matchLevel: -1,
     matchOver: null,
+    // A regatta: who had gone out and where they finished, and how many were alive at the deal.
+    finished: {},
+    aliveAtStart: 0,
     // Whether the Rival has said hello this sitting.
     rivalGreeted: false,
     wandererGreeted: false,
@@ -370,11 +394,13 @@ export function renderTable(ctx, params = {}) {
   // The same object, not a copy: the opponents read what the reader does.
   table.readerMemory = session.readerMemory;
   if (grind) profile.setBankroll(profile.data.bankroll - buyInCost);
+  // The entry is paid before the first card, and the prize comes back at the end.
+  if (regatta) profile.setBankroll(profile.data.bankroll - room.entry, room.key);
 
   const hero = table.player(HERO_ID);
   // A lesson table is a chapter, and a duel is a fight for the table: neither
   // pays pearls by the hand, and nobody at them carries a bounty.
-  const pays = !lesson && !duel;
+  const pays = !lesson && !match;
   if (pays) {
     for (const p of table.players) {
       if (p.isHero) continue;
@@ -391,7 +417,7 @@ export function renderTable(ctx, params = {}) {
   const lessonNoteHost = el('div');
   const matchHost = el('div');
   const leaveButton = el('button.btn.sm.ghost', { onclick: () => leave() },
-    duel ? t('Forfeit') : grind ? 'Cash out' : 'Leave table');
+    duel ? t('Forfeit') : regatta ? t('Withdraw') : grind ? 'Cash out' : 'Leave table');
   // Under the felt: the help button, your companions, what this sitting has
   // paid so far — and the drawer they open.
   const trayHost = el('div.tray-host');
@@ -408,6 +434,12 @@ export function renderTable(ctx, params = {}) {
           el('span.scene-stake', t(room.name)),
           el('span.table-owner', t('Heads-up, to the last chip')),
         )
+      : regatta
+        ? el('div.row',
+          el('h1.sign.table-place', { style: { margin: 0 } }, t('Regatta at {place}', { place: t(room.name) })),
+          el('span.scene-stake', room.label),
+          el('span.table-owner', t('Six players, the top three are paid')),
+        )
       : grind
         ? el('div.row',
           el('h1.sign.table-place', { style: { margin: 0 } }, t(room.name)),
@@ -421,8 +453,8 @@ export function renderTable(ctx, params = {}) {
           lesson ? null : el('span.table-owner', t('No money on it — just hands.')),
         ),
       el('div.row',
-        !grind && !lesson && !duel ? variantSwitcher(variantKey, seats, go) : null,
-        !grind && !lesson && !duel ? sizeSwitcher(variantKey, seats, go) : null,
+        !grind && !lesson && !match ? variantSwitcher(variantKey, seats, go) : null,
+        !grind && !lesson && !match ? sizeSwitcher(variantKey, seats, go) : null,
         lesson ? null : coachToggle,
         lesson
           ? el('button.btn.sm.ghost', { onclick: () => go('walkthrough', { module: params.lesson }) },
@@ -435,7 +467,7 @@ export function renderTable(ctx, params = {}) {
     // that stops on the flop is not the game — saying so is the difference
     // between a simplification and a lie.
     lesson ? lessonNoteHost : null,
-    duel ? matchHost : null,
+    match ? matchHost : null,
     wrap,
   );
   root.classList.add('saloon');
@@ -538,7 +570,7 @@ export function renderTable(ctx, params = {}) {
    * the match calls for, and the first hand of a new level says so out loud.
    */
   function advanceBlinds() {
-    const b = blindsFor(session.matchHands);
+    const b = (regatta ? regattaBlinds : blindsFor)(session.matchHands);
     table.smallBlind = b.small;
     table.bigBlind = b.big;
     stats.bigBlind = b.big;
@@ -551,7 +583,8 @@ export function renderTable(ctx, params = {}) {
     }
     session.matchHands++;
     // The owner's opening line, once, over the first hand.
-    if (session.matchHands === 1) say(bossId, t(story.challenge), 5200);
+    if (duel && session.matchHands === 1) say(bossId, t(story.challenge), 5200);
+    if (regatta && session.matchHands === 1 && bossId) say(bossId, t(boss.hello), 5200);
   }
 
   function startHand() {
@@ -563,7 +596,8 @@ export function renderTable(ctx, params = {}) {
     if (hero.stack <= 0) { draw(); return null; }
     if (table.players.filter((p) => p.stack > 0).length < 2) return topUpBots();
 
-    if (duel) advanceBlinds();
+    if (match) advanceBlinds();
+    session.aliveAtStart = table.players.filter((p) => p.stack > 0).length;
     if (rivalId && !session.rivalGreeted) greetTheRival();
     if (wandererId && !session.wandererGreeted) greetTheWanderer();
     table.startHand();
@@ -981,7 +1015,7 @@ export function renderTable(ctx, params = {}) {
       profile.save();
     }
     // The road asks for hands at this stop's own table.
-    if (grind) profile.noteHandAt(room.key);
+    if (grind || regatta) profile.noteHandAt(room.key);
     // A pearl for the hand — more at the stops further down the river. A
     // lesson table pays in XP only: it is a chapter, not a game.
     if (pays) {
@@ -1037,7 +1071,7 @@ export function renderTable(ctx, params = {}) {
     const events = {
       type: 'hand',
       // A duel starts with the stacks to double and ends with them: not a session you doubled in.
-      doubledUp: !duel && hero.stack >= startingStack * 2,
+      doubledUp: !match && hero.stack >= startingStack * 2,
       bustedOpponent: table.players.some((p) => !p.isHero && p.stack === 0),
       madeRoyal: heroShow && categoryOf(heroShow.score) === CAT.STRAIGHT_FLUSH && (heroShow.score & 0xf0000) >> 16 === 14,
       madeQuads: heroShow && categoryOf(heroShow.score) === CAT.QUADS,
@@ -1049,6 +1083,7 @@ export function renderTable(ctx, params = {}) {
       const over = duelOver(hero.stack, table.player(bossId).stack);
       if (over.over) finishDuel(over.won);
     }
+    if (regatta) tallyRegatta();
     // Armed before the draw, so the bar is drawn with its countdown running.
     armAutoDeal(result);
     draw();
@@ -1203,6 +1238,18 @@ export function renderTable(ctx, params = {}) {
       go('stop', { at: room.key, ...(m ? { after: m.took.first ? 'took' : m.won ? 'up' : 'down' } : {}), ...(notes === null ? {} : { notes }), ...(m && m.took.purse ? { purse: m.took.purse } : {}) });
       return;
     }
+    if (regatta) {
+      // Getting up before the end gives up the entry: a try at no place, no prize. Before a
+      // card is dealt, nothing has been played and the entry comes back.
+      if (!session.matchOver) {
+        if (session.matchHands) profile.noteRegatta(room.key, { place: null, entry: room.entry, prize: 0 });
+        else profile.setBankroll(profile.data.bankroll + room.entry, room.key);
+      }
+      const m = session.matchOver;
+      const notes = writeReport();
+      go('stop', { at: room.key, ...(m && m.place === 1 ? { after: 'up' } : m ? { after: m.prize > room.entry ? 'up' : 'down' } : {}), ...(notes === null ? {} : { notes }) });
+      return;
+    }
     if (grind) {
       const cashOut = (hero.stack / (bigBlind * 100)) * stake.buyIn;
       profile.setBankroll(profile.data.bankroll + cashOut);
@@ -1279,21 +1326,100 @@ export function renderTable(ctx, params = {}) {
     if (won) toast({ icon: '🏆', title: took.first ? t('You took {place}', { place: t(room.name) }) : t('You beat {name}', { name: boss.short }), desc: t('{n} of 3 stars', { n: stars }) });
   }
 
-  /** What the blinds are, and how long they stay there. */
+  /** What the blinds are, and how long they stay there; in a regatta, who is left and what is paid. */
   function drawMatch() {
-    if (!duel) return;
+    if (!match) return;
+    const clock = regatta ? regattaBlinds : blindsFor;
+    const levels = regatta ? REGATTA_LEVELS.length : DUEL_LEVELS.length;
     const idx = session.handStarted ? session.matchHands - 1 : session.matchHands;
-    const b = blindsFor(Math.max(0, idx));
+    const b = clock(Math.max(0, idx));
     const left = b.left - (session.handStarted ? 1 : 0);
-    leaveButton.textContent = session.matchOver ? t('Leave') : t('Forfeit');
+    leaveButton.textContent = session.matchOver ? t('Leave') : regatta ? t('Withdraw') : t('Forfeit');
+    const alive = table.players.filter((p) => p.stack > 0).length;
+    const prizes = regatta ? regattaPayouts(room.entry) : null;
     mount(matchHost, el('div.match-banner',
       el('span.match-blinds', icon('chip', { size: 14 }), t('Blinds {small} / {big}', { small: b.small, big: b.big })),
-      el('span.match-level', t('Level {n} of {total}', { n: b.level + 1, total: DUEL_LEVELS.length })),
+      el('span.match-level', t('Level {n} of {total}', { n: b.level + 1, total: levels })),
+      regatta
+        ? el('span.match-field', { title: t('Prizes: {first} / {second} / {third}', { first: fmt.money(prizes[0]), second: fmt.money(prizes[1]), third: fmt.money(prizes[2]) }) },
+          icon('anchor', { size: 14 }), t('{n} of {total} left', { n: alive, total: FIELD }),
+          !session.matchOver && alive <= 3 ? el('span.match-money', ` · ${t('in the money')}`) : null)
+        : null,
       el('span.match-clock', session.matchOver
         ? t('Over')
         : b.last
           ? t('Last level: the blinds stop here')
           : left <= 0 ? t('The blinds go up after this hand') : t('Blinds go up in {n} hands', { n: left })),
+    ));
+  }
+
+  /**
+   * After a regatta hand: who is out, and where they finished. Several players
+   * going out on one hand are placed by who started it with fewer chips. It is
+   * over when the reader is out, or the last one standing.
+   */
+  function tallyRegatta() {
+    const out = table.players.filter((p) => p.stack <= 0 && session.stacksAtStart[p.id] > 0 && !session.finished[p.id])
+      .map((p) => ({ id: p.id, stack: session.stacksAtStart[p.id] }));
+    for (const { id, place } of placesFor(session.aliveAtStart, out)) {
+      session.finished[id] = place;
+      if (id !== HERO_ID) {
+        const who = table.player(id).name;
+        log(t('{name} is out in {place}', { name: who, place: t(ordinal(place)) }), true);
+        toast({ icon: '⚓', title: t('{name} is out', { name: who }), desc: t('Finished {place}', { place: t(ordinal(place)) }) });
+      }
+    }
+    if (hero.stack <= 0) return finishRegatta(session.finished[HERO_ID]);
+    if (table.players.filter((p) => p.stack > 0).length === 1) {
+      session.finished[HERO_ID] = 1;
+      return finishRegatta(1);
+    }
+    return null;
+  }
+
+  /** Where it ended: the prize into the bankroll, the record, the pearls for a better finish than before. */
+  function finishRegatta(place) {
+    const prize = prizeFor(place, room.entry);
+    if (prize) profile.setBankroll(profile.data.bankroll + prize, room.key);
+    const { bestBefore } = profile.noteRegatta(room.key, { place, entry: room.entry, prize });
+    const pearlsEarned = placePearls(room.index, bestBefore, place);
+    if (pearlsEarned) {
+      session.pearls.bonus += profile.earnPearls(pearlsEarned);
+      pearlPop(pearlsEarned, trayHost);
+    }
+    const { decisions, sound: soundCount, share } = soundShare(session.graded);
+    session.matchOver = { place, prize, pearlsEarned, decisions, sound: soundCount, share, net: Math.round((prize - room.entry) * 100) / 100 };
+    sound(place <= 3 ? 'win' : 'lose');
+    if (place <= 3) {
+      toast({ icon: place === 1 ? '🏆' : '🥈', title: t('You finished {place}', { place: t(ordinal(place)) }), desc: t('{money} paid', { money: fmt.money(prize) }) });
+    }
+    return null;
+  }
+
+  /** Where a regatta ended, in words and money, and the way to go again. */
+  function drawRegattaResult() {
+    const m = session.matchOver;
+    const result = table.result;
+    const prizes = regattaPayouts(room.entry);
+    const canAgain = profile.data.bankroll >= room.entry;
+    mount(actionHost, el('div.action-bar.duel-result.regatta-result',
+      el('h3', m.place === 1
+        ? t('You won the Regatta')
+        : m.place <= 3 ? t('You finished {place}, in the money', { place: t(ordinal(m.place)) })
+          : t('You finished {place} of {total}', { place: t(ordinal(m.place)), total: FIELD })),
+      result ? el('div.faint', resultHeadline(result, table)) : null,
+      el('div.regatta-money',
+        el(`span.regatta-net.${m.net >= 0 ? 'up' : 'down'}`, `${m.net >= 0 ? '+' : '−'}${fmt.money(Math.abs(m.net))}`),
+        el('span.faint', m.prize
+          ? t('{prize} paid on a {entry} entry', { prize: fmt.money(m.prize), entry: fmt.money(room.entry) })
+          : t('Nothing paid outside the top three. The entry was {entry}.', { entry: fmt.money(room.entry) }))),
+      el('p.faint', t('Prizes: {first} / {second} / {third}', { first: fmt.money(prizes[0]), second: fmt.money(prizes[1]), third: fmt.money(prizes[2]) })),
+      m.pearlsEarned ? el('p.duel-pearls', t('Paid:'), ' ', pearlsNode(m.pearlsEarned)) : null,
+      el('div.row',
+        el('button.btn.primary.lg', { disabled: !canAgain, onclick: () => go('play', { mode: 'regatta', at: room.key }) },
+          icon('repeat', { size: 16 }), canAgain ? t('Enter again — {money}', { money: fmt.money(room.entry) }) : t('Not enough for another entry')),
+        el('button.btn.ghost', { onclick: () => leave() }, t('Back to {place}', { place: t(room.name) })),
+      ),
     ));
   }
 
@@ -1762,7 +1888,7 @@ export function renderTable(ctx, params = {}) {
   }
 
   function drawActions() {
-    if (session.matchOver) return drawDuelResult();
+    if (session.matchOver) return regatta ? drawRegattaResult() : drawDuelResult();
     if (hero.stack <= 0 && !session.handStarted) return drawBust();
     if (session.runOver) return drawRunReport();
 
