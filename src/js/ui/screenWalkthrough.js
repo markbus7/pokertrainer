@@ -185,6 +185,12 @@ export function renderWalkthrough(ctx, params) {
             ? el('button.btn.sm.primary', { onclick: () => go('play', { lesson: meta.id }) },
               t('▶ Play this lesson'))
             : null,
+          // ICM is a tournament idea, so its table is the bubble: a Regatta already down to
+          // four with three paid, dealt straight away.
+          meta.id === 'icm' && meta.unlockLevel <= profile.level
+            ? el('button.btn.sm.primary', { onclick: () => go('play', { mode: 'regatta', bubble: '1', at: profile.career.venue }) },
+              t('▶ Play the bubble'))
+            : null,
           el('button.btn.sm.ghost', { onclick: () => go('learn', { module: meta.id }) }, 'Exit lesson'),
         ),
       ),

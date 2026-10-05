@@ -91,7 +91,7 @@ describe('lesson tables: every lesson actually asks you something', () => {
     for (const id of MODULE_IDS) {
       assert(id in LESSON_TABLES, `${id} has no entry — every module must be decided about`);
     }
-    equal(lessonTable('icm'), null, 'ICM is a tournament idea and this is a cash table');
+    equal(lessonTable('icm'), null, 'ICM is a tournament idea: its table is the bubble, not a lesson table cut from a cash game');
     equal(lessonTable('bankroll'), null, 'Career already is that lesson');
   });
 });

@@ -108,8 +108,9 @@ export const LESSON_TABLES = {
     autopilot: 'see-flops',
     simplified: 'Three players to the river, so there is a real opponent to read rather than a described one.',
   },
-  // ICM is a tournament idea and this is a cash table; Bankroll is about
-  // which table to sit at, which is what Career already is.
+  // ICM is a tournament idea, so it is not a table cut from a cash game: its
+  // table is the bubble (state/regatta.js), reached from the lesson's own page.
+  // Bankroll is about which table to sit at, which is what Career already is.
   // Saying so is better than inventing a table that teaches neither.
   icm: null,
   bankroll: null,

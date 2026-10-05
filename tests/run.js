@@ -18,6 +18,7 @@ const modules = [
   './post.test.js',
   './pushfold.test.js',
   './regatta.test.js',
+  './icm.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',

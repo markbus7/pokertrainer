@@ -150,6 +150,16 @@ time it is reached, and a win is a trophy at that stop. With a prize list a chip
 you lose is worth more than a chip you win, and most of it is decided with a
 short stack, where the bots shove or fold the way a short stack does.
 
+The prize list changes what a decision is worth, and the coach knows it. A short
+stack in a Regatta is shove or fold, graded not on chips but on prize equity
+(the Malmuth-Harville model): for each of the two plays it works out what the
+stacks that could result are worth in prize money, weighted by how often each
+happens, and the better one is the answer, with the gap as what a mistake
+cost. A call that is right when the winner takes all can be wrong with three
+paid, and the verdict says so. The ICM chapter has a table of its own now: the
+bubble, four left and three paid, dealt straight away with a short stack, for
+practice — nothing is entered and nothing is won.
+
 Pearls are what the tables pay for hands you play through and decisions you
 get right — folding before the flop is the default and pays nothing, and a
 table with fewer than six players pays half. The practice table can be dealt

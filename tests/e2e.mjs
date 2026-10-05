@@ -3429,6 +3429,108 @@ await step('a Regatta: six players, the entry paid up front, the top three paid,
   }
 });
 
+await step('the bubble: the ICM chapter has a table, and the coach counts the prizes', async () => {
+  // ICM is a tournament idea, so its table is a Regatta already down to four
+  // with three paid: dealt straight away, practice only, and graded with the
+  // prize money counted rather than the chips.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const bub = await ctx.newPage();
+  bub.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
+  bub.on('console', (m) => { if (m.type() === 'error' && !/raw\.githubusercontent|ERR_CONNECTION|Failed to load resource/.test(m.text())) errors.push(m.text()); });
+  const text = async (sel) => (await bub.textContent(sel).catch(() => '') || '').replace(/\s+/g, ' ').trim();
+  const profile = () => bub.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')));
+  const seed = (patch) => bub.evaluate((p) => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    localStorage.setItem(key, JSON.stringify({ ...raw, ...p, settings: { ...(raw.settings || {}), sound: false, music: false, autoDeal: false, liveCoach: true, ...(p.settings || {}) } }));
+  }, patch);
+  try {
+    await bub.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    await bub.evaluate(() => localStorage.removeItem('poker-trainer.profile.v1'));
+    await bub.reload({ waitUntil: 'domcontentloaded' });
+    const OWNED = ['hand-rankings', 'pot-odds', 'outs', 'preflop', 'position', 'cbet', 'mdf', 'bluffing', 'spr', 'exploit', 'icm'];
+    await seed({
+      seenPrologue: true,
+      walkthroughs: OWNED,
+      economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: OWNED.map((id) => `lesson:${id}`) },
+      career: { venue: 'nl10', best: 'nl10', busted: 0, staked: 0, beaten: ['nl2', 'nl5'], played: { nl2: 40, nl5: 60, nl10: 5 } },
+      bankroll: 1000,
+    });
+    await bub.reload({ waitUntil: 'domcontentloaded' });
+
+    // The chapter has a way to play it.
+    await bub.goto(`${BASE}/#learn?module=icm`, { waitUntil: 'domcontentloaded' });
+    await bub.waitForSelector('.chapter-actions', { timeout: 8000 });
+    const play = await bub.$('button:has-text("Play the bubble")');
+    if (!play) throw new Error('the ICM chapter has no way to play the bubble');
+    await play.click();
+    await bub.waitForSelector('.felt', { timeout: 8000 });
+    const head = await text('.table-head');
+    if (!/The bubble/.test(head) || !/Nothing is entered and nothing is won/.test(head)) throw new Error(`the bubble's header reads "${head}"`);
+    const clock = await text('.match-banner');
+    if (!/Blinds 150 \/ 300/.test(clock) || !/Level 5 of 11/.test(clock) || !/4 of 4 left/.test(clock)) throw new Error(`the bubble's banner reads "${clock}"`);
+    if ((await bub.$$('.felt .seat')).length !== 4) throw new Error('the bubble is not four players');
+    const bankroll = (await profile()).bankroll;
+    await bub.click('button:has-text("Deal me in")');
+
+    // The first decision is named for what it is, and graded with the prizes in it.
+    await bub.waitForSelector('.action-buttons button', { timeout: 20000 });
+    const spot = await text('.coach');
+    if (!/Tournament ICM/.test(spot)) throw new Error(`the coach does not name the skill: "${spot.slice(0, 160)}"`);
+    let verdictSeen = null;
+    const deadline = Date.now() + 200000;
+    while (Date.now() < deadline && !(await bub.$('.bubble-result'))) {
+      if (!verdictSeen) {
+        const v = await bub.$('.verdict-box');
+        if (v) verdictSeen = ((await v.textContent()) || '').replace(/\s+/g, ' ').trim();
+      }
+      const bar = (await bub.textContent('.action-bar').catch(() => '')) || '';
+      if (/Deal next hand/.test(bar)) { await bub.click('button:has-text("Deal next hand")').catch(() => {}); await bub.waitForTimeout(120); continue; }
+      const band = await bub.$('.read-bands .btn');
+      if (band) { await band.click().catch(() => {}); continue; }
+      const allIn = await bub.$('.size-presets .size-btn:last-child');
+      const fold = await bub.$('.action-buttons .btn.danger');
+      if (allIn && Math.random() < 0.5) {
+        await allIn.click().catch(() => {});
+        const go = await bub.$('.action-buttons .btn.primary');
+        if (go) await go.click().catch(() => {});
+      } else if (fold) {
+        await fold.click().catch(() => {});
+      } else {
+        const btn = (await bub.$('.action-buttons .btn.success')) || (await bub.$('.action-buttons .btn:not(.primary):not(.danger)'));
+        if (btn) await btn.click().catch(() => {});
+      }
+      await bub.waitForTimeout(120);
+    }
+    if (!(await bub.$('.bubble-result'))) throw new Error('the bubble never burst');
+    if (!verdictSeen || !/prize|close call|Too tight|Right, with/i.test(verdictSeen)) throw new Error(`the verdict does not count the prizes: "${verdictSeen}"`);
+    const result = await text('.bubble-result');
+    if (!/bubble/.test(result) || !/decisions were right with the prizes counted|not asked anything/.test(result)) throw new Error(`the result reads "${result}"`);
+    if (Math.abs((await profile()).bankroll - bankroll) > 0.001) throw new Error('practice moved the bankroll');
+    if ((await profile()).career.regattas && (await profile()).career.regattas.nl10) throw new Error('the bubble was recorded as a Regatta');
+
+    // Another one starts fresh; Silas's notes call it the bubble.
+    await bub.click('.bubble-result .btn.primary');
+    await bub.waitForSelector('.felt', { timeout: 8000 });
+    if (!/4 of 4 left/.test(await text('.match-banner'))) throw new Error('a second bubble did not start with four');
+    await bub.click('button:has-text("Deal me in")');
+    await bub.waitForSelector('.action-buttons button', { timeout: 20000 });
+    await bub.click('.table-head button:has-text("Leave")');
+    await bub.waitForTimeout(600);
+
+    // And in Dutch.
+    await seed({ settings: { lang: 'nl' } });
+    await bub.reload({ waitUntil: 'domcontentloaded' });
+    await bub.goto(`${BASE}/#play?mode=regatta&bubble=1&at=nl10`, { waitUntil: 'domcontentloaded' });
+    await bub.waitForSelector('.felt', { timeout: 8000 });
+    const dutch = await text('.table-head');
+    if (!/De bubbel/.test(dutch) || /Practice|Nothing is entered/.test(dutch)) throw new Error(`the bubble in Dutch reads "${dutch}"`);
+    console.log(`      the ICM chapter plays the bubble: four left, 150/300; the coach named Tournament ICM and counted the prizes ("${verdictSeen.slice(0, 50)}…"); practice paid nothing; Dutch`);
+  } finally {
+    await ctx.close();
+  }
+});
+
 /** Play hands of a duel by shoving or calling until `n` have been dealt, or it ends; says whether the log saw the blinds rise. */
 async function playOutHands(page, n) {
   let dealt = 0;
