@@ -16,7 +16,7 @@ const shortfall = (have, need) => t('— {n} more hands', { n: need - have });
 import { renderFelt } from './feltView.js';
 import { createTable, STREETS } from '../engine/table.js';
 import { botAction, getProfile, pickOpponents } from '../engine/bots.js';
-import { venueFor } from '../data/venues.js';
+import { VENUES, venueFor } from '../data/venues.js';
 import { VARIANTS, VARIANT_KEYS } from '../engine/variants.js';
 import { equityVsField, outsToImprove } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, spr } from '../core/odds.js';
@@ -45,7 +45,9 @@ import { bossFor, MENTOR } from '../data/characters.js';
 import { svgNode, lampNode } from './place.js';
 import { fishSvg } from './fishArt.js';
 import { autoDealEnabled, autoDealDelay, autoDealReady, countdown } from '../state/autoDeal.js';
-import { takeTable } from '../state/journey.js';
+import { takeTable, duelStatus } from '../state/journey.js';
+import { DUEL_LEVELS, MIN_DECISIONS, STAR_SHARE, blindsFor, duelStars, starPearls, duelOver, soundShare } from '../state/match.js';
+import { storyFor } from '../data/story.js';
 import { bites, landed, weighIn, speciesOf } from '../data/fish.js';
 import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
@@ -141,7 +143,19 @@ const TABLE_SIZES = [6, 3, 2];
 export function renderTable(ctx, params = {}) {
   const grind = params.mode === 'grind';
   const { profile, rng, go } = ctx;
-  const variantKey = params.variant && VARIANTS[params.variant] ? params.variant : 'holdem';
+  // A duel: you against the owner of a stop's table, to the last chip, with the
+  // blinds climbing until somebody has them all. Only once the city's lessons
+  // and hands are done — an owner will not duel a stranger.
+  const duelStop = params.mode === 'duel' ? VENUES.find((v) => v.key === params.at) || null : null;
+  const duel = Boolean(duelStop);
+  if (params.mode === 'duel' && (!duel || !duelStatus(ctx.profile, duelStop.index).ready)) {
+    return el('div.screen', el('div.panel',
+      el('h1', t('Not yet')),
+      el('p.muted', t('The owner of this table will not duel a stranger. Finish the lessons and the hands for this city first.')),
+      el('button.btn.primary', { onclick: () => go(duel ? 'stop' : 'home', duel ? { at: duelStop.key } : {}) }, t('Back')),
+    ));
+  }
+  const variantKey = !duel && params.variant && VARIANTS[params.variant] ? params.variant : 'holdem';
   const stake = stakeFor(profile.data.stakeKey);
 
   const bigBlind = 2;
@@ -194,7 +208,7 @@ export function renderTable(ctx, params = {}) {
   // Free play can be dealt for fewer: you against one, or against two. The
   // stops are full tables with somebody who owns them, and a lesson is cut to
   // whatever it teaches.
-  const seats = lesson ? lesson.seats : (!grind && TABLE_SIZES.includes(Number(params.seats)) ? Number(params.seats) : 6);
+  const seats = duel ? 2 : lesson ? lesson.seats : (!grind && TABLE_SIZES.includes(Number(params.seats)) ? Number(params.seats) : 6);
 
   // Free play is the table. Silas at your shoulder, grading every decision
   // out loud, is a choice the reader makes with the switch in the header —
@@ -209,9 +223,10 @@ export function renderTable(ctx, params = {}) {
   // style the stop was built around — the boss is a face and a voice on one
   // of the engine's six players, not a seventh — so their seat takes that
   // style's place and their name.
-  const room = grind ? venueFor(profile.career.venue) : null;
+  const room = duel ? duelStop : grind ? venueFor(profile.career.venue) : null;
   const boss = room ? bossFor(room.boss) : null;
-  if (grind && !opponents.includes(room.resident)) opponents[0] = room.resident;
+  if ((grind || duel) && !opponents.includes(room.resident)) opponents[0] = room.resident;
+  const story = duel ? storyFor(room.key) : null;
   const bossIndex = boss ? opponents.indexOf(room.resident) : -1;
   const bossId = bossIndex >= 0 ? `bot${bossIndex}` : null;
   // Whose face each seat wears: the boss's own, or the style's regular.
@@ -235,7 +250,9 @@ export function renderTable(ctx, params = {}) {
   // that is what botAction and the hand-reading engine are handed, and one of
   // them reading a different answer than the other is the bug this whole
   // feature would otherwise be made of.
-  table.readerLevel = profile.level;
+  // In a duel the owner is paying attention: they read you as a player three
+  // ranks above the one you are.
+  table.readerLevel = duel ? Math.min(10, profile.level + 3) : profile.level;
 
   const stats = new SessionStats();
   stats.bigBlind = bigBlind;
@@ -286,6 +303,10 @@ export function renderTable(ctx, params = {}) {
     // endless table: without a last hand there is no moment where anyone
     // says how it went.
     run: lesson ? startRun(params.lesson) : null,
+    // A duel: hands dealt, the blind level, and how it ended (null while it runs).
+    matchHands: 0,
+    matchLevel: -1,
+    matchOver: null,
     // The countdown to the next hand, when the table deals itself:
     // { total, started, timer } while it runs, null otherwise.
     autoDeal: null,
@@ -322,8 +343,10 @@ export function renderTable(ctx, params = {}) {
   if (grind) profile.setBankroll(profile.data.bankroll - buyInCost);
 
   const hero = table.player(HERO_ID);
-  // A lesson table is a chapter, not a game: nobody there carries anything.
-  if (!lesson) {
+  // A lesson table is a chapter, and a duel is a fight for the table: neither
+  // pays pearls by the hand, and nobody at them carries a bounty.
+  const pays = !lesson && !duel;
+  if (pays) {
     for (const p of table.players) {
       if (!p.isHero) session.bounties[p.id] = seatBounty(room ? room.index : null, p.id === bossId);
     }
@@ -334,6 +357,9 @@ export function renderTable(ctx, params = {}) {
   // takes the book's ink.
   const coachHost = el('div.coach.paper');
   const lessonNoteHost = el('div');
+  const matchHost = el('div');
+  const leaveButton = el('button.btn.sm.ghost', { onclick: () => leave() },
+    duel ? t('Forfeit') : grind ? 'Cash out' : 'Leave table');
   // Under the felt: the help button, your companions, what this sitting has
   // paid so far — and the drawer they open.
   const trayHost = el('div.tray-host');
@@ -344,7 +370,13 @@ export function renderTable(ctx, params = {}) {
     liveCoach() ? coachHost : null);
   const root = el('div.screen',
     el('div.spread.table-head',
-      grind
+      duel
+        ? el('div.row',
+          el('h1.sign.table-place', { style: { margin: 0 } }, t('{name}\'s duel', { name: boss.short })),
+          el('span.scene-stake', t(room.name)),
+          el('span.table-owner', t('Heads-up, to the last chip')),
+        )
+      : grind
         ? el('div.row',
           el('h1.sign.table-place', { style: { margin: 0 } }, t(room.name)),
           el('span.scene-stake', room.label),
@@ -357,20 +389,21 @@ export function renderTable(ctx, params = {}) {
           lesson ? null : el('span.table-owner', t('No money on it — just hands.')),
         ),
       el('div.row',
-        !grind && !lesson ? variantSwitcher(variantKey, seats, go) : null,
-        !grind && !lesson ? sizeSwitcher(variantKey, seats, go) : null,
+        !grind && !lesson && !duel ? variantSwitcher(variantKey, seats, go) : null,
+        !grind && !lesson && !duel ? sizeSwitcher(variantKey, seats, go) : null,
         lesson ? null : coachToggle,
         lesson
           ? el('button.btn.sm.ghost', { onclick: () => go('walkthrough', { module: params.lesson }) },
             t('Read the lesson'))
           : null,
-        el('button.btn.sm.ghost', { onclick: () => leave() }, grind ? 'Cash out' : 'Leave table'),
+        leaveButton,
       ),
     ),
     // What has been taken away, and why. A table with two seats and a hand
     // that stops on the flop is not the game — saying so is the difference
     // between a simplification and a lie.
     lesson ? lessonNoteHost : null,
+    duel ? matchHost : null,
     wrap,
   );
   root.classList.add('saloon');
@@ -441,6 +474,27 @@ export function renderTable(ctx, params = {}) {
     if (session.logLines.length > 120) session.logLines.shift();
   }
 
+  /**
+   * The blind clock: each hand of a duel is dealt at the blinds its place in
+   * the match calls for, and the first hand of a new level says so out loud.
+   */
+  function advanceBlinds() {
+    const b = blindsFor(session.matchHands);
+    table.smallBlind = b.small;
+    table.bigBlind = b.big;
+    stats.bigBlind = b.big;
+    if (b.level !== session.matchLevel) {
+      if (session.matchLevel >= 0) {
+        log(t('The blinds go up: {small} / {big}', { small: b.small, big: b.big }), true);
+        sound('chips');
+      }
+      session.matchLevel = b.level;
+    }
+    session.matchHands++;
+    // The owner's opening line, once, over the first hand.
+    if (session.matchHands === 1) say(bossId, t(story.challenge), 5200);
+  }
+
   function startHand() {
     if (session.cancelled) return;
     stopCountdown();
@@ -450,6 +504,7 @@ export function renderTable(ctx, params = {}) {
     if (hero.stack <= 0) { draw(); return null; }
     if (table.players.filter((p) => p.stack > 0).length < 2) return topUpBots();
 
+    if (duel) advanceBlinds();
     table.startHand();
     stats.startHand();
     // Who had chips when the cards were dealt, so a bust is counted once.
@@ -775,20 +830,20 @@ export function renderTable(ctx, params = {}) {
       action: action.type,
       helped,
       head: verdict.head,
-      costBb: verdict.cost ? verdict.cost / bigBlind : 0,
+      costBb: verdict.cost ? verdict.cost / table.bigBlind : 0,
       hand: table.handNumber,
       handId: null,
     });
     // The Catch Book: a spot played right hooks the fish that lives in it.
     // Some only come in if the hand ends the right way; endHand says.
-    if (!lesson) {
+    if (pays) {
       const caughtHere = bites({
         street: table.street, action: action.type, concept: verdict.concept.id, level: verdict.level,
         helped, position: snap.position, firstIn: snap.firstIn, toCall: snap.toCall, seats: lesson ? 6 : seats,
       }, room ? room.index : null);
       for (const key of caughtHere) session.hooked.push({ key, pot: snap.pot });
     }
-    const earned = lesson ? 0 : paidForTable(decisionPearls({ level: verdict.level, street: table.street, action: action.type, helped }));
+    const earned = !pays ? 0 : paidForTable(decisionPearls({ level: verdict.level, street: table.street, action: action.type, helped }));
     if (earned) {
       session.pearls.decisions += earned;
       const extra = fromTheStrongbox(earned);
@@ -864,7 +919,7 @@ export function renderTable(ctx, params = {}) {
     if (grind) profile.noteHandAt(room.key);
     // A pearl for the hand — more at the stops further down the river. A
     // lesson table pays in XP only: it is a chapter, not a game.
-    if (!lesson) {
+    if (pays) {
       // A hand you folded before the flop was not played through: folding is
       // the default, and a table that paid for it paid the most for the least.
       const played = playedThrough(session.graded.filter((d) => d.hand === table.handNumber));
@@ -892,14 +947,15 @@ export function renderTable(ctx, params = {}) {
     if (bossId) {
       const bossWon = (result.payouts[bossId] || 0) > 0;
       const bossShowed = showdown && result.showdown.some((s) => s.id === bossId);
-      if (bossWon && (bossShowed || potTotal >= bigBlind * 20)) say(bossId, t(pick(boss.brag)));
+      if (bossWon && (bossShowed || potTotal >= table.bigBlind * 20)) say(bossId, t(pick(boss.brag)));
       else if (bossShowed && won) say(bossId, t(pick(boss.sore)));
     }
 
     const heroShow = result.showdown.find((s) => s.id === HERO_ID);
     const events = {
       type: 'hand',
-      doubledUp: hero.stack >= startingStack * 2,
+      // A duel starts with the stacks to double and ends with them: not a session you doubled in.
+      doubledUp: !duel && hero.stack >= startingStack * 2,
       bustedOpponent: table.players.some((p) => !p.isHero && p.stack === 0),
       madeRoyal: heroShow && categoryOf(heroShow.score) === CAT.STRAIGHT_FLUSH && (heroShow.score & 0xf0000) >> 16 === 14,
       madeQuads: heroShow && categoryOf(heroShow.score) === CAT.QUADS,
@@ -907,6 +963,10 @@ export function renderTable(ctx, params = {}) {
     };
     checkAchievements(profile, events).forEach((a) => toast({ icon: a.icon, title: a.name, desc: a.description }));
 
+    if (duel) {
+      const over = duelOver(hero.stack, table.player(bossId).stack);
+      if (over.over) finishDuel(over.won);
+    }
     // Armed before the draw, so the bar is drawn with its countdown running.
     armAutoDeal(result);
     draw();
@@ -1033,6 +1093,14 @@ export function renderTable(ctx, params = {}) {
     session.cancelled = true;
     stopCountdown();
     clearTimeout(session.timer);
+    if (duel) {
+      // Getting up before the end is losing it: a try, and no stars.
+      if (!session.matchOver && session.matchHands) profile.noteDuel(room.key, { won: false, stars: 0 });
+      const m = session.matchOver;
+      const notes = writeReport();
+      go('stop', { at: room.key, ...(m ? { after: m.took.first ? 'took' : m.won ? 'up' : 'down' } : {}), ...(notes === null ? {} : { notes }), ...(m && m.took.purse ? { purse: m.took.purse } : {}) });
+      return;
+    }
     if (grind) {
       const cashOut = (hero.stack / (bigBlind * 100)) * stake.buyIn;
       profile.setBankroll(profile.data.bankroll + cashOut);
@@ -1071,6 +1139,83 @@ export function renderTable(ctx, params = {}) {
     else go('home');
   }
 
+  /* ---------------- duel ---------------- */
+
+  /**
+   * The match is over: score it, pay what it pays, take the table if it is
+   * the first win, and let the owner have a last word. Everything about how
+   * it went is kept on session.matchOver for the panel to draw.
+   */
+  function finishDuel(won) {
+    const { decisions, sound: soundCount, share } = soundShare(session.graded);
+    const stars = duelStars({ won, decisions, sound: soundCount });
+    const record = profile.noteDuel(room.key, { won, stars });
+    const pearlsForStars = won ? starPearls(room.index, record.before, record.after) : 0;
+    const took = won ? takeTable(profile, room.index) : { first: false, purse: 0 };
+    const tableBonus = took.first ? EARN.tableTaken : 0;
+    if (pearlsForStars + tableBonus) {
+      session.pearls.bonus += profile.earnPearls(pearlsForStars + tableBonus);
+      pearlPop(pearlsForStars + tableBonus, trayHost);
+    }
+    session.matchOver = {
+      won, stars, decisions, sound: soundCount, share, record, pearlsForStars, tableBonus, took,
+      handsDealt: session.matchHands,
+      best: record.after,
+    };
+    say(bossId, t(won ? boss.beaten : story.loss), 6000);
+    sound(won ? 'win' : 'lose');
+    if (won) toast({ icon: '🏆', title: took.first ? t('You took {place}', { place: t(room.name) }) : t('You beat {name}', { name: boss.short }), desc: t('{n} of 3 stars', { n: stars }) });
+  }
+
+  /** What the blinds are, and how long they stay there. */
+  function drawMatch() {
+    if (!duel) return;
+    const idx = session.handStarted ? session.matchHands - 1 : session.matchHands;
+    const b = blindsFor(Math.max(0, idx));
+    const left = b.left - (session.handStarted ? 1 : 0);
+    leaveButton.textContent = session.matchOver ? t('Leave') : t('Forfeit');
+    mount(matchHost, el('div.match-banner',
+      el('span.match-blinds', icon('chip', { size: 14 }), t('Blinds {small} / {big}', { small: b.small, big: b.big })),
+      el('span.match-level', t('Level {n} of {total}', { n: b.level + 1, total: DUEL_LEVELS.length })),
+      el('span.match-clock', session.matchOver
+        ? t('Over')
+        : b.last
+          ? t('Last level: the blinds stop here')
+          : left <= 0 ? t('The blinds go up after this hand') : t('Blinds go up in {n} hands', { n: left })),
+    ));
+  }
+
+  /** The end of a duel: the stars, what they were for, and where to go next. */
+  function drawDuelResult() {
+    const m = session.matchOver;
+    const result = table.result;
+    const star = (n) => el('span', { class: `duel-star${n <= m.stars ? ' on' : ''}`, 'aria-hidden': 'true' }, icon('star', { size: 26 }));
+    const pct = m.decisions ? Math.round(m.share * 100) : 0;
+    const why = !m.won
+      ? t('Lost the stack. The stars are for winning, and a rematch is always open.')
+      : m.decisions < MIN_DECISIONS
+        ? t('Only {n} decisions to judge, which is too few for more than the first star.', { n: m.decisions })
+        : t('{sound} of {n} decisions sound, {pct}%. Two stars take {two}%, three take {three}%, and a decision made with help does not count.',
+          { sound: m.sound, n: m.decisions, pct, two: Math.round(STAR_SHARE.two * 100), three: Math.round(STAR_SHARE.three * 100) });
+    mount(actionHost, el('div.action-bar.duel-result',
+      el('h3', m.won
+        ? (m.took.first ? t('You took the table') : t('You won the duel'))
+        : t('{name} won the duel', { name: boss.short })),
+      result ? el('div.faint', resultHeadline(result, table)) : null,
+      el('div.duel-stars', { role: 'img', 'aria-label': t('{n} of 3 stars', { n: m.stars }) }, [1, 2, 3].map(star)),
+      el('p.muted', why),
+      m.pearlsForStars || m.tableBonus
+        ? el('p.duel-pearls', t('Paid:'), ' ', pearlsNode(m.pearlsForStars + m.tableBonus),
+          m.took.purse > 0 ? el('span', ` · ${t('and a purse of {money}', { money: fmt.money(m.took.purse) })}`) : null)
+        : null,
+      el('div.row',
+        el('button.btn.primary.lg', { onclick: () => go('play', { mode: 'duel', at: room.key }) },
+          icon('repeat', { size: 16 }), m.won && m.best < 3 ? t('Go for another star') : t('Rematch')),
+        el('button.btn.ghost', { onclick: () => leave() }, t('Back to {place}', { place: t(room.name) })),
+      ),
+    ));
+  }
+
   /* ---------------- auto-deal ---------------- */
 
   /**
@@ -1091,6 +1236,7 @@ export function renderTable(ctx, params = {}) {
 
   function armAutoDeal(result) {
     stopCountdown();
+    if (session.matchOver) return;
     const ready = autoDealReady({
       on: autoDealEnabled(profile.settings),
       lesson: Boolean(lesson),
@@ -1217,6 +1363,7 @@ export function renderTable(ctx, params = {}) {
 
   function draw() {
     drawLessonNote();
+    drawMatch();
     drawFelt();
     drawActions();
     if (liveCoach()) drawCoach();
@@ -1371,7 +1518,7 @@ export function renderTable(ctx, params = {}) {
       reveal: table.handOver && !!table.result && table.result.reason === 'showdown',
       fourColour: profile.settings.fourColour,
       potLabel: table.handOver ? 'final pot' : 'pot',
-      bigBlind,
+      bigBlind: table.bigBlind,
     }));
   }
 
@@ -1492,6 +1639,7 @@ export function renderTable(ctx, params = {}) {
   }
 
   function drawActions() {
+    if (session.matchOver) return drawDuelResult();
     if (hero.stack <= 0 && !session.handStarted) return drawBust();
     if (session.runOver) return drawRunReport();
 

@@ -43,7 +43,10 @@ page.on('console', (m) => {
 });
 page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
 
+// ONLY=duel runs the steps whose names match, for working on one of them.
+const only = process.env.ONLY ? new RegExp(process.env.ONLY, 'i') : null;
 const step = async (name, fn) => {
+  if (only && !only.test(name)) return;
   try { await fn(); console.log(`  ✓ ${name}`); }
   catch (e) { console.log(`  ✗ ${name}: ${e.message}`); errors.push(`${name}: ${e.message}`); }
 };
@@ -3058,6 +3061,190 @@ await step('the road says what to do next, a city at a time', async () => {
     const list = await text('.road-panel');
     if (/\b(Read the|Play \d+ hands|Take .* from)\b/.test(list)) throw new Error(`the list is still English in Dutch: ${list.slice(0, 160)}`);
     console.log('      Mud Landing 0 / 4 and Hand Rankings next; seven cities shut with what opens them; the table counts hands; finishing a city opens the next; Dutch');
+  } finally {
+    await ctx.close();
+  }
+});
+
+/** Play hands of a duel by shoving or calling until `n` have been dealt, or it ends; says whether the log saw the blinds rise. */
+async function playOutHands(page, n) {
+  let dealt = 0;
+  let rose = false;
+  const deadline = Date.now() + 120000;
+  let lastBar = '';
+  while (Date.now() < deadline && dealt < n) {
+    if (await page.$('.duel-result')) break;
+    const bar = ((await page.textContent('.action-bar').catch(() => '')) || '');
+    if (/Deal next hand|Deal me in/.test(bar)) {
+      if (bar !== lastBar) { dealt++; lastBar = bar; }
+      if (dealt >= n) break;
+      const deal = await page.$('button:has-text("Deal next hand"), button:has-text("Deal me in")');
+      if (deal) await deal.click().catch(() => {});
+      await page.waitForTimeout(150);
+      lastBar = '';
+      continue;
+    }
+    // A cautious hand: call or check, so the match runs long enough to see the clock move.
+    const btn = (await page.$('.action-buttons .btn.success')) || (await page.$('.action-buttons .btn:not(.primary):not(.danger)'));
+    if (btn) await btn.click().catch(() => {});
+    await page.waitForTimeout(100);
+  }
+  const clock = ((await page.textContent('.match-banner').catch(() => '')) || '');
+  rose = /Level [2-8] of 8/.test(clock) || (await page.$('.duel-result')) !== null;
+  return { dealt, rose };
+}
+
+await step('a duel with the owner of a table: the blinds climb, it ends, the stars say why', async () => {
+  // Once a city's lessons and hands are done its owner will play you heads-up
+  // for the table. Before that they will not, and say what is left. The match
+  // has a blind clock, ends when somebody has every chip, scores the play and
+  // not just the result, and can be fought again for the stars.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const duel = await ctx.newPage();
+  duel.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
+  duel.on('console', (m) => { if (m.type() === 'error' && !/raw\.githubusercontent|ERR_CONNECTION|Failed to load resource/.test(m.text())) errors.push(m.text()); });
+  const text = async (sel) => (await duel.textContent(sel).catch(() => '') || '').replace(/\s+/g, ' ').trim();
+  const profile = () => duel.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')));
+  const seed = (patch) => duel.evaluate((p) => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    localStorage.setItem(key, JSON.stringify({ ...raw, ...p, settings: { ...(raw.settings || {}), sound: false, music: false, ...(p.settings || {}) } }));
+  }, patch);
+  const READY = {
+    walkthroughs: ['hand-rankings', 'pot-odds'],
+    economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: ['lesson:hand-rankings', 'lesson:pot-odds'] },
+    career: { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: [], played: { nl2: 30 } },
+  };
+  /** Shove, or call, or check, until the duel's result is up. Returns the panel's text. */
+  const playOut = async () => {
+    const deadline = Date.now() + 150000;
+    while (Date.now() < deadline) {
+      if (await duel.$('.duel-result')) return text('.duel-result');
+      const bar = (await duel.textContent('.action-bar').catch(() => '')) || '';
+      if (/Deal next hand|Deal me in/.test(bar)) {
+        const deal = await duel.$('button:has-text("Deal next hand"), button:has-text("Deal me in")');
+        if (deal) await deal.click().catch(() => {});
+        await duel.waitForTimeout(150);
+        continue;
+      }
+      const allIn = await duel.$('.size-presets .size-btn:last-child');
+      if (allIn) {
+        await allIn.click().catch(() => {});
+        const go = await duel.$('.action-buttons .btn.primary');
+        if (go) await go.click().catch(() => {});
+      } else {
+        const btn = (await duel.$('.action-buttons .btn.success')) || (await duel.$('.action-buttons .btn:not(.primary):not(.danger)'));
+        if (btn) await btn.click().catch(() => {});
+      }
+      await duel.waitForTimeout(120);
+    }
+    throw new Error('the duel never finished');
+  };
+  try {
+    await duel.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    await seed({ settings: { autoDeal: true }, ...READY });
+    await duel.reload({ waitUntil: 'domcontentloaded' });
+    await duel.goto(`${BASE}/#stop?at=nl2`, { waitUntil: 'domcontentloaded' });
+    await duel.waitForSelector('.stop-screen', { timeout: 5000 });
+
+    // The first visit tells you what the place is like, once.
+    await duel.waitForSelector('.story-card', { timeout: 5000 });
+    if (!/Mud Landing/.test(await text('.story-card'))) throw new Error(`the arrival scene reads "${await text('.story-card')}"`);
+    await duel.reload({ waitUntil: 'domcontentloaded' });
+    await duel.waitForSelector('.stop-screen', { timeout: 5000 });
+    if (await duel.$('.story-card')) throw new Error('the arrival scene is told every time');
+
+    // With the city done the owner offers a duel; before that they do not.
+    const block = await text('.duel-block');
+    if (!/Duel Wade/.test(block) || !/Challenge Wade/.test(block)) throw new Error(`the duel block reads "${block}"`);
+    if (!/Win it and the table is yours/.test(block)) throw new Error(`a duel for the table does not say what it wins: ${block}`);
+    await seed({ career: { ...READY.career, played: { nl2: 3 } } });
+    await duel.reload({ waitUntil: 'domcontentloaded' });
+    await duel.waitForSelector('.duel-block', { timeout: 5000 });
+    const shut = await text('.duel-block');
+    if (!/will not duel a stranger/.test(shut) || !/Play 25 hands/.test(shut)) throw new Error(`before the hands are played: "${shut}"`);
+    if (await duel.$('.duel-block .btn')) throw new Error('a stranger was offered a duel');
+    await duel.goto(`${BASE}/#play?mode=duel&at=nl2`, { waitUntil: 'domcontentloaded' });
+    await duel.waitForSelector('.panel h1', { timeout: 5000 });
+    if (!/Not yet/.test(await text('.screen'))) throw new Error('the table dealt a duel to a stranger');
+    await seed({ career: READY.career });
+    await duel.reload({ waitUntil: 'domcontentloaded' });
+
+    // Challenge them: two seats, a blind clock, the owner's opening line.
+    await duel.goto(`${BASE}/#stop?at=nl2`, { waitUntil: 'domcontentloaded' });
+    await duel.waitForSelector('.duel-block .btn.primary', { timeout: 5000 });
+    await duel.click('.duel-block .btn.primary');
+    await duel.waitForSelector('.felt', { timeout: 5000 });
+    const head = await text('.table-head');
+    if (!/Wade's duel/.test(head) || !/Heads-up, to the last chip/.test(head) || !/Forfeit/.test(head)) throw new Error(`the duel header reads "${head}"`);
+    const clock = await text('.match-banner');
+    if (!/Blinds 1 \/ 2/.test(clock) || !/Level 1 of 8/.test(clock) || !/in 8 hands/.test(clock)) throw new Error(`the blind clock reads "${clock}"`);
+    const seats = await duel.$$eval('.felt .seat', (n) => n.length);
+    if (seats !== 2) throw new Error(`${seats} seats at a duel`);
+    if (await duel.$('.size-chips-switch, .variant-switch')) throw new Error('a duel can be switched to another game');
+    await duel.click('button:has-text("Deal me in")');
+    await duel.waitForSelector('.action-buttons button', { timeout: 20000 });
+
+    // The blinds go up on the clock, and say so in the log.
+    const first = await playOutHands(duel, 9);
+    if (!first.rose) throw new Error('nine hands in and the blinds had not gone up');
+    if (!/Level 2 of 8/.test(await text('.match-banner')) && !(await duel.$('.duel-result'))) throw new Error(`after eight hands the clock reads "${await text('.match-banner')}"`);
+
+    // Shove it out. A coin flip a hand, so a few goes if the first is lost.
+    let result = await playOut();
+    let tries = 1;
+    while (!/won the duel|You took the table|You won the duel/.test(result) || /Wade won/.test(result)) {
+      if (tries >= 8) throw new Error(`eight duels and no win: ${result}`);
+      if (!/Wade won the duel/.test(result)) throw new Error(`the result reads "${result}"`);
+      if (!/Lost the stack/.test(result)) throw new Error(`a loss does not say what the stars were for: ${result}`);
+      if ((await duel.$$('.duel-star.on')).length !== 0) throw new Error('a lost duel earned stars');
+      await duel.click('.duel-result .btn.primary');
+      await duel.waitForSelector('.felt', { timeout: 5000 });
+      await duel.click('button:has-text("Deal me in")');
+      result = await playOut();
+      tries++;
+    }
+    const stars = (await duel.$$('.duel-star.on')).length;
+    if (stars < 1 || stars > 3) throw new Error(`${stars} stars for a win`);
+    if (!/You took the table/.test(result)) throw new Error(`the first win does not take the table: ${result}`);
+    if (!/decisions/.test(result)) throw new Error(`the result does not say what the stars were for: ${result}`);
+    if (!/Paid/.test(result)) throw new Error(`a first win pays nothing: ${result}`);
+
+    // Kept: a try for every duel, one win, the best stars, and the table taken.
+    const saved = await profile();
+    const rec = saved.career.duels.nl2;
+    if (rec.tries !== tries || rec.wins !== 1 || rec.stars !== stars) throw new Error(`the record is ${JSON.stringify(rec)} after ${tries} duels and ${stars} stars`);
+    if (!saved.career.beaten.includes('nl2')) throw new Error('winning the duel did not take the table');
+
+    // Back at the stop: the owner's last word, the keepsake, and a rematch for the stars.
+    await duel.click('.duel-result .btn.ghost');
+    await duel.waitForSelector('.stop-screen', { timeout: 5000 });
+    await duel.waitForSelector('.took-scrim', { timeout: 5000 });
+    await duel.click('.took .btn.primary');
+    await duel.waitForSelector('.duel-block .star-row', { timeout: 5000 });
+    const after = await text('.duel-block');
+    if (!/Rematch Wade/.test(after) || !new RegExp(`${tries > 1 ? tries : 1} won of ${tries}|1 won of ${tries}`).test(after)) throw new Error(`after the duel the block reads "${after}"`);
+
+    // Getting up in the middle of one is a loss, with no stars.
+    const before = (await profile()).career.duels.nl2;
+    await duel.click('.duel-block .btn.primary');
+    await duel.waitForSelector('.felt', { timeout: 5000 });
+    await duel.click('button:has-text("Deal me in")');
+    await duel.waitForSelector('.action-buttons button', { timeout: 20000 });
+    await duel.click('.table-head button:has-text("Forfeit")');
+    await duel.waitForSelector('.stop-screen', { timeout: 5000 });
+    const forfeited = (await profile()).career.duels.nl2;
+    if (forfeited.tries !== before.tries + 1 || forfeited.wins !== before.wins || forfeited.stars !== before.stars) {
+      throw new Error(`a forfeit left ${JSON.stringify(forfeited)} after ${JSON.stringify(before)}`);
+    }
+
+    // And it all speaks Dutch.
+    await seed({ settings: { lang: 'nl' } });
+    await duel.reload({ waitUntil: 'domcontentloaded' });
+    await duel.waitForSelector('.duel-block', { timeout: 5000 });
+    const dutch = await text('.duel-block');
+    if (!/Duel met Wade/.test(dutch) || /Rematch|stars/.test(dutch)) throw new Error(`the duel block in Dutch reads "${dutch}"`);
+    console.log(`      the first visit tells the story once; a stranger is refused; Wade's blinds climb 1/2 → 2/4; a win took the table on duel ${tries} with ${stars} star${stars === 1 ? '' : 's'}; a forfeit counted as a loss; Dutch`);
   } finally {
     await ctx.close();
   }

@@ -106,6 +106,16 @@ over a keepsake and a purse for the next stop; your boat grows as you get
 further down the river. Bust and the house stakes you back in, and writes it
 down.
 
+Every owner will also play you heads-up for the table, once the city's lessons
+and hands are done: two hundred chips each, the blinds rising every eight
+hands until somebody has them all. A duel is scored for how you played it, not
+just for winning it — one star for the win, a second when 92% of your decisions
+were sound, a third at 97%, and a decision you asked for help on does not
+count. Each star pays pearls the first time you earn it, so a
+rematch is worth playing for the star you do not have. The first win takes the
+table. A short scene tells you what each stop is like the first time you tie
+up there.
+
 Pearls are what the tables pay for hands you play through and decisions you
 get right — folding before the flop is the default and pays nothing, and a
 table with fewer than six players pays half. The practice table can be dealt

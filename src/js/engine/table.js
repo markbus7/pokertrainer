@@ -416,14 +416,26 @@ export class Table {
         amount += Math.max(0, Math.min(p.totalCommitted, level) - previous);
       }
       const eligible = this.players.filter((p) => !p.folded && p.totalCommitted >= level);
-      if (amount > 0) pots.push({ amount, eligible });
+      if (amount > 0) {
+        const pot = { amount, eligible };
+        // Chips nobody left in the hand could win: a player folded after
+        // putting in more than anybody else who is still in — the small blind
+        // folding to a big blind that was all in for less. They are not a pot,
+        // they are the part of the bet that nobody called, and they go back.
+        if (!eligible.length) {
+          pot.refund = this.players
+            .map((p) => ({ player: p, amount: Math.max(0, Math.min(p.totalCommitted, level) - previous) }))
+            .filter((r) => r.amount > 0);
+        }
+        pots.push(pot);
+      }
       previous = level;
     }
     // Merge adjacent pots contested by exactly the same players.
     const merged = [];
     for (const pot of pots) {
       const last = merged[merged.length - 1];
-      const sameField = last && last.eligible.length === pot.eligible.length
+      const sameField = last && pot.eligible.length > 0 && last.eligible.length === pot.eligible.length
         && last.eligible.every((p, i) => p === pot.eligible[i]);
       if (sameField) last.amount += pot.amount;
       else merged.push(pot);
@@ -460,7 +472,10 @@ export class Table {
         const best = Math.max(...pot.eligible.map((p) => scores.get(p.id) ?? -1));
         winners = pot.eligible.filter((p) => scores.get(p.id) === best);
       }
-      if (!winners.length) continue;
+      if (!winners.length) {
+        for (const r of pot.refund || []) payouts.set(r.player.id, payouts.get(r.player.id) + r.amount);
+        continue;
+      }
 
       const share = Math.floor(pot.amount / winners.length);
       let remainder = pot.amount - share * winners.length;
@@ -486,7 +501,7 @@ export class Table {
     this.result = {
       reason,
       board: this.board.slice(),
-      pots: pots.map((pot) => ({ amount: pot.amount, eligible: pot.eligible.map((p) => p.id) })),
+      pots: pots.filter((pot) => pot.eligible.length).map((pot) => ({ amount: pot.amount, eligible: pot.eligible.map((p) => p.id) })),
       payouts: Object.fromEntries(payouts),
       showdown,
       net: Object.fromEntries(this.players.map((p) => [p.id, (payouts.get(p.id) || 0) - p.totalCommitted])),

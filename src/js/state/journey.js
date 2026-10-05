@@ -89,7 +89,16 @@ function evaluate(profile, chapter, spec) {
     case 'take': {
       return {
         ...base, text: 'Take {stop} from {boss}', params: { stop: venue.name, boss: bossName(venue) },
-        hint: 'Cash out with double your buy-in.', done: beaten,
+        hint: 'Double your buy-in at the table, or beat them in a duel.', done: beaten,
+        to: { route: 'stop', params: { at: venue.key }, place: null, stop: venue.key },
+      };
+    }
+
+    case 'stars': {
+      const stars = profile.duelRecord(venue.key).stars;
+      return {
+        ...base, text: 'Win the duel with {n} stars', params: { n: spec.need },
+        done: stars >= spec.need, have: Math.min(stars, spec.need), need: spec.need,
         to: { route: 'stop', params: { at: venue.key }, place: null, stop: venue.key },
       };
     }
@@ -224,6 +233,23 @@ export function nextGoal(chapter) {
   if (pick) return { chapter: chapter.index, goal: pick };
   const bonus = chapter.goals.find((g) => !g.required && !g.done && !g.blocked);
   return bonus ? { chapter: chapter.index, goal: bonus } : null;
+}
+
+/**
+ * Whether you may challenge a stop's owner to a duel. The road has to be open
+ * to the stop, and the lessons and hands of that city done: an owner will not
+ * duel a stranger. A table already taken can always be fought again, for stars.
+ *
+ * @returns {{open:boolean, ready:boolean, taken:boolean, missing:Array, record:object}}
+ */
+export function duelStatus(profile, stopIndex) {
+  const journey = journeyState(profile);
+  const chapter = journey.chapters[stopIndex];
+  const venue = VENUES[stopIndex];
+  const open = stopIndex <= journey.current;
+  const taken = profile.career.beaten.includes(venue.key);
+  const missing = chapter.goals.filter((g) => g.required && g.kind !== 'take' && !g.done);
+  return { open, taken, missing, ready: open && (taken || missing.length === 0), record: profile.duelRecord(venue.key) };
 }
 
 /** Whether the road lets you into a stop (the bankroll is a separate bar). */

@@ -26,8 +26,8 @@
 
 /**
  * @typedef {object} Bonus
- * @property {'fish'|'chart'|'boat'|'pet'|'race'} kind
- * @property {number} [need]   how many, for fish and companions
+ * @property {'stars'|'fish'|'chart'|'boat'|'pet'|'race'} kind
+ * @property {number} [need]   how many, for stars, fish and companions
  * @property {string} [key]    the chart's checkpoint, or the boat's key
  */
 
@@ -45,49 +45,49 @@ export const ROAD = [
     stop: 'nl2',
     lessons: ['hand-rankings', 'pot-odds'],
     hands: 25,
-    bonus: [{ kind: 'fish', need: 1 }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'fish', need: 1 }],
   },
   {
     stop: 'nl5',
     lessons: ['outs', 'preflop'],
     hands: 40,
-    bonus: [{ kind: 'chart', key: 'open:BTN' }, { kind: 'pet', need: 1 }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'chart', key: 'open:BTN' }, { kind: 'pet', need: 1 }],
   },
   {
     stop: 'nl10',
     lessons: ['position', 'bankroll'],
     hands: 60,
-    bonus: [{ kind: 'boat', key: 'skiff' }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'boat', key: 'skiff' }],
   },
   {
     stop: 'nl25',
     lessons: ['cbet'],
     hands: 80,
-    bonus: [{ kind: 'fish', need: 4 }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'fish', need: 4 }],
   },
   {
     stop: 'nl50',
     lessons: ['mdf'],
     hands: 100,
-    bonus: [{ kind: 'race', need: 1 }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'race', need: 1 }],
   },
   {
     stop: 'nl100',
     lessons: ['bluffing', 'exploit'],
     hands: 120,
-    bonus: [{ kind: 'pet', need: 3 }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'pet', need: 3 }],
   },
   {
     stop: 'nl200',
     lessons: ['spr'],
     hands: 150,
-    bonus: [{ kind: 'boat', key: 'launch' }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'boat', key: 'launch' }],
   },
   {
     stop: 'nl500',
     lessons: ['icm'],
     hands: 200,
-    bonus: [{ kind: 'fish', need: 10 }],
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'fish', need: 10 }],
   },
 ];
 

@@ -582,6 +582,40 @@ export class Profile {
     return this.career.played[key] || 0;
   }
 
+  /** How the duels with a stop's owner have gone: tries, wins, best stars. */
+  duelRecord(key) {
+    const d = (this.career.duels || {})[key];
+    return { tries: d ? d.tries || 0 : 0, wins: d ? d.wins || 0 : 0, stars: d ? d.stars || 0 : 0 };
+  }
+
+  /**
+   * A duel finished. Returns what it changed: whether it was the first win,
+   * and the star it took the record from and to.
+   */
+  noteDuel(key, { won, stars = 0 }) {
+    const career = this.career;
+    if (!career.duels || typeof career.duels !== 'object') career.duels = {};
+    const before = this.duelRecord(key);
+    career.duels[key] = {
+      tries: before.tries + 1,
+      wins: before.wins + (won ? 1 : 0),
+      stars: Math.max(before.stars, won ? stars : 0),
+    };
+    this.save();
+    return { firstWin: won && before.wins === 0, before: before.stars, after: career.duels[key].stars };
+  }
+
+  /** Whether a scene has been read, and marking it read. Scenes are shown once. */
+  seenScene(key) {
+    return Boolean((this.data.scenes || {})[key]);
+  }
+
+  markScene(key) {
+    if (!this.data.scenes || typeof this.data.scenes !== 'object') this.data.scenes = {};
+    this.data.scenes[key] = true;
+    this.save();
+  }
+
   /** Beating the Belle in the racing chute, counted for the road. */
   noteRaceWon() {
     this.data.raceWins = (this.data.raceWins || 0) + 1;
