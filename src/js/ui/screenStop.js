@@ -24,8 +24,10 @@ import { reportsOf } from '../state/sessionReport.js';
 import { EARN } from '../state/economy.js';
 import { pearls } from './shop.js';
 import { MENTOR } from '../data/characters.js';
-import { gatedBy } from '../state/journey.js';
-import { roadList, opensLine } from './roadView.js';
+import { gatedBy, duelStatus } from '../state/journey.js';
+import { starPearls, LEVEL_HANDS, STAR_SHARE } from '../state/match.js';
+import { storyFor } from '../data/story.js';
+import { roadList, opensLine, goalText } from './roadView.js';
 
 /** The place itself: sky, the far bank, the water, and the stop drawn big. */
 function scene(venue, state, arrived) {
@@ -185,6 +187,68 @@ function tableBlock(venue, state, profile, go) {
   );
 }
 
+/** The first time you tie up at a stop, a few lines about what is there. */
+function arrivalCard(venue) {
+  const story = storyFor(venue.key);
+  if (!story) return null;
+  return el('div.panel.paper.story-card',
+    el('div.story-kicker', icon('anchor', { size: 14 }), t('The river, {place}', { place: t(venue.name) })),
+    el('p.story-text', typedText(t(story.arrival))),
+  );
+}
+
+/** Three stars, filled up to `n`. */
+export function starRow(n, { size = 18 } = {}) {
+  return el('span.star-row', { role: 'img', 'aria-label': t('{n} of 3 stars', { n }) },
+    [1, 2, 3].map((i) => el(`span.star${i <= n ? '.on' : ''}`, icon('star', { size }))));
+}
+
+/**
+ * The duel with the owner of this table: heads-up, to the last chip, with the
+ * blinds rising. Before the city's goals are done it says what is left;
+ * after, it is the way to take the table — and then the way to earn the
+ * stars the rematch is for.
+ */
+function duelBlock(venue, state, profile, go) {
+  const boss = bossFor(venue.boss);
+  const duel = duelStatus(profile, venue.index);
+  if (!duel.open) return null;
+  const record = duel.record;
+
+  const rules = el('p.faint', t(
+    'Just the two of you, {chips} chips each, the blinds rising every {n} hands until one of you has them all. It costs nothing to sit down.',
+    { chips: 200, n: LEVEL_HANDS }));
+
+  if (!duel.ready) {
+    return el('div.panel.duel-block.shut',
+      el('div.panel-title', el('h3', icon('cards', { size: 16 }), t('Duel {name}', { name: boss.short }))),
+      el('p.muted', t('{name} will not duel a stranger. Do these first:', { name: boss.short })),
+      el('ul.duel-missing', duel.missing.map((g) => el('li', icon('lock', { size: 12 }), goalText(g)))),
+    );
+  }
+
+  const nextStar = Math.min(3, record.stars + 1);
+  const worth = record.stars >= 3 ? 0 : starPearls(venue.index, record.stars, nextStar);
+  return el('div.panel.duel-block',
+    el('div.panel-title', el('h3', icon('cards', { size: 16 }), t('Duel {name}', { name: boss.short })),
+      record.tries ? starRow(record.stars) : null),
+    rules,
+    !duel.taken
+      ? el('p.muted', t('Win it and the table is yours: the keepsake, the purse and the pearls.'))
+      : record.stars < 3
+        ? el('p.muted', t('A rematch for the next star pays {n} pearls. Stars are for how well you play, not just for winning: {two}% of your decisions sound for two, {three}% for three.',
+          { n: worth, two: Math.round(STAR_SHARE.two * 100), three: Math.round(STAR_SHARE.three * 100) }))
+        : el('p.muted', t('Three stars. There is nothing more to win from {name}, but {name} will always play you again.', { name: boss.short })),
+    record.tries
+      ? el('div.faint', t('{wins} won of {tries} played.', { wins: record.wins, tries: record.tries }))
+      : null,
+    el('div.stop-actions',
+      el('button.btn.primary.plank', { onclick: () => { audio.sfx('chips'); go('play', { mode: 'duel', at: venue.key }); } },
+        icon('cards', { size: 16 }), duel.taken ? t('Rematch {name}', { name: boss.short }) : t('Challenge {name}', { name: boss.short })),
+    ),
+  );
+}
+
 /** What you took from this table, if you took it. */
 function keepsakeBlock(venue, state) {
   if (!state.beaten.has(venue.index)) return null;
@@ -291,14 +355,22 @@ export function renderStop(ctx, params = {}) {
   const reports = reportsOf(profile);
   const notesIndex = params.notes != null && reports[Number(params.notes)] ? Number(params.notes) : null;
 
+  // Where you are, the first time: what the place is like. Marked read as it
+  // is shown, so it is told once and left on the page for this visit.
+  const arrivalKey = `arrive-${venue.key}`;
+  const showArrival = venue.index === state.here.index && !after && !profile.seenScene(arrivalKey);
+  if (showArrival) profile.markScene(arrivalKey);
+
   const screen = el('div.screen.stop-screen',
     scene(venue, state, arrived),
+    showArrival ? arrivalCard(venue) : null,
     bossBlock(venue, state, after),
     notesIndex !== null ? notesCard(reports[notesIndex], notesIndex, go) : null,
     el('div.stop-grid',
       tableBlock(venue, state, profile, go),
       keepsakeBlock(venue, state),
     ),
+    duelBlock(venue, state, profile, go),
     roadBlock(venue, state, go),
     neighbours(venue, go),
   );

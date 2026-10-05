@@ -4938,4 +4938,132 @@ export const NL = {
     '{boss} geeft een buidel: {money}, genoeg voor een stoel bij {next}.',
   'What to do at {place}':
     'Wat te doen bij {place}',
+
+  /* ---- v3.11: duels, stars, and the story ---- */
+  'Double your buy-in at the table, or beat them in a duel.':
+    'Verdubbel je inkoop aan de tafel, of versla ze in een duel.',
+  'Win the duel with {n} stars':
+    'Win het duel met {n} sterren',
+  'Not yet':
+    'Nog niet',
+  'The owner of this table will not duel a stranger. Finish the lessons and the hands for this city first.':
+    'De eigenaar van deze tafel duelleert niet met een vreemde. Maak eerst de lessen en de handen voor deze stad af.',
+  'Forfeit':
+    'Opgeven',
+  '{name}\'s duel':
+    'Duel met {name}',
+  'Heads-up, to the last chip':
+    'Heads-up, tot de laatste chip',
+  'The blinds go up: {small} / {big}':
+    'De blinds gaan omhoog: {small} / {big}',
+  'You took {place}':
+    'Je nam {place} af',
+  'You beat {name}':
+    'Je versloeg {name}',
+  '{n} of 3 stars':
+    '{n} van 3 sterren',
+  'Blinds {small} / {big}':
+    'Blinds {small} / {big}',
+  'Level {n} of {total}':
+    'Niveau {n} van {total}',
+  'Over':
+    'Afgelopen',
+  'Last level: the blinds stop here':
+    'Laatste niveau: hier stoppen de blinds',
+  'The blinds go up after this hand':
+    'De blinds gaan omhoog na deze hand',
+  'Blinds go up in {n} hands':
+    'De blinds gaan omhoog over {n} handen',
+  'Lost the stack. The stars are for winning, and a rematch is always open.':
+    'De stack kwijt. De sterren zijn voor winnen, en een revanche kan altijd.',
+  'Only {n} decisions to judge, which is too few for more than the first star.':
+    'Maar {n} beslissingen om te beoordelen, en dat is te weinig voor meer dan de eerste ster.',
+  '{sound} of {n} decisions sound, {pct}%. Two stars take {two}%, three take {three}%, and a decision made with help does not count.':
+    '{sound} van {n} beslissingen goed, {pct}%. Voor twee sterren heb je {two}% nodig, voor drie {three}%, en een beslissing met hulp telt niet mee.',
+  'You took the table':
+    'Je nam de tafel af',
+  'You won the duel':
+    'Je won het duel',
+  '{name} won the duel':
+    '{name} won het duel',
+  'Paid:':
+    'Uitbetaald:',
+  'and a purse of {money}':
+    'en een buidel van {money}',
+  'Go for another star':
+    'Ga voor nog een ster',
+  'Rematch':
+    'Revanche',
+  'Back to {place}':
+    'Terug naar {place}',
+  'The river, {place}':
+    'De rivier, {place}',
+  'Just the two of you, {chips} chips each, the blinds rising every {n} hands until one of you has them all. It costs nothing to sit down.':
+    'Alleen jullie tweeën, elk {chips} chips, en de blinds gaan elke {n} handen omhoog tot een van jullie ze allemaal heeft. Gaan zitten kost niets.',
+  'Duel {name}':
+    'Duel met {name}',
+  '{name} will not duel a stranger. Do these first:':
+    '{name} duelleert niet met een vreemde. Doe eerst dit:',
+  'Win it and the table is yours: the keepsake, the purse and the pearls.':
+    'Win je het, dan is de tafel van jou: het aandenken, de buidel en de parels.',
+  'A rematch for the next star pays {n} pearls. Stars are for how well you play, not just for winning: {two}% of your decisions sound for two, {three}% for three.':
+    'Een revanche voor de volgende ster levert {n} parels op. Sterren zijn voor hoe goed je speelt, niet alleen voor winnen: {two}% van je beslissingen goed voor twee, {three}% voor drie.',
+  'Three stars. There is nothing more to win from {name}, but {name} will always play you again.':
+    'Drie sterren. Er valt niets meer te winnen van {name}, maar {name} speelt altijd graag nog een keer tegen je.',
+  '{wins} won of {tries} played.':
+    '{wins} gewonnen van {tries} gespeeld.',
+  'Rematch {name}':
+    'Revanche tegen {name}',
+  'Challenge {name}':
+    'Daag {name} uit',
+
+  /* The story: one scene on arrival, and what each owner says over a duel. */
+  'You tie the borrowed rowboat to a piling at Mud Landing. A dockhand is dealing on an upturned crate and does not look up. "Everybody starts here," says Silas, behind you. "Everybody who is going anywhere, anyway."':
+    'Je legt de geleende roeiboot vast aan een paal bij Mud Landing. Een havenarbeider deelt kaarten op een omgekeerde kist en kijkt niet op. "Iedereen begint hier," zegt Silas achter je. "Iedereen die ergens heen gaat, tenminste."',
+  'A duel? Just the two of us and one crate? Friend, I have never folded in my life. Deal.':
+    'Een duel? Alleen wij tweeën en één kist? Vriend, ik heb nog nooit in mijn leven gepast. Delen maar.',
+  'Told you. Never fold a hand that might get there. Go and read your book, and come back.':
+    'Zei ik het niet. Pas nooit een hand die er nog kan komen. Ga je boek maar lezen, en kom terug.',
+  'Fisher\'s Rest stands on stilts over the shallows, and every plank of it complains. Ma Tilly pours the tea herself, and she has already heard who took Wade\'s crate.':
+    'Fisher\'s Rest staat op palen boven het ondiepe water, en elke plank piept. Ma Tilly schenkt zelf de thee in, en ze heeft allang gehoord wie Wades kist heeft afgenomen.',
+  'Just you and me, dearie? Pour the tea. I will call anything once, and you will find out how long once can last.':
+    'Alleen jij en ik, schatje? Schenk de thee maar in. Ik call alles één keer, en je zult merken hoe lang één keer kan duren.',
+  'Ooh. Patience, dearie, the river always comes. Try me again when you have learned to wait.':
+    'Oeh. Geduld, schatje, de rivier komt altijd. Probeer het nog eens als je hebt leren wachten.',
+  'The Ferry is one table bolted to a deck, going nowhere for the nine-thousandth time. Hollis Crane looks at you for a long minute and folds a hand without picking it up.':
+    'De Ferry is één tafel die op een dek is vastgeschroefd en voor de negenduizendste keer nergens heen gaat. Hollis Crane kijkt je een lange minuut aan en past een hand zonder hem op te pakken.',
+  'Heads up. Hm. Waiting is a skill, and I have had a lifetime of practice. Sit, and do not mistake my silence for weakness.':
+    'Heads-up. Hm. Wachten is een vaardigheid, en ik heb er een mensenleven in geoefend. Ga zitten, en verwar mijn stilte niet met zwakte.',
+  'I waited for the hand and the hand came. That is the whole of my method.':
+    'Ik wachtte op de hand en de hand kwam. Dat is mijn hele methode.',
+  'Upstairs at the cotton exchange nobody raises their voice, because nobody needs to. Evangeline Marsh keeps a ledger of the river\'s debts, and yours has just acquired a new line.':
+    'Boven in de katoenbeurs verheft niemand zijn stem, want dat is nergens voor nodig. Evangeline Marsh houdt een boek bij van de schulden van de rivier, en die van jou heeft er net een regel bij gekregen.',
+  'A private match, then? Very well. I price everything, so let us see what you are worth.':
+    'Dus een privépartij? Goed dan. Ik geef overal een prijs aan, dus laten we zien wat jij waard bent.',
+  'Position is a price, and you paid it twice. Do read the chapter before you come back.':
+    'Positie is een prijs, en jij betaalde hem twee keer. Lees het hoofdstuk voordat je terugkomt.',
+  'The Belle is a paddle steamer with the engine room turned into a card room, and it is loud. Captain Rourke has been raising since Memphis and shows no sign of stopping.':
+    'De Belle is een raderstoomboot waarvan de machinekamer een kaartzaal is geworden, en het is er luid. Kapitein Rourke raiset sinds Memphis en is niet van plan te stoppen.',
+  'Heads up, on my own deck? Ha! Stoke the engine. I bet every street.':
+    'Heads-up, op mijn eigen dek? Ha! Stook de machine maar op. Ik bet elke street.',
+  'Played back without a hand, did you? I raise, you pay. That is the Belle.':
+    'Zonder hand teruggespeeld, hè? Ik raise, jij betaalt. Dat is de Belle.',
+  'The Grand Hotel\'s parlour is so quiet you can hear the cards land. Professor Ashby is the only person in it who looks pleased to see you, which is somehow worse.':
+    'De salon van het Grand Hotel is zo stil dat je de kaarten hoort vallen. Professor Ashby is de enige die blij lijkt je te zien, en dat is op de een of andere manier erger.',
+  'One against one, then. I should warn you that I have read everything you have ever done at a table. Shall we?':
+    'Eén tegen één dan. Ik moet je waarschuwen dat ik alles heb gelezen wat je ooit aan een tafel hebt gedaan. Zullen we?',
+  'You have a pattern, I am afraid. Everyone does. Find yours before I find it again.':
+    'Je hebt helaas een patroon. Iedereen heeft er een. Vind het jouwe voordat ik het opnieuw vind.',
+  'The Gilded Barge has no name painted on its hull and does not need one. Lucky Delacroix throws chips about as though they were somebody else\'s, and a whisper on the gangway says they are the Commodore\'s.':
+    'Op de Gilded Barge staat geen naam op de romp en dat is ook niet nodig. Lucky Delacroix gooit met chips alsof ze van een ander zijn, en volgens een gefluister op de loopplank zijn ze van de Commodore.',
+  'A duel! Marvellous! Double or nothing, triple or nothing, I never count!':
+    'Een duel! Prachtig! Dubbel of niets, driedubbel of niets, ik tel nooit!',
+  'Luck! It is a gift, my friend, and today it is not yours.':
+    'Geluk! Het is een gave, vriend, en vandaag is het de jouwe niet.',
+  'The river opens into the delta, and there, riding at anchor, is the Commodore\'s flagship. Every debt and every table on this river leads to this room, and he knows exactly who you are.':
+    'De rivier opent zich naar de delta, en daar, voor anker, ligt het vlaggenschip van de Commodore. Elke schuld en elke tafel op deze rivier leidt naar deze zaal, en hij weet precies wie je bent.',
+  'Nobody has asked me for a duel in twenty years. Sit down. Let us see what the river has made of you.':
+    'Al twintig jaar heeft niemand me om een duel gevraagd. Ga zitten. Laten we zien wat de rivier van je heeft gemaakt.',
+  'Nobody here is going to give you anything. Come back when you have earned it.':
+    'Hier geeft niemand je iets. Kom terug als je het verdiend hebt.',
 };

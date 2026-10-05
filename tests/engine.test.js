@@ -142,6 +142,23 @@ describe('engine: pots and settlement', () => {
     equal(pots.reduce((s, x) => s + x.amount, 0), 350, 'every chip on the table is in a pot');
   });
 
+  it('gives back what a folded player put in beyond anybody left to win it', () => {
+    // The blinds at the end of a duel: the small blind is bigger than the
+    // whole stack of the big blind, who is all in for what they have. The
+    // small blind folds. Nobody left in the hand can win the part of the
+    // small blind that the big blind could not cover, and it was vanishing.
+    const t = createTable({
+      players: seats(395, 5), smallBlind: 25, bigBlind: 50, rng: makeRng(7),
+    }).startHand();
+    equal(t.players[0].totalCommitted, 25);
+    equal(t.players[1].totalCommitted, 5);
+    t.act({ type: 'fold' });
+    equal(t.players.reduce((s, p) => s + p.stack, 0), 400, 'chips vanished from the table');
+    equal(t.players[1].stack, 10, 'the big blind wins what they could cover, twice over');
+    equal(t.players[0].stack, 390, 'the small blind gets the uncalled part back');
+    assert(t.result.pots.every((p) => p.eligible.length > 0), 'a pot nobody can win was reported');
+  });
+
   it('keeps a folded player money in the pot but out of the running', () => {
     const t = table([200, 200, 200]).startHand();
     t.act({ type: 'raise', amount: 10 });  // p0
