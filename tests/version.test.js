@@ -95,3 +95,16 @@ describe('version: the update check never throws', () => {
     equal(r.reason, 'malformed');
   });
 });
+
+describe('version: the build is on the rail of every screen', () => {
+  it('draws the stamped version in the top bar, not only inside the ledger', () => {
+    const app = readFileSync(new URL('../src/js/app.js', import.meta.url), 'utf8');
+    assert(/crest-version/.test(app), 'the top bar does not carry the version');
+    assert(/`v\$\{VERSION\}`/.test(app.slice(app.indexOf('crest-version') - 200, app.indexOf('crest-version') + 200)),
+      'the version in the top bar is not the stamped one');
+    const css = readFileSync(new URL('../src/css/river.css', import.meta.url), 'utf8');
+    assert(/\.crest-version\s*\{/.test(css), 'the version tag has no style');
+    // The name is hidden on a phone, so the version must not live inside it.
+    assert(!/\.crest-name[^{]*\{[^}]*crest-version/.test(css), 'the version is hidden with the name on a phone');
+  });
+});
