@@ -1609,7 +1609,9 @@ await step('the front door is the river, with you on it', async () => {
     raw.bankroll = 412;
     raw.stakeKey = 'nl10';
     raw.seenPrologue = true;
-    raw.career = { venue: 'nl10', best: 'nl10', busted: 1, staked: 20, beaten: ['nl2'] };
+    // Moored at the Ferry, having been as far as Cotton Row: the road is open
+    // that far, so what keeps the next city shut is the purse.
+    raw.career = { venue: 'nl10', best: 'nl25', busted: 1, staked: 20, beaten: ['nl2'] };
     localStorage.setItem('poker-trainer.profile.v1', JSON.stringify(raw));
   });
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -1757,7 +1759,8 @@ await step('the boat goes back upriver without losing how far it got', async () 
   if (!await page.$('.river-map .your-boat.sailing')) throw new Error('the boat never set off on the map');
   const career = await page.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).career);
   if (career.venue !== 'nl5') throw new Error(`travelled to ${career.venue}`);
-  if (career.best !== 'nl10') throw new Error(`the furthest stop dropped to ${career.best}`);
+  // The front door put the boat at the Ferry, having been as far as Cotton Row.
+  if (career.best !== 'nl25') throw new Error(`the furthest stop dropped to ${career.best}`);
   await page.waitForFunction(() => /stop\?at=nl5/.test(location.hash), null, { timeout: 8000 })
     .catch(() => { throw new Error('the boat never tied up at Fisher\'s Rest'); });
   await page.waitForTimeout(200);
@@ -2751,7 +2754,8 @@ await step('the table deals the next hand by itself, and a switch turns that off
       }
       const band = await page.$('.read-bands .btn');
       if (band) { await band.click().catch(() => {}); continue; }
-      const btn = (await page.$('.action-buttons .btn.danger')) || (await page.$('.action-buttons .btn.success'));
+      const btn = (await page.$('.action-buttons .btn.danger'))
+        || (await page.$('.action-buttons .btn:not(.primary):not(.danger)'));
       if (btn) await btn.click().catch(() => {});
       await page.waitForTimeout(150);
     }
@@ -2936,6 +2940,127 @@ await step('the practice table can be dealt for you against one, or against two'
   await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.reload({ waitUntil: 'domcontentloaded' });
   console.log('      full table by default; heads-up 0,3 and three-handed 0,2,4; PLO keeps the size; chips read 6/3/HU on a phone');
+});
+
+await step('the road says what to do next, a city at a time', async () => {
+  // A player with nothing done, in a browser of their own so the veteran the
+  // other steps run as is left alone. The road is a short list per city: the
+  // map points at the next thing, every later city is shut with the name of
+  // the one that opens it, and finishing a city opens the next.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const fresh = await ctx.newPage();
+  fresh.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
+  fresh.on('console', (m) => { if (m.type() === 'error' && !/raw\.githubusercontent|ERR_CONNECTION|Failed to load resource/.test(m.text())) errors.push(m.text()); });
+  const text = async (sel) => (await fresh.textContent(sel).catch(() => '') || '').replace(/\s+/g, ' ').trim();
+  const seed = (patch) => fresh.evaluate((p) => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    localStorage.setItem(key, JSON.stringify({ ...raw, ...p, settings: { ...(raw.settings || {}), sound: false, music: false, ...(p.settings || {}) } }));
+  }, patch);
+  try {
+    await fresh.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    await seed({ settings: { autoDeal: false } });
+    await fresh.reload({ waitUntil: 'domcontentloaded' });
+    await fresh.waitForSelector('.prologue', { timeout: 5000 });
+    if (!/a city at a time/.test(await text('.prologue'))) throw new Error('the prologue does not say how the river is travelled');
+    await fresh.click('.prologue .btn');
+    await fresh.waitForSelector('.road-banner', { timeout: 5000 });
+
+    // The banner: the city, how far through, and the one thing to do.
+    const banner = await text('.road-banner');
+    if (!/Mud Landing/.test(banner) || !/0 \/ 4/.test(banner)) throw new Error(`the banner reads "${banner}"`);
+    if (!/Read the Hand Rankings lesson/.test(banner)) throw new Error(`the first thing is not Hand Rankings: "${banner}"`);
+
+    // The map: the school is next, and every city after the first is shut and says what opens it.
+    const next = await fresh.$$eval('.map-stop.is-next, .map-place.is-next', (n) => n.map((x) => x.textContent.trim()));
+    if (next.length !== 1 || !/Silas/.test(next[0]) || !/Next/.test(next[0])) throw new Error(`what is next on the map: ${JSON.stringify(next)}`);
+    const locked = await fresh.$$eval('.map-stop.is-locked', (n) => n.map((x) => x.querySelector('.map-status').textContent.trim()));
+    if (locked.length !== 7) throw new Error(`${locked.length} cities shut on a new player's map, expected 7`);
+    if (locked[0] !== "After Mud Landing" || locked[1] !== "After Fisher's Rest") throw new Error(`the shut cities say: ${locked}`);
+    const here = await text('.map-stop.is-here');
+    if (!/Mud Landing/.test(here)) throw new Error(`you are not at the first city: ${here}`);
+
+    // The list under the map: four things here, the first is the one to do, the hard ones say why.
+    const goals = await fresh.$$eval('.road-panel .road-list > .road-goals .road-goal', (n) => n.map((x) => x.textContent.replace(/\s+/g, ' ').trim()));
+    if (goals.length !== 4) throw new Error(`${goals.length} things to do in the first city: ${goals.join(' | ')}`);
+    if (!/Pot Odds/.test(goals[1]) || !/Costs 60 pearls/.test(goals[1])) throw new Error(`the second lesson does not say it costs pearls: ${goals[1]}`);
+    if (!/0 of 25/.test(goals[2])) throw new Error(`hands at the table do not start at 0 of 25: ${goals[2]}`);
+
+    // The banner's button goes where it says.
+    await fresh.click('.road-banner .btn');
+    await fresh.waitForFunction(() => /walkthrough/.test(location.hash), null, { timeout: 5000 });
+    if (!/module=hand-rankings/.test(await fresh.evaluate(() => location.hash))) throw new Error('the banner went somewhere other than Hand Rankings');
+
+    // A shut city says so on its own screen, and offers no way in.
+    await fresh.goto(`${BASE}/#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+    await fresh.waitForSelector('.road-stop', { timeout: 5000 });
+    const shut = await text('.stop-actions');
+    if (!/opens when Mud Landing is finished/.test(shut)) throw new Error(`a shut city says: ${shut}`);
+    if (await fresh.$('.stop-actions .btn:has-text("Steam down")')) throw new Error('a shut city offers a way in');
+    if (await fresh.$('.road-stop .road-goal .btn')) throw new Error('a shut city has buttons on its list');
+
+    // Playing at the table counts, hand by hand.
+    await fresh.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await fresh.waitForSelector('.here-actions .btn.primary', { timeout: 5000 });
+    await fresh.click('.here-actions .btn.primary');
+    await fresh.waitForSelector('.felt', { timeout: 5000 });
+    await fresh.click('button:has-text("Deal me in")');
+    let finished = 0;
+    const deadline = Date.now() + 90000;
+    while (Date.now() < deadline && finished < 2) {
+      const bar = (await fresh.textContent('.action-bar').catch(() => '')) || '';
+      if (/Deal next hand/.test(bar)) {
+        finished++;
+        if (finished >= 2) break;
+        await fresh.click('button:has-text("Deal next hand")');
+        continue;
+      }
+      const btn = (await fresh.$('.action-buttons .btn.danger'))
+        || (await fresh.$('.action-buttons .btn:not(.primary):not(.danger)'));
+      if (btn) await btn.click().catch(() => {});
+      await fresh.waitForTimeout(150);
+    }
+    const played = await fresh.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).career.played);
+    if (played.nl2 !== 2) throw new Error(`two hands at Mud Landing were counted as ${JSON.stringify(played)}`);
+
+    // Finish the first city and the second opens, the third stays shut.
+    await fresh.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await fresh.waitForSelector('.road-banner', { timeout: 5000 });
+    await seed({
+      walkthroughs: ['hand-rankings', 'pot-odds'],
+      economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: ['lesson:hand-rankings', 'lesson:pot-odds'] },
+      career: { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: ['nl2'], played: { nl2: 30 } },
+    });
+    await fresh.reload({ waitUntil: 'domcontentloaded' });
+    await fresh.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await fresh.waitForSelector('.road-banner', { timeout: 5000 });
+    const second = await text('.road-banner');
+    if (!/Fisher's Rest/.test(second)) throw new Error(`with the first city finished the banner still reads "${second}"`);
+    const after = await fresh.$$eval('.map-stop.is-locked', (n) => n.map((x) => x.querySelector('.map-name').textContent.trim()));
+    if (after.length !== 6 || after.includes("Fisher's Rest") || !after.includes('The Ferry')) throw new Error(`after the first city, shut: ${after}`);
+    const strip = await fresh.$$eval('.road-node', (n) => n.map((x) => x.className.match(/is-(\w+)/)[1]));
+    if (strip.join() !== 'done,current,locked,locked,locked,locked,locked,locked') throw new Error(`the strip reads ${strip}`);
+
+    // Tapping a later city shows what it will ask, without a way in.
+    await fresh.click('.road-node:nth-child(3)');
+    const ahead = await text('.road-head');
+    if (!/The Ferry/.test(ahead) || !/Opens when Fisher's Rest is finished/.test(ahead)) throw new Error(`a city further on reads "${ahead}"`);
+    if (await fresh.$('.road-body .road-goal .btn')) throw new Error('a city that is not open has buttons on its list');
+    await fresh.click('.road-node:nth-child(1)');
+    if (!/Finished/.test(await text('.road-head'))) throw new Error('a city that is done does not say so');
+
+    // And it speaks Dutch.
+    await seed({ settings: { lang: 'nl' } });
+    await fresh.reload({ waitUntil: 'domcontentloaded' });
+    await fresh.waitForSelector('.road-banner', { timeout: 5000 });
+    const dutch = await text('.road-banner');
+    if (!/De Weg/.test(dutch) || /The Road/.test(dutch)) throw new Error(`the banner in Dutch reads "${dutch}"`);
+    const list = await text('.road-panel');
+    if (/\b(Read the|Play \d+ hands|Take .* from)\b/.test(list)) throw new Error(`the list is still English in Dutch: ${list.slice(0, 160)}`);
+    console.log('      Mud Landing 0 / 4 and Hand Rankings next; seven cities shut with what opens them; the table counts hands; finishing a city opens the next; Dutch');
+  } finally {
+    await ctx.close();
+  }
 });
 
 await step('layout holds up on phone and tablet viewports', async () => {

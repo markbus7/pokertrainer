@@ -3242,3 +3242,164 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
   .size-switch { padding-left: var(--s-1); }
   .size-switch .btn.sm { padding-left: 10px; padding-right: 10px; }
 }
+
+/* ================================================================
+   The Road: what to do in each city, and what comes next
+   ================================================================ */
+
+/* The banner above the map: the city you are working on, and the next thing. */
+.road-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  margin: 0 0 var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-radius: 10px;
+  border: 1px solid var(--brass-lo);
+  background: var(--bg-card);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), var(--shadow-sm);
+}
+.road-banner.finished { justify-content: flex-start; gap: var(--s-3); color: var(--brass-hi); }
+.road-banner-text { min-width: 0; flex: 1 1 280px; }
+.road-kicker {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+.road-where { color: var(--brass-hi); letter-spacing: 0.04em; }
+.road-banner-line { font-family: var(--font-print); font-weight: 700; font-size: var(--t-lg); line-height: 1.25; margin-top: 2px; }
+.road-next-label {
+  display: inline-block;
+  padding: 0 8px;
+  margin-right: 2px;
+  border-radius: 99px;
+  background: var(--brass);
+  color: var(--on-brass);
+  font-family: var(--font);
+  font-size: var(--t-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+.road-banner .btn { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.road-note { display: flex; align-items: flex-start; gap: 6px; margin-top: 3px; font-size: var(--t-sm); color: var(--text-dim); line-height: 1.35; }
+.road-note.blocked { color: var(--brass-hi); }
+.road-note .icon { margin-top: 3px; flex: none; }
+
+/* The panel under the map, and the same list on a stop's own screen. */
+.river-below > .road-panel { grid-column: 1 / -1; }
+.road-panel .panel-title h2, .road-panel .panel-title h3 { display: flex; align-items: center; gap: 8px; }
+.road-strip { display: grid; grid-template-columns: repeat(8, minmax(0, 38px)); gap: 6px; margin: var(--s-3) 0; }
+.road-node {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid var(--ink-rule);
+  background: var(--paper-2);
+  color: var(--ink);
+  font: inherit;
+  font-family: var(--font-print);
+  font-weight: 700;
+  cursor: pointer;
+}
+.road-node.is-done { background: var(--ink-green); border-color: var(--ink-green); color: var(--paper); }
+.road-node.is-current { background: var(--brass); border-color: var(--brass-lo); color: var(--on-brass); }
+.road-node.is-locked { opacity: 0.6; }
+.road-node.viewing { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--brass-lo); }
+.road-node:focus-visible { outline: 2px solid var(--brass-lo); outline-offset: 2px; }
+.road-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s-3); margin-bottom: var(--s-2); }
+.road-city { margin: 0; font-family: var(--font-sign); font-weight: 400; font-size: 26px; display: flex; align-items: baseline; gap: 10px; }
+.road-stake { font-family: var(--mono); font-weight: 600; font-size: var(--t-sm); color: var(--ink-dim); }
+.road-sub { flex-basis: 100%; }
+.road-stop .road-sub { margin: 0 0 var(--s-2); }
+
+.road-goals { list-style: none; margin: 0; padding: 0; }
+.road-goal {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--s-3);
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--ink-rule);
+}
+.road-goal:last-child { border-bottom: 0; }
+.road-goal.next { background: rgba(0, 0, 0, 0.05); box-shadow: inset 3px 0 0 var(--brass-lo); border-radius: 4px; }
+.road-mark {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-rule);
+  color: var(--ink-dim);
+}
+.road-goal.done .road-mark { background: var(--ink-green); border-color: var(--ink-green); color: var(--paper); }
+.road-goal.next .road-mark { background: var(--brass); border-color: var(--brass-lo); color: var(--on-brass); }
+.road-goal-text { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); line-height: 1.25; }
+.road-goal.done .road-goal-text { color: var(--ink-dim); font-weight: 600; text-decoration: line-through; text-decoration-color: var(--ink-rule); }
+.road-goal.bonus .road-goal-text { font-weight: 600; }
+.road-panel .road-note { color: var(--ink-dim); }
+.road-panel .road-note.blocked { color: var(--ink-red); }
+.road-goal .btn { white-space: nowrap; align-self: center; }
+.road-progress { display: flex; align-items: center; gap: var(--s-2); margin-top: 6px; }
+.road-bar { flex: 1; max-width: 220px; height: 7px; border-radius: 99px; background: rgba(0, 0, 0, 0.14); overflow: hidden; }
+.road-bar span { display: block; height: 100%; background: var(--brass-lo); border-radius: 99px; }
+.road-count { font-size: var(--t-xs); font-weight: 700; color: var(--ink-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.road-bonus { margin-top: var(--s-3); padding-top: var(--s-2); border-top: 1px dashed var(--ink-rule); }
+.road-bonus-title { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--ink-dim); margin-bottom: 2px; }
+.road-opens { margin: var(--s-3) 0 0; }
+
+@media (max-width: 640px) {
+  .road-goal { grid-template-columns: 26px minmax(0, 1fr); }
+  .road-goal .btn { grid-column: 2; justify-self: start; }
+  .road-banner .btn { width: 100%; justify-content: center; }
+}
+
+/* On the map: what is next gets a ring and a tag, a city you cannot enter yet
+   is greyed with a lock, and the city you are working on counts its list. */
+.map-next {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 8px;
+  border-radius: 99px;
+  background: var(--brass);
+  color: var(--on-brass);
+  border: 1px solid var(--brass-lo);
+  font-family: var(--font);
+  font-size: 0.78em;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+.map-stop.is-next, .map-place.is-next { animation: road-next 2.4s ease-in-out infinite; }
+@keyframes road-next {
+  0%, 100% { box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--brass-lo); }
+  50% { box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), 0 0 0 4px var(--brass), 0 0 18px var(--brass); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-stop.is-next, .map-place.is-next { animation: none; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), 0 0 0 3px var(--brass); }
+}
+.map-stop.is-locked { opacity: 0.72; }
+.map-stop.is-locked .map-name { color: var(--ink-dim); }
+.map-lock { color: var(--ink-dim); flex: none; }
+.map-pips { display: inline-flex; gap: 3px; margin-top: 2px; }
+.map-pips .pip { width: 0.62em; height: 0.62em; border-radius: 50%; border: 1px solid var(--ink-dim); }
+.map-pips .pip.on { background: var(--ink-green); border-color: var(--ink-green); }
+.map-stop.is-here .map-pips .pip { border-color: var(--on-brass); }
+.map-stop.is-here .map-pips .pip.on { background: var(--on-brass); }
+
+/* The purse in the moment a table is taken. */
+.took-purse { margin: var(--s-2) 0 0; font-family: var(--font-print); font-style: italic; color: var(--ink-dim); text-align: center; }

@@ -4835,10 +4835,107 @@ export const NL = {
     'Een parel voor elke hand die je uitspeelde, en nog een voor elke goede beslissing die je zonder vragen nam.',
   'The tables pay in pearls, too: one for every hand you play through, one more for every decision made well. Pearls buy your lessons, your charts and your companions at the Trading Post — so the first thing to do is play.':
     'De tafels betalen ook in parels: een voor elke hand die je uitspeelt, en nog een voor elke beslissing die je goed neemt. Met parels koop je je lessen, je charts en je maatjes in de handelspost — dus het eerste wat je doet, is spelen.',
-  'Free play, pearls for hands played':
-    'Vrij spel, parels voor uitgespeelde handen',
+  'Free play, earn pearls':
+    'Vrij spel, verdien parels',
   'This chapter is on Delphine\'s shelf at the Trading Post. The tables pay in pearls — a pearl for every hand you play through, and more for every decision made well.':
     'Dit hoofdstuk ligt bij Delphine op de plank in de handelspost. De tafels betalen in parels — een parel voor elke hand die je uitspeelt, en meer voor elke beslissing die je goed neemt.',
   'Your purse is light, cher. Go and sit at a table; a pearl for every hand you play, and more for playing it right.':
     'Je buidel is licht, cher. Ga aan een tafel zitten; een parel voor elke hand die je speelt, en meer als je hem goed speelt.',
+  // v3.10 — the Road
+  'Needs rank {rank} first. Playing and drilling earn it — Your Papers shows what is missing.':
+    'Eerst rang {rank} nodig. Spelen en oefenen leveren die op — Je Papieren laat zien wat er nog mist.',
+  'Costs {price} pearls and you have {have}. The tables pay them.':
+    'Kost {price} parels en je hebt er {have}. De tafels betalen ze uit.',
+  'On the shelf at the Trading Post for {price} pearls.':
+    'Ligt in de handelspost voor {price} parels.',
+  'Read the {module} lesson':
+    'Lees de les {module}',
+  'Play {n} hands at {stop}':
+    'Speel {n} handen bij {stop}',
+  'Take {stop} from {boss}':
+    'Neem {stop} af van {boss}',
+  'Cash out with double your buy-in.':
+    'Cash uit met het dubbele van je buy-in.',
+  'Land your first fish in the Catch Book':
+    'Vang je eerste vis voor het Vangstboek',
+  'Land {n} kinds of fish in the Catch Book':
+    'Vang {n} soorten vis voor het Vangstboek',
+  'Needs the Preflop Ranges chapter first.':
+    'Heeft eerst het hoofdstuk Preflop Ranges nodig.',
+  'Pass the chart at the Pilot House: {chart}':
+    'Haal de chart in het Loodshuis: {chart}',
+  'Your boat has not been far enough down the river for this one yet.':
+    'Je boot is nog niet ver genoeg stroomafwaarts geweest voor deze.',
+  'Buy the {boat} at the Boatyard':
+    'Koop {boat} bij de scheepswerf',
+  'Take a companion aboard':
+    'Neem een maatje aan boord',
+  'Have {n} companions aboard':
+    'Heb {n} maatjes aan boord',
+  'Beat the Belle in the Racing Chute':
+    'Versla de Belle in de Racegeul',
+  'done':
+    'klaar',
+  'Read it':
+    'Lees hem',
+  'To the Trading Post':
+    'Naar de handelspost',
+  'To the table':
+    'Naar de tafel',
+  'To the Catch Book':
+    'Naar het Vangstboek',
+  'To the Pilot House':
+    'Naar het Loodshuis',
+  'To the Boatyard':
+    'Naar de scheepswerf',
+  'To the Racing Chute':
+    'Naar de Racegeul',
+  'Go there':
+    'Ga erheen',
+  '{have} of {need}':
+    '{have} van {need}',
+  'Worth doing here, and nobody is waiting on them':
+    'Het doen waard, en niemand wacht erop',
+  'This is the last table on the river. Take it and the river is yours.':
+    'Dit is de laatste tafel op de rivier. Neem hem en de rivier is van jou.',
+  'When these are done, {next} opens. Taking this table also has {boss} hand over a purse of {money}, enough for a seat there.':
+    'Als dit klaar is, gaat {next} open. Als je deze tafel afneemt, geeft {boss} ook een buidel van {money}, genoeg voor een stoel daar.',
+  'The cities on the road':
+    'De steden langs de weg',
+  'after {place}':
+    'na {place}',
+  'finished':
+    'klaar',
+  'closed':
+    'dicht',
+  'You have taken every table on the river.':
+    'Je hebt elke tafel op de rivier afgenomen.',
+  'The Road':
+    'De Weg',
+  'Everything here is done. The next stop is open.':
+    'Alles hier is klaar. De volgende halte is open.',
+  'Finished.':
+    'Klaar.',
+  'Opens when {place} is finished.':
+    'Gaat open als {place} klaar is.',
+  '{done} of {total} done. Any order, but the first undone one is the best place to start.':
+    '{done} van {total} klaar. In elke volgorde, maar de eerste die nog niet klaar is, is de beste om mee te beginnen.',
+  'A city at a time, the way a river goes. Do what is listed for the one you are in, in any order; when it is done the next one opens.':
+    'Een stad tegelijk, zoals een rivier loopt. Doe wat er staat voor de stad waar je bent, in elke volgorde; als het klaar is, gaat de volgende open.',
+  'After {place}':
+    'Na {place}',
+  'You have {money} and a borrowed rowboat. Every seat is paid out of that purse, and you go down the river a city at a time: each has a short list of things to do, in any order, and when it is done the next one opens.':
+    'Je hebt {money} en een geleende roeiboot. Elke stoel betaal je uit die buidel, en je gaat de rivier af een stad tegelijk: elke stad heeft een korte lijst dingen om te doen, in elke volgorde, en als die klaar is gaat de volgende open.',
+  'Take the table from the one who owns it and they hand over their purse for the next stop, and something to remember them by. Lose the purse and the house stakes you back in — and writes it down.':
+    'Neem de tafel af van degene die hem bezit en die geeft zijn buidel voor de volgende halte, en iets om hem door te onthouden. Raak je je buidel kwijt, dan zet het huis je weer in — en schrijft het op.',
+  'The road down it: what to do next':
+    'De weg erlangs: wat je nu doet',
+  'The road to {place} opens when {gate} is finished.':
+    'De weg naar {place} gaat open als {gate} klaar is.',
+  'See what is left at {place}':
+    'Kijk wat er nog te doen is bij {place}',
+  '{boss} hands over a purse: {money}, enough for a seat at {next}.':
+    '{boss} geeft een buidel: {money}, genoeg voor een stoel bij {next}.',
+  'What to do at {place}':
+    'Wat te doen bij {place}',
 };

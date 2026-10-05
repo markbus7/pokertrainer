@@ -36,6 +36,8 @@ import { pearls } from './shop.js';
 import { boatPerks, crewStrip } from './boats.js';
 import * as audio from '../audio/engine.js';
 import { bookProgress } from '../data/fish.js';
+import { journeyState, gatedBy } from '../state/journey.js';
+import { roadBanner, roadPanel } from './roadView.js';
 
 export { svgNode };
 
@@ -59,12 +61,20 @@ export function riverState(profile) {
     berths: boatBerths(profile),
     bonus: boatBonus(profile),
     wonRiver,
+    // What the road says: which city you are working on, what is done in it,
+    // and what to do next. A city opens when the one before it is finished.
+    road: journeyState(profile),
   };
 }
 
 /** What a stop's name plate says under it. */
 export function stopStatus(venue, state) {
   if (venue.index === state.here.index) return { key: 'here', text: t('You are here') };
+  // The road comes first: a city further down than the one you are working on
+  // is closed whatever the purse says, and says which one opens it.
+  if (venue.index > state.road.current) {
+    return { key: 'locked', text: t('After {place}', { place: t(gatedBy(venue.index).name) }) };
+  }
   if (state.bankroll >= venue.stake.minBankroll) {
     return state.beaten.has(venue.index)
       ? { key: 'beaten', text: t('Taken') }
@@ -77,22 +87,32 @@ function stopPlate(venue, state, go) {
   const p = stopAt(venue.index);
   const status = stopStatus(venue, state);
   const boss = bossFor(venue.boss);
-  const never = venue.index > state.best && status.key === 'shut';
+  const never = venue.index > state.best && (status.key === 'shut' || status.key === 'locked');
+  const chapter = state.road.chapters[venue.index];
+  // The city you are working on shows how far through it you are.
+  const working = venue.index === state.road.current && !chapter.complete;
+  const next = state.road.next && state.road.next.goal.to.stop === venue.key;
   // North-bank plates hang above their drawing and south-bank ones below,
   // so a plate never lies across the river it belongs to.
   const north = p.side < 0;
-  return el(`button.map-stop.is-${status.key}${never ? '.far' : ''}${state.beaten.has(venue.index) ? '.taken' : ''}${north ? '.north' : ''}`, {
+  return el(`button.map-stop.is-${status.key}${never ? '.far' : ''}${state.beaten.has(venue.index) ? '.taken' : ''}${north ? '.north' : ''}${next ? '.is-next' : ''}`, {
     dataset: { key: venue.key },
     style: { left: `${(p.x / WORLD.W) * 100}%`, top: `${((north ? p.y - 40 : p.y + 24) / WORLD.H) * 100}%` },
     onclick: () => { audio.sfx('click'); go('stop', { at: venue.key }); },
     'aria-label': `${t(venue.name)}, ${venue.label}: ${status.text}`,
   },
+    next ? el('span.map-next', t('Next')) : null,
     el('span.map-name', t(venue.name)),
     el('span.map-meta',
       el('span.map-stake', venue.label),
       state.beaten.has(venue.index) ? icon(`k-${boss.keepsake.key}`, { size: 14, className: 'map-keepsake' }) : null,
+      status.key === 'locked' ? icon('lock', { size: 11, className: 'map-lock' }) : null,
       el('span.map-status', status.text),
     ),
+    working
+      ? el('span.map-pips', { title: `${chapter.done} / ${chapter.total}` },
+        Array.from({ length: chapter.total }, (_, i) => el(`span.pip${i < chapter.done ? '.on' : ''}`)))
+      : null,
   );
 }
 
@@ -107,7 +127,7 @@ function placeStatus(place, profile) {
     case 'assay': return ownsLesson(profile, 'pot-odds') ? t('The counter is open') : t('Needs the Pot Odds chapter');
     case 'race': return t('Beat the Belle for pearls');
     case 'tradingpost': return null;
-    case 'saloon': return t('Free play, pearls for hands played');
+    case 'saloon': return t('Free play, earn pearls');
     case 'boatyard': return t('Boats and fittings');
     case 'tackle': {
       const p = bookProgress(profile.catchBook);
@@ -117,14 +137,16 @@ function placeStatus(place, profile) {
   }
 }
 
-function placePlate(place, profile, go) {
+function placePlate(place, profile, go, nextPlace) {
   const status = placeStatus(place, profile);
   const canBuy = (place.key === 'tradingpost' || place.key === 'boatyard') && somethingToBuy(profile, place.key);
-  return el(`button.map-place.place-${place.key}${canBuy ? '.can-buy' : ''}`, {
+  const next = place.key === nextPlace;
+  return el(`button.map-place.place-${place.key}${canBuy ? '.can-buy' : ''}${next ? '.is-next' : ''}`, {
     style: { left: `${(place.x / WORLD.W) * 100}%`, top: `${((place.y + 26) / WORLD.H) * 100}%` },
     onclick: () => { audio.sfx('click'); go(place.route); },
     'aria-label': `${t(place.name)} — ${t(place.label)}`,
   },
+    next ? el('span.map-next', t('Next')) : null,
     el('span.map-place-name', t(place.name)),
     place.key === 'tradingpost'
       ? el('span.map-place-meta', pearls(profile.pearls), canBuy ? el('span.place-new', t('Something to buy')) : null)
@@ -139,7 +161,8 @@ function riverMap(state, profile, go) {
   chart.innerHTML = worldSvg({
     here: state.here.index,
     best: state.best,
-    open: state.open,
+    // The purse opens a stop and the road lets you in; both have to say yes.
+    open: Math.min(state.open, state.road.current),
     beaten: state.beaten,
     boat: state.boat.key,
     landmarks: VENUES.map((v) => v.landmark),
@@ -160,7 +183,8 @@ function riverMap(state, profile, go) {
     });
   });
   for (const v of VENUES) chart.appendChild(stopPlate(v, state, go));
-  for (const place of PLACES) chart.appendChild(placePlate(place, profile, go));
+  const nextPlace = state.road.next ? state.road.next.goal.to.place : null;
+  for (const place of PLACES) chart.appendChild(placePlate(place, profile, go, nextPlace));
   // On a narrow screen the chart is wider than the page and scrolls sideways,
   // the way a map is dragged; on a wide one the scroller simply fits.
   return el('div.map-scroller', chart);
@@ -242,8 +266,8 @@ function prologue(state, profile, rerender) {
   return el('div.prologue.paper',
     el('div.prologue-year.sign', '1890'),
     el('p.said', t('The Long River runs from Mud Landing down to the delta. At every stop there is a card table, and somebody who owns it. At the end sits the Commodore, who owns most of the rest.')),
-    el('p.said', t('You have {money} and a borrowed rowboat. Every seat is paid out of that purse, and a stop further down will only have you once the purse can stand its stakes.', { money: fmt.money(state.bankroll) })),
-    el('p.said', t('Beat the one who owns a table and they give you something to remember them by. Lose the purse and the house stakes you back in — and writes it down.')),
+    el('p.said', t('You have {money} and a borrowed rowboat. Every seat is paid out of that purse, and you go down the river a city at a time: each has a short list of things to do, in any order, and when it is done the next one opens.', { money: fmt.money(state.bankroll) })),
+    el('p.said', t('Take the table from the one who owns it and they hand over their purse for the next stop, and something to remember them by. Lose the purse and the house stakes you back in — and writes it down.')),
     el('p.said', t('The tables pay in pearls, too: one for every hand you play through, one more for every decision made well. Pearls buy your lessons, your charts and your companions at the Trading Post — so the first thing to do is play.')),
     el('button.btn.primary.plank', {
       onclick: () => {
@@ -325,9 +349,11 @@ export function renderRiver(ctx) {
           el('h2.sign', t('The Long River')),
           el('div.cartouche-sub', t('Eight tables from Mud Landing to the delta, and everything on the water between')),
         ),
+        roadBanner(state.road, go),
         map,
       ),
       el('div.river-below',
+        roadPanel(state.road, go),
         hereCard(state, profile, go),
         el('div.river-side',
           boatCard(state, profile, go),

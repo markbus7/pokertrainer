@@ -227,13 +227,38 @@ describe('the river: what a stop says about itself', () => {
 
   it('opens a stop when the purse can stand its stakes, and not before', () => {
     setLang('en');
-    const poor = at(100, {});
+    // Somebody who has already been down the river, so the road is open all
+    // the way and the purse is the only thing left to say no.
+    const been = { best: 'nl500' };
+    const poor = at(100, been);
     equal(stopStatus(VENUES[0], poor).key, 'here');
     equal(stopStatus(VENUES[1], poor).key, 'shut', '$100 is not a purse for NL5');
     assert(/\$150/.test(stopStatus(VENUES[1], poor).text), 'a shut stop does not say what it takes');
-    const rich = at(400, {});
+    const rich = at(400, been);
     equal(stopStatus(VENUES[2], rich).key, 'open', '$400 is a purse for NL10');
     equal(stopStatus(VENUES[3], rich).key, 'shut');
+  });
+
+  it('keeps a city shut until the one before it is finished, whatever the purse says', () => {
+    setLang('en');
+    const fresh = at(20000, {});
+    equal(stopStatus(VENUES[0], fresh).key, 'here');
+    for (let i = 1; i < VENUES.length; i++) {
+      const status = stopStatus(VENUES[i], fresh);
+      equal(status.key, 'locked', `${VENUES[i].name} was open to somebody who has done nothing`);
+      assert(/^After /.test(status.text), `a closed city does not say what opens it: ${status.text}`);
+      assert(status.text.includes(VENUES[i - 1].name), `${VENUES[i].name} is not opened by ${VENUES[i - 1].name}`);
+    }
+    // Finish the first city (read it, play it, take it) and the next one opens.
+    const done = new Profile({
+      bankroll: 20000,
+      career: { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: ['nl2'], played: {} },
+      walkthroughs: ['hand-rankings', 'pot-odds'],
+      economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: ['lesson:hand-rankings', 'lesson:pot-odds'] },
+    }, null);
+    const after = riverState(done);
+    equal(stopStatus(VENUES[1], after).key, 'open');
+    equal(stopStatus(VENUES[2], after).key, 'locked');
   });
 
   it('marks the tables you have taken, and gives you the boat for how far you got', () => {
