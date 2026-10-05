@@ -203,6 +203,11 @@ export function renderLearn(ctx, params) {
         el('button.btn.primary.lg.plank', { onclick: () => go('walkthrough', { module: meta.id }) },
           done ? 'Do the guided lesson again' : 'Start the guided lesson'),
         el('button.btn.lg.ghost', { onclick: () => go('drill', { module: meta.id }) }, 'Skip to drills'),
+        // ICM is a tournament idea: its table is the bubble, four left and three paid.
+        meta.id === 'icm'
+          ? el('button.btn.lg.primary', { onclick: () => go('play', { mode: 'regatta', bubble: '1', at: profile.career.venue }) },
+            t('▶ Play the bubble'))
+          : null,
       ),
       walkthroughShape(meta.id),
       // When the lesson is the only thing left, say so beside the button

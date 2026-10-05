@@ -5353,4 +5353,55 @@ export const NL = {
   'First': 'Eerste',
   'Second': 'Tweede',
   'Third': 'Derde',
+
+  /* ---- v3.15: the prizes counted (ICM), and the bubble ---- */
+  'A short stack in a tournament. The prizes are in play, so chips are not worth what they were: shove or fold, with the prize money in mind.':
+    'Een korte stack in een toernooi. De prijzen staan op het spel, dus chips zijn niet meer waard wat ze waren: all-in of passen, met het prijzengeld in gedachten.',
+  'A close call, either way is fine':
+    'Een nipte keuze, allebei is prima',
+  'Right, with the prizes counted':
+    'Goed, met de prijzen meegerekend',
+  'Too tight for the prizes':
+    'Te strak voor de prijzen',
+  'The prize list says fold':
+    'De prijzenlijst zegt: pas',
+  'With these stacks and these prizes, {verb} with {hand} is worth about {go} and folding is worth {fold}.':
+    'Met deze stacks en deze prijzen is {verb} met {hand} ongeveer {go} waard en passen {fold}.',
+  'With these stacks and these prizes, folding {hand} is worth about {fold}; the {verb} is worth {go}.':
+    'Met deze stacks en deze prijzen is passen met {hand} ongeveer {fold} waard; de {verb} is {go} waard.',
+  'The {verb} with {hand} is worth about {go} and folding only {fold}: at this stack the blinds are eating you, and the chips are worth more in the pot than in your hand.':
+    'De {verb} met {hand} is ongeveer {go} waard en passen maar {fold}: bij deze stack eten de blinds je op, en de chips zijn meer waard in de pot dan in je hand.',
+  'The {verb} with {hand} is worth about {go} but folding is worth {fold}: with a prize list, busting costs you more than the chips you would win are worth.':
+    'De {verb} met {hand} is ongeveer {go} waard maar passen is {fold} waard: met een prijzenlijst kost uitgeschakeld worden je meer dan de chips die je zou winnen waard zijn.',
+  'Shove': 'All-in',
+  'The bubble':
+    'De bubbel',
+  'Practice':
+    'Oefenen',
+  'Four left, three are paid. Nothing is entered and nothing is won.':
+    'Nog vier, drie worden uitbetaald. Er is niets ingelegd en er valt niets te winnen.',
+  'You went out on the bubble':
+    'Je ging eruit op de bubbel',
+  'The bubble burst, and you are in the money':
+    'De bubbel barstte, en jij zit in het geld',
+  'Nobody went out in {n} hands. The bubble held.':
+    'Niemand ging eruit in {n} handen. De bubbel hield stand.',
+  'Fourth place pays nothing. What this is for is whether each shove and each call was right once the prizes were counted.':
+    'De vierde plaats levert niets op. Waar het om gaat is of elke all-in en elke call goed was met de prijzen meegerekend.',
+  '{sound} of {n} decisions were right with the prizes counted, {pct}%.':
+    '{sound} van {n} beslissingen waren goed met de prijzen meegerekend, {pct}%.',
+  'You were not asked anything this time: the blinds did the work.':
+    'Er werd je deze keer niets gevraagd: de blinds deden het werk.',
+  'Short stacks are not about the chips you can win but the chips you cannot afford to lose. Look at what each decision was worth in Silas\'s notes.':
+    'Bij korte stacks gaat het niet om de chips die je kunt winnen maar om de chips die je je niet kunt veroorloven te verliezen. Kijk in Silas\' notities wat elke beslissing waard was.',
+  'Another bubble':
+    'Nog een bubbel',
+  'Silas\'s notes on it':
+    'Silas\' notities erover',
+  'Back to the lesson':
+    'Terug naar de les',
+  '▶ Play the bubble':
+    '▶ Speel de bubbel',
+  'ICM is a tournament idea, so it is played at a tournament table: the bubble, with four left and three paid.':
+    'ICM is een toernooi-idee, dus het wordt aan een toernooitafel gespeeld: de bubbel, met nog vier over en drie die worden uitbetaald.',
 };

@@ -15,7 +15,7 @@ import { t } from '../i18n/index.js';
 const shortfall = (have, need) => t('— {n} more hands', { n: need - have });
 import { renderFelt } from './feltView.js';
 import { createTable, STREETS } from '../engine/table.js';
-import { botAction, getProfile, pickOpponents } from '../engine/bots.js';
+import { botAction, getProfile, pickOpponents, profileAt } from '../engine/bots.js';
 import { VENUES, venueFor } from '../data/venues.js';
 import { VARIANTS, VARIANT_KEYS } from '../engine/variants.js';
 import { equityVsField, outsToImprove } from '../core/equity.js';
@@ -56,6 +56,7 @@ import { DUEL_LEVELS, MIN_DECISIONS, STAR_SHARE, blindsFor, duelStars, starPearl
 import { storyFor } from '../data/story.js';
 import {
   FIELD, START_STACK, LEVELS as REGATTA_LEVELS, blindsFor as regattaBlinds, payouts as regattaPayouts, prizeFor, placesFor, placePearls, ordinal,
+  BUBBLE, BUBBLE_START_HAND, bubbleStacks,
 } from '../state/regatta.js';
 import { bites, landed, weighIn, speciesOf } from '../data/fish.js';
 import { portraitSvg } from './portraits.js';
@@ -166,10 +167,19 @@ export function renderTable(ctx, params = {}) {
   }
   // A regatta: a six-player tournament at a stop, to the last chip, with the top
   // three paid. The entry comes out of the bankroll and the prize goes back in.
-  const regattaStop = params.mode === 'regatta' ? VENUES.find((v) => v.key === params.at) || null : null;
+  // The bubble is the ICM chapter's table: a Regatta already down to four with three paid,
+  // for practice — nothing entered, nothing paid.
+  const bubble = params.mode === 'regatta' && params.bubble === '1';
+  const regattaStop = params.mode === 'regatta'
+    ? VENUES.find((v) => v.key === params.at) || (bubble ? venueFor(ctx.profile.career.venue) : null)
+    : null;
   const regatta = Boolean(regattaStop);
+  // What a seat in this tournament costs, and the size of the field.
+  const entryFee = bubble ? 0 : regatta ? regattaStop.entry : 0;
+  const prizeEntry = bubble ? BUBBLE.entry : entryFee;
+  const fieldSize = bubble ? BUBBLE.field : FIELD;
   if (params.mode === 'regatta' && !regatta) return el('div.screen', el('div.panel', el('h1', t('Not yet')), el('button.btn.primary', { onclick: () => go('home') }, t('Back'))));
-  if (regatta && ctx.profile.data.bankroll < regattaStop.entry) {
+  if (regatta && !bubble && ctx.profile.data.bankroll < regattaStop.entry) {
     return el('div.screen', el('div.panel',
       el('h1', t('Not enough bankroll')),
       el('p.muted', t('The entry is {cost} and you have {have}.', { cost: fmt.money(regattaStop.entry), have: fmt.money(ctx.profile.data.bankroll) })),
@@ -182,7 +192,7 @@ export function renderTable(ctx, params = {}) {
   const variantKey = !match && params.variant && VARIANTS[params.variant] ? params.variant : 'holdem';
   const stake = stakeFor(profile.data.stakeKey);
 
-  const bigBlind = regatta ? REGATTA_LEVELS[0][1] : 2;
+  const bigBlind = regatta ? REGATTA_LEVELS[bubble ? BUBBLE.levelIndex : 0][1] : 2;
   const startingStack = regatta ? START_STACK : bigBlind * 100;
   const buyInCost = grind ? stake.buyIn : 0;
 
@@ -214,15 +224,17 @@ export function renderTable(ctx, params = {}) {
     return el('div.screen', el('div.panel',
       el('h1', meta ? icon(meta.icon, { size: 22 }) : null, meta ? t(meta.name) : t('No table for that')),
       el('p.muted', meta && params.lesson === 'icm'
-        ? t('ICM is a tournament idea and this is a cash table, so there is no honest way to '
-          + 'play it here. The lesson and its drill still teach it.')
+        ? t('ICM is a tournament idea, so it is played at a tournament table: the bubble, with four left and three paid.')
         : meta && params.lesson === 'bankroll'
           ? t('Which table to sit at is the whole subject, so the river is this '
             + 'lesson — climbing the stakes with a real roll is the exercise.')
           : t('That is not a lesson this game can deal.')),
       el('div.row',
+        meta && params.lesson === 'icm'
+          ? el('button.btn.primary', { onclick: () => go('play', { mode: 'regatta', bubble: '1', at: profile.career.venue }) }, t('▶ Play the bubble'))
+          : null,
         meta
-          ? el('button.btn.primary', { onclick: () => go('walkthrough', { module: params.lesson }) },
+          ? el(`button.btn${params.lesson === 'icm' ? '.ghost' : '.primary'}`, { onclick: () => go('walkthrough', { module: params.lesson }) },
             t('Read the lesson'))
           : null,
         el('button.btn.ghost', { onclick: () => go('home') }, t('Back')),
@@ -232,7 +244,7 @@ export function renderTable(ctx, params = {}) {
   // Free play can be dealt for fewer: you against one, or against two. The
   // stops are full tables with somebody who owns them, and a lesson is cut to
   // whatever it teaches.
-  const seats = duel ? 2 : regatta ? FIELD : lesson ? lesson.seats : (!grind && TABLE_SIZES.includes(Number(params.seats)) ? Number(params.seats) : 6);
+  const seats = duel ? 2 : regatta ? fieldSize : lesson ? lesson.seats : (!grind && TABLE_SIZES.includes(Number(params.seats)) ? Number(params.seats) : 6);
 
   // Free play is the table. Silas at your shoulder, grading every decision
   // out loud, is a choice the reader makes with the switch in the header —
@@ -250,12 +262,14 @@ export function renderTable(ctx, params = {}) {
   const boss = room ? bossFor(room.boss) : null;
   // Which of the stop's tables this is. The same lobby the stop screen showed:
   // it is made from the stop and the count of sittings, not from a die.
-  const lobby = grind || regatta ? lobbyFor(room, profile.sittings) : null;
+  const lobby = grind || (regatta && !bubble) ? lobbyFor(room, profile.sittings) : null;
   const seat = lobby ? (regatta ? lobby.tables[0] : lobby.tables.find((x) => x.id === params.table) || lobby.tables[0]) : null;
   const ownerHere = duel || !seat || seat.owner;
   const opponents = duel ? [room.resident] : seat ? seat.styles.slice() : pickOpponents(seats - 1, rng);
+  const bubbleDeal = bubble ? bubbleStacks(rng) : null;
   const story = duel ? storyFor(room.key) : null;
-  const bossIndex = boss && ownerHere ? 0 : -1;
+  // The bubble is practice against whoever is about: nobody owns it.
+  const bossIndex = boss && ownerHere && !bubble ? 0 : -1;
   const bossId = bossIndex >= 0 ? `bot${bossIndex}` : null;
   // The Rival, if she is at this table: one seat, and a memory that is hers
   // and lasts between sittings.
@@ -276,13 +290,13 @@ export function renderTable(ctx, params = {}) {
     rng,
     lastStreet: lesson ? lesson.lastStreet : 'river',
     players: [
-      { id: HERO_ID, name: 'You', stack: startingStack, isHero: true },
+      { id: HERO_ID, name: 'You', stack: bubble ? bubbleDeal[0] : startingStack, isHero: true },
       ...opponents.map((key, i) => {
         const p = getProfile(key);
         return {
           id: `bot${i}`,
           name: i === bossIndex ? boss.short : i === rivalIndex ? RIVAL.short : i === wandererIndex ? wanderer.short : p.name,
-          stack: startingStack,
+          stack: bubble ? bubbleDeal[i + 1] : startingStack,
           profile: key,
           memory: i === rivalIndex ? rivalMemory : null,
         };
@@ -351,7 +365,9 @@ export function renderTable(ctx, params = {}) {
     // says how it went.
     run: lesson ? startRun(params.lesson) : null,
     // A duel: hands dealt, the blind level, and how it ended (null while it runs).
-    matchHands: 0,
+    matchHands: bubble ? BUBBLE_START_HAND : 0,
+    // Hands dealt in this match, whatever hand number its clock started from.
+    dealt: 0,
     matchLevel: -1,
     matchOver: null,
     // A regatta: who had gone out and where they finished, and how many were alive at the deal.
@@ -395,7 +411,7 @@ export function renderTable(ctx, params = {}) {
   table.readerMemory = session.readerMemory;
   if (grind) profile.setBankroll(profile.data.bankroll - buyInCost);
   // The entry is paid before the first card, and the prize comes back at the end.
-  if (regatta) profile.setBankroll(profile.data.bankroll - room.entry, room.key);
+  if (regatta && !bubble) profile.setBankroll(profile.data.bankroll - room.entry, room.key);
 
   const hero = table.player(HERO_ID);
   // A lesson table is a chapter, and a duel is a fight for the table: neither
@@ -417,7 +433,7 @@ export function renderTable(ctx, params = {}) {
   const lessonNoteHost = el('div');
   const matchHost = el('div');
   const leaveButton = el('button.btn.sm.ghost', { onclick: () => leave() },
-    duel ? t('Forfeit') : regatta ? t('Withdraw') : grind ? 'Cash out' : 'Leave table');
+    duel ? t('Forfeit') : bubble ? t('Leave') : regatta ? t('Withdraw') : grind ? 'Cash out' : 'Leave table');
   // Under the felt: the help button, your companions, what this sitting has
   // paid so far — and the drawer they open.
   const trayHost = el('div.tray-host');
@@ -433,6 +449,12 @@ export function renderTable(ctx, params = {}) {
           el('h1.sign.table-place', { style: { margin: 0 } }, t('{name}\'s duel', { name: boss.short })),
           el('span.scene-stake', t(room.name)),
           el('span.table-owner', t('Heads-up, to the last chip')),
+        )
+      : bubble
+        ? el('div.row',
+          el('h1.sign.table-place', { style: { margin: 0 } }, t('The bubble')),
+          el('span.scene-stake', t('Practice')),
+          el('span.table-owner', t('Four left, three are paid. Nothing is entered and nothing is won.')),
         )
       : regatta
         ? el('div.row',
@@ -582,9 +604,10 @@ export function renderTable(ctx, params = {}) {
       session.matchLevel = b.level;
     }
     session.matchHands++;
+    session.dealt++;
     // The owner's opening line, once, over the first hand.
-    if (duel && session.matchHands === 1) say(bossId, t(story.challenge), 5200);
-    if (regatta && session.matchHands === 1 && bossId) say(bossId, t(boss.hello), 5200);
+    if (duel && session.dealt === 1) say(bossId, t(story.challenge), 5200);
+    if (regatta && !bubble && session.dealt === 1 && bossId) say(bossId, t(boss.hello), 5200);
   }
 
   function startHand() {
@@ -826,12 +849,43 @@ export function renderTable(ctx, params = {}) {
    * is only the right question in some of them. The seat, the board and what
    * you are holding are what say which skill the decision is really about.
    */
-  const takeSnapshot = () => snapshotOf(table, hero, {
-    rng, aggressor: session.aggressor, opener: session.opener, ranges: session.ranges,
-    // A lesson table is cut to its lesson and teaches the chart's own spots at
-    // whatever size it is; free play is graded for the table it was dealt.
-    seats: lesson ? 6 : seats,
-  });
+  const takeSnapshot = () => {
+    const snap = snapshotOf(table, hero, {
+      rng, aggressor: session.aggressor, opener: session.opener, ranges: session.ranges,
+      // A lesson table is cut to its lesson and teaches the chart's own spots at
+      // whatever size it is; free play is graded for the table it was dealt; a
+      // tournament table is however many are left in it.
+      seats: lesson ? 6 : regatta ? Math.max(2, table.players.filter((p) => p.stack + p.committed > 0).length) : seats,
+    });
+    if (regatta) snap.tournament = tournamentOf();
+    return snap;
+  };
+
+  /**
+   * The tournament as the coach needs it to count the prizes: every seat still
+   * in, what each has behind and has posted, who raised, who is left to act
+   * after the reader, and what each place pays.
+   */
+  function tournamentOf() {
+    const inPlay = table.players.filter((p) => p.stack + p.committed > 0);
+    const at = (p) => inPlay.indexOf(p);
+    const raiser = table.lastAggressor && table.lastAggressor !== hero ? at(table.lastAggressor) : -1;
+    const n = table.players.length;
+    const behind = [];
+    for (let k = 1; k < n; k++) {
+      const p = table.players[(hero.seat + k) % n];
+      if (!p.folded && !p.sittingOut && at(p) >= 0) behind.push(at(p));
+    }
+    return {
+      stacks: inPlay.map((p) => p.stack),
+      committed: inPlay.map((p) => p.committed),
+      hero: at(hero),
+      villain: raiser >= 0 ? raiser : null,
+      payouts: regattaPayouts(prizeEntry),
+      profiles: inPlay.map((p) => (p.isHero ? null : profileAt(table, p))),
+      behind,
+    };
+  }
 
 
   /**
@@ -978,7 +1032,9 @@ export function renderTable(ctx, params = {}) {
     session.handStarted = false;
     // Kept only if there is something to learn from it — a mistake, or a big
     // loss that was nobody's fault. keepHand decides; see state/handHistory.
-    session.savedHand = keepHand(session.recorder.finish(table));
+    // A tournament hand is graded with the prizes counted, which a saved hand cannot be asked again
+    // (the log re-grades from what it kept, and would grade a shove on chips). So it is not kept.
+    session.savedHand = regatta ? null : keepHand(session.recorder.finish(table));
 
     const net = result.net[HERO_ID] || 0;
     const showdown = result.reason === 'showdown';
@@ -1213,9 +1269,13 @@ export function renderTable(ctx, params = {}) {
   function writeReport(cash = null) {
     if (lesson || !stats.hands) return null;
     const report = buildReport({
-      place: grind
-        ? { kind: 'stop', key: room.key, name: room.name, label: room.label, table: seat.id }
-        : { kind: 'practice', key: 'practice', name: 'Silas\'s practice table' },
+      place: bubble
+        ? { kind: 'practice', key: 'bubble', name: 'The bubble' }
+        : regatta
+          ? { kind: 'stop', key: room.key, name: room.name, label: room.label }
+          : grind
+            ? { kind: 'stop', key: room.key, name: room.name, label: room.label, table: seat.id }
+            : { kind: 'practice', key: 'practice', name: 'Silas\'s practice table' },
       stats,
       graded: session.graded,
       pearls: session.pearls,
@@ -1232,17 +1292,23 @@ export function renderTable(ctx, params = {}) {
     clearTimeout(session.timer);
     if (duel) {
       // Getting up before the end is losing it: a try, and no stars.
-      if (!session.matchOver && session.matchHands) profile.noteDuel(room.key, { won: false, stars: 0 });
+      if (!session.matchOver && session.dealt) profile.noteDuel(room.key, { won: false, stars: 0 });
       const m = session.matchOver;
       const notes = writeReport();
       go('stop', { at: room.key, ...(m ? { after: m.took.first ? 'took' : m.won ? 'up' : 'down' } : {}), ...(notes === null ? {} : { notes }), ...(m && m.took.purse ? { purse: m.took.purse } : {}) });
+      return;
+    }
+    if (bubble) {
+      // Practice: nothing was entered, so there is nothing to give up or get back.
+      const notes = writeReport();
+      go(notes === null ? 'learn' : 'report', notes === null ? { module: 'icm' } : { i: notes });
       return;
     }
     if (regatta) {
       // Getting up before the end gives up the entry: a try at no place, no prize. Before a
       // card is dealt, nothing has been played and the entry comes back.
       if (!session.matchOver) {
-        if (session.matchHands) profile.noteRegatta(room.key, { place: null, entry: room.entry, prize: 0 });
+        if (session.dealt) profile.noteRegatta(room.key, { place: null, entry: room.entry, prize: 0 });
         else profile.setBankroll(profile.data.bankroll + room.entry, room.key);
       }
       const m = session.matchOver;
@@ -1334,15 +1400,15 @@ export function renderTable(ctx, params = {}) {
     const idx = session.handStarted ? session.matchHands - 1 : session.matchHands;
     const b = clock(Math.max(0, idx));
     const left = b.left - (session.handStarted ? 1 : 0);
-    leaveButton.textContent = session.matchOver ? t('Leave') : regatta ? t('Withdraw') : t('Forfeit');
+    leaveButton.textContent = session.matchOver || bubble ? t('Leave') : regatta ? t('Withdraw') : t('Forfeit');
     const alive = table.players.filter((p) => p.stack > 0).length;
-    const prizes = regatta ? regattaPayouts(room.entry) : null;
+    const prizes = regatta ? regattaPayouts(prizeEntry) : null;
     mount(matchHost, el('div.match-banner',
       el('span.match-blinds', icon('chip', { size: 14 }), t('Blinds {small} / {big}', { small: b.small, big: b.big })),
       el('span.match-level', t('Level {n} of {total}', { n: b.level + 1, total: levels })),
       regatta
         ? el('span.match-field', { title: t('Prizes: {first} / {second} / {third}', { first: fmt.money(prizes[0]), second: fmt.money(prizes[1]), third: fmt.money(prizes[2]) }) },
-          icon('anchor', { size: 14 }), t('{n} of {total} left', { n: alive, total: FIELD }),
+          icon('anchor', { size: 14 }), t('{n} of {total} left', { n: alive, total: fieldSize }),
           !session.matchOver && alive <= 3 ? el('span.match-money', ` · ${t('in the money')}`) : null)
         : null,
       el('span.match-clock', session.matchOver
@@ -1369,11 +1435,26 @@ export function renderTable(ctx, params = {}) {
         toast({ icon: '⚓', title: t('{name} is out', { name: who }), desc: t('Finished {place}', { place: t(ordinal(place)) }) });
       }
     }
+    if (bubble) {
+      // The bubble is over when somebody goes out, which is the whole of what it is for.
+      const heroOut = hero.stack <= 0;
+      const burst = table.players.filter((p) => p.stack > 0).length < BUBBLE.field;
+      if (heroOut || burst || session.dealt >= BUBBLE.maxHands) return finishBubble({ heroOut, burst });
+      return null;
+    }
     if (hero.stack <= 0) return finishRegatta(session.finished[HERO_ID]);
     if (table.players.filter((p) => p.stack > 0).length === 1) {
       session.finished[HERO_ID] = 1;
       return finishRegatta(1);
     }
+    return null;
+  }
+
+  /** The bubble is over: somebody went out, or nobody did in a long time. */
+  function finishBubble({ heroOut, burst }) {
+    const { decisions, sound: soundCount, share } = soundShare(session.graded);
+    session.matchOver = { bubble: true, heroOut, burst, place: heroOut ? session.finished[HERO_ID] : null, decisions, sound: soundCount, share };
+    sound(heroOut ? 'lose' : 'win');
     return null;
   }
 
@@ -1396,8 +1477,32 @@ export function renderTable(ctx, params = {}) {
     return null;
   }
 
+  /** The end of the bubble: how it went, and how the decisions did with the prizes counted. */
+  function drawBubbleResult() {
+    const m = session.matchOver;
+    const pct = m.decisions ? Math.round(m.share * 100) : 0;
+    mount(actionHost, el('div.action-bar.duel-result.regatta-result.bubble-result',
+      el('h3', m.heroOut
+        ? t('You went out on the bubble')
+        : m.burst ? t('The bubble burst, and you are in the money')
+          : t('Nobody went out in {n} hands. The bubble held.', { n: session.dealt })),
+      m.heroOut ? el('p.faint', t('Fourth place pays nothing. What this is for is whether each shove and each call was right once the prizes were counted.')) : null,
+      m.decisions
+        ? el('p.muted', t('{sound} of {n} decisions were right with the prizes counted, {pct}%.', { sound: m.sound, n: m.decisions, pct }))
+        : el('p.muted', t('You were not asked anything this time: the blinds did the work.')),
+      el('p.faint', t('Short stacks are not about the chips you can win but the chips you cannot afford to lose. Look at what each decision was worth in Silas\'s notes.')),
+      el('div.row',
+        el('button.btn.primary.lg', { onclick: () => go('play', { mode: 'regatta', bubble: '1', at: room.key }) },
+          icon('repeat', { size: 16 }), t('Another bubble')),
+        el('button.btn.ghost', { onclick: () => leave() }, t('Silas\'s notes on it')),
+        el('button.btn.ghost', { onclick: () => { session.cancelled = true; go('learn', { module: 'icm' }); } }, t('Back to the lesson')),
+      ),
+    ));
+  }
+
   /** Where a regatta ended, in words and money, and the way to go again. */
   function drawRegattaResult() {
+    if (session.matchOver.bubble) return drawBubbleResult();
     const m = session.matchOver;
     const result = table.result;
     const prizes = regattaPayouts(room.entry);

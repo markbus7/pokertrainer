@@ -18,6 +18,7 @@
  * true and useless. The one named is the one the decision turns on.
  */
 
+import { SHORT_STACK_BB } from '../engine/pushfold.js';
 import { categoryOf, CAT } from './evaluator.js';
 import { spr as sprOf } from './odds.js';
 
@@ -51,6 +52,15 @@ export function conceptOf(spot) {
     madeCategory = CAT.HIGH_CARD, outs = 0, seats = 6,
   } = spot;
   const facing = toCall > 0;
+
+  // A short stack in a tournament is a different game: the prizes are in play,
+  // so chips are not worth what they were, and the decision is shove or fold
+  // rather than anything on a chart. Only when there is something to decide —
+  // a free check in the big blind is not it.
+  if (spot.tournament && street === 'preflop' && (facing || firstIn) && spot.bigBlind
+    && effectiveStack / spot.bigBlind <= SHORT_STACK_BB) {
+    return { id: 'icm', why: 'A short stack in a tournament. The prizes are in play, so chips are not worth what they were: shove or fold, with the prize money in mind.' };
+  }
 
   if (street === 'preflop' && seats < 6) {
     // The opening and defending charts are drawn for six players. With fewer

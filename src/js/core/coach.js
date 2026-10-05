@@ -15,6 +15,7 @@
  * the hand review cannot disagree about the same hand.
  */
 
+import { judgeIcm } from './icmJudge.js';
 import { judgeDecision } from './judge.js';
 import { conceptOf } from './spotConcept.js';
 import { describeTexture } from './board.js';
@@ -39,11 +40,13 @@ export function judgeSpot(spot) {
   // than a chart lookup that would throw.
   const chartable = spot.hole && spot.position
     && (!spot.firstIn || Boolean(CHARTS.rfi[spot.position]));
-  const verdict = concept.id === 'preflop' && chartable
-    ? judgePreflop(spot)
-    : concept.id === 'cbet' && spot.board
-      ? judgeCbet(spot)
-      : judgeDecision(spot);
+  const icm = concept.id === 'icm' && spot.tournament ? judgeIcm(spot) : null;
+  const verdict = icm
+    || (concept.id === 'preflop' && chartable
+      ? judgePreflop(spot)
+      : concept.id === 'cbet' && spot.board
+        ? judgeCbet(spot)
+        : judgeDecision(spot));
   return { concept, ...verdict };
 }
 

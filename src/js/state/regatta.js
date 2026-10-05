@@ -87,3 +87,44 @@ export function standing({ heroStack, rivalsAlive, aliveBeforeHeroOut = null }) 
 /** 1st … 6th, as keys for t(): the Dutch is 1e, 2e, and so on. */
 const ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th'];
 export const ordinal = (n) => ORDINALS[n] || `${n}th`;
+
+/**
+ * The bubble: four players left and three paid, with the blinds already at
+ * 150/300 and the stacks short, so that every hand is shove or fold with the
+ * prizes in play. It is how the ICM chapter gets a table — the situation the
+ * chapter is about, dealt straight away instead of after forty hands of getting
+ * there. Nothing is paid and nothing is entered.
+ *
+ * The prizes are the shape of a six-player pool at a nominal entry, because ICM
+ * only needs the proportions.
+ */
+export const BUBBLE = { field: 4, levelIndex: 4, maxHands: 24, entry: 10 };
+
+/** The hand number the bubble's blind clock starts from: the opening of its level. */
+export const BUBBLE_START_HAND = BUBBLE.levelIndex * LEVEL_HANDS;
+
+/**
+ * Four stacks adding up to the whole 9,000 that was ever on the table, the
+ * reader's the first. The reader is short, never the shortest by much and never
+ * the chip leader, since the shortest stack and the chip leader make the least
+ * interesting decisions; the rest are spread so one is big, and the table is
+ * not symmetrical.
+ *
+ * @param {() => number} rng
+ * @returns {number[]}
+ */
+export function bubbleStacks(rng) {
+  const total = START_STACK * FIELD;
+  const hero = [900, 1200, 1500, 1900, 2400][Math.floor(rng() * 5)];
+  const rest = total - hero;
+  for (let tries = 0; tries < 50; tries++) {
+    const w = [0.6 + rng(), 0.6 + rng(), 0.6 + rng()];
+    const sum = w[0] + w[1] + w[2];
+    const a = Math.round(((rest * w[0]) / sum) / 50) * 50;
+    const b = Math.round(((rest * w[1]) / sum) / 50) * 50;
+    const c = rest - a - b;
+    const all = [a, b, c];
+    if (all.every((s) => s >= 700) && Math.max(...all) > hero) return [hero, ...all];
+  }
+  return [hero, rest - 2 * Math.round(rest / 3 / 50) * 50, Math.round(rest / 3 / 50) * 50, Math.round(rest / 3 / 50) * 50];
+}
