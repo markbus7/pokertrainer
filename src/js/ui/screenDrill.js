@@ -342,6 +342,8 @@ export function renderDrill(ctx, params) {
     // does, because it is the one place nobody tells you which skill is next.
     const prize = gauntlet && passed ? profile.earnPearls(EARN.raceWon) : 0;
     if (prize) pearlPop(prize);
+    // The road counts the Belle beaten.
+    if (gauntlet && passed) profile.noteRaceWon();
 
     mount(header,
       el('div.row',

@@ -45,6 +45,7 @@ import { bossFor, MENTOR } from '../data/characters.js';
 import { svgNode, lampNode } from './place.js';
 import { fishSvg } from './fishArt.js';
 import { autoDealEnabled, autoDealDelay, autoDealReady, countdown } from '../state/autoDeal.js';
+import { takeTable } from '../state/journey.js';
 import { bites, landed, weighIn, speciesOf } from '../data/fish.js';
 import { portraitSvg } from './portraits.js';
 import * as audio from '../audio/engine.js';
@@ -859,6 +860,8 @@ export function renderTable(ctx, params = {}) {
       profile.data.handsPlayed++;
       profile.save();
     }
+    // The road asks for hands at this stop's own table.
+    if (grind) profile.noteHandAt(room.key);
     // A pearl for the hand — more at the stops further down the river. A
     // lesson table pays in XP only: it is a chapter, not a game.
     if (!lesson) {
@@ -1050,12 +1053,15 @@ export function renderTable(ctx, params = {}) {
       // you merely sat at is a number; a table you took is somewhere you
       // have been, and its owner gives you something to remember it by.
       const spent = session.buyInsUsed * stake.buyIn;
-      const took = cashOut - stake.buyIn >= stake.buyIn && profile.noteResidentBeaten(room.key);
+      // Doubling the buy-in takes the table, and the owner's purse with it.
+      const { first: took, purse } = cashOut - stake.buyIn >= stake.buyIn
+        ? takeTable(profile, room.index)
+        : { first: false, purse: 0 };
       // Taking somebody's table is the biggest thing the river pays for.
       if (took) session.pearls.bonus += profile.earnPearls(EARN.tableTaken);
       const after = took ? 'took' : cashOut > spent ? 'up' : cashOut < spent ? 'down' : 'even';
       const notes = writeReport({ spent, back: cashOut });
-      go('stop', notes === null ? { at: room.key, after } : { at: room.key, after, notes });
+      go('stop', { at: room.key, after, ...(notes === null ? {} : { notes }), ...(purse ? { purse } : {}) });
       return;
     } else if (stats.hands) {
       profile.recordSession({ hands: stats.hands, profitBb: stats.profitBb, stake: 'practice', endedAt: Date.now() });

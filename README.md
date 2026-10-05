@@ -93,11 +93,23 @@ ferryman who only plays aces, a steamboat captain who raises everything. Each
 of them plays one of the six styles above, tells you how they play and how to
 beat them before you sit down, and points you at the lesson that teaches it.
 
-Seats are paid out of a simulated bankroll, and a stop further down only lets
-you in once your purse can stand its stakes — 30 buy-ins, the way a serious
-player manages a roll. Leave a table with a buy-in of its money and its owner
-hands over a keepsake; your boat grows as you get further down the river. Bust
-and the house stakes you back in, and writes it down.
+You go down it a city at a time. Each stop has a short list of things to do —
+the lessons it teaches, hands at its own table, and the table itself — which
+can be done in any order, and the next stop opens when the list is done. The
+map says what to do next and points at the place to do it; the stops further on
+are shut, and say which one opens them.
+
+Seats are paid out of a simulated bankroll, and a stop only lets you in while
+your purse can stand its stakes — 30 buy-ins, the way a serious player manages
+a roll. Take a table (leave it with double your buy-in) and its owner hands
+over a keepsake and a purse for the next stop; your boat grows as you get
+further down the river. Bust and the house stakes you back in, and writes it
+down.
+
+Pearls are what the tables pay for hands you play through and decisions you
+get right — folding before the flop is the default and pays nothing, and a
+table with fewer than six players pays half. The practice table can be dealt
+for a full table, three players or heads-up.
 
 The river is drawn in the hour of the day you pick (night, bayou, dusk or
 daylight), the people have faces, and everything you hear — chips, cards, the

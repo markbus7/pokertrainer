@@ -24,6 +24,8 @@ import { reportsOf } from '../state/sessionReport.js';
 import { EARN } from '../state/economy.js';
 import { pearls } from './shop.js';
 import { MENTOR } from '../data/characters.js';
+import { gatedBy } from '../state/journey.js';
+import { roadList, opensLine } from './roadView.js';
 
 /** The place itself: sky, the far bank, the water, and the stop drawn big. */
 function scene(venue, state, arrived) {
@@ -138,6 +140,15 @@ function tableBlock(venue, state, profile, go) {
       }, t('Take {money} from the house', { money: fmt.money(GRUBSTAKE) })),
       el('button.btn.ghost', { onclick: () => go('train') }, t('Go and study instead')),
     );
+  } else if (venue.index > state.road.current) {
+    // The road: the city before this one is not finished, whatever the purse says.
+    const gate = gatedBy(venue.index);
+    action = el('div.stop-actions.shut',
+      el('div.stop-need', icon('lock', { size: 16 }),
+        t('The road to {place} opens when {gate} is finished.', { place: t(venue.name), gate: t(gate.name) })),
+      el('button.btn.primary.plank', { onclick: () => go('stop', { at: gate.key }) },
+        t('See what is left at {place}', { place: t(gate.name) })),
+    );
   } else if (canReach) {
     const down = venue.index > state.here.index;
     action = el('div.stop-actions',
@@ -191,7 +202,7 @@ function keepsakeBlock(venue, state) {
  * The moment a table is taken: the boss's last word, and what they hand
  * over. Shown once, on the way back from the table, with the brass.
  */
-function tookIt(venue, close) {
+function tookIt(venue, close, purse = 0) {
   const boss = bossFor(venue.boss);
   return el('div.took-scrim', { onclick: close },
     el('div.took.paper', {
@@ -209,8 +220,29 @@ function tookIt(venue, close) {
         el('div.boat-name', t(boss.keepsake.name)),
       ),
       el('div.took-pearls', pearls(EARN.tableTaken), el('span', t('in pearls, for taking the table'))),
+      purse > 0 && VENUES[venue.index + 1]
+        ? el('p.took-purse', t('{boss} hands over a purse: {money}, enough for a seat at {next}.',
+          { boss: boss.short, money: fmt.money(purse), next: t(VENUES[venue.index + 1].name) }))
+        : null,
       el('button.btn.primary.plank', { onclick: close }, t('Hang it in the boat')),
     ),
+  );
+}
+
+/** What to do here, from the road: the same list the map shows. */
+function roadBlock(venue, state, go) {
+  const chapter = state.road.chapters[venue.index];
+  const locked = venue.index > state.road.current;
+  const next = state.road.next && state.road.next.chapter === venue.index ? state.road.next : null;
+  return el('div.panel.page.paper.road-panel.road-stop',
+    el('div.panel-title', el('h3', icon('river', { size: 16 }), t('What to do at {place}', { place: t(venue.name) }))),
+    el('div.faint.road-sub', chapter.complete
+      ? t('Finished.')
+      : locked
+        ? t('Opens when {place} is finished.', { place: t(gatedBy(venue.index).name) })
+        : t('{done} of {total} done. Any order, but the first undone one is the best place to start.', { done: chapter.done, total: chapter.total })),
+    roadList(chapter, { next, go, interactive: !locked }),
+    !chapter.complete ? el('p.faint.road-opens', opensLine(chapter)) : null,
   );
 }
 
@@ -267,6 +299,7 @@ export function renderStop(ctx, params = {}) {
       tableBlock(venue, state, profile, go),
       keepsakeBlock(venue, state),
     ),
+    roadBlock(venue, state, go),
     neighbours(venue, go),
   );
 
@@ -279,7 +312,7 @@ export function renderStop(ctx, params = {}) {
       // Once is the celebration; a reload should not throw it again.
       history.replaceState(null, '', `#stop?at=${venue.key}`);
     };
-    const overlay = tookIt(venue, close);
+    const overlay = tookIt(venue, close, Number(params.purse) || 0);
     document.body.appendChild(overlay);
     ctx.onLeave = () => overlay.remove();
     setTimeout(() => audio.sfx('fanfare'), 300);
