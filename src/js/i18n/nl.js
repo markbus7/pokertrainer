@@ -4803,4 +4803,42 @@ export const NL = {
     'Automatisch delen staat aan: de volgende hand wordt voor je gedeeld. Klik om elke hand zelf te delen.',
   'Auto-deal is off: press the button for each hand. Click to have the next hand dealt for you.':
     'Automatisch delen staat uit: druk voor elke hand op de knop. Klik om de volgende hand voor je te laten delen.',
+  // v3.9 — table sizes, and what a hand pays
+  'No chips won or lost this hand.':
+    'Geen fiches gewonnen of verloren in deze hand.',
+  'Full table':
+    'Volle tafel',
+  '3 players':
+    '3 spelers',
+  'Heads-up':
+    'Heads-up',
+  'Players at the table':
+    'Spelers aan tafel',
+  'Six players: the table the charts are drawn for.':
+    'Zes spelers: de tafel waar de charts voor getekend zijn.',
+  'You and two others. Everybody plays more hands, and the pot is rarely multiway for long.':
+    'Jij en twee anderen. Iedereen speelt meer handen, en de pot blijft zelden lang met meer dan twee.',
+  'You against one. The button is also the small blind, and acts first before the flop.':
+    'Jij tegen één. De button is ook de small blind en doet voor de flop als eerste iets.',
+  'Fewer players at the table, so everybody plays more hands. The charts are drawn for six, so this is graded on the price instead.':
+    'Minder spelers aan tafel, dus iedereen speelt meer handen. De charts zijn voor zes getekend, dus dit wordt beoordeeld op de prijs.',
+  'These charts are drawn for six players. With fewer at the table everybody plays more hands, so read them as the tight end of the range.':
+    'Deze charts zijn voor zes spelers getekend. Met minder spelers speelt iedereen meer handen, lees ze dus als de strakke kant van de range.',
+  'The charts are drawn for six players. With fewer at the table everybody plays more hands, so this is the tight end of what you could play. Your hand is ringed.':
+    'De charts zijn voor zes spelers getekend. Met minder spelers speelt iedereen meer handen, dit is dus de strakke kant van wat je kunt spelen. Je hand is omcirkeld.',
+  'A chart spot, and the charts are drawn for six players.':
+    'Een chart-spot, en de charts zijn voor zes spelers getekend.',
+  // v3.9 — what a hand pays
+  'A pearl for every hand you play through at a table — more at the stops further down the river. A hand you fold before the flop pays nothing, and a table with fewer than six players pays half.':
+    'Een parel voor elke hand die je aan een tafel uitspeelt — meer bij de haltes verder stroomafwaarts. Een hand die je voor de flop foldt levert niets op, en een tafel met minder dan zes spelers betaalt de helft.',
+  'A pearl for every hand you played through, one more for every sound decision you made without asking.':
+    'Een parel voor elke hand die je uitspeelde, en nog een voor elke goede beslissing die je zonder vragen nam.',
+  'The tables pay in pearls, too: one for every hand you play through, one more for every decision made well. Pearls buy your lessons, your charts and your companions at the Trading Post — so the first thing to do is play.':
+    'De tafels betalen ook in parels: een voor elke hand die je uitspeelt, en nog een voor elke beslissing die je goed neemt. Met parels koop je je lessen, je charts en je maatjes in de handelspost — dus het eerste wat je doet, is spelen.',
+  'Free play, pearls for hands played':
+    'Vrij spel, parels voor uitgespeelde handen',
+  'This chapter is on Delphine\'s shelf at the Trading Post. The tables pay in pearls — a pearl for every hand you play through, and more for every decision made well.':
+    'Dit hoofdstuk ligt bij Delphine op de plank in de handelspost. De tafels betalen in parels — een parel voor elke hand die je uitspeelt, en meer voor elke beslissing die je goed neemt.',
+  'Your purse is light, cher. Go and sit at a table; a pearl for every hand you play, and more for playing it right.':
+    'Je buidel is licht, cher. Ga aan een tafel zitten; een parel voor elke hand die je speelt, en meer als je hem goed speelt.',
 };

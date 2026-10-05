@@ -3214,3 +3214,31 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 @media (prefers-reduced-motion: reduce) {
   .deal-fill { transition: none; }
 }
+
+/* The chart fish only bite at a full table: a small tag by their name. */
+.catch-name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+.catch-tag {
+  font-family: var(--font);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 1px 8px;
+  border: 1px solid var(--ink-rule);
+  border-radius: 99px;
+  color: var(--ink-dim);
+}
+
+/* The practice table's size switch: three chips beside the variants. */
+.size-switch { padding-left: var(--s-2); border-left: 1px solid rgba(255, 255, 255, 0.14); }
+
+/* The size chips say "Full table / 3 players / Heads-up" where there is room,
+   and "6 / 3 / HU" on a phone, where they share a row with the variants and
+   the title's badge keeps to "NLHE" so the heading stays on its two lines. */
+.size-short { display: none; }
+@media (max-width: 700px) {
+  .size-long { display: none; }
+  .size-short { display: inline; }
+  .size-suffix { display: none; }
+  .size-switch { padding-left: var(--s-1); }
+  .size-switch .btn.sm { padding-left: 10px; padding-right: 10px; }
+}

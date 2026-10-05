@@ -40,6 +40,7 @@ const AIR = 0.33;
  * @param {boolean} spot.firstIn    preflop, is the pot still unopened
  * @param {number} [spot.madeCategory]  what your five cards make right now
  * @param {number} [spot.outs]      cards that improve you to a likely winner
+ * @param {number} [spot.seats]     chairs at the table; below six the charts do not apply
  * @returns {{id: string, why: string}} a curriculum module id and one line
  *          saying what makes this that kind of spot
  */
@@ -47,9 +48,18 @@ export function conceptOf(spot) {
   const {
     street, toCall = 0, pot = 0, equity = 0, opponents = 1,
     effectiveStack = 0, wasAggressor = false, firstIn = false,
-    madeCategory = CAT.HIGH_CARD, outs = 0,
+    madeCategory = CAT.HIGH_CARD, outs = 0, seats = 6,
   } = spot;
   const facing = toCall > 0;
+
+  if (street === 'preflop' && seats < 6) {
+    // The opening and defending charts are drawn for six players. With fewer
+    // at the table everybody plays more hands, so a chart answer would call
+    // good plays mistakes. Short-handed, the blinds are already a price to
+    // pay and the decision is that price against what the hand holds, so it
+    // is graded and named as that.
+    return { id: 'pot-odds', why: 'Fewer players at the table, so everybody plays more hands. The charts are drawn for six, so this is graded on the price instead.' };
+  }
 
   if (street === 'preflop') {
     // Opening and defending are the same chart work; which one it is decides

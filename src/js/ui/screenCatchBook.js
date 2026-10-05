@@ -76,7 +76,8 @@ function fishCard(species, entry, go) {
   const caught = Boolean(entry);
   return el(`article.catch-card${caught ? '.caught' : ''}`,
     svgNode(fishSvg(species, { width: 180, caught }), 'catch-pic'),
-    el('h3.catch-name', t(species.name)),
+    el('h3.catch-name', el('span.catch-name-text', t(species.name)),
+      species.full ? el('span.catch-tag', { title: t('A chart spot, and the charts are drawn for six players.') }, t('Full table')) : null),
     caught
       ? el('div.catch-record',
         el('span', t('Caught {n}×', { n: entry.count })),

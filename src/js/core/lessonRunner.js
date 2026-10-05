@@ -33,9 +33,9 @@ import { requiredEquity, spr } from './odds.js';
  *
  * @param {object} table
  * @param {object} hero
- * @param {object} ctx  { rng, aggressor: {street: playerId}, opener }
+ * @param {object} ctx  { rng, aggressor: {street: playerId}, opener, ranges, seats }
  */
-export function snapshotOf(table, hero, { rng, aggressor = {}, opener = null, ranges = null } = {}) {
+export function snapshotOf(table, hero, { rng, aggressor = {}, opener = null, ranges = null, seats = 6 } = {}) {
   const live = table.contestants.filter((p) => !p.isHero).length;
   const toCall = Math.max(0, table.currentBet - hero.committed);
   const pot = table.totalPot;
@@ -52,6 +52,11 @@ export function snapshotOf(table, hero, { rng, aggressor = {}, opener = null, ra
     board: table.board.slice(),
     position: hero.position,
     bigBlind: table.bigBlind,
+    // Chairs at the table, which the caller says rather than this reading it
+    // off the felt: the charts are drawn for a six-handed game, a free-play
+    // table dealt for two or three is a different one, and a lesson table
+    // that happens to be heads-up is still teaching the chart's own spots.
+    seats,
     effectiveStack: table.effectiveStack(hero),
     currentBet: table.currentBet,
     // First in means nobody has voluntarily put money in yet — not merely

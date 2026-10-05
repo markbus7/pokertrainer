@@ -9,8 +9,8 @@
  * The reader asked for it plainly: playing had become something done for the
  * rank alone, and nothing in the game needed a hand to be played to get it.
  * So the chapters, the charts and the companions now cost pearls, and pearls
- * come from playing — a pearl a hand, one more for every sound decision made
- * unaided, and a fortune for taking somebody's table. XP and the rank ladder
+ * come from playing — a pearl for every hand you play, one more for every sound
+ * decision made unaided, and a fortune for taking somebody's table. XP and the rank ladder
  * are untouched: they still measure what you know, and pearls measure what
  * you have played for.
  *
@@ -53,12 +53,62 @@ export const EARN = {
  * hand; the stops pay more the further down the river they are, so the climb
  * is worth making for the purse as well as for the stakes.
  *
+ * A hand you fold before the flop is not played through: folding is the
+ * default, and a table that paid for it paid the most for the least play.
+ * Measured, a player who folded every hand earned 360 pearls an hour against
+ * 500 for one who played them well, so skill was worth under half again what
+ * sitting there was.
+ *
  * @param {number|null} stopIndex  0 for Mud Landing … 7 for the delta, or
  *   null at the practice table
  */
 export function handPearls(stopIndex = null) {
   if (stopIndex == null || stopIndex < 0) return 1;
   return 1 + Math.floor(stopIndex / 2);
+}
+
+/**
+ * Whether a hand was played through, which is what pays its pearl: you made
+ * at least one decision in it that was not folding before the flop. A hand
+ * with no decision of yours (the table folded to your big blind) was not
+ * played by you either.
+ *
+ * @param {Array<{street:string, action:string}>} decisions  yours, in this hand
+ */
+export function playedThrough(decisions) {
+  return decisions.some((d) => !(d.street === 'preflop' && d.action === 'fold'));
+}
+
+/**
+ * What a table of this size pays, as a share of a full one.
+ *
+ * Measured with the coach as the player (tools/measure-pearls.mjs): a
+ * heads-up table paid about half as much again an hour as a full one, and a
+ * three-handed table two thirds as much again — hands come round twice as
+ * fast, and there is a decision to make in nearly every one. Pearls are for
+ * how much poker you play and how well, not for finding the table where it
+ * is quickest, so a short-handed table pays half.
+ */
+export function tableShare(seats = 6) {
+  return seats >= 6 ? 1 : 0.5;
+}
+
+/**
+ * A payment scaled by a table's share, with the fraction carried to the next
+ * one so that half a pearl a hand is paid in full over two hands instead of
+ * being rounded away every time — the way the strongbox does it.
+ *
+ * @param {number} carry   the fraction owed from earlier payments
+ * @param {number} amount  what the table would pay a full table
+ * @param {number} share   tableShare(seats)
+ * @returns {{paid:number, carry:number}}
+ */
+export function scalePearls(carry, amount, share) {
+  if (!(amount > 0)) return { paid: 0, carry };
+  if (share >= 1) return { paid: amount, carry };
+  const owed = carry + amount * share;
+  const paid = Math.floor(owed + 1e-9);
+  return { paid, carry: owed - paid };
 }
 
 /**

@@ -50,7 +50,7 @@ export function renderStore(ctx) {
     el('div.panel.page.paper.store-earn',
       el('h3', icon('pearl', { size: 18 }), t('Where pearls come from')),
       el('ul.lesson-points',
-        el('li', el('span', t('A pearl for every hand you play at a table — more at the stops further down the river.'))),
+        el('li', el('span', t('A pearl for every hand you play through at a table — more at the stops further down the river. A hand you fold before the flop pays nothing, and a table with fewer than six players pays half.'))),
         el('li', el('span', t('One more for every sound decision you make without asking for help.'))),
         el('li', el('span', t('A bounty for every player you knock out: all of it if you played the hand right, half with one mistake, nothing with two.'))),
         el('li', el('span', t('The first of every fish in the Catch Book: each one is a spot played right at a real table.'))),

@@ -11,6 +11,7 @@ const modules = [
   './audio.test.js',
   './fish.test.js',
   './autoDeal.test.js',
+  './tableSizes.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',

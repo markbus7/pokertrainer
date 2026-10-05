@@ -171,7 +171,7 @@ export const MENTOR = {
   pilot: 'A pilot knows the river by heart: every bend and every snag, at night, with no chart. The charts are the same. First by daylight with the chart on the table, then at dusk with it in the drawer, then at night with nothing but what you remember.',
   shoals: 'These are your shoals — the hands you keep running aground on. Sound them until they are charted, and they come off this list on their own.',
   // A chapter still on the shelf: what it costs, and where pearls come from.
-  shelf: 'This chapter is on Delphine\'s shelf at the Trading Post. The tables pay in pearls — a pearl a hand, and more for every hand played well.',
+  shelf: 'This chapter is on Delphine\'s shelf at the Trading Post. The tables pay in pearls — a pearl for every hand you play through, and more for every decision made well.',
   shelfReady: 'You have the pearls for this one. Buy it and we start.',
   shelfRank: 'Not yet. This chapter is built on the ones before it, and it waits for {rank}.',
   // The records: the log of hands, the chart room, the almanac.
@@ -244,7 +244,7 @@ export const TRADER = {
   short: 'Delphine',
   title: 'Keeps the Trading Post',
   hello: 'Pearls on the counter and anything on these shelves is yours. No pearls, no business — the tables pay in them.',
-  poor: 'Your purse is light, cher. Go and sit at a table; a pearl a hand, and more for playing it right.',
+  poor: 'Your purse is light, cher. Go and sit at a table; a pearl for every hand you play, and more for playing it right.',
   thanks: ['A fine choice.', 'Mind how you use it.', 'Pleasure doing business.', 'That one will earn its keep.'],
 };
 

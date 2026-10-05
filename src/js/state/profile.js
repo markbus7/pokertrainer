@@ -209,7 +209,7 @@ const emptyProfile = () => ({
   // The climb is money: `venue` is the room you last sat in, `best` the
   // furthest door that has opened, and `beaten` the rooms whose regular you
   // have taken a stack off.
-  career: { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: [] },
+  career: { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: [], played: {} },
   // The range ladder: per checkpoint, which rung of support you are on
   // and whether you have cleared the unaided one.
   ranges: {},
@@ -564,10 +564,31 @@ export class Profile {
   /* ---- the career ------------------------------------------------- */
 
   get career() {
-    if (!this.data.career) this.data.career = { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: [] };
+    if (!this.data.career) this.data.career = { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: [], played: {} };
     if (!this.data.career.beaten) this.data.career.beaten = [];
+    if (!this.data.career.played || typeof this.data.career.played !== 'object') this.data.career.played = {};
     return this.data.career;
   }
+
+  /** A hand finished at a stop's table, counted for the road's "play N hands here". */
+  noteHandAt(key) {
+    const played = this.career.played;
+    played[key] = (played[key] || 0) + 1;
+    this.save();
+  }
+
+  /** Hands played at one stop's table. */
+  handsAt(key) {
+    return this.career.played[key] || 0;
+  }
+
+  /** Beating the Belle in the racing chute, counted for the road. */
+  noteRaceWon() {
+    this.data.raceWins = (this.data.raceWins || 0) + 1;
+    this.save();
+  }
+
+  get raceWins() { return this.data.raceWins || 0; }
 
   /**
    * Tie up at a stop. Records the furthest one reached, which only ever
@@ -795,7 +816,9 @@ export class Profile {
   recordSession(session) {
     this.data.sessions.push(session);
     if (this.data.sessions.length > 200) this.data.sessions.shift();
-    this.data.handsPlayed += session.hands || 0;
+    // handsPlayed is counted hand by hand as they finish, at the table. Adding
+    // the session's total here as well counted every hand twice — three hands
+    // at a table made six — which halved the hands the ranks ask for.
     this.data.lifetimeProfitBb += session.profitBb || 0;
     this.save();
   }

@@ -2445,7 +2445,7 @@ await step('the Catch Book is on the map, and a spot played right lands its fish
 
   await page.goto(`${BASE}/#catchbook`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.catch-card.caught', { timeout: 5000 });
-  const name = (await page.textContent('.catch-card.caught .catch-name')).trim();
+  const name = (await page.textContent('.catch-card.caught .catch-name-text')).trim();
   if (name !== 'Patient Minnow') throw new Error(`the book shows ${name} as caught`);
   console.log(`      13 shadows in an empty book; a good fold landed a ${caught.minnow.best} lb minnow, and the book shows it`);
 });
@@ -2822,6 +2822,120 @@ await step('the table deals the next hand by itself, and a switch turns that off
   await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.reload({ waitUntil: 'domcontentloaded' });
   console.log(`      on by default; the next hand came after ${auto.after}ms; off stays off for 5s; back on deals again; the choice survives a reload`);
+});
+
+await step('the practice table can be dealt for you against one, or against two', async () => {
+  // Free play was always six-handed. It can be dealt for a heads-up game or a
+  // three-handed one now, the other players sit round the oval rather than on
+  // one side of it, and the choice is kept when the game is switched.
+  await veteran(false);
+  await page.evaluate(() => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    raw.settings = { ...(raw.settings || {}), liveCoach: false };
+    localStorage.setItem(key, JSON.stringify(raw));
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.size-switch', { timeout: 5000 });
+
+  const look = () => page.evaluate(() => {
+    const plates = [...document.querySelectorAll('.seat .seat-plate')].map((n) => n.getBoundingClientRect());
+    let hits = 0;
+    for (let i = 0; i < plates.length; i++) {
+      for (let j = i + 1; j < plates.length; j++) {
+        const a = plates[i];
+        const b = plates[j];
+        if (a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2) hits++;
+      }
+    }
+    return {
+      seats: document.querySelectorAll('.seat').length,
+      slots: [...document.querySelectorAll('.seat')].map((n) => n.dataset.slot).join(','),
+      pressed: [...document.querySelectorAll('.size-switch .btn[aria-pressed="true"]')].map((n) => n.getAttribute('aria-label')).join(),
+      badge: document.querySelector('.scene-stake').textContent.trim(),
+      hits,
+    };
+  });
+
+  const names = await page.$$eval('.size-switch .btn', (n) => n.map((x) => x.getAttribute('aria-label')));
+  if (names.join('|') !== 'Full table|3 players|Heads-up') throw new Error(`sizes offered: ${names}`);
+  const full = await look();
+  if (full.seats !== 6 || full.pressed !== 'Full table') throw new Error(`the default is not a full table: ${JSON.stringify(full)}`);
+
+  await page.click('.size-switch .btn[aria-label="Heads-up"]');
+  await page.waitForSelector('.seat', { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelectorAll('.seat').length === 2, null, { timeout: 5000 });
+  const headsUp = await look();
+  if (headsUp.slots !== '0,3') throw new Error(`heads-up is not you against somebody straight across: ${JSON.stringify(headsUp)}`);
+  if (headsUp.pressed !== 'Heads-up' || !/Heads-up/.test(headsUp.badge)) throw new Error(`the table does not say it is heads-up: ${JSON.stringify(headsUp)}`);
+
+  // A hand is dealt and can be played to the end.
+  await page.click('button:has-text("Deal me in")');
+  await page.waitForSelector('.action-buttons button', { timeout: 20000 });
+  const deadline = Date.now() + 60000;
+  while (Date.now() < deadline) {
+    if (/Deal next hand/.test(await page.textContent('.action-bar'))) break;
+    const btn = (await page.$('.action-buttons .btn.success'))
+      || (await page.$('.action-buttons .btn:not(.primary):not(.danger)'))
+      || (await page.$('.action-buttons .btn.danger'));
+    if (btn) await btn.click().catch(() => {});
+    await page.waitForTimeout(150);
+  }
+  if (!/Deal next hand/.test(await page.textContent('.action-bar'))) throw new Error('a heads-up hand never finished');
+  const line = await page.textContent('.action-bar');
+  if (/won 0 chips|lost 0 chips/.test(line)) throw new Error(`a hand that came to nothing says "${line.replace(/\s+/g, ' ').trim().slice(0, 100)}"`);
+
+  // Three-handed: either side of the top. The game switch keeps the size.
+  await page.click('.size-switch .btn[aria-label="3 players"]');
+  await page.waitForFunction(() => document.querySelectorAll('.seat').length === 3, null, { timeout: 5000 });
+  const three = await look();
+  if (three.slots !== '0,2,4') throw new Error(`three-handed seats are at ${three.slots}`);
+  if (three.hits) throw new Error(`${three.hits} seat plates on top of each other three-handed`);
+  await page.click('button.btn.sm:has-text("PLO")');
+  await page.waitForFunction(() => document.querySelectorAll('.seat').length === 3, null, { timeout: 5000 });
+  await page.click('button:has-text("Deal me in")');
+  await page.waitForSelector('.action-buttons button', { timeout: 20000 });
+  const plo = await page.$$eval('.seat.hero .card', (n) => n.length);
+  if (plo !== 4) throw new Error(`switching to PLO dropped the table size or the game: ${plo} cards`);
+
+  // A lesson table that is heads-up draws the same way.
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#play?lesson=hand-rankings`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.felt', { timeout: 5000 });
+  const lesson = await look();
+  if (lesson.slots !== '0,3') throw new Error(`a heads-up lesson table seats them at ${lesson.slots}`);
+  if (await page.$('.size-switch')) throw new Error('a lesson table offers a table size');
+
+  // On a phone the chips say 6 / 3 / HU, and the buttons are still on screen.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/#play?seats=3`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.size-switch', { timeout: 5000 });
+  const short = await page.$$eval('.size-switch .btn', (n) => n.map((x) => {
+    const visible = (el) => getComputedStyle(el).display !== 'none';
+    return [...x.children].filter(visible).map((c) => c.textContent).join('');
+  }));
+  if (short.join('|') !== '6|3|HU') throw new Error(`phone chips read ${short}`);
+  await page.click('button:has-text("Deal me in")');
+  await page.waitForSelector('.action-buttons button', { timeout: 20000 });
+  const fold = await page.$eval('.action-buttons button', (n) => n.getBoundingClientRect().bottom <= innerHeight);
+  if (!fold) throw new Error('on a phone the buttons are off the screen with the size chips in the header');
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.evaluate(() => {
+    const key = 'poker-trainer.profile.v1';
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    raw.settings = { ...(raw.settings || {}) };
+    delete raw.settings.liveCoach;          // the veteran seeding puts Silas back
+    localStorage.setItem(key, JSON.stringify(raw));
+  });
+  await veteran(true);
+  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  console.log('      full table by default; heads-up 0,3 and three-handed 0,2,4; PLO keeps the size; chips read 6/3/HU on a phone');
 });
 
 await step('layout holds up on phone and tablet viewports', async () => {

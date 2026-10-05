@@ -47,12 +47,14 @@ const LATE = ['CO', 'BTN', 'SB'];
  * @property {string} [position]
  * @property {boolean} [firstIn]
  * @property {number} [toCall]
+ * @property {number} [seats]      chairs at the table; the chart fish only bite at six
  */
 
 const aggressive = (a) => a === 'bet' || a === 'raise';
 
 /**
- * Every species. `bite` says whether a decision hooks it; `land` is set on
+ * Every species. `full` marks the ones that are chart spots, which only bite
+ * at a full table. `bite` says whether a decision hooks it; `land` is set on
  * the few that are only landed by how the hand ended ('won-fold' when
  * everybody folded to you, 'won-showdown' when you won at showdown), and
  * `special` on the one caught some other way.
@@ -63,18 +65,21 @@ export const SPECIES = [
   // ---- the shallows: preflop -----------------------------------------
   {
     key: 'perch', water: 'shallows', name: 'Steal Perch', module: 'preflop',
+    full: true,
     how: 'Open-raise first in from the cutoff, the button or the small blind, with a hand the chart opens.',
     bite: (c) => c.street === 'preflop' && c.firstIn && LATE.includes(c.position) && aggressive(c.action) && c.level === 'good',
     shape: { len: 52, depth: 20, tail: 'fork', pattern: 'bars', dorsal: 'spiny' },
   },
   {
     key: 'minnow', water: 'shallows', name: 'Patient Minnow', module: 'preflop',
+    full: true,
     how: 'Fold before the flop a hand the chart says to fold.',
     bite: (c) => c.street === 'preflop' && c.action === 'fold' && c.level === 'good',
     shape: { len: 36, depth: 11, tail: 'fork', pattern: 'stripe', dorsal: 'small' },
   },
   {
     key: 'bream', water: 'shallows', name: 'Blind Bream', module: 'preflop',
+    full: true,
     how: 'Defend the big blind against an open — call or 3-bet a hand the chart plays.',
     bite: (c) => c.street === 'preflop' && c.position === 'BB' && !c.firstIn && c.toCall > 0
       && (c.action === 'call' || aggressive(c.action)) && c.level === 'good',
@@ -102,6 +107,7 @@ export const SPECIES = [
   },
   {
     key: 'walleye', water: 'channel', name: '3-Bet Walleye', module: 'preflop',
+    full: true,
     how: 'Re-raise an open before the flop with a hand the chart 3-bets.',
     bite: (c) => c.street === 'preflop' && !c.firstIn && c.toCall > 0 && aggressive(c.action) && c.level === 'good',
     shape: { len: 60, depth: 17, tail: 'fork', pattern: 'mottled', dorsal: 'spiny', eye: 'big' },
@@ -174,8 +180,10 @@ export function fishesIn(stopIndex, waterKey) {
  */
 export function bites(cast, stopIndex) {
   if (!cast || cast.helped || cast.level === 'bad') return [];
+  const shortHanded = cast.seats != null && cast.seats < 6;
   return SPECIES
-    .filter((s) => s.bite && fishesIn(stopIndex, s.water) && s.bite(cast))
+    // The chart fish are chart spots, and the charts are drawn for six players.
+    .filter((s) => s.bite && !(s.full && shortHanded) && fishesIn(stopIndex, s.water) && s.bite(cast))
     .map((s) => s.key);
 }
 
