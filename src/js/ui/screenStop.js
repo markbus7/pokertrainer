@@ -30,6 +30,7 @@ import { storyFor } from '../data/story.js';
 import { lobbyFor, RIVAL_FROM } from '../state/lobby.js';
 import { readOn as rivalRead } from '../state/rival.js';
 import { RIVAL, RIVAL_NOTES } from '../data/rival.js';
+import { wandererFor } from '../data/wanderers.js';
 import { roadList, opensLine, goalText } from './roadView.js';
 
 /** The place itself: sky, the far bank, the water, and the stop drawn big. */
@@ -247,8 +248,8 @@ function duelBlock(venue, state, profile, go) {
 }
 
 /** A face and a name, small: who is in a seat at a table in the lobby. */
-function lobbyFace(name, portrait, { rival = false, owner = false } = {}) {
-  return el(`span.lobby-face${rival ? '.rival' : ''}${owner ? '.owner' : ''}`, { title: name },
+function lobbyFace(name, portrait, { rival = false, owner = false, wanderer = false } = {}) {
+  return el(`span.lobby-face${rival ? '.rival' : ''}${owner ? '.owner' : ''}${wanderer ? '.wanderer' : ''}`, { title: name },
     svgNode(portraitSvg(portrait, { size: 34 }), 'lobby-portrait'),
     el('span.lobby-name', name));
 }
@@ -263,6 +264,7 @@ function lobbyCard(table, venue, lobby, { state, profile, go }) {
   const faces = table.styles.map((key, i) => {
     if (table.owner && i === 0) return lobbyFace(boss.short, boss.key, { owner: true });
     if (table.rivalSeat === i) return lobbyFace(RIVAL.short, RIVAL.key, { rival: true });
+    if (table.wandererSeat === i) return lobbyFace(wandererFor(key).short, key, { wanderer: true });
     return lobbyFace(getProfile(key).name, key);
   });
   return el(`article.lobby-card${table.owner ? '.owner' : ''}`,
@@ -272,6 +274,8 @@ function lobbyCard(table, venue, lobby, { state, profile, go }) {
         ? el('span.lobby-tag.owner', t('Owner: {name}', { name: boss.short }))
         : el('span.lobby-tag', t('No owner')),
       lobby.rival === table.id ? el('span.lobby-tag.rival', t('{name} is here', { name: RIVAL.short })) : null,
+      lobby.wanderer && lobby.wanderer.table === table.id
+        ? el('span.lobby-tag.wanderer', t('{name} is here', { name: wandererFor(lobby.wanderer.key).short })) : null,
     ),
     el('div.lobby-faces', faces),
     el('div.lobby-stats',
@@ -332,6 +336,31 @@ function rivalBlock(venue, profile) {
       ? el('p.rival-read', t(RIVAL_NOTES[read.kind], { n: read.n, pct: pct == null ? 0 : pct }))
       : el('p.rival-read.faint', t('Somebody is sitting at {table} who is not a regular. Sit down and find out.', { table: t(here.name) })),
     el('p.faint', t(RIVAL_NOTES.explain)),
+  );
+}
+
+/**
+ * A stranger who is passing through, if one is: who they are, where they are
+ * sitting, how they play and how to beat it. They are gone in a few sittings.
+ */
+function wandererBlock(venue, profile) {
+  const lobby = lobbyFor(venue, profile.sittings);
+  if (!lobby.wanderer) return null;
+  const w = wandererFor(lobby.wanderer.key);
+  const at = lobby.tables.find((x) => x.id === lobby.wanderer.table);
+  const style = getProfile(w.key);
+  return el('div.panel.wanderer-block',
+    el('div.rival-head',
+      svgNode(portraitSvg(w.key, { size: 64 }), 'rival-portrait'),
+      el('div',
+        el('div.here-kicker', t('Passing through')),
+        el('h3.rival-name', t(w.name)),
+        el('div.faint', `${t(w.title)} · ${t('at {table}', { table: t(at.name) })}`),
+      ),
+    ),
+    el('p.rival-read', el('span.style-tag', style.tag), ' ', t(w.read)),
+    el('p.faint', el('strong', t('How to beat {name}', { name: w.short })), ': ', t(w.beat)),
+    el('p.faint', t('A stranger carries a purse twice an owner\'s, and they will not be here for long.')),
   );
 }
 
@@ -457,6 +486,7 @@ export function renderStop(ctx, params = {}) {
       keepsakeBlock(venue, state),
     ),
     rivalBlock(venue, profile),
+    wandererBlock(venue, profile),
     duelBlock(venue, state, profile, go),
     roadBlock(venue, state, go),
     neighbours(venue, go),

@@ -262,6 +262,45 @@ const PEOPLE = {
       + '<circle cx="50" cy="24" r="1.7" fill="#2f5260"/>',
   },
 
+  /* ---- wanderers: a cattle buyer, a riverboat gambler, a travelling preacher ---- */
+  hale: {
+    skin: SKIN.fair,
+    ground: '#6a5a3f',
+    body: shoulders('#7a5a3a')
+      + '<path d="M42 69L50 82L58 69" fill="#e9e2d0"/><path d="M50 74v22" stroke="#4a3322" stroke-width="1.4"/>'
+      + '<path d="M44 70l6 8 6-8" stroke="#b8423a" stroke-width="1.6" fill="none"/>',
+    face: { mouth: 'grin', brow: '#7a5a3a' },
+    front: '<path d="M37 53C36 62 64 62 63 53C60 58 40 58 37 53Z" fill="#8a6a44" opacity=".55"/>'
+      + '<ellipse cx="50" cy="32" rx="30" ry="6.5" fill="#6a4a2a"/>'
+      + '<path d="M36 32C36 14 64 14 64 32Z" fill="#7d5a34"/>'
+      + '<path d="M36 28h28v3.6H36z" fill="#3a2a1a"/>',
+  },
+  dixie: {
+    skin: SKIN.light,
+    ground: '#3f5a4a',
+    back: '<path d="M30 56C25 30 40 20 52 22C66 22 75 34 70 56C67 46 64 40 50 40C36 40 33 46 30 56Z" fill="#a23a2a"/>',
+    body: shoulders('#244a38')
+      + '<path d="M40 70C44 80 56 80 60 70L58 100H42Z" fill="#c9a24a"/>'
+      + '<path d="M44 74h12M44 80h12M44 86h12" stroke="#8a6a1e" stroke-width=".9"/>'
+      + '<path d="M46 69l4 5 4-5z" fill="#1b1a1f"/>',
+    hair: '<path d="M33.5 44C32 28 68 28 66.5 44C62 36 56 33 50 33S38 36 33.5 44Z" fill="#a23a2a"/>',
+    face: { mouth: 'open', brow: '#6a2418', eyes: 'wide' },
+    front: '<path d="M32 36q18-13 36 0q-6 4-18 4q-12 0-18-4z" fill="#1b1a1f"/>'
+      + '<path d="M34 34q16-9 32 0" stroke="#c9a24a" stroke-width="2" fill="none"/>'
+      + '<circle cx="66.5" cy="31" r="2.2" fill="#c9a24a"/>',
+  },
+  josiah: {
+    skin: SKIN.fair,
+    ground: '#3d3f4a',
+    body: shoulders('#1d1d22')
+      + '<path d="M44 69L50 78L56 69" fill="#f1ece0"/>'
+      + '<path d="M50 78v22" stroke="#3a3a42" stroke-width="1.4"/>',
+    face: { mouth: 'stern', brow: '#cfcbc4', eyes: 'narrow' },
+    front: '<path d="M33.5 40C32 26 68 26 66.5 40C60 33 40 33 33.5 40Z" fill="#cfcbc4"/>'
+      + '<path d="M36 55q14 14 28 0q-3 10-14 11q-11-1-14-11z" fill="#cfcbc4" opacity=".85"/>'
+      + '<path d="M60 76l8 2" stroke="#c9a24a" stroke-width="2" stroke-linecap="round"/>',
+  },
+
   /* ---- the trader: a madras tignon, gold hoops, and a shawl ---- */
   delphine: {
     skin: SKIN.brown,

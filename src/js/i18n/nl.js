@@ -5158,4 +5158,131 @@ export const NL = {
     'Je past maar voor {pct}% van de bets die ze heeft gezien ({n}). Ze is gestopt met bluffen tegen je.',
   'You fold to {pct}% of the bets she has seen ({n}). That is about even, and gives her nothing to work with.':
     'Je past voor {pct}% van de bets die ze heeft gezien ({n}). Dat is ongeveer gelijk, en geeft haar niets om mee te werken.',
+
+  /* ---- v3.13: contracts, today's question, and strangers passing through ---- */
+  'Silas\'s contracts':
+    'Silas\' opdrachten',
+  'Jobs from the skills you are weakest at, to be done at a real table. A decision made with help does not count.':
+    'Klussen uit de vaardigheden waar je het zwakst in bent, uit te voeren aan een echte tafel. Een beslissing met hulp telt niet mee.',
+  '{n} done so far. A new one is posted as each is finished.':
+    '{n} klaar tot nu toe. Er komt een nieuwe bij zodra er een klaar is.',
+  'Make {n} sound {skill} decisions at a real table':
+    'Maak {n} goede {skill}-beslissingen aan een echte tafel',
+  'Play {n} hands in a row at a real table without a mistake':
+    'Speel {n} handen achter elkaar aan een echte tafel zonder fout',
+  'Land a {fish}':
+    'Vang een {fish}',
+  'Contract done: {text}':
+    'Opdracht klaar: {text}',
+  'Silas\'s contract: done':
+    'Silas\' opdracht: klaar',
+  '{n} pearls':
+    '{n} parels',
+  'Today\'s question':
+    'De vraag van vandaag',
+  'Done for today: {n} of {total} right. Come back tomorrow for the next three.':
+    'Klaar voor vandaag: {n} van {total} goed. Kom morgen terug voor de volgende drie.',
+  'Three questions from the chapters you have, the same for everybody today. Come every day and it pays more.':
+    'Drie vragen uit de hoofdstukken die je hebt, vandaag voor iedereen hetzelfde. Kom elke dag en het levert meer op.',
+  'day in a row':
+    'dag achter elkaar',
+  'days in a row':
+    'dagen achter elkaar',
+  'best {n}':
+    'beste {n}',
+  'Go through them again':
+    'Doe ze nog eens',
+  'Answer today\'s three':
+    'Beantwoord de drie van vandaag',
+  'A good day on the river':
+    'Een goede dag op de rivier',
+  'That is today\'s set':
+    'Dat was de set van vandaag',
+  'for today\'s set. {n} days in a row, and your best is {best}.':
+    'voor de set van vandaag. {n} dagen achter elkaar, en je beste is {best}.',
+  'You did today\'s set already, so this one was practice and pays nothing. Your streak is {n}.':
+    'Je hebt de set van vandaag al gedaan, dus dit was oefenen en levert niets op. Je reeks is {n}.',
+  'Passing through':
+    'Op doorreis',
+  'at {table}':
+    'bij {table}',
+  'A stranger carries a purse twice an owner\'s, and they will not be here for long.':
+    'Een vreemdeling heeft een buidel van twee keer die van een eigenaar, en blijft niet lang.',
+
+  /* The strangers. */
+  'Ezekiel Hale': 'Ezekiel Hale',
+  'Cattle buyer': 'Veehandelaar',
+  'Dixie Lamont': 'Dixie Lamont',
+  'Riverboat gambler': 'Rivierboot-gokker',
+  'Brother Josiah': 'Broeder Josiah',
+  'Travelling preacher': 'Rondtrekkende prediker',
+  'The Cattle Buyer': 'De Veehandelaar',
+  'The Riverboat Gambler': 'De Rivierboot-gokker',
+  'The Preacher': 'De Prediker',
+  'A broad man in a dusty hat has taken the corner chair and a stack of chips the size of a feed sack. "Driving two hundred head to the delta," he says, "and I never saw a card I did not want to look at." He is going to pay to see every one of them.':
+    'Een breedgeschouderde man met een stoffige hoed heeft de stoel in de hoek genomen, met een stapel chips zo groot als een voederzak. "Ik drijf tweehonderd stuks naar de delta," zegt hij, "en ik heb nog nooit een kaart gezien die ik niet wilde zien." Hij gaat betalen om ze allemaal te zien.',
+  'Deal me in. I never fold when I might be beaten by a better hand than mine.':
+    'Deel me maar in. Ik pas nooit, ook niet als iemand een betere hand heeft dan ik.',
+  'Folding is for people who are not enjoying themselves.':
+    'Passen is voor mensen die zich niet vermaken.',
+  'Ha! I had nothing, and I called anyway!':
+    'Ha! Ik had niets, en ik heb toch gecalld!',
+  'Never count a man out who is still in the pot.':
+    'Schrijf nooit een man af die nog in de pot zit.',
+  'Well, that is cattle for you.':
+    'Tja, dat is veehandel.',
+  'You had it. I had a feeling.':
+    'Jij had hem. Ik had zo\'n gevoel.',
+  'Calls with anything, and has never folded a pair. He will pay you off with almost every hand.':
+    'Called met alles en heeft nog nooit een paar gepast. Hij betaalt je uit met bijna elke hand.',
+  'Never bluff him. Bet every good hand for value, three streets, as big as you dare.':
+    'Bluf hem nooit. Bet elke goede hand voor value, drie streets, zo groot als je durft.',
+  'A woman in a green waistcoat is riffling chips one-handed, and every one of them is in the middle before you have sat down. "Dixie Lamont," she says. "I came off the Natchez with one rule, which is that I do not check."':
+    'Een vrouw in een groen vest schudt met één hand chips, en elke chip ligt al in het midden voordat je zit. "Dixie Lamont," zegt ze. "Ik kwam van de Natchez met één regel, namelijk dat ik niet check."',
+  'Raise! I have not even looked at my cards.':
+    'Raise! Ik heb mijn kaarten nog niet eens bekeken.',
+  'Everybody gets a bet from me. Everybody.':
+    'Iedereen krijgt een bet van me. Iedereen.',
+  'You folded! They always fold!':
+    'Je paste! Ze passen altijd!',
+  'I was bluffing the whole time, and I will do it again.':
+    'Ik bluften de hele tijd, en ik doe het weer.',
+  'You called a bluff? Rude.':
+    'Je callde een bluf? Onbeschoft.',
+  'Well, that is a lot of chips going the wrong way.':
+    'Nou, dat zijn veel chips die de verkeerde kant op gaan.',
+  'Bets and raises with everything, over and over. Most of what she has is nothing at all.':
+    'Bet en raiset met alles, steeds opnieuw. Het meeste wat ze heeft is helemaal niets.',
+  'Tighten up, call down lighter than feels safe, and let her bluff off her stack into your good hands.':
+    'Speel strakker, call lichter dan veilig voelt, en laat haar haar stack in je goede handen bluffen.',
+  'A thin man in a black coat sits with a Bible on one side of his chips and a glass of water on the other. He does not look at the cards when they come, only at you. "I wager only when the Lord is plainly on my side," he says, and the whole table believes it.':
+    'Een magere man in een zwarte jas zit met een Bijbel aan de ene kant van zijn chips en een glas water aan de andere. Hij kijkt niet naar de kaarten als ze komen, alleen naar jou. "Ik zet alleen in als de Heer duidelijk aan mijn kant staat," zegt hij, en de hele tafel gelooft het.',
+  'Patience is a virtue.':
+    'Geduld is een deugd.',
+  'I will not be hurried into a sin of folly.':
+    'Ik laat me niet haasten tot een dwaze zonde.',
+  'The meek, as promised.':
+    'De zachtmoedigen, zoals beloofd.',
+  'I told you the Lord was on my side.':
+    'Ik zei toch dat de Heer aan mijn kant stond.',
+  'Pride goeth before a fall, and so does a pair of kings.':
+    'Hoogmoed komt voor de val, en een paar heren ook.',
+  'Hm.':
+    'Hm.',
+  'Plays one hand in twenty, and bets only the very best of them. When he bets, he has it.':
+    'Speelt één hand op twintig en bet alleen de allerbeste. Als hij bet, heeft hij hem.',
+  'Steal his blinds all night, and fold the moment he puts real money in.':
+    'Steel de hele avond zijn blinds, en pas zodra hij echt geld inzet.',
+  'Pays to see every card, and has never folded a pair.':
+    'Betaalt om elke kaart te zien en heeft nog nooit een paar gepast.',
+  'He calls with anything and almost never raises.':
+    'Hij called met alles en raiset bijna nooit.',
+  'Bets and raises with everything, and most of it is nothing.':
+    'Bet en raiset met alles, en het meeste is niets.',
+  'Huge bets, over and over, with nothing at all.':
+    'Enorme bets, steeds opnieuw, met helemaal niets.',
+  'One hand in twenty, and only the best of them.':
+    'Eén hand op twintig, en alleen de beste.',
+  'When he bets, he has it.':
+    'Als hij bet, heeft hij hem.',
 };

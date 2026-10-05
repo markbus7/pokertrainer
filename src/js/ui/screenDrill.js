@@ -6,7 +6,8 @@ import { t } from '../i18n/index.js';
 import { scenarioView } from './scenarioView.js';
 import { copyButton } from './copySpot.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
-import { generateQuestion, generateGauntlet, difficultyForLevel } from '../trainers/index.js';
+import { generateQuestion, generateGauntlet, difficultyForLevel, DRILL_MODULE_IDS } from '../trainers/index.js';
+import { dateKey, dailyQuestions, recordDaily, DAILY_PASS } from '../state/daily.js';
 import { checkAchievements } from '../state/achievements.js';
 import {
   masteryTier, nextTierGoal, promotion, tierByKey, EVIDENCE_BAR, tierPlan, REQUIREMENTS,
@@ -252,15 +253,20 @@ export function renderLearn(ctx, params) {
  */
 export function renderDrill(ctx, params) {
   const gauntlet = params.mode === 'gauntlet';
-  const meta = gauntlet ? null : moduleMeta(params.module);
-  if (!gauntlet && !meta) return el('div.empty', 'Unknown module.');
-  if (!gauntlet && !ownsLesson(ctx.profile, meta.id)) return lockedChapter(ctx, meta);
+  // Today's three questions: a short mixed set, like the race but not a race.
+  const daily = params.mode === 'daily';
+  const mixed = gauntlet || daily;
+  const meta = mixed ? null : moduleMeta(params.module);
+  if (!mixed && !meta) return el('div.empty', 'Unknown module.');
+  if (!mixed && !ownsLesson(ctx.profile, meta.id)) return lockedChapter(ctx, meta);
 
   const { profile, rng, go } = ctx;
   const difficulty = difficultyForLevel(profile.level);
   // The race asks about the chapters you own: a question from a chapter
   // still on the shelf would be a test of something nobody has taught you.
-  const queue = gauntlet ? generateGauntlet(rng, profile.level, 10, ownedModules(profile).map((m) => m.id)) : [];
+  const queue = gauntlet ? generateGauntlet(rng, profile.level, 10, ownedModules(profile).map((m) => m.id))
+    : daily ? dailyQuestions(dateKey(), ownedModules(profile).map((m) => m.id).filter((id) => DRILL_MODULE_IDS.includes(id)), difficultyForLevel(profile.level))
+      : [];
 
   // A session used to run forever, so there was no moment of having finished
   // and no target to aim at. It is now a fixed length with a stated pass mark,
@@ -268,14 +274,14 @@ export function renderDrill(ctx, params) {
   // only mode available.
   const endless = params.endless === '1';
   const SESSION_LENGTH = 10;
-  const PASS_MARK = 8;
+  const PASS_MARK = daily ? DAILY_PASS : 8;
   // The Gauntlet is run as a race against the Belle, in whatever boat you
   // have worked your way up to. Her pace is the pass mark.
   const raceBoat = gauntlet ? riverState(profile).boat.key : null;
   const tally = () => (gauntlet
     ? raceStrip(state.results, sessionLength, PASS_MARK, { boat: raceBoat, rival: RACE.boat })
     : lanterns(state.results, sessionLength));
-  const tierBefore = gauntlet ? null : masteryTier(profile, meta.id);
+  const tierBefore = mixed ? null : masteryTier(profile, meta.id);
 
   const state = {
     index: 0,
@@ -291,8 +297,8 @@ export function renderDrill(ctx, params) {
     verdictLine: null,
   };
 
-  const sessionLength = gauntlet ? queue.length : SESSION_LENGTH;
-  const bounded = gauntlet || !endless;
+  const sessionLength = mixed ? queue.length : SESSION_LENGTH;
+  const bounded = mixed || !endless;
   const sessionOver = () => bounded && state.answered >= sessionLength;
 
   const header = el('div.panel.book-bar');
@@ -302,8 +308,8 @@ export function renderDrill(ctx, params) {
 
   const nextQuestion = () => {
     if (sessionOver()) return finish();
-    if (gauntlet && state.index >= queue.length) return finish();
-    state.question = gauntlet ? queue[state.index] : generateQuestion(meta.id, rng, difficulty);
+    if (mixed && state.index >= queue.length) return finish();
+    state.question = mixed ? queue[state.index] : generateQuestion(meta.id, rng, difficulty);
     state.locked = false;
     state.typed = null;
     state.peeked = false;
@@ -321,7 +327,7 @@ export function renderDrill(ctx, params) {
         .forEach((a) => toast({ icon: a.icon, title: a.name, desc: a.description }));
     }
 
-    const tierAfter = gauntlet ? null : masteryTier(profile, meta.id);
+    const tierAfter = mixed ? null : masteryTier(profile, meta.id);
     const promoted = tierBefore ? promotion(tierBefore, tierAfter) : null;
     if (promoted) {
       audio.sfx('bell');
@@ -332,7 +338,7 @@ export function renderDrill(ctx, params) {
         duration: 7000,
       });
     }
-    const goal = gauntlet ? null : nextTierGoal(profile, meta.id);
+    const goal = mixed ? null : nextTierGoal(profile, meta.id);
 
     // Three stars for a clean sheet, two for a pass, one for most of it.
     const stars = state.answered && state.correct === state.answered ? 3
@@ -344,13 +350,18 @@ export function renderDrill(ctx, params) {
     if (prize) pearlPop(prize);
     // The road counts the Belle beaten.
     if (gauntlet && passed) profile.noteRaceWon();
+    // The day's set counts once a day, and a day done in a row keeps the streak.
+    const day = daily ? recordDaily(profile, dateKey(), { correct: state.correct }) : null;
+    const dayPrize = day && day.counted ? profile.earnPearls(day.reward) : 0;
+    if (dayPrize) pearlPop(dayPrize);
 
     mount(header,
       el('div.row',
         el('div',
           el('h1', { style: { margin: 0 } }, gauntlet
             ? (passed ? t('You beat the Belle') : t('The Belle got there first'))
-            : passed ? 'Session passed' : 'Session complete'),
+            : daily ? (passed ? t('A good day on the river') : t('That is today\'s set'))
+              : passed ? 'Session passed' : 'Session complete'),
           el('div.muted', t('{correct} of {answered} correct — {pct}',
             { correct: state.correct, answered: state.answered, pct: fmt.pct(pct) })
             + (bounded ? t(' · pass mark was {pass}', { pass: PASS_MARK }) : '')
@@ -371,6 +382,13 @@ export function renderDrill(ctx, params) {
         : null,
       prize
         ? el('div.race-prize', pearls(prize, { className: 'big' }), el('span', t('in pearls for beating the Belle')))
+        : null,
+      day
+        ? el('div.race-prize.daily-prize',
+          day.counted ? pearls(dayPrize, { className: 'big' }) : null,
+          el('span', day.counted
+            ? t('for today\'s set. {n} days in a row, and your best is {best}.', { n: day.streak, best: day.best })
+            : t('You did today\'s set already, so this one was practice and pays nothing. Your streak is {n}.', { n: day.streak })))
         : null,
       silasSays(t(verdictText(pct, gauntlet)), { typed: false, size: 60 }),
       el('div.grid.cols-3',
@@ -404,7 +422,7 @@ export function renderDrill(ctx, params) {
             el('div.bar', { style: { marginTop: '10px' } },
               el('span', { style: { width: `${Math.round(goal.progress * 100)}%` } })),
           )
-        : !gauntlet
+        : !mixed
           ? el('div.notice', { style: { marginTop: '16px' } },
               t('You have mastered {module}. It will come back for spaced review so it stays that way.',
                 { module: t(meta.name) }))
@@ -413,14 +431,18 @@ export function renderDrill(ctx, params) {
     );
 
     mount(footer,
-      el('button.btn.primary', { onclick: () => go(gauntlet ? 'gauntlet' : 'drill', { module: params.module }) },
-        gauntlet ? t('Race again') : 'Another session'),
-      !gauntlet
+      daily
+        ? el('button.btn.primary', { onclick: () => go('home') }, t('Back to the river'))
+        : el('button.btn.primary', { onclick: () => go(gauntlet ? 'gauntlet' : 'drill', { module: params.module }) },
+          gauntlet ? t('Race again') : 'Another session'),
+      !mixed
         ? el('button.btn.ghost', { onclick: () => go('drill', { module: params.module, endless: '1' }) }, 'Endless practice')
         : null,
-      gauntlet
-        ? el('button.btn.ghost', { onclick: () => go('home') }, 'Back to the river')
-        : el('button.btn.ghost', { onclick: () => go('train') }, 'Back to the school'),
+      daily
+        ? el('button.btn.ghost', { onclick: () => go('drill', { mode: 'daily' }) }, t('Go through them again'))
+        : gauntlet
+          ? el('button.btn.ghost', { onclick: () => go('home') }, 'Back to the river')
+          : el('button.btn.ghost', { onclick: () => go('train') }, 'Back to the school'),
     );
     return null;
   };
@@ -516,8 +538,8 @@ export function renderDrill(ctx, params) {
         el('div.row',
           el('span.module-glyph', icon(q.icon, { size: 20 })),
           el('div',
-            el('div.book-title', gauntlet ? t('The Race') : t(q.moduleName)),
-            el('div.faint', gauntlet
+            el('div.book-title', gauntlet ? t('The Race') : daily ? t('Today\'s question') : t(q.moduleName)),
+            el('div.faint', mixed
               ? t('Question {n} of {total} · {module}', { n: state.index, total: queue.length, module: t(q.moduleName) })
               : bounded
                 ? t('Question {n} of {total} · pass mark {pass}', { n: Math.min(state.index, sessionLength), total: sessionLength, pass: PASS_MARK })
@@ -620,7 +642,7 @@ export function renderDrill(ctx, params) {
         : null,
 
       chosen !== null && !bounded ? el('button.btn.ghost', { onclick: finish }, 'End session') : null,
-      !gauntlet && chosen === null ? el('button.btn.ghost', { onclick: () => go('learn', { module: meta.id }) }, 'Review the lesson') : null,
+      !mixed && chosen === null ? el('button.btn.ghost', { onclick: () => go('learn', { module: meta.id }) }, 'Review the lesson') : null,
     );
   };
 
@@ -645,7 +667,7 @@ export function renderDrill(ctx, params) {
 
   ctx.onKey = (e) => root.dispatchEvent(new KeyboardEvent('keydown', { key: e.key }));
 
-  if (gauntlet && !queue.length) {
+  if (mixed && !queue.length) {
     return el('div.empty', 'No modules unlocked yet — start with a lesson.');
   }
   nextQuestion();

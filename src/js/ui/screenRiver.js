@@ -38,6 +38,7 @@ import * as audio from '../audio/engine.js';
 import { bookProgress } from '../data/fish.js';
 import { journeyState, gatedBy } from '../state/journey.js';
 import { roadBanner, roadPanel } from './roadView.js';
+import { postPanel } from './postView.js';
 
 export { svgNode };
 
@@ -354,6 +355,7 @@ export function renderRiver(ctx) {
       ),
       el('div.river-below',
         roadPanel(state.road, go),
+        postPanel(profile, go),
         hereCard(state, profile, go),
         el('div.river-side',
           boatCard(state, profile, go),

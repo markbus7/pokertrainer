@@ -128,6 +128,18 @@ the tables' regulars she remembers between sittings: fold too much and she
 bluffs you more, call too much and she stops. Her card on the stop's screen says
 what she has made of you so far.
 
+Silas posts three contracts on the map, drawn from the skills you are weakest
+at — "make eight sound pot-odds decisions at a real table", "play four hands in
+a row without a mistake", "land a fish you have not caught" — each with a purse,
+and posts the next as you finish them. It is the bridge between a drill that
+says a skill is weak and a table where you use it. Today's question is three
+questions from the chapters you own, the same for everybody on the same day;
+it counts once, and a streak of days in a row pays a little more each time.
+Now and then a stranger passes through — a cattle buyer who pays to see every
+card, a riverboat gambler who has not checked since Natchez, a preacher who bets
+only when it is over — and sits at a side game for three sittings. Each is an
+extreme of one of the styles, with a purse on them worth twice an owner's.
+
 Pearls are what the tables pay for hands you play through and decisions you
 get right — folding before the flop is the default and pays nothing, and a
 table with fewer than six players pays half. The practice table can be dealt

@@ -3484,3 +3484,20 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 .notes-choice { display: flex; align-items: flex-start; gap: 6px; margin: var(--s-2) 0; font-weight: 600; color: var(--ink); }
 .notes-choice .icon { margin-top: 3px; flex: none; }
 
+
+/* ---- Wanderers, contracts, and the river post ------------------------- */
+.lobby-tag.wanderer { color: #9ccf7a; font-weight: 700; }
+.lobby-face.wanderer .portrait-rim { stroke: #9ccf7a; }
+.wanderer-block { display: grid; gap: var(--s-2); }
+.river-below > .post-panel { grid-column: 1 / -1; }
+.post-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+@media (min-width: 900px) { .post-panel { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); } }
+.post-card .panel-title h3 { display: flex; align-items: center; gap: 8px; }
+.contracts { list-style: none; margin: var(--s-2) 0; padding: 0; display: grid; gap: var(--s-2); }
+.contract { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-3); align-items: center; padding: var(--s-2) 0; border-top: 1px dashed var(--ink-rule); }
+.contract:first-child { border-top: 0; }
+.contract-text { font-weight: 600; }
+.contract-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.daily-streak { display: flex; align-items: baseline; gap: 8px; margin: var(--s-2) 0 var(--s-3); }
+.daily-streak-n { font-family: var(--font-print); font-size: var(--t-2xl, 2rem); font-weight: 700; color: var(--brass-lo); }
+@media (max-width: 640px) { .contract { grid-template-columns: 1fr; } .contract-side { flex-direction: row; align-items: center; justify-content: space-between; } }

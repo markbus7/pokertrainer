@@ -22,6 +22,7 @@
 
 import { getProfile } from '../engine/bots.js';
 import { makeRng } from '../core/rng.js';
+import { WANDERER_KEYS } from '../data/wanderers.js';
 
 /** The chairs at every table: you, and five others. */
 export const LOBBY_SEATS = 6;
@@ -54,6 +55,8 @@ export const TEMPLATES = {
  * styles do not. Never shown: the reader works it out from the numbers.
  */
 const WORTH = { station: 1.0, maniac: 0.7, lag: 0.2, rock: 0.1, tag: -0.3, pro: -0.6 };
+/** The wanderers are the extremes of their styles, and worth more than the style they are an extreme of. */
+const WANDERER_WORTH = { hale: 1.4, dixie: 1.0, josiah: 0.2 };
 
 /** A table is soft when its players are worth more than this, on average. */
 export const SOFT = 0.3;
@@ -91,7 +94,7 @@ export function lobbyStats(styles) {
 }
 
 /** What a table's players are worth, on average. Higher is softer. */
-export const softness = (styles) => mean(styles.map((k) => WORTH[k] ?? 0));
+export const softness = (styles) => mean(styles.map((k) => WORTH[k] ?? WANDERER_WORTH[k] ?? 0));
 
 /**
  * The lobby at a stop.
@@ -132,7 +135,8 @@ export function lobbyFor(stop, sittings = 0) {
     })),
   ].map((table) => ({ ...table, stats: lobbyStats(table.styles), soft: softness(table.styles) }));
 
-  return { tables, rival: rivalAt(stop, rng, tables) };
+  const rival = rivalAt(stop, rng, tables);
+  return { tables, rival, wanderer: wandererAt(stop, sittings, tables) };
 }
 
 /**
@@ -161,6 +165,36 @@ function rivalAt(stop, rng, tables) {
   table.stats = lobbyStats(table.styles);
   table.soft = softness(table.styles);
   return table.id;
+}
+
+/**
+ * A stranger passing through: from the second city on, about two periods in
+ * five, and gone after three sittings. They take a seat at one of the side
+ * games — never the owner's — where they change the table least, and never the
+ * Rival's. Made from the stop and the period, so the same stranger is in the
+ * same chair for all three sittings.
+ */
+export const WANDERER_FROM = 1;
+export const WANDERER_CHANCE = 0.4;
+export const WANDERER_STAY = 3;
+function wandererAt(stop, sittings, tables) {
+  const period = Math.floor(Math.max(0, sittings) / WANDERER_STAY);
+  const rng = makeRng(hash(`wanderer/${stop.key}/${period}`));
+  const roll = rng();
+  const key = WANDERER_KEYS[Math.floor(rng() * WANDERER_KEYS.length)];
+  const pickTable = Math.floor(rng() * SIDE_TABLES.length);
+  if (stop.index < WANDERER_FROM || roll >= WANDERER_CHANCE) return null;
+  const table = tables.find((t) => t.id === SIDE_TABLES[pickTable].id);
+  let seat = -1;
+  table.styles.forEach((style, i) => {
+    if (table.rivalSeat === i) return;
+    if (seat < 0 || (WORTH[style] ?? WANDERER_WORTH[style] ?? 0) <= (WORTH[table.styles[seat]] ?? WANDERER_WORTH[table.styles[seat]] ?? 0)) seat = i;
+  });
+  table.styles[seat] = key;
+  table.wandererSeat = seat;
+  table.stats = lobbyStats(table.styles);
+  table.soft = softness(table.styles);
+  return { key, table: table.id };
 }
 
 /**

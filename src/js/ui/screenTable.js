@@ -34,6 +34,9 @@ import { emptyMemory, watch, adaptationNote, ADAPT_FULL } from '../engine/adapt.
 import { lobbyFor, chosenRank } from '../state/lobby.js';
 import { remember as rivalRemembers, readOn as rivalRead } from '../state/rival.js';
 import { RIVAL } from '../data/rival.js';
+import { wandererFor } from '../data/wanderers.js';
+import { ensureContracts, noteEvent as noteContract, contractText } from '../state/contracts.js';
+import { furthestStop } from '../state/economy.js';
 import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
@@ -242,8 +245,12 @@ export function renderTable(ctx, params = {}) {
   const rivalId = rivalIndex >= 0 ? `bot${rivalIndex}` : null;
   const rivalMemory = rivalId ? profile.rival.memory : null;
   const firstMeeting = rivalId ? profile.noteRivalMet() : false;
+  // A stranger passing through, if one is at this table.
+  const wandererIndex = seat && seat.wandererSeat !== undefined ? seat.wandererSeat : -1;
+  const wanderer = wandererIndex >= 0 ? wandererFor(seat.styles[wandererIndex]) : null;
+  const wandererId = wanderer ? `bot${wandererIndex}` : null;
   // Whose face each seat wears: the boss's own, the Rival's, or the style's regular.
-  const faces = Object.fromEntries(opponents.map((key, i) => [`bot${i}`, i === bossIndex ? boss.key : i === rivalIndex ? RIVAL.key : key]));
+  const faces = Object.fromEntries(opponents.map((key, i) => [`bot${i}`, i === bossIndex ? boss.key : i === rivalIndex ? RIVAL.key : i === wandererIndex ? wanderer.key : key]));
   const table = createTable({
     variant: variantKey,
     smallBlind: bigBlind / 2,
@@ -256,7 +263,7 @@ export function renderTable(ctx, params = {}) {
         const p = getProfile(key);
         return {
           id: `bot${i}`,
-          name: i === bossIndex ? boss.short : i === rivalIndex ? RIVAL.short : p.name,
+          name: i === bossIndex ? boss.short : i === rivalIndex ? RIVAL.short : i === wandererIndex ? wanderer.short : p.name,
           stack: startingStack,
           profile: key,
           memory: i === rivalIndex ? rivalMemory : null,
@@ -328,6 +335,7 @@ export function renderTable(ctx, params = {}) {
     matchOver: null,
     // Whether the Rival has said hello this sitting.
     rivalGreeted: false,
+    wandererGreeted: false,
     // The countdown to the next hand, when the table deals itself:
     // { total, started, timer } while it runs, null otherwise.
     autoDeal: null,
@@ -369,7 +377,10 @@ export function renderTable(ctx, params = {}) {
   const pays = !lesson && !duel;
   if (pays) {
     for (const p of table.players) {
-      if (!p.isHero) session.bounties[p.id] = seatBounty(room ? room.index : null, p.id === bossId || p.id === rivalId);
+      if (p.isHero) continue;
+      // A stranger passing through carries a purse twice an owner's: they are not staying.
+      const owner = p.id === bossId || p.id === rivalId || p.id === wandererId;
+      session.bounties[p.id] = seatBounty(room ? room.index : null, owner) * (p.id === wandererId ? 2 : 1);
     }
   }
   const feltHost = el('div');
@@ -508,6 +519,21 @@ export function renderTable(ctx, params = {}) {
   }
 
   /**
+   * The stranger says hello — after the Rival, if she is here too, so the two
+   * do not talk over each other. The first time a kind of stranger is met it
+   * is a scene.
+   */
+  function greetTheWanderer() {
+    session.wandererGreeted = true;
+    const key = `wanderer-${wanderer.key}`;
+    if (!profile.seenScene(key)) {
+      profile.markScene(key);
+      toast({ icon: '🎩', title: t('{name} sits down', { name: wanderer.name }), desc: t(wanderer.intro), duration: 11000 });
+    }
+    setTimeout(() => { if (!session.cancelled) say(wandererId, t(pick(wanderer.hello)), 4200); }, rivalId ? 4500 : 0);
+  }
+
+  /**
    * The blind clock: each hand of a duel is dealt at the blinds its place in
    * the match calls for, and the first hand of a new level says so out loud.
    */
@@ -539,6 +565,7 @@ export function renderTable(ctx, params = {}) {
 
     if (duel) advanceBlinds();
     if (rivalId && !session.rivalGreeted) greetTheRival();
+    if (wandererId && !session.wandererGreeted) greetTheWanderer();
     table.startHand();
     stats.startHand();
     // Who had chips when the cards were dealt, so a bust is counted once.
@@ -870,6 +897,8 @@ export function renderTable(ctx, params = {}) {
       hand: table.handNumber,
       handId: null,
     });
+    // Silas's contracts count sound decisions at a real table, for the skill they name.
+    if (pays) payContracts(noteContract(profile, { type: 'decision', skill: verdict.concept.id, level: verdict.level, helped }));
     // The Catch Book: a spot played right hooks the fish that lives in it.
     // Some only come in if the hand ends the right way; endHand says.
     if (pays) {
@@ -958,7 +987,10 @@ export function renderTable(ctx, params = {}) {
     if (pays) {
       // A hand you folded before the flop was not played through: folding is
       // the default, and a table that paid for it paid the most for the least.
-      const played = playedThrough(session.graded.filter((d) => d.hand === table.handNumber));
+      const mine = session.graded.filter((d) => d.hand === table.handNumber);
+      const played = playedThrough(mine);
+      // A hand folded before the flop neither counts toward a run of clean hands nor breaks it.
+      if (played) payContracts(noteContract(profile, { type: 'hand', clean: mine.every((d) => d.level !== 'bad' && !d.helped) }));
       const paid = played ? paidForTable(handPearls(room ? room.index : null)) : 0;
       session.pearls.hands += paid;
       const extra = fromTheStrongbox(paid);
@@ -987,6 +1019,12 @@ export function renderTable(ctx, params = {}) {
       else if (bossShowed && won) say(bossId, t(pick(boss.sore)));
     }
 
+    if (wandererId && !session.speech) {
+      const wonIt = (result.payouts[wandererId] || 0) > 0;
+      const showed = showdown && result.showdown.some((s) => s.id === wandererId);
+      if (wonIt && (showed || potTotal >= table.bigBlind * 20) && Math.random() < 0.5) say(wandererId, t(pick(wanderer.brag)));
+      else if (showed && won && Math.random() < 0.5) say(wandererId, t(pick(wanderer.sore)));
+    }
     // The Rival has her own opinion of a big pot, said less often than the owner's.
     if (rivalId && !session.speech) {
       const rivalWon = (result.payouts[rivalId] || 0) > 0;
@@ -1053,6 +1091,24 @@ export function renderTable(ctx, params = {}) {
   }
 
   /**
+   * Silas's contracts that this finished: the purse, a line in the log, a toast,
+   * and the board filled up again.
+   */
+  function payContracts(finished) {
+    if (!finished.length) return;
+    for (const k of finished) {
+      const paid = profile.earnPearls(k.reward);
+      session.pearls.bonus += paid;
+      pearlPop(paid, trayHost);
+      const line = contractText(k);
+      const text = t(line.text, Object.fromEntries(Object.entries(line.params).map(([n, v]) => [n, typeof v === 'string' ? t(v) : v])));
+      log(t('Contract done: {text}', { text }), true);
+      toast({ icon: '📜', title: t('Silas\'s contract: done'), desc: `${text} — ${t('{n} pearls', { n: paid })}` });
+    }
+    ensureContracts(profile, { reach: furthestStop(profile) });
+  }
+
+  /**
    * Bring in what the hand landed: into the Catch Book, weighed by the pot
    * it came out of — the pot as it stood when you made the decision, or for
    * a fish only the ending lands (a bluff, a hero call, the pike) the pot
@@ -1068,6 +1124,7 @@ export function renderTable(ctx, params = {}) {
       const lb = weighIn(species.land || species.special ? finalPot : atDecision, bigBlind);
       const got = profile.landCatch(key, { weight: lb, where });
       if (!got) continue;
+      if (got.first) payContracts(noteContract(profile, { type: 'catch', key }));
       const fish = t(species.name);
       const weight = lb.toFixed(1);
       if (got.reward) {
