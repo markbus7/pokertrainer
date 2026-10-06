@@ -25,8 +25,13 @@ import { STARTER, LESSON_PRICES, fillBerths } from './economy.js';
 import { boatEarnedBy } from '../data/characters.js';
 import { VENUES, venueFor } from '../data/venues.js';
 import { logCatch } from '../data/fish.js';
+import { sanitizeLifetime, recordHand } from './lifetime.js';
+import { sanitizeLook } from '../data/looks.js';
 
 const STORAGE_KEY = 'poker-trainer.profile.v1';
+
+/** Lifetimes already read back from the save, so each is checked once. */
+const CHECKED = new WeakSet();
 
 /**
  * The purse of pearls and what has been bought with it.
@@ -696,6 +701,37 @@ export class Profile {
   }
 
   get raceWins() { return this.data.raceWins || 0; }
+
+  /* ---- you -------------------------------------------------------- */
+
+  /**
+   * Your career at the tables, hand by hand (state/lifetime.js). Read back as
+   * plain numbers once, the first time it is asked for after a load or an
+   * import, and then the same object from one read to the next.
+   */
+  get lifetime() {
+    if (!CHECKED.has(this.data.lifetime)) {
+      this.data.lifetime = sanitizeLifetime(this.data.lifetime);
+      CHECKED.add(this.data.lifetime);
+    }
+    return this.data.lifetime;
+  }
+
+  /** A hand finished at a real table: what it says about you. Saved with the next save. */
+  noteLifetimeHand(facts) {
+    recordHand(this.lifetime, facts);
+  }
+
+  /** How you look: the choices that are yours (data/looks.js). */
+  get look() {
+    return sanitizeLook(this.data.look);
+  }
+
+  setLook(patch) {
+    this.data.look = sanitizeLook({ ...this.look, ...patch });
+    this.save();
+    return this.data.look;
+  }
 
   /**
    * Tie up at a stop. Records the furthest one reached, which only ever

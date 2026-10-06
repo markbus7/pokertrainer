@@ -19,6 +19,7 @@ const modules = [
   './pushfold.test.js',
   './regatta.test.js',
   './icm.test.js',
+  './character.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',

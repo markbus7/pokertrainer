@@ -39,6 +39,9 @@ import { bookProgress } from '../data/fish.js';
 import { journeyState, gatedBy } from '../state/journey.js';
 import { roadBanner, roadPanel } from './roadView.js';
 import { postPanel } from './postView.js';
+import { figureFor, nameFor } from './screenCharacter.js';
+import { whoYouAre } from '../state/character.js';
+import { TIERS } from '../data/looks.js';
 
 export { svgNode };
 
@@ -222,6 +225,20 @@ function hereCard(state, profile, go) {
   );
 }
 
+/** You, on the way past: the figure, the kind of player you are, and the door to the rest. */
+function youCard(profile, go) {
+  const me = whoYouAre(profile);
+  return el('button.panel.you-card', { onclick: () => go('character'), title: t('Your character') },
+    svgNode(figureFor(me, { width: 64 }), 'you-card-figure'),
+    el('span',
+      el('span.here-kicker', t('Your character')),
+      el('span.you-card-name', { style: { display: 'block' } }, t('{name}, {epithet}', { name: nameFor(me), epithet: t(me.type.epithet) })),
+      el('span.faint.you-card-line', { style: { display: 'block' } }, `${t(TIERS[me.tier].name)} · ${t(me.type.name)}`),
+    ),
+    icon('arrowRight', { size: 16, className: 'door-arrow' }),
+  );
+}
+
 /** The boat you have, who is aboard, and the keepsakes on its shelf. */
 function boatCard(state, profile, go) {
   const got = VENUES.filter((v) => state.beaten.has(v.index)).length;
@@ -358,6 +375,7 @@ export function renderRiver(ctx) {
         postPanel(profile, go),
         hereCard(state, profile, go),
         el('div.river-side',
+          youCard(profile, go),
           boatCard(state, profile, go),
           studyLine(profile, go),
         ),

@@ -30,6 +30,7 @@ import { renderTable } from './ui/screenTable.js';
 import { renderReview } from './ui/screenReview.js';
 import { renderStats, renderCharts, renderGlossary } from './ui/screenStats.js';
 import { renderLevels } from './ui/screenLevels.js';
+import { renderCharacter } from './ui/screenCharacter.js';
 import { renderStore } from './ui/screenStore.js';
 import { renderBoatyard } from './ui/screenBoatyard.js';
 import { renderCatchBook } from './ui/screenCatchBook.js';
@@ -63,6 +64,7 @@ const ROUTES = {
   glossary: { render: renderGlossary, title: 'The Almanac' },
   stats: { render: renderStats, title: 'Your Cabin' },
   levels: { render: renderLevels, title: 'Your Papers' },
+  character: { render: renderCharacter, title: 'Your character' },
   store: { render: renderStore, title: 'The Trading Post' },
   boatyard: { render: renderBoatyard, title: 'The Boatyard', music: 'river' },
   catchbook: { render: renderCatchBook, title: 'The Catch Book', music: 'river' },
@@ -93,6 +95,7 @@ const LEDGER = [
   {
     title: 'Records',
     items: [
+      { route: 'character', label: 'Your character', icon: 'person', note: 'Who you are at the table: your style, your hands, your records' },
       { route: 'report', label: 'Silas\'s notes', icon: 'notes', note: 'What he saw at your last sittings' },
       { route: 'review', label: 'The Log', icon: 'review', note: 'Hand review: the hands worth a second look' },
       { route: 'charts', label: 'The Chart Room', icon: 'charts', note: 'Every range chart, by seat' },
@@ -347,9 +350,11 @@ function drawHud() {
       title: t('Your pearls. The tables pay them; the Trading Post takes them.'),
       'aria-label': t('{n} pearls — the Trading Post', { n: profile.pearls }),
     }, pearl(18), el('span.pearl-count', fmt.chips(profile.pearls))),
+    // The chip is you: your rank, and the way to your character — the figure,
+    // the kind of player you are, and from there your papers.
     el('button.rank-chip', {
-      onclick: () => go('levels'),
-      title: `${rank.blurb} — click to see what the next rank asks for`,
+      onclick: () => go('character'),
+      title: t('{blurb} — your character', { blurb: t(rank.blurb) }),
     },
       el('span.emoji', rank.emoji),
       el('div.meta',

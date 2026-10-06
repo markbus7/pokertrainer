@@ -542,6 +542,21 @@
   --pearl: #efe8dc;
   --pearl-rose: #efd3d6;
   --pearl-lo: #a79d90;
+
+  /* Your character's charts, printed on paper, which is light in every room.
+     Checked with the dataviz validator against all four papers: you in blue
+     at 4.7:1 or better, the regulars in grey at 3.5:1, apart for colour-blind
+     eyes; and how often a hand is played as one brass hue, light to dark,
+     every step clear of the next and the lightest clear of the page. */
+  --char-you: #2e64a6;
+  --char-them: #7f7261;
+  --char-s1: #c49548;
+  --char-s2: #a47726;
+  --char-s3: #855a00;
+  --char-s4: #673d00;
+  /* The lamp over the stage the figure stands on, and the look you wear now. */
+  --char-lamp: rgba(255, 214, 140, 0.42);
+  --char-now: rgba(201, 162, 74, 0.2);
 }
 
 :root {
