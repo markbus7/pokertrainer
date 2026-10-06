@@ -43,7 +43,10 @@ export const LIFE_SAMPLE = {
 };
 
 /** How many of your mistakes are kept, with what was said about each. */
-export const MISTAKES_KEPT = 120;
+export const MISTAKES_KEPT = 200;
+
+/** How many kinds of good decision are kept for each starting hand. */
+export const PRAISE_KINDS = 8;
 
 const round = (x) => Math.round(x * 100) / 100;
 const num = (x, min = 0) => (Number.isFinite(x) && x >= min ? x : min);
@@ -91,6 +94,9 @@ export function emptyLifetime() {
     // why, and what was right instead — so a hand that keeps costing you can
     // say how. Bounded at MISTAKES_KEPT.
     mistakes: [],
+    // What you do well with each hand: key -> { kind: [times, head, street, action] },
+    // the decisions Silas called good without help, by kind, at most PRAISE_KINDS a hand.
+    praise: {},
     biggestPot: null,   // { bb, key, made, at, where }  cash only
     biggestBluff: null, // { bb, key, at, where }  won with nothing, no showdown; cash only
     bestHand: null,     // { score, key, at, where, won }
@@ -130,6 +136,7 @@ export function sanitizeLifetime(raw) {
   life.starting = table(raw.starting, 4, [3]);
   life.decided = table(raw.decided, 4, [3]);
   life.mistakes = (Array.isArray(raw.mistakes) ? raw.mistakes : []).slice(0, MISTAKES_KEPT).map(sanitizeMistake).filter(Boolean);
+  life.praise = sanitizePraise(raw.praise);
   life.seats = table(raw.seats, 2, [1]);
   life.against = table(raw.against, 3, [1, 2]);
   if (Array.isArray(raw.made)) life.made = life.made.map((_, i) => int(raw.made[i]));
@@ -249,6 +256,8 @@ export function recordHand(life, f) {
           d[3] = round(d[3] + Math.max(0, money(g.costBb)));
           const kept = sanitizeMistake({ ...g, key: f.key, at: f.at, where: f.where });
           if (kept) life.mistakes.unshift(kept);
+        } else if (g.level === 'good' && !g.helped) {
+          notePraise(life, f.key, g);
         }
       }
       if (life.mistakes.length > MISTAKES_KEPT) life.mistakes.length = MISTAKES_KEPT;
@@ -432,3 +441,41 @@ export function handRatings(life) {
 
 /** The mistakes kept for one starting hand, newest first. */
 export const mistakesWith = (life, key) => life.mistakes.filter((m) => m.key === key);
+
+const PRAISE_TEXT = (x, max) => typeof x === 'string' && x.length > 0 && x.length <= max;
+
+/** A good decision with a hand, counted by kind; the rarest kind gives way when a hand has too many. */
+function notePraise(life, key, g) {
+  if (!PRAISE_TEXT(g.head, 160) || typeof key !== 'string' || key.length > 4) return;
+  const kind = PRAISE_TEXT(g.id, 40) ? g.id : g.head;
+  const kinds = life.praise[key] || (life.praise[key] = {});
+  if (!kinds[kind]) {
+    const names = Object.keys(kinds);
+    if (names.length >= PRAISE_KINDS) {
+      const rarest = names.reduce((a, b) => (kinds[b][0] < kinds[a][0] ? b : a));
+      delete kinds[rarest];
+    }
+    kinds[kind] = [0, g.head, PRAISE_TEXT(g.street, 8) ? g.street : 'preflop', PRAISE_TEXT(g.action, 8) ? g.action : null];
+  }
+  kinds[kind][0] += 1;
+}
+
+function sanitizePraise(raw) {
+  const out = {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const [key, kinds] of Object.entries(raw).slice(0, 200)) {
+    if (key.length > 4 || !kinds || typeof kinds !== 'object' || Array.isArray(kinds)) continue;
+    const row = {};
+    for (const [kind, v] of Object.entries(kinds).slice(0, PRAISE_KINDS)) {
+      if (kind.length > 160 || !Array.isArray(v) || !PRAISE_TEXT(v[1], 160)) continue;
+      row[kind] = [int(v[0]), v[1], PRAISE_TEXT(v[2], 8) ? v[2] : 'preflop', PRAISE_TEXT(v[3], 8) ? v[3] : null];
+    }
+    if (Object.keys(row).length) out[key] = row;
+  }
+  return out;
+}
+
+/** What you do well with one hand, the most frequent first. */
+export const praiseFor = (life, key) => Object.values(life.praise[key] || {})
+  .map(([times, head, street, action]) => ({ times, head, street, action }))
+  .sort((a, b) => b.times - a.times);

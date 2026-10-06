@@ -29,7 +29,7 @@ import {
   TIERS, SKINS, HAIRS, HAIR_COLOURS, BEARDS, COLOURS, LOOK_LABELS, NAME_MAX, PROPS_TEXT, FORM_TEXT,
 } from '../data/looks.js';
 import { PLAYER_TYPES, REGULARS, BOUNDS, HEALTHY } from '../data/playerTypes.js';
-import { startingHands, seats as seatRecords, rivals, handRatings, mistakesWith, LIFE_SAMPLE } from '../state/lifetime.js';
+import { startingHands, seats as seatRecords, rivals, handRatings, mistakesWith, praiseFor, LIFE_SAMPLE } from '../state/lifetime.js';
 import { findHand } from '../state/handHistory.js';
 import { whoYouAre, riverRecords } from '../state/character.js';
 import { RANKS } from '../state/profile.js';
@@ -48,15 +48,13 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').repl
 export function renderCharacter(ctx) {
   const { profile, go } = ctx;
   const me = whoYouAre(profile);
-  const rating = ratingPanel(me, go);
   return el('div.screen.character',
     roomSign({ glyph: 'person', kicker: t('Who you are at the table'), title: t('Your character') }),
     heroPanel(profile, me, go),
     typePanel(me, go),
     numbersPanel(me),
     resultsPanel(me),
-    handsPanel(me, rating.open),
-    rating.node,
+    handsPanel(me, go),
     famePanel(me),
     tablePanel(me),
     riverPanel(profile),
@@ -607,8 +605,8 @@ function miniCards(key) {
     [key[0], key[1]].map((r, i) => el(`span.mini-card${suits[i] === '♥' ? '.red' : ''}`, el('b', face(r)), el('i', suits[i]))));
 }
 
-function handCard(kicker, row, line, open) {
-  return el(row ? 'button.hand-pick.is-button' : 'div.hand-pick', row ? { type: 'button', onclick: () => open(row.key) } : null,
+function handCard(kicker, row, line) {
+  return el(row ? 'button.hand-pick.is-button' : 'div.hand-pick', row ? { type: 'button', dataset: { key: row.key } } : null,
     el('div.page-kicker', t(kicker)),
     row ? miniCards(row.key) : el('span.mini-cards.empty', '?'),
     el('div',
@@ -618,78 +616,100 @@ function handCard(kicker, row, line, open) {
   );
 }
 
-function handsPanel(me, open) {
-  const { rows, favourite, best, worst } = startingHands(me.life);
-  return el('section.panel.paper.char-hands',
-    el('div.panel-title', el('h2', t('Your hands'))),
-    el('div.hands-body',
-      el('div.hand-picks',
-      handCard('Your favourite', favourite, (r) => t('Played {n} times, won {w}', { n: r.played, w: r.won }), open),
-      handCard('Your money-maker', best, (r) => t('{bb} at cash tables, over {n} hands played', { bb: bb(r.netBb), n: r.played }), open),
-      handCard('The one that costs you', worst, (r) => t('{bb} at cash tables, over {n} hands played', { bb: bb(r.netBb), n: r.played }), open),
-      ),
-      handGrid(rows, open),
-    ),
-  );
-}
-
-/* ---- your hand rating -------------------------------------------------- */
+/* ---- your hands, and how you play each one ------------------------------ */
 
 const DID = { fold: 'You folded', check: 'You checked', call: 'You called', bet: 'You bet', raise: 'You raised' };
 
 /**
- * Every decision you make at a real table is graded, and kept with the hand
+ * Your hands and your hand rating, on one page with the hand you tapped open
+ * beside them: tap one after another and the panel on the right changes in
+ * place, without the page moving. On a phone there is no right, so the hand
+ * opens in a sheet over the bottom of the screen instead.
+ *
+ * Every decision you make at a real table is graded and kept with the hand
  * you held: so the hands you keep getting wrong can be named, and the ones you
- * play best — and a tap on any of them says what the mistakes were, why each
- * one was a mistake, and what was right instead.
+ * play best — and each hand says what the mistakes were, why, and what was
+ * right instead, and what you do well with it.
  */
-function ratingPanel(me, go) {
-  const { rows, worst, best } = handRatings(me.life);
-  const total = rows.reduce((sum, r) => sum + r.decisions, 0);
-  const detail = el('div.hand-detail', { hidden: true, tabIndex: -1 });
-  const open = (key) => {
-    mount(detail, handDetail(me, key, go, () => { detail.hidden = true; }));
-    detail.hidden = false;
-    detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    detail.focus({ preventScroll: true });
+function handsPanel(me, go) {
+  const { rows, favourite, best: earner, worst: loser } = startingHands(me.life);
+  const rating = handRatings(me.life);
+  const total = rating.rows.reduce((sum, r) => sum + r.decisions, 0);
+  const inspector = el('aside.hand-inspector', { 'aria-live': 'polite', 'aria-label': t('The hand you picked') });
+  let picked = null;
+  let section = null;
+
+  const show = (key, { sheet = true } = {}) => {
+    picked = key;
+    mount(inspector, key
+      ? handDetail(me, key, go, () => inspector.classList.remove('is-open'))
+      : el('div.hand-inspector-empty',
+        icon('cards', { size: 28 }),
+        el('p', t('Tap any hand on this page — a card, a row or a square of the grid — and how you play it opens here.'))));
+    if (key && sheet) inspector.classList.add('is-open');
+    if (section) {
+      for (const n of section.querySelectorAll('[data-key]')) n.classList.toggle('is-picked', n.dataset.key === key);
+    }
   };
-  const rateRow = (r, kind) => el('button.rate-row', { type: 'button', onclick: () => open(r.key) },
+
+  const rateRow = (r, kind) => el('button.rate-row', { type: 'button', dataset: { key: r.key } },
     miniCards(r.key),
     el('span.rate-name', el('b', r.key), el('span.faint', handWords(r.key))),
     kind === 'worst'
       ? el('span.rate-score.is-bad', icon('cross', { size: 14 }), ' ',
         r.mistakes === 1 ? t('1 mistake in {d}', { d: r.decisions }) : t('{n} mistakes in {d}', { n: r.mistakes, d: r.decisions }))
       : el('span.rate-score.is-good', icon('check', { size: 14 }), ' ', t('{n} of {d} right', { n: r.sound, d: r.decisions })),
-    icon('arrowRight', { size: 14, className: 'door-arrow' }),
   );
-  const node = el('section.panel.paper.char-rating',
+
+  section = el('section.panel.paper.char-hands',
     el('div.panel-title',
-      el('h2', t('Your hand rating')),
+      el('h2', t('Your hands')),
       el('span.faint', t('{n} decisions graded at real tables', { n: fmt.chips(total) })),
     ),
-    el('p.faint', t('Every decision at a real table is graded and kept with the hand you held. Tap a hand to see each mistake, why it was one, and what was right.')),
-    total
-      ? el('div.rate-cols',
-        el('div.rate-col',
-          el('h3.rate-title', icon('warn', { size: 16 }), ' ', t('Where you go wrong')),
-          worst.length ? worst.map((r) => rateRow(r, 'worst')) : el('p.faint', t('No mistakes yet. Keep it that way.'))),
-        el('div.rate-col',
-          el('h3.rate-title', icon('check', { size: 16 }), ' ', t('Where you play best')),
-          best.length
-            ? best.map((r) => rateRow(r, 'best'))
-            : el('p.faint', t('A hand you play makes this list after {n} decisions with it.', { n: LIFE_SAMPLE.rating }))),
-      )
-      : el('p', t('Nothing graded yet. Play at a real table — the free table, a stop, a duel or a Regatta — and every decision lands here, under the hand you held.')),
-    detail,
+    el('div.hands-layout',
+      el('div.hands-browse', {
+        // One listener for every hand on the page: the cards, the rows and the grid.
+        onclick: (e) => {
+          const hit = e.target.closest('[data-key]');
+          if (hit && hit.dataset.key) show(hit.dataset.key);
+        },
+      },
+        el('div.hand-picks',
+          handCard('Your favourite', favourite, (r) => t('Played {n} times, won {w}', { n: r.played, w: r.won })),
+          handCard('Your money-maker', earner, (r) => t('{bb} at cash tables, over {n} hands played', { bb: bb(r.netBb), n: r.played })),
+          handCard('The one that costs you', loser, (r) => t('{bb} at cash tables, over {n} hands played', { bb: bb(r.netBb), n: r.played })),
+        ),
+        el('h3.hands-sub', t('Your hand rating')),
+        total
+          ? el('div.rate-cols',
+            el('div.rate-col',
+              el('h3.rate-title', icon('warn', { size: 16 }), ' ', t('Where you go wrong')),
+              rating.worst.length ? rating.worst.map((r) => rateRow(r, 'worst')) : el('p.faint', t('No mistakes yet. Keep it that way.'))),
+            el('div.rate-col',
+              el('h3.rate-title', icon('check', { size: 16 }), ' ', t('Where you play best')),
+              rating.best.length
+                ? rating.best.map((r) => rateRow(r, 'best'))
+                : el('p.faint', t('A hand you play makes this list after {n} decisions with it.', { n: LIFE_SAMPLE.rating }))),
+          )
+          : el('p.faint', t('Nothing graded yet. Play at a real table — the free table, a stop, a duel or a Regatta — and every decision lands here, under the hand you held.')),
+        handGrid(rows),
+      ),
+      inspector,
+    ),
   );
-  return { node, open };
+  // Something to look at straight away: the hand that needs it most.
+  const first = (rating.worst[0] || rating.best[0] || favourite || null);
+  show(first ? first.key : null, { sheet: false });
+  return section;
 }
 
-/** One hand, opened: how it has gone, and each mistake made with it. */
+/** One hand, opened: how it has gone, what you do well with it, and each mistake made with it. */
 function handDetail(me, key, go, close) {
   const [dealt, played, won, netBb] = me.life.starting[key] || [0, 0, 0, 0];
   const [decisions, sound, mistakes] = me.life.decided[key] || [0, 0, 0, 0];
+  const helped = Math.max(0, decisions - sound - mistakes);
   const list = mistakesWith(me.life, key);
+  const praise = praiseFor(me.life, key);
   // The same mistake made four times is one lesson, not four: grouped, with
   // how often, the latest time it happened, and the latest hand you can replay.
   const groups = [];
@@ -708,28 +728,62 @@ function handDetail(me, key, go, close) {
   }
   groups.sort((a, b) => b.count - a.count);
   const shown = groups.slice(0, 8);
-  return el('div.hand-detail-inner',
+  const share = decisions ? sound / decisions : null;
+  // In one line, how this hand goes for you.
+  const verdict = !decisions ? t('No decisions graded with this hand yet.')
+    : decisions < LIFE_SAMPLE.rating ? t('Too few decisions to say yet: {n} so far.', { n: decisions })
+      : share >= 0.85 ? t('You play this hand well.')
+        : share >= 0.65 ? t('Mostly right, with a leak or two.')
+          : t('This hand costs you: you go wrong with it often.');
+  return el('div.hand-detail',
     el('div.hand-detail-head',
       miniCards(key),
       el('div.hand-detail-title',
-        el('h3', `${handWords(key)} · ${key}`),
-        el('div.faint', [
-          t('Dealt {n}', { n: dealt }),
-          t('played {n}', { n: played }),
-          t('won {n}', { n: won }),
-          netBb ? bb(netBb) : null,
-          decisions ? t('{n} of {d} decisions right', { n: sound, d: decisions }) : null,
-        ].filter(Boolean).join(' · ')),
+        el('h3', handWords(key)),
+        el('div.faint', key),
       ),
-      el('button.btn.sm.ghost', { type: 'button', onclick: close }, t('Close')),
+      el('button.btn.sm.ghost.hand-detail-close', { type: 'button', onclick: close }, t('Close')),
     ),
-    shown.length
-      ? el('ol.mistake-list', shown.map((g) => mistakeItem(g, go)))
-      : el('p.mistake-none', icon('check', { size: 16 }), ' ', decisions
-        ? t('No mistakes with {hand}: every decision with it was right.', { hand: key })
-        : t('No decisions graded with {hand} yet.', { hand: key })),
-    groups.length > shown.length ? el('p.faint', t('And {n} other kinds of mistake.', { n: groups.length - shown.length })) : null,
-    mistakes > list.length ? el('p.faint', t('The oldest mistakes are not kept in full, only counted.')) : null,
+    el('div.hand-facts',
+      el('div', el('b', String(dealt)), el('span', t('Dealt'))),
+      el('div', el('b', dealt ? pct(played / dealt) : '—'), el('span', t('Played'))),
+      el('div', el('b', String(won)), el('span', t('Won'))),
+      el('div', el('b', netBb ? bb(netBb) : '—'), el('span', t('Cash result'))),
+    ),
+    el('div.hand-score',
+      el('div.hand-score-line', el('b', verdict)),
+      decisions
+        ? el('div.hand-score-bar', { role: 'img', 'aria-label': t('{n} right, {h} right with help, {m} mistakes', { n: sound, h: helped, m: mistakes }) },
+          sound ? el('span.is-good', { style: { flexGrow: sound } }) : null,
+          helped ? el('span.is-helped', { style: { flexGrow: helped } }) : null,
+          mistakes ? el('span.is-bad', { style: { flexGrow: mistakes } }) : null)
+        : null,
+      decisions
+        ? el('div.hand-score-legend.faint',
+          el('span', el('i.is-good'), t('{n} right', { n: sound })),
+          helped ? el('span', el('i.is-helped'), t('{n} with help', { n: helped })) : null,
+          el('span', el('i.is-bad'), mistakes === 1 ? t('1 mistake') : t('{n} mistakes', { n: mistakes })))
+        : null,
+    ),
+    praise.length
+      ? el('div.hand-part',
+        el('h4.hand-part-title.is-good', icon('check', { size: 15 }), ' ', t('What you do well')),
+        el('ul.praise-list', praise.slice(0, 5).map((p) => el('li.praise',
+          el('span.praise-when', el('b.mistake-street', p.street), p.action && DID[p.action] ? ` · ${t(DID[p.action])}` : ''),
+          el('span.praise-head', t(p.head)),
+          p.times > 1 ? el('span.praise-count', t('{n} times', { n: p.times })) : null,
+        ))))
+      : null,
+    el('div.hand-part',
+      el('h4.hand-part-title.is-bad', icon('warn', { size: 15 }), ' ', t('Your mistakes')),
+      shown.length
+        ? el('ol.mistake-list', shown.map((g) => mistakeItem(g, go)))
+        : el('p.mistake-none', icon('check', { size: 16 }), ' ', decisions
+          ? t('No mistakes with {hand}: every decision with it was right.', { hand: key })
+          : t('No decisions graded with {hand} yet.', { hand: key })),
+      groups.length > shown.length ? el('p.faint', t('And {n} other kinds of mistake.', { n: groups.length - shown.length })) : null,
+      mistakes > list.length ? el('p.faint', t('The oldest mistakes are not kept in full, only counted.')) : null,
+    ),
   );
 }
 
@@ -758,7 +812,7 @@ function mistakeItem({ latest: m, count, cost, replay }, go) {
 }
 
 /** How often you play each hand when it is dealt: all 169, in one grid. */
-function handGrid(rows, open) {
+function handGrid(rows) {
   const byKey = Object.fromEntries(rows.map((r) => [r.key, r]));
   const dealtAny = rows.some((r) => r.dealt > 0);
   const cells = [];
@@ -794,8 +848,6 @@ function handGrid(rows, open) {
     withTips(el('div.chart-box', el('div.hand-grid', {
       role: 'img',
       'aria-label': t('All 169 starting hands, shaded by how often you play them'),
-      // Any square opens that hand's rating: how it has gone, and the mistakes.
-      onclick: (e) => { const cell = e.target.closest('.hg-cell'); if (cell && cell.dataset.key) open(cell.dataset.key); },
     }, cells))),
     el('p.faint.chart-note', t('Tap a square to see how you play that hand.')),
     dealtAny ? null : el('p.faint.chart-note', t('Every hand you are dealt at a real table fills in its square.')),

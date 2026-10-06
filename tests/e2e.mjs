@@ -3991,21 +3991,35 @@ await step('your hand rating names the hands you go wrong with, and opens each m
     }, KEY);
     await rp.reload({ waitUntil: 'domcontentloaded' });
     await rp.evaluate(() => { location.hash = '#character'; });
-    await rp.waitForSelector('.char-rating .rate-row', { timeout: 5000 });
+    await rp.waitForSelector('.char-hands .rate-row', { timeout: 5000 });
     const lists = await rp.evaluate(() => [...document.querySelectorAll('.rate-col')].map((c) => c.textContent.replace(/\s+/g, ' ')));
     if (!/KJo.*3 mistakes in 6/.test(lists[0])) throw new Error(`where you go wrong reads "${lists[0]}"`);
     if (!/AKs.*8 of 8 right/.test(lists[1])) throw new Error(`where you play best reads "${lists[1]}"`);
-    await rp.click('.rate-col:first-child .rate-row');
-    await rp.waitForSelector('.hand-detail:not([hidden]) .mistake', { timeout: 5000 });
-    const detail = await rp.textContent('.hand-detail');
+    // A tap opens the hand beside the list, and the page does not move.
+    const tap = async (sel) => {
+      await rp.evaluate((q) => document.querySelector(q).scrollIntoView({ block: 'center' }), sel);
+      const at = await rp.evaluate((q) => { const r = document.querySelector(q).getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, scrollY]; }, sel);
+      await rp.mouse.click(at[0], at[1]);
+      await rp.waitForTimeout(200);
+      if (await rp.evaluate(() => scrollY) !== at[2]) throw new Error(`tapping ${sel} scrolled the page`);
+    };
+    await tap('.rate-col:first-child .rate-row');
+    await rp.waitForFunction(() => /King-Jack offsuit/.test(document.querySelector('.hand-inspector').textContent), null, { timeout: 5000 });
+    const inView = await rp.evaluate(() => { const r = document.querySelector('.hand-inspector').getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; });
+    if (!inView) throw new Error('the hand opened out of sight');
+    const detail = await rp.textContent('.hand-inspector');
     if (!/Called without the odds/.test(detail) || !/3 times/.test(detail) || !/The price asked for 31% and you had 21%/.test(detail) || !/Instead:\s*Fold/.test(detail)) {
       throw new Error(`the mistake opened as "${detail.replace(/\s+/g, ' ').slice(0, 200)}"`);
     }
-    // Any square of the grid opens its hand too.
-    await rp.click('.hg-cell[data-key="AKs"]');
-    await rp.waitForFunction(() => /Ace-King suited/.test(document.querySelector('.hand-detail').textContent), null, { timeout: 5000 });
+    if (!/What you do well/.test(detail) || !/Correct against the open/.test(detail)) throw new Error('the hand does not say what you do well with it');
+    // Any square of the grid opens its hand too, in the same place.
+    await tap('.hg-cell[data-key="AKs"]');
+    await rp.waitForFunction(() => /Ace-King suited/.test(document.querySelector('.hand-inspector').textContent), null, { timeout: 5000 });
+    if (!(await rp.$('.hg-cell.is-picked[data-key="AKs"]'))) throw new Error('the square picked is not marked');
+    const aks = await rp.textContent('.hand-inspector');
+    if (!/You play this hand well/.test(aks) || !/Right bet on the right board/.test(aks) || !/4 times/.test(aks)) throw new Error(`AKs opened as "${aks.replace(/\s+/g, ' ').slice(0, 200)}"`);
     if (mine.length) throw new Error(mine.join(' | '));
-    console.log('      KJo: 3 mistakes in 6, grouped, with why and what instead; AKs 8 of 8; the grid opens a hand too');
+    console.log('      KJo: 3 mistakes in 6, grouped, with why and what instead, and what it does well; AKs 8 of 8; taps open beside the list without moving the page');
   } finally {
     await ctx.close();
   }
