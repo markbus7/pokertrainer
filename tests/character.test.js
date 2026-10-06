@@ -10,10 +10,12 @@
  */
 
 import { describe, it, assert, equal, close } from './harness.js';
+
+const deepEqual = (a, b, msg = '') => equal(JSON.stringify(a), JSON.stringify(b), msg);
 import { Profile } from '../src/js/state/profile.js';
 import {
   emptyLifetime, sanitizeLifetime, recordHand, styleNumbers, styleFromReports, cashResults,
-  startingHands, seats, rivals, soundRate, handRatings, mistakesWith, LIFE_SAMPLE, MISTAKES_KEPT,
+  startingHands, seats, rivals, soundRate, handRatings, mistakesWith, praiseFor, LIFE_SAMPLE, MISTAKES_KEPT, PRAISE_KINDS,
 } from '../src/js/state/lifetime.js';
 import { seatOf, seatValue, chipsValue, doublingTarget, keepSeat, clearSeat } from '../src/js/state/seat.js';
 import { PLAYER_TYPES, REGULARS, BOUNDS, HEALTHY, playerType } from '../src/js/data/playerTypes.js';
@@ -536,6 +538,30 @@ describe('your hand rating: every decision kept with the hand you held', () => {
     equal(kept[1].params.needed, '31%');
     equal(kept[1].handId, 'h-1');
     equal(kept[1].where, 'nl2');
+  });
+
+  it('keeps what you do well with each hand, by kind, counted — not when you were helped', () => {
+    const life = emptyLifetime();
+    for (let i = 0; i < 3; i++) recordHand(life, hand({ key: 'AKs', vpip: true, graded: [right(), right({ street: 'flop', action: 'bet', head: 'Right bet on the right board' })] }));
+    recordHand(life, hand({ key: 'AKs', vpip: true, graded: [right({ helped: true }), right({ level: 'ok', head: 'Close enough' }), mistake()] }));
+    const well = praiseFor(life, 'AKs');
+    equal(well.length, 2, 'helped and merely close decisions are not praise');
+    equal(well[0].times, 3);
+    deepEqual(well.map((p) => p.head).sort(), ['Right bet on the right board', 'Right side of the chart']);
+    equal(well.find((p) => p.street === 'flop').action, 'bet');
+    deepEqual(praiseFor(life, 'KJo'), []);
+  });
+
+  it('keeps a bounded number of kinds per hand, and survives a save', () => {
+    const life = emptyLifetime();
+    recordHand(life, hand({ key: 'QQ', vpip: true, graded: [right(), right()] }));
+    for (let i = 0; i < PRAISE_KINDS + 4; i++) recordHand(life, hand({ key: 'QQ', vpip: true, graded: [right({ head: `Kind ${i}` })] }));
+    const kinds = Object.keys(life.praise.QQ);
+    equal(kinds.length, PRAISE_KINDS);
+    assert(kinds.includes('Right side of the chart'), 'the most frequent kind is not the one that gives way');
+    const back = sanitizeLifetime(JSON.parse(JSON.stringify(life)));
+    deepEqual(praiseFor(back, 'QQ'), praiseFor(life, 'QQ'));
+    deepEqual(sanitizeLifetime({ praise: { QQ: { x: ['nope'] }, toolongkey: {} } }).praise, {});
   });
 
   it('keeps no more mistakes than it can show, and drops nothing it counts', () => {

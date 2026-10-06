@@ -2456,13 +2456,48 @@ button.char-fact:hover { border-color: var(--brass-lo); box-shadow: 0 0 0 1px va
 .char-plaques .stat .value { font-family: var(--font-print); }
 
 /* Your hands. */
-.hands-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 var(--s-5); }
 .hand-picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--s-3); }
-@media (min-width: 1040px) {
-  .hands-body { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); align-items: start; }
-  .hands-body .hand-picks { order: 2; grid-template-columns: 1fr; margin-top: var(--s-5); }
-  .hands-body .hand-grid-figure { order: 1; }
+.hands-sub { margin: var(--s-5) 0 0; font-size: var(--t-lg) !important; }
+.hands-browse .hand-grid-figure { margin-top: var(--s-5); }
+
+/* The hand you picked, beside the hands: it stays in view while the page
+   does not move, and changes in place with every tap. On a phone, a sheet
+   over the bottom of the screen. */
+.hands-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
+/* The panel's deal-in keeps a transform when it fills forwards, and a
+   transformed ancestor would pin the phone's sheet to the panel, not the screen. */
+.char-hands { animation-fill-mode: backwards; }
+.hand-inspector {
+  padding: var(--s-4);
+  border: 1px solid var(--brass-lo);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 3px var(--paper-2);
 }
+@media (min-width: 1040px) {
+  .hands-layout { grid-template-columns: minmax(0, 1fr) minmax(340px, 400px); align-items: start; }
+  .hand-inspector { position: sticky; top: 88px; max-height: calc(100vh - 104px); overflow-y: auto; overscroll-behavior: contain; }
+  .hand-detail-close { display: none; }
+}
+@media (max-width: 1039px) {
+  .hand-inspector {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    max-height: 72vh; overflow-y: auto; overscroll-behavior: contain;
+    padding-bottom: max(var(--s-4), env(safe-area-inset-bottom));
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.35), inset 0 0 0 3px var(--paper-2);
+    transform: translateY(105%);
+    visibility: hidden;
+    transition: transform 0.22s ease, visibility 0s linear 0.22s;
+  }
+  .hand-inspector.is-open { transform: none; visibility: visible; transition: transform 0.22s ease; }
+  .hand-detail-head { position: sticky; top: calc(-1 * var(--s-4)); z-index: 1; margin: calc(-1 * var(--s-4)) calc(-1 * var(--s-4)) 0; padding: var(--s-3) var(--s-4); background: var(--paper); border-bottom: 1px solid var(--ink-rule); }
+}
+.hand-inspector-empty { display: grid; justify-items: center; gap: var(--s-2); padding: var(--s-5) var(--s-3); text-align: center; color: var(--ink-dim); }
+.hand-inspector-empty p { margin: 0; }
+/* Whichever hand is open, marked wherever it appears on the page. */
+.hg-cell.is-picked { outline: 3px solid var(--ink); outline-offset: -2px; position: relative; z-index: 1; }
+.rate-row.is-picked, button.hand-pick.is-picked { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
 .hand-pick { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--s-3); align-items: center; padding: var(--s-3); border: 1px solid var(--ink-rule); border-radius: 8px; background: var(--paper-2); }
 .hand-pick .page-kicker { grid-column: 1 / -1; }
 .hand-pick-name { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); margin-top: 4px; }
@@ -2541,7 +2576,7 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .rate-col:last-child .rate-title { color: var(--ink-green); }
 .rate-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--s-3);
   width: 100%;
@@ -2567,13 +2602,33 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .rate-score.is-bad { color: var(--ink-red); }
 .rate-score.is-good { color: var(--ink-green); }
 
-.hand-detail { margin-top: var(--s-4); padding: var(--s-4); border: 1px solid var(--brass-lo); border-radius: 10px; background: var(--paper); box-shadow: inset 0 0 0 3px var(--paper-2); scroll-margin-top: 80px; }
-.hand-detail[hidden] { display: none; }
-.hand-detail:focus { outline: none; }
+.hand-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: var(--s-3); }
+.hand-facts > div { display: flex; flex-direction: column; align-items: center; padding: 6px 4px; border-radius: 6px; background: var(--paper-2); text-align: center; }
+.hand-facts b { font-family: var(--font-print); font-size: clamp(13px, 3.4vw, var(--t-md)); white-space: nowrap; }
+.hand-facts span { font-size: var(--t-xs); color: var(--ink-dim); }
+.hand-score { margin-top: var(--s-3); }
+.hand-score-line { font-family: var(--font-print); font-size: var(--t-md); }
+.hand-score-bar { display: flex; gap: 2px; height: 10px; margin-top: 6px; }
+.hand-score-bar span { display: block; min-width: 4px; border-radius: 2px; }
+.hand-score-bar .is-good, .hand-score-legend i.is-good { background: var(--ink-green); }
+.hand-score-bar .is-helped, .hand-score-legend i.is-helped { background: var(--brass-lo); }
+.hand-score-bar .is-bad, .hand-score-legend i.is-bad { background: var(--ink-red); }
+.hand-score-legend { display: flex; flex-wrap: wrap; gap: 4px var(--s-3); margin-top: 4px; font-size: var(--t-xs); }
+.hand-score-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.hand-score-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+.hand-part { margin-top: var(--s-4); }
+.hand-part-title { display: flex; align-items: center; gap: 4px; margin: 0 0 var(--s-2); font-size: var(--t-md); }
+.hand-part-title.is-good { color: var(--ink-green); }
+.hand-part-title.is-bad { color: var(--ink-red); }
+.praise-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.praise { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--s-2); padding: 6px var(--s-3); border-left: 3px solid var(--ink-green); background: var(--paper-2); border-radius: 0 8px 8px 0; }
+.praise-when { grid-column: 1; font-size: var(--t-sm); }
+.praise-head { grid-column: 1; font-family: var(--font-print); font-weight: 700; }
+.praise-count { grid-column: 2; grid-row: 1 / span 2; align-self: center; padding: 1px 8px; border-radius: 99px; background: var(--ink-green); color: var(--paper); font-size: var(--t-xs); font-weight: 700; white-space: nowrap; }
 .hand-detail-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--s-3); align-items: center; }
 .hand-detail-head .mini-cards { margin-top: 0; }
 .hand-detail-title h3 { margin: 0; font-size: var(--t-lg) !important; }
-.mistake-list { list-style: none; margin: var(--s-4) 0 0; padding: 0; display: grid; gap: var(--s-3); }
+.mistake-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); }
 .mistake { padding: var(--s-3); border-left: 3px solid var(--ink-red); background: var(--paper-2); border-radius: 0 8px 8px 0; }
 .mistake-when { font-size: var(--t-sm); }
 .mistake-street { text-transform: capitalize; }

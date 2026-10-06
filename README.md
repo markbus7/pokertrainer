@@ -220,9 +220,13 @@ Every decision you make at a real table is graded and kept with the hand you
 held, so the page has a hand rating: the hands you make the most mistakes with,
 and the ones you play best (of the hands you actually play — folding 9-3 every
 time is right, but it is not playing it well). Tap any of them, or any square of
-the grid, and the mistakes made with that hand open up, grouped by kind: what
-you did and on which street, what it is called, why it was a mistake, what was
-right instead, what it cost, and the hand itself to replay if the Log kept it.
+the grid, and that hand opens beside the list, without the page moving, so you
+can tap one after another: how often it is dealt and played, what it has won,
+how many of your decisions with it were right, what you do well with it, and
+the mistakes, grouped by kind — what you did and on which street, why it was a
+mistake, what was right instead, what it cost, and the hand itself to replay
+if the Log kept it. On a phone the hand opens in a sheet over the bottom of
+the screen.
 
 ### 📋 Interactive range charts
 
@@ -283,7 +287,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.17.1`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.17.2`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is
