@@ -64,6 +64,11 @@ pot odds, and SPR. The moment you act, it tells you whether that was right:
 > **Called without the odds** — You needed 39.1% but had only 21.2%. Over a
 > career, calls like this are the single biggest leak in small-stakes poker.
 
+The next decision replaces that verdict, often before there is time to read
+it, so the last few stay underneath under **What Silas said before**: the
+street, what you did, a ✓, ≈ or ✗ for whether he agreed, and the verdict.
+Tap one to read why again and what was right.
+
 At the end of a session it produces a **leak report** from your own stats —
 VPIP, PFR, aggression factor, WTSD — naming what you are doing wrong and what
 to do instead.
@@ -278,7 +283,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.17.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.17.1`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

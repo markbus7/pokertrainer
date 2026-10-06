@@ -5794,4 +5794,8 @@ export const NL = {
   'Cost about {bb} in all': 'Kostte in totaal ongeveer {bb}',
   'Replay the hand': 'Speel de hand terug',
   'Tap a square to see how you play that hand.': 'Tik op een vakje om te zien hoe je die hand speelt.',
+  // v3.17: what Silas said before
+  'What Silas said before': 'Wat Silas eerder zei',
+  'previous hand': 'vorige hand',
+  'earlier hand': 'eerdere hand',
 };
