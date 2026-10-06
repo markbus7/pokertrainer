@@ -352,6 +352,30 @@ input[type="range"] {
 .verdict-box.skip strong { color: var(--text-dim); }
 .verdict-box .head { font-weight: 700; margin-bottom: 4px; }
 
+/* Silas's earlier verdicts, under the current one: one line each, tap for why. */
+.said-before { margin-top: 10px; font-family: var(--font); }
+.said-title { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 4px; }
+.said-row {
+  border-left: 3px solid var(--border-bright);
+  padding: 4px 0 4px 8px; margin-top: 4px;
+  font-size: 0.8rem;
+}
+.said-row.good { border-left-color: var(--green); }
+.said-row.bad { border-left-color: var(--red); }
+.said-row.ok { border-left-color: var(--blue); }
+.said-row summary { cursor: pointer; list-style: none; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.said-row summary::-webkit-details-marker { display: none; }
+.said-mark { font-weight: 700; width: 1em; }
+.said-row.good .said-mark { color: var(--green); }
+.said-row.bad .said-mark { color: var(--red); }
+.said-row.ok .said-mark { color: var(--blue); }
+.said-street { text-transform: capitalize; }
+.said-head { flex-basis: 100%; padding-left: calc(1em + 6px); font-weight: 600; }
+.said-street { font-weight: 700; }
+.said-why { margin: 6px 0 0; color: var(--text-dim); }
+.paper .said-why, .paper .said-title { color: var(--ink-dim); }
+.said-row .verdict-better { margin-top: 4px; }
+
 .log {
   font-family: var(--mono);
   font-size: 0.76rem;

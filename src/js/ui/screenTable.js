@@ -148,6 +148,12 @@ export function resultLine(net) {
   return t('No chips won or lost this hand.');
 }
 
+/** Silas's earlier verdicts: how many are kept, and how many are shown under the current one. */
+const SAID_KEPT = 8;
+const SAID_SHOWN = 4;
+const SAID_MARK = { good: '✓', ok: '≈', bad: '✗', skip: '–' };
+const DID = { fold: 'You folded', check: 'You checked', call: 'You called', bet: 'You bet', raise: 'You raised' };
+
 /** How many chairs the practice table can be dealt for. */
 const TABLE_SIZES = [6, 3, 2];
 
@@ -494,6 +500,10 @@ export function renderTable(ctx, params = {}) {
     helped: false,
     // Silas's notes: every decision as graded, whether or not he said so.
     graded: [],
+    // What Silas said about your last few decisions, newest first: the next
+    // verdict replaces the box before there is time to read it, so the ones
+    // before it stay underneath.
+    said: [],
     pearls: { hands: 0, decisions: 0, bonus: 0, boat: 0, bounty: 0, catches: 0 },
     // The Catch Book: fish hooked this hand, waiting on how it ends.
     hooked: [],
@@ -1159,6 +1169,8 @@ export function renderTable(ctx, params = {}) {
     if (rivalMemory) rivalRemembers(rivalMemory, { facingBet: snap.toCall > 0, action: action.type });
     const verdict = judgeSpot({ ...snap, action: action.type, amount: action.amount });
     session.verdict = verdict;
+    session.said.unshift({ verdict, street: table.street, action: action.type, hand: table.handNumber });
+    if (session.said.length > SAID_KEPT) session.said.length = SAID_KEPT;
     const helped = session.helped || session.peeked;
     recordLearning(verdict, helped);
     // Into Silas's notes, said out loud or not; and the pearl, if it earned one.
@@ -2529,6 +2541,30 @@ export function renderTable(ctx, params = {}) {
     return null;
   }
 
+  /**
+   * The verdicts before the one in the box, short: the street, what you did,
+   * and whether Silas agreed. Tap one for the why and what was right.
+   */
+  function saidBefore() {
+    const before = session.said.filter((s) => s.verdict !== session.verdict).slice(0, SAID_SHOWN);
+    if (!before.length) return null;
+    return el('div.said-before',
+      el('div.said-title', t('What Silas said before')),
+      before.map(({ verdict: v, street, action, hand }) => el(`details.said-row.${v.level}`,
+        el('summary',
+          el('span.said-mark', { 'aria-hidden': 'true' }, SAID_MARK[v.level] || '•'),
+          el('span.said-when',
+            el('b.said-street', street),
+            DID[action] ? ` · ${t(DID[action])}` : '',
+            hand !== table.handNumber
+              ? el('span.faint', ` · ${hand === table.handNumber - 1 ? t('previous hand') : t('earlier hand')}`)
+              : null),
+          el('span.said-head', t(v.head, v.params))),
+        v.body ? el('p.said-why', t(v.body, v.params)) : null,
+        v.better ? el('div.verdict-better', t('Instead:'), ' ', t(v.better, v.params)) : null,
+      )));
+  }
+
   function drawCoach() {
     const snap = session.snapshot;
     const summary = stats.summary();
@@ -2643,6 +2679,8 @@ export function renderTable(ctx, params = {}) {
               : null,
           )
         : null,
+
+      saidBefore(),
 
       session.learned.length
         ? el('div', { style: { marginTop: '16px' } },
