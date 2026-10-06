@@ -57,6 +57,30 @@ export const MISTAKES = {
     label: 'Limping instead of raising',
     fix: 'Raise or fold. Limping gives everyone behind you a cheap look at a flop.',
   },
+  'over-limped': {
+    label: 'Limping behind with a hand to fold',
+    fix: 'Behind a limper, raise the hands this seat opens and fold the rest.',
+  },
+  'limped-behind': {
+    label: 'Limping behind with a hand to raise',
+    fix: 'A hand worth opening is worth raising over a limper: take the pot to one player.',
+  },
+  'raised-a-call': {
+    label: 'Re-raising a hand that calls',
+    fix: 'Against an open, the chart has three answers. The middle of the range calls; only its top 3-bets.',
+  },
+  'flatted-value': {
+    label: 'Calling with a hand that 3-bets for value',
+    fix: 'The top of the range re-raises against an open: build the pot your best hands win.',
+  },
+  'flatted-bluff': {
+    label: 'Calling with a 3-bet bluff',
+    fix: 'The bluffs in the 3-bet chart are there because they play badly as calls.',
+  },
+  'continued-outside-range': {
+    label: 'Playing a hand that folds to an open',
+    fix: 'Against a raise the range is far tighter than when opening. If it is not in the chart, fold.',
+  },
   'checked-back-value': {
     label: 'Checking back after taking the lead',
     fix: 'You raised before the flop; on most boards the bet is automatic.',

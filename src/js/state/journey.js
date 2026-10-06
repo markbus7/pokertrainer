@@ -87,9 +87,15 @@ function evaluate(profile, chapter, spec) {
     }
 
     case 'take': {
+      // "Double your buy-in" was the whole instruction, and it did not say what
+      // to do: it means sitting down for the price of a seat and getting up —
+      // with the Cash out button — holding at least twice that.
+      const money = (n) => `$${n.toFixed(2)}`;
       return {
         ...base, text: 'Take {stop} from {boss}', params: { stop: venue.name, boss: bossName(venue) },
-        hint: 'Double your buy-in at their table, or beat them in a duel.', done: beaten,
+        hint: 'Sit at {boss}\'s table for {buyin}, then cash out with {target} or more: double what you sat down with. Or beat {boss} in a duel.',
+        hintParams: { boss: bossName(venue), buyin: money(venue.entry), target: money(venue.entry * 2) },
+        done: beaten,
         to: { route: 'stop', params: { at: venue.key }, place: null, stop: venue.key },
       };
     }

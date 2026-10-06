@@ -160,6 +160,20 @@ paid, and the verdict says so. The ICM chapter has a table of its own now: the
 bubble, four left and three paid, dealt straight away with a short stack, for
 practice — nothing is entered and nothing is won.
 
+A table waits for you. Looking at something else — the Ledger, your character,
+a hand in the Log — pauses it where it is, mid-hand if that is where you were,
+and a bar under the top rail says where you are sitting and what is on the
+table, with **Back to the table** and **Cash out**. The chips are kept in the
+save after every action of yours, so a closed tab or a reload does not lose
+them either: the seat is offered back, and taking it costs nothing. Getting up
+in the middle of a hand folds it, as it would at any card room. One table at a
+time. A Regatta cut short by a closed tab is settled the way Withdraw settles it.
+
+Taking a table from its owner means sitting down at their table for the price of
+a seat and cashing out with at least twice that — sit down with $2 at Mud
+Landing, get up with $4 or more. The owner's table shows how close you are, and
+says so when you have it.
+
 Pearls are what the tables pay for hands you play through and decisions you
 get right — folding before the flop is the default and pays nothing, and a
 table with fewer than six players pays half. The practice table can be dealt
@@ -196,6 +210,14 @@ longest winning run; your best and worst seat, your favourite victim and your
 nemesis; and what you have done on the river. Nothing is named from too few
 hands: each number says how many more it needs. It is in the Ledger too, and on
 the river beside your boat.
+
+Every decision you make at a real table is graded and kept with the hand you
+held, so the page has a hand rating: the hands you make the most mistakes with,
+and the ones you play best (of the hands you actually play — folding 9-3 every
+time is right, but it is not playing it well). Tap any of them, or any square of
+the grid, and the mistakes made with that hand open up, grouped by kind: what
+you did and on which street, what it is called, why it was a mistake, what was
+right instead, what it cost, and the hand itself to replay if the Log kept it.
 
 ### 📋 Interactive range charts
 
@@ -256,7 +278,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.16.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.17.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

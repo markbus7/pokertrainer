@@ -2529,6 +2529,62 @@ button.char-fact:hover { border-color: var(--brass-lo); box-shadow: 0 0 0 1px va
 .fun-facts { margin-top: var(--s-5); }
 .fun-facts ul { margin: 6px 0 0; padding-left: 1.2em; font-family: var(--font-print); font-size: var(--t-md); line-height: 1.6; }
 
+/* Your hand rating: the hands you go wrong with, the ones you play best,
+   and one opened with its mistakes. */
+button.hand-pick.is-button { font: inherit; color: inherit; text-align: left; cursor: pointer; width: 100%; }
+button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 0 0 1px var(--brass-lo); }
+.hg-cell { cursor: pointer; }
+.hg-cell:hover { outline: 2px solid var(--ink); outline-offset: -1px; }
+.rate-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--s-4); margin-top: var(--s-3); }
+.rate-title { display: flex; align-items: center; gap: 4px; margin: 0 0 var(--s-2); font-size: var(--t-md) !important; }
+.rate-col:first-child .rate-title { color: var(--ink-red); }
+.rate-col:last-child .rate-title { color: var(--ink-green); }
+.rate-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-rule);
+  border-radius: 8px;
+  background: var(--paper-2);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rate-row:hover { border-color: var(--brass-lo); box-shadow: 0 0 0 1px var(--brass-lo); }
+.rate-row .mini-cards { margin-top: 0; }
+.rate-row .mini-card { width: 26px; height: 36px; }
+.rate-row .mini-card b { font-size: 13px; }
+.rate-row .mini-card i { font-size: 12px; }
+.rate-name { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.rate-name b { font-family: var(--mono); }
+.rate-name .faint { font-size: var(--t-xs); }
+.rate-score { display: inline-flex; align-items: center; font-size: var(--t-sm); font-weight: 700; white-space: nowrap; }
+.rate-score.is-bad { color: var(--ink-red); }
+.rate-score.is-good { color: var(--ink-green); }
+
+.hand-detail { margin-top: var(--s-4); padding: var(--s-4); border: 1px solid var(--brass-lo); border-radius: 10px; background: var(--paper); box-shadow: inset 0 0 0 3px var(--paper-2); scroll-margin-top: 80px; }
+.hand-detail[hidden] { display: none; }
+.hand-detail:focus { outline: none; }
+.hand-detail-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--s-3); align-items: center; }
+.hand-detail-head .mini-cards { margin-top: 0; }
+.hand-detail-title h3 { margin: 0; font-size: var(--t-lg) !important; }
+.mistake-list { list-style: none; margin: var(--s-4) 0 0; padding: 0; display: grid; gap: var(--s-3); }
+.mistake { padding: var(--s-3); border-left: 3px solid var(--ink-red); background: var(--paper-2); border-radius: 0 8px 8px 0; }
+.mistake-when { font-size: var(--t-sm); }
+.mistake-street { text-transform: capitalize; }
+.mistake-head { font-family: var(--font-print); font-weight: 700; font-size: var(--t-md); margin-top: 2px; }
+.mistake-why { margin: 4px 0 0; line-height: 1.5; }
+.mistake-count { margin-left: 8px; padding: 1px 8px; border-radius: 99px; background: var(--ink-red); color: var(--paper); font-family: var(--font); font-size: var(--t-xs); font-weight: 700; vertical-align: middle; }
+.mistake-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--s-4); margin-top: 6px; font-size: var(--t-sm); }
+.mistake-better b { color: var(--ink-green); }
+.mistake-foot .btn { display: inline-flex; align-items: center; gap: 4px; }
+.mistake-none { display: flex; align-items: center; gap: 6px; margin: var(--s-3) 0 0; color: var(--ink-green); font-weight: 600; }
+
 /* At the table. */
 .seat-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
 .person-picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s-3); }
@@ -3916,3 +3972,58 @@ button.char-fact:hover { border-color: var(--brass-lo); box-shadow: 0 0 0 1px va
 .regatta-net { font-family: var(--mono); font-size: var(--t-xl); font-weight: 700; }
 .regatta-net.up { color: var(--green, #3ecf8e); }
 .regatta-net.down { color: var(--red, #e8826f); }
+
+/* ================================================================
+   A table waiting for you: the bar under the rail
+   ================================================================ */
+
+#seatbar {
+  position: relative;
+  z-index: 40;
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-2), var(--wood-3));
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--on-wood);
+  border-bottom: 1px solid var(--brass-lo);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+#seatbar[hidden] { display: none; }
+.seatbar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px var(--s-3);
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 8px max(16px, env(safe-area-inset-left));
+}
+.seatbar-inner > svg { flex: none; color: var(--brass-hi); }
+.seatbar-line { flex: 1 1 220px; font-family: var(--font-print); font-size: var(--t-md); }
+.seatbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.seatbar-actions .btn.ghost { color: var(--on-wood); border-color: rgba(255, 255, 255, 0.3); }
+
+/* Somewhere else to sit, while you are still sitting here. */
+.seated-elsewhere { max-width: 560px; margin: var(--s-6) auto; }
+
+/* Taking the table: the meter in the table's header. */
+.take-meter {
+  display: grid;
+  grid-template-columns: auto;
+  gap: 2px;
+  min-width: 180px;
+  padding: 5px 10px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--brass-lo);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--on-wood);
+  font-size: var(--t-xs);
+  line-height: 1.25;
+}
+.take-line { font-weight: 700; }
+.take-sub { opacity: 0.8; }
+.take-bar { display: block; height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.15); overflow: hidden; }
+.take-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--brass-lo), var(--brass-hi)); }
+.take-meter.reached { border-color: var(--brass-hi); box-shadow: 0 0 0 1px var(--brass-hi), 0 0 14px rgba(255, 255, 255, 0.18); }
+.take-meter.reached .take-line { color: var(--brass-hi); }

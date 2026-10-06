@@ -288,7 +288,8 @@ function lobbyCard(table, venue, lobby, { state, profile, go }) {
         el('span.k', t('Average pot')), el('span.v', t('{n} bb', { n: table.stats.pot }))),
     ),
     table.owner
-      ? el('p.faint.lobby-note', t('Double your buy-in here, or beat {name} in a duel, and the table is yours.', { name: boss.short }))
+      ? el('p.faint.lobby-note', t('Sit down for {buyin} and cash out with {target} or more, double what you sat down with, or beat {name} in a duel, and the table is yours.',
+        { buyin: fmt.money(venue.entry), target: fmt.money(venue.entry * 2), name: boss.short }))
       : el('p.faint.lobby-note', t('Nobody owns this game, so there is no table to take. A place to build your roll.')),
     el(`button.btn${table.owner ? '.primary.plank' : '.ghost'}`, {
       onclick: () => {

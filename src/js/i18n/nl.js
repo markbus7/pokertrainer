@@ -5703,4 +5703,95 @@ export const NL = {
   'all told': 'in totaal',
   'Nights with Nell': 'Avonden met Nell',
   'sittings with the Rival': 'zittingen met de Rivaal',
+  /* ---- v3.17: the preflop verdicts against an open and a limp ---- */
+  'Right against the limp': 'Juist tegen de limp',
+  'Raise the limper': 'Raise de limper',
+  '{hand} is worth a raise from {seat}. Limping behind invites the whole table in and hands away the lead: raise, and play the pot against one weak player instead.':
+    '{hand} is een raise waard vanaf {seat}. Achter een limper meelimpen nodigt de hele tafel uit en geeft het initiatief weg: raise, en speel de pot tegen één zwakke speler.',
+  'Limping behind with a fold': 'Meelimpen met een fold',
+  '{hand} is not worth a raise from {seat}, and a hand that is not worth a raise is not worth a call: it is behind, in a pot with several players, with nobody\'s lead to take.':
+    '{hand} is geen raise waard vanaf {seat}, en een hand die geen raise waard is, is ook geen call waard: hij ligt achter, in een pot met meerdere spelers, zonder initiatief om te pakken.',
+  'A call here, not a 3-bet': 'Hier een call, geen 3-bet',
+  '{hand} is a hand to play against this open, but as a call: too good to fold, not strong enough to 3-bet for value. Re-raised, it folds out the hands it beats and is called by the ones that beat it.':
+    '{hand} is een hand om tegen deze open te spelen, maar als call: te goed om te folden, niet sterk genoeg om voor value te 3-betten. Als re-raise jaagt hij de handen weg die hij verslaat en wordt hij gecalld door de handen die hem verslaan.',
+  'Too strong to just call': 'Te sterk om alleen te callen',
+  '{hand} 3-bets for value against this open. Calling lets the opener, and everybody still to act, see a flop cheaply, and keeps small the pot your best hands are meant to build.':
+    '{hand} 3-bet voor value tegen deze open. Callen laat de opener, en iedereen die nog moet handelen, goedkoop een flop zien, en houdt de pot klein die je beste handen horen op te bouwen.',
+  'This one 3-bets as a bluff': 'Deze 3-bet als bluf',
+  '{hand} is in the chart as a 3-bet bluff: it blocks the opener\'s best hands and plays well when it is called. Flatted, it is a weak hand in a raised pot.':
+    '{hand} staat in de chart als 3-betbluf: hij blokkeert de beste handen van de opener en speelt goed als hij gecalld wordt. Als call is het een zwakke hand in een geraiste pot.',
+  'Too weak against the open': 'Te zwak tegen de open',
+  '{hand} is not in the range that 3-bets against this open, nor the one that calls it. Re-raised, it is a bluff the opener\'s good hands are glad to see.':
+    '{hand} zit niet in de range die tegen deze open 3-bet, en ook niet in de range die callt. Als re-raise is het een bluf die de goede handen van de opener graag zien.',
+  '{hand} is not in the range that continues against this open. Calling with it is how a stack drips away: it is behind the hands that open, and often out of position.':
+    '{hand} zit niet in de range die tegen deze open doorgaat. Ermee callen is hoe een stack wegdruppelt: hij ligt achter op de handen die openen, en vaak zonder positie.',
+  'Limping behind with a hand to fold': 'Meelimpen met een hand om te folden',
+  'Behind a limper, raise the hands this seat opens and fold the rest.': 'Achter een limper raise je de handen die deze plek opent, en fold je de rest.',
+  'Limping behind with a hand to raise': 'Meelimpen met een hand om te raisen',
+  'A hand worth opening is worth raising over a limper: take the pot to one player.': 'Een hand die je zou openen, is ook een raise over een limper waard: speel de pot tegen één speler.',
+  'Re-raising a hand that calls': 'Re-raisen met een hand die callt',
+  'Against an open, the chart has three answers. The middle of the range calls; only its top 3-bets.': 'Tegen een open heeft de chart drie antwoorden. Het midden van de range callt; alleen de top 3-bet.',
+  'Calling with a hand that 3-bets for value': 'Callen met een hand die voor value 3-bet',
+  'The top of the range re-raises against an open: build the pot your best hands win.': 'De top van de range re-raist tegen een open: bouw de pot op die je beste handen winnen.',
+  'Calling with a 3-bet bluff': 'Callen met een 3-betbluf',
+  'The bluffs in the 3-bet chart are there because they play badly as calls.': 'De bluffs in de 3-betchart staan erin omdat ze slecht spelen als call.',
+  'Playing a hand that folds to an open': 'Een hand spelen die tegen een open foldt',
+  'Against a raise the range is far tighter than when opening. If it is not in the chart, fold.': 'Tegen een raise is de range veel strakker dan bij het openen. Staat hij niet in de chart, fold dan.',
+  /* ---- v3.17: your seat waits, and taking the table ---- */
+  'You are still at {place}': 'Je zit nog aan {place}',
+  'One table at a time. Go back to it, or get up from it first.': 'Eén tafel tegelijk. Ga terug, of sta er eerst op.',
+  'Your {money} is still on that table. One table at a time: go back to it, or cash out first.':
+    'Je {money} ligt nog op die tafel. Eén tafel tegelijk: ga terug, of cash eerst uit.',
+  'Back to the table': 'Terug naar de tafel',
+  'You are still seated at {place}, with {money} in front of you.': 'Je zit nog aan tafel bij {place}, met {money} voor je.',
+  'You are still seated at {place}, out of chips.': 'Je zit nog aan tafel bij {place}, zonder chips.',
+  'Your duel is waiting: {place}.': 'Je duel wacht: {place}.',
+  'Your Regatta is waiting: {place}.': 'Je Regatta wacht: {place}.',
+  'Your table is waiting: {place}.': 'Je tafel wacht: {place}.',
+  'You still have a seat at {place}, with {money} on the table.': 'Je hebt nog een plek bij {place}, met {money} op tafel.',
+  'Your Regatta was interrupted': 'Je Regatta werd onderbroken',
+  'The page closed in the middle of it, so it counts as withdrawn. The entry stays in the pool.':
+    'De pagina sloot halverwege, dus het telt als opgegeven. De inleg blijft in de pot.',
+  'No card had been dealt, so the entry is back in your bankroll.': 'Er was nog geen kaart gedeeld, dus de inleg staat weer in je bankroll.',
+  'You have doubled your buy-in': 'Je hebt je buy-in verdubbeld',
+  'Cash out now and {place} is yours: {name} hands over the table.': 'Cash nu uit en {place} is van jou: {name} geeft de tafel over.',
+  'Sit down with {buyin}, get up with {need} or more by cashing out, and {name} hands the table over.':
+    'Ga zitten met {buyin}, sta op met {need} of meer door uit te cashen, en {name} geeft de tafel over.',
+  'Doubled! Cash out to take the table': 'Verdubbeld! Cash uit om de tafel te nemen',
+  'Take the table: cash out with {need}': 'Neem de tafel: cash uit met {need}',
+  'You have {have}': 'Je hebt {have}',
+  'Sit at {boss}\'s table for {buyin}, then cash out with {target} or more: double what you sat down with. Or beat {boss} in a duel.':
+    'Ga aan de tafel van {boss} zitten voor {buyin} en cash uit met {target} of meer: het dubbele van waarmee je ging zitten. Of versla {boss} in een duel.',
+  'Sit down for {buyin} and cash out with {target} or more, double what you sat down with, or beat {name} in a duel, and the table is yours.':
+    'Ga zitten voor {buyin} en cash uit met {target} of meer, het dubbele van waarmee je ging zitten, of versla {name} in een duel, en de tafel is van jou.',
+  /* ---- v3.17: your hand rating ---- */
+  'Your hand rating': 'Je handbeoordeling',
+  '{n} decisions graded at real tables': '{n} beslissingen beoordeeld aan echte tafels',
+  'Every decision at a real table is graded and kept with the hand you held. Tap a hand to see each mistake, why it was one, and what was right.':
+    'Elke beslissing aan een echte tafel wordt beoordeeld en bewaard bij de hand die je had. Tik op een hand om elke fout te zien, waarom het een fout was, en wat goed was geweest.',
+  'Where you go wrong': 'Waar je de fout in gaat',
+  'No mistakes yet. Keep it that way.': 'Nog geen fouten. Houd dat zo.',
+  'Where you play best': 'Waar je het best speelt',
+  'A hand you play makes this list after {n} decisions with it.': 'Een hand die je speelt komt op deze lijst na {n} beslissingen ermee.',
+  'Nothing graded yet. Play at a real table — the free table, a stop, a duel or a Regatta — and every decision lands here, under the hand you held.':
+    'Nog niets beoordeeld. Speel aan een echte tafel — de vrije tafel, een stad, een duel of een Regatta — en elke beslissing komt hier terecht, bij de hand die je had.',
+  '1 mistake in {d}': '1 fout in {d}',
+  '{n} mistakes in {d}': '{n} fouten in {d}',
+  '{n} of {d} right': '{n} van {d} goed',
+  'Dealt {n}': '{n} keer gekregen',
+  'played {n}': '{n} keer gespeeld',
+  'won {n}': '{n} keer gewonnen',
+  '{n} of {d} decisions right': '{n} van {d} beslissingen goed',
+  'No mistakes with {hand}: every decision with it was right.': 'Geen fouten met {hand}: elke beslissing ermee was goed.',
+  'No decisions graded with {hand} yet.': 'Nog geen beslissingen met {hand} beoordeeld.',
+  'And {n} other kinds of mistake.': 'En nog {n} andere soorten fouten.',
+  'The oldest mistakes are not kept in full, only counted.': 'De oudste fouten worden niet helemaal bewaard, alleen geteld.',
+  'You called': 'Je callde',
+  'You raised': 'Je raisede',
+  'last time': 'laatste keer',
+  '{n} times': '{n} keer',
+  'Cost about {bb}': 'Kostte ongeveer {bb}',
+  'Cost about {bb} in all': 'Kostte in totaal ongeveer {bb}',
+  'Replay the hand': 'Speel de hand terug',
+  'Tap a square to see how you play that hand.': 'Tik op een vakje om te zien hoe je die hand speelt.',
 };

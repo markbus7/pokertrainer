@@ -39,7 +39,11 @@ export const LIFE_SAMPLE = {
   hand: 4,                   // times a starting hand was played before it can be your best or worst
   seat: 25,                  // hands in a seat before it can be your best
   victim: 10,                // hands against a style before it can be your victim or nemesis
+  rating: 4,                 // graded decisions with a hand before it can be one you play best
 };
+
+/** How many of your mistakes are kept, with what was said about each. */
+export const MISTAKES_KEPT = 120;
 
 const round = (x) => Math.round(x * 100) / 100;
 const num = (x, min = 0) => (Number.isFinite(x) && x >= min ? x : min);
@@ -79,6 +83,14 @@ export function emptyLifetime() {
     royals: 0,
     // Records. A made hand is kept as its score (core/evaluator.js, in the
     // standard order) and named when it is shown, in whatever language then.
+    // Every graded decision, by starting hand: key -> [decisions, sound, mistakes, bbLost].
+    // Sound is right and unaided; a mistake is one graded wrong. bbLost is what
+    // the mistakes were priced at, where the coach could price them.
+    decided: {},
+    // The mistakes themselves, newest first: what you did, what it was called,
+    // why, and what was right instead — so a hand that keeps costing you can
+    // say how. Bounded at MISTAKES_KEPT.
+    mistakes: [],
     biggestPot: null,   // { bb, key, made, at, where }  cash only
     biggestBluff: null, // { bb, key, at, where }  won with nothing, no showdown; cash only
     bestHand: null,     // { score, key, at, where, won }
@@ -116,6 +128,8 @@ export function sanitizeLifetime(raw) {
     return out;
   };
   life.starting = table(raw.starting, 4, [3]);
+  life.decided = table(raw.decided, 4, [3]);
+  life.mistakes = (Array.isArray(raw.mistakes) ? raw.mistakes : []).slice(0, MISTAKES_KEPT).map(sanitizeMistake).filter(Boolean);
   life.seats = table(raw.seats, 2, [1]);
   life.against = table(raw.against, 3, [1, 2]);
   if (Array.isArray(raw.made)) life.made = life.made.map((_, i) => int(raw.made[i]));
@@ -168,6 +182,8 @@ export function sanitizeLifetime(raw) {
  *           the Rival, or a wanderer): netBb positive when they took chips off you
  * @property {number} at           when
  * @property {string} where        the stop's key, or 'practice'
+ * @property {Array<object>} [graded]  the decisions of this hand as the coach graded them:
+ *           { street, action, level, helped, id, head, body, better, params, costBb, handId }
  */
 
 /** Add one hand. Mutates and returns the lifetime. */
@@ -219,6 +235,24 @@ export function recordHand(life, f) {
     if (f.vpip) row[1] += 1;
     if (f.won) row[2] += 1;
     if (f.mode === 'cash') row[3] = round(row[3] + money(f.netBb));
+
+    // How each decision with this hand was graded, and the mistakes in full.
+    const graded = Array.isArray(f.graded) ? f.graded : [];
+    if (graded.length) {
+      const d = life.decided[f.key] || (life.decided[f.key] = [0, 0, 0, 0]);
+      for (const g of graded) {
+        if (!g || typeof g !== 'object') continue;
+        d[0] += 1;
+        if (g.level !== 'bad' && !g.helped) d[1] += 1;
+        if (g.level === 'bad') {
+          d[2] += 1;
+          d[3] = round(d[3] + Math.max(0, money(g.costBb)));
+          const kept = sanitizeMistake({ ...g, key: f.key, at: f.at, where: f.where });
+          if (kept) life.mistakes.unshift(kept);
+        }
+      }
+      if (life.mistakes.length > MISTAKES_KEPT) life.mistakes.length = MISTAKES_KEPT;
+    }
   }
 
   if (f.mode === 'cash') {
@@ -346,3 +380,55 @@ export function rivals(life) {
 export function soundRate(life) {
   return life.decisions >= 20 ? life.sound / life.decisions : null;
 }
+
+/** A mistake read back from a save, or written into one: short strings and plain values only. */
+function sanitizeMistake(m) {
+  if (!m || typeof m !== 'object' || typeof m.key !== 'string' || m.key.length > 4) return null;
+  const text = (x, max) => (typeof x === 'string' && x.length <= max ? x : null);
+  const params = {};
+  if (m.params && typeof m.params === 'object' && !Array.isArray(m.params)) {
+    for (const [k, v] of Object.entries(m.params).slice(0, 12)) {
+      if (k.length <= 24 && (typeof v === 'number' ? Number.isFinite(v) : typeof v === 'string' && v.length <= 80)) params[k] = v;
+    }
+  }
+  const head = text(m.head, 160);
+  if (!head) return null;
+  return {
+    key: m.key,
+    street: text(m.street, 8) || 'preflop',
+    action: text(m.action, 8),
+    id: text(m.id, 40),
+    head,
+    body: text(m.body, 600),
+    better: text(m.better, 120),
+    params,
+    costBb: Number.isFinite(m.costBb) && m.costBb > 0 ? round(m.costBb) : 0,
+    handId: text(m.handId, 64),
+    at: Number.isFinite(m.at) ? m.at : null,
+    where: text(m.where, 24),
+  };
+}
+
+/**
+ * How you play each starting hand: the ones you make the most mistakes with,
+ * and the ones you play best — each only from enough decisions to say so.
+ */
+export function handRatings(life) {
+  const rows = Object.entries(life.decided)
+    .map(([key, [decisions, sound, mistakes, bbLost]]) => ({
+      key, decisions, sound, mistakes, bbLost, share: decisions ? sound / decisions : null,
+    }));
+  const worst = rows.filter((r) => r.mistakes > 0)
+    .sort((a, b) => b.mistakes - a.mistakes || a.share - b.share || b.bbLost - a.bbLost)
+    .slice(0, 5);
+  // Best is the hands you play well, not the ones you fold well: folding 9-3
+  // offsuit every time is right, and it is not what playing a hand well means.
+  const played = (key) => (life.starting[key] ? life.starting[key][1] : 0);
+  const best = rows.filter((r) => r.decisions >= LIFE_SAMPLE.rating && played(r.key) >= 3)
+    .sort((a, b) => b.share - a.share || b.decisions - a.decisions)
+    .slice(0, 5);
+  return { rows, worst, best };
+}
+
+/** The mistakes kept for one starting hand, newest first. */
+export const mistakesWith = (life, key) => life.mistakes.filter((m) => m.key === key);
