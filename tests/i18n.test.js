@@ -355,6 +355,12 @@ describe('i18n: the coach speaks Dutch too', () => {
     // in the middle of a Dutch session, which is exactly the complaint that
     // started this.
     const missing = new Set();
+    // preflopAdvice hands back a sentence it has already translated, with the
+    // hand and the seats filled in: that is covered if its template is.
+    const templates = Object.keys(NL).filter((k) => /\{\w+\}/.test(k))
+      .map((k) => new RegExp(`^${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\{\w+\\\}/g, '[\\s\\S]+?')}$`));
+    const covered = (text) => Boolean(NL[text]) || templates.some((re) => re.test(text));
+
     const base = { pot: 100, bigBlind: 2, opponents: 1, effectiveStack: 200, currentBet: 0 };
     const boards = ['Ks 7d 2c', '9h 8h 7s', '9h 8h 7h', '2c 7d Ts', 'Ah Kd Qc'];
 
@@ -382,6 +388,24 @@ describe('i18n: the coach speaks Dutch too', () => {
         }
       }
     }
+    // Against an open and behind a limper: every answer the chart can give,
+    // and every way of not giving it.
+    for (const position of ['BTN', 'SB', 'BB']) {
+      for (const hand of ['Ad As', '7d 2c', '8h 8d', 'Ah 5h', 'Kd Jd']) {
+        for (const action of ['raise', 'fold', 'call']) {
+          collect(judgeSpot({
+            ...base, street: 'preflop', toCall: 4, pot: 9, currentBet: 6, firstIn: false, raiser: 'CO',
+            action, hole: parseCards(hand), position,
+          }));
+          if (position !== 'BB') {
+            collect(judgeSpot({
+              ...base, street: 'preflop', toCall: 2, pot: 5, currentBet: 2, firstIn: false, raiser: null,
+              action, hole: parseCards(hand), position,
+            }));
+          }
+        }
+      }
+    }
     // Every way the coach can name a spot, so no "why" line is left behind.
     for (const street of ['preflop', 'flop', 'turn', 'river']) {
       for (const toCall of [0, 20, 90]) {
@@ -406,9 +430,7 @@ describe('i18n: the coach speaks Dutch too', () => {
     function collect(v) {
       for (const text of [v.head, v.body, v.better, v.concept && v.concept.why]) {
         if (!text || KEEP_ENGLISH.has(text) || !needsTranslation(text)) continue;
-        // preflopAdvice hands back a sentence it has already translated.
-        if (/opening range from/.test(text)) continue;
-        if (!NL[text]) missing.add(text);
+        if (!covered(text)) missing.add(text);
       }
     }
 

@@ -90,6 +90,14 @@ const veteran = async (on) => {
   await page.evaluate((flag) => localStorage.setItem('e2e.veteran', flag ? '1' : '0'), on);
 };
 
+// A table waits for you when you look away, so going somewhere else and coming
+// back no longer deals a new one. A step that wants a fresh table says so: a
+// reload lets go of the one that was waiting.
+const freshTable = async (hash = '#play') => {
+  await page.goto(`${BASE}/${hash}`, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+};
+
 await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
 // The first visit writes a save of its own (the contracts it posted, and the
 // defaults beside them). The veteran is made from nothing, not from that.
@@ -300,11 +308,8 @@ await step('playing a hand teaches a named skill and counts toward it', async ()
   // the skill it exercises and recorded the same way a drill answer is.
   // Before this, playing fed nothing at all — the ladder could only be
   // climbed by answering multiple-choice questions.
-  // Via the dashboard: a goto to the hash we are already on is a fragment
-  // navigation, so the previous step's half-played hand would still be there
-  // and there would be no Deal button to click.
-  await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
-  await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+  // A fresh table: the previous step's half-played hand is waiting otherwise.
+  await freshTable();
   await page.waitForSelector('.felt', { timeout: 5000 });
   await page.click('button.btn.primary.lg');
   await page.waitForSelector('.action-buttons button', { timeout: 20000 });
@@ -2704,8 +2709,7 @@ await step('the table is playable on an iPad on its side, a phone, and a phone o
   const report = [];
   for (const [w, h] of [[1000, 585], [1180, 740], [390, 844], [844, 340]]) {
     await page.setViewportSize({ width: w, height: h });
-    await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
-    await page.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+    await freshTable();
     await page.waitForSelector('.felt', { timeout: 5000 });
     await page.click('button:has-text("Deal me in")');
     await page.waitForSelector('.action-buttons button', { timeout: 20000 });
@@ -3857,6 +3861,151 @@ await step('your character: the hands you play make the player you are, and the 
     if (wide > 1) throw new Error(`the Character screen is ${wide}px wider than a phone`);
     if (mine.length) throw new Error(mine.join(' | '));
     console.log('      one hand counted; 169 squares, one filled; a TAG career puts you on the map; the look survives a reload');
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('a table waits when you look away: the seat is kept, the bar says so, and cashing out pays it back', async () => {
+  // Looking at anything else used to end the table, and the buy-in went with
+  // it: a reader lost buy-in after buy-in checking things between hands. The
+  // table now waits, mid-hand, the rail says where you are sitting, a reload
+  // keeps the chips, and nothing is charged twice.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const sp = await ctx.newPage();
+  const mine = [];
+  sp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const KEY = 'poker-trainer.profile.v1';
+  const saved = () => sp.evaluate((key) => JSON.parse(localStorage.getItem(key)), KEY);
+  try {
+    await sp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await sp.evaluate((key) => {
+      const raw = JSON.parse(localStorage.getItem(key) || '{}');
+      raw.seenPrologue = true;
+      raw.settings = { ...(raw.settings || {}), autoDeal: false, liveCoach: false, lang: 'en' };
+      localStorage.setItem(key, JSON.stringify(raw));
+    }, KEY);
+    await sp.reload({ waitUntil: 'domcontentloaded' });
+    const road = await sp.textContent('.road-panel');
+    if (!/cash out with \$4\.00/.test(road)) throw new Error('the road does not say what doubling the buy-in means in money');
+    const start = (await saved()).bankroll;
+
+    await sp.click('.here-actions .btn.primary');
+    await sp.waitForSelector('.felt', { timeout: 8000 });
+    const sat = await saved();
+    if (Math.abs(sat.bankroll - (start - 2)) > 1e-9) throw new Error(`sitting down cost ${start - sat.bankroll}, not the $2 buy-in`);
+    if (!sat.seat || sat.seat.chips !== 200) throw new Error(`the seat was not kept: ${JSON.stringify(sat.seat)}`);
+    const meter = await sp.textContent('.take-meter');
+    if (!/cash out with \$4\.00/.test(meter) || !/You have \$2\.00/.test(meter)) throw new Error(`the meter reads "${meter}"`);
+
+    await sp.click('button.btn.primary.lg');
+    await sp.waitForFunction(() => document.querySelectorAll('.seat.hero .card').length === 2, null, { timeout: 12000 });
+    const cards = await sp.evaluate(() => [...document.querySelectorAll('.seat.hero .card')].map((c) => c.textContent).join(' '));
+
+    // Look away, and the rail says where you are sitting.
+    await sp.click('.rank-chip');
+    await sp.waitForSelector('#seatbar:not([hidden])', { timeout: 5000 });
+    const bar = await sp.textContent('#seatbar');
+    if (!/still seated at Mud Landing/.test(bar)) throw new Error(`the bar reads "${bar}"`);
+    await sp.click('#seatbar .btn.primary');
+    await sp.waitForFunction(() => document.querySelectorAll('.seat.hero .card').length === 2, null, { timeout: 5000 });
+    const again = await sp.evaluate(() => [...document.querySelectorAll('.seat.hero .card')].map((c) => c.textContent).join(' '));
+    if (again !== cards) throw new Error(`back at the table with ${again}, not the ${cards} left there`);
+    if ((await saved()).bankroll !== sat.bankroll) throw new Error('going back to the table charged for it');
+
+    // The language switched at the table keeps the hand, and the sign over it follows.
+    const switchLanguage = async (label) => {
+      await sp.click('.ledger-button');
+      await sp.click('.lang-chip:not(.active)');
+      await sp.keyboard.press('Escape');
+      await sp.waitForFunction((want) => document.querySelector('.table-head').textContent.includes(want), label, { timeout: 5000 });
+    };
+    await switchLanguage('Cash uit');
+    const dutch = await sp.evaluate(() => [...document.querySelectorAll('.seat.hero .card')].map((c) => c.textContent).join(' '));
+    if (dutch !== cards) throw new Error(`a language switch dealt ${dutch} in place of the ${cards} in play`);
+    if ((await saved()).bankroll !== sat.bankroll) throw new Error('a language switch charged another buy-in');
+    await switchLanguage('Cash out');
+
+    // One table at a time.
+    await sp.evaluate(() => { location.hash = '#play'; });
+    await sp.waitForSelector('.seated-elsewhere', { timeout: 5000 });
+
+    // A reload keeps the chips, and taking the seat back costs nothing.
+    await sp.reload({ waitUntil: 'domcontentloaded' });
+    await sp.evaluate(() => { location.hash = '#home'; });
+    await sp.waitForSelector('#seatbar:not([hidden])', { timeout: 5000 });
+    if (!/still have a seat at Mud Landing/.test(await sp.textContent('#seatbar'))) throw new Error('after a reload the seat was not offered back');
+    await sp.click('#seatbar .btn.primary');
+    await sp.waitForSelector('.felt', { timeout: 8000 });
+    const back = await saved();
+    if (back.bankroll !== sat.bankroll) throw new Error(`taking the seat back cost ${sat.bankroll - back.bankroll}`);
+
+    // Cashing out pays back what is on the table, and gives the seat up.
+    const chips = back.seat.chips;
+    await sp.click('.table-head .btn:has-text("Cash out")');
+    await sp.waitForFunction(() => !/#play/.test(location.hash), null, { timeout: 5000 });
+    const out = await saved();
+    if (out.seat) throw new Error('the seat was still kept after cashing out');
+    if (Math.abs(out.bankroll - (sat.bankroll + chips / 100)) > 0.011) throw new Error(`cashed out to ${out.bankroll}, expected ${sat.bankroll + chips / 100}`);
+    if (!(await sp.evaluate(() => document.querySelector('#seatbar').hidden))) throw new Error('the bar stayed after getting up');
+
+    // A Regatta the tab closed on before a card was dealt: the entry comes back,
+    // before the reload on its address enters a new one, which is not refunded.
+    await sp.evaluate((key) => {
+      const raw = JSON.parse(localStorage.getItem(key));
+      raw.bankroll = 50;
+      raw.seat = { mode: 'regatta', venue: 'nl2', entry: 2, dealt: 0, at: Date.now() };
+      localStorage.setItem(key, JSON.stringify(raw));
+      location.href = `${location.origin}/?closed=1#play?mode=regatta&at=nl2`;
+    }, KEY);
+    await sp.waitForSelector('.felt', { timeout: 8000 });
+    const regatta = await saved();
+    if (regatta.bankroll !== 50) throw new Error(`the closed Regatta's refund and the new entry left ${regatta.bankroll}, not 50`);
+    if (!regatta.seat || regatta.seat.mode !== 'regatta' || regatta.seat.dealt !== 0) throw new Error(`the new Regatta is not the one kept: ${JSON.stringify(regatta.seat)}`);
+    if (!/entry is back/.test(await sp.textContent('#toasts'))) throw new Error('the closed Regatta was settled without a word');
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log(`      $2 once; the same ${cards} after looking away and in Dutch; one table at a time; a reload kept ${chips} chips; cashed out to $${out.bankroll.toFixed(2)}; a closed Regatta refunded once`);
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('your hand rating names the hands you go wrong with, and opens each mistake', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const rp = await ctx.newPage();
+  const mine = [];
+  rp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const KEY = 'poker-trainer.profile.v1';
+  try {
+    await rp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await rp.evaluate(async (key) => {
+      const { emptyLifetime, recordHand } = await import('/src/js/state/lifetime.js');
+      const life = emptyLifetime();
+      const base = { mode: 'cash', full: true, position: 'BTN', vpip: true, pfr: false, threeBet: false, threeBetChance: false, sawFlop: true, showdown: false, won: false, netBb: -2, potBb: 4, bets: 0, raises: 0, calls: 1, folds: 0, allIn: false, made: null, bluff: false, decisions: 2, sound: 1, opponents: [], at: Date.now(), where: 'nl2' };
+      const wrong = { street: 'flop', action: 'call', level: 'bad', helped: false, id: 'called-without-odds', head: 'Called without the odds', body: 'The price asked for {needed} and you had {equity}.', better: 'Fold', params: { needed: '31%', equity: '21%' }, costBb: 1.4, handId: null };
+      for (let i = 0; i < 3; i++) recordHand(life, { ...base, key: 'KJo', graded: [{ street: 'preflop', action: 'call', level: 'good', helped: false, head: 'Correct against the open' }, wrong] });
+      for (let i = 0; i < 4; i++) recordHand(life, { ...base, key: 'AKs', graded: [{ street: 'preflop', action: 'raise', level: 'good', helped: false, head: 'Right side of the chart' }, { street: 'flop', action: 'bet', level: 'good', helped: false, head: 'Right bet on the right board' }] });
+      const raw = JSON.parse(localStorage.getItem(key) || '{}');
+      Object.assign(raw, { seenPrologue: true, lifetime: life, settings: { ...(raw.settings || {}), lang: 'en' } });
+      localStorage.setItem(key, JSON.stringify(raw));
+    }, KEY);
+    await rp.reload({ waitUntil: 'domcontentloaded' });
+    await rp.evaluate(() => { location.hash = '#character'; });
+    await rp.waitForSelector('.char-rating .rate-row', { timeout: 5000 });
+    const lists = await rp.evaluate(() => [...document.querySelectorAll('.rate-col')].map((c) => c.textContent.replace(/\s+/g, ' ')));
+    if (!/KJo.*3 mistakes in 6/.test(lists[0])) throw new Error(`where you go wrong reads "${lists[0]}"`);
+    if (!/AKs.*8 of 8 right/.test(lists[1])) throw new Error(`where you play best reads "${lists[1]}"`);
+    await rp.click('.rate-col:first-child .rate-row');
+    await rp.waitForSelector('.hand-detail:not([hidden]) .mistake', { timeout: 5000 });
+    const detail = await rp.textContent('.hand-detail');
+    if (!/Called without the odds/.test(detail) || !/3 times/.test(detail) || !/The price asked for 31% and you had 21%/.test(detail) || !/Instead:\s*Fold/.test(detail)) {
+      throw new Error(`the mistake opened as "${detail.replace(/\s+/g, ' ').slice(0, 200)}"`);
+    }
+    // Any square of the grid opens its hand too.
+    await rp.click('.hg-cell[data-key="AKs"]');
+    await rp.waitForFunction(() => /Ace-King suited/.test(document.querySelector('.hand-detail').textContent), null, { timeout: 5000 });
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log('      KJo: 3 mistakes in 6, grouped, with why and what instead; AKs 8 of 8; the grid opens a hand too');
   } finally {
     await ctx.close();
   }

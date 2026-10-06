@@ -13,8 +13,9 @@ import { describe, it, assert, equal, close } from './harness.js';
 import { Profile } from '../src/js/state/profile.js';
 import {
   emptyLifetime, sanitizeLifetime, recordHand, styleNumbers, styleFromReports, cashResults,
-  startingHands, seats, rivals, soundRate, LIFE_SAMPLE,
+  startingHands, seats, rivals, soundRate, handRatings, mistakesWith, LIFE_SAMPLE, MISTAKES_KEPT,
 } from '../src/js/state/lifetime.js';
+import { seatOf, seatValue, chipsValue, doublingTarget, keepSeat, clearSeat } from '../src/js/state/seat.js';
 import { PLAYER_TYPES, REGULARS, BOUNDS, HEALTHY, playerType } from '../src/js/data/playerTypes.js';
 import {
   TIERS, tierFor, SKINS, HAIRS, HAIR_COLOURS, BEARDS, COLOURS, LOOK_LABELS, DEFAULT_LOOK, NAME_MAX,
@@ -509,3 +510,122 @@ describe('your character: in Dutch', () => {
     assert(missing.length === 0, `no Dutch for: ${missing.join(' | ')}`);
   });
 });
+
+describe('your hand rating: every decision kept with the hand you held', () => {
+  const mistake = (over = {}) => ({
+    street: 'flop', action: 'call', level: 'bad', helped: false, id: 'called-without-odds',
+    head: 'Called without the odds', body: 'The price asked for {needed} and you had {equity}.',
+    better: 'Fold', params: { needed: '31%', equity: '21%' }, costBb: 1.4, handId: 'h-1', ...over,
+  });
+  const right = (over = {}) => ({ street: 'preflop', action: 'raise', level: 'good', helped: false, head: 'Right side of the chart', ...over });
+
+  it('counts decisions, sound ones and mistakes by starting hand, and keeps each mistake whole', () => {
+    const life = emptyLifetime();
+    recordHand(life, hand({ key: 'AJo', vpip: true, graded: [right(), mistake()] }));
+    recordHand(life, hand({ key: 'AJo', vpip: true, graded: [right({ helped: true }), mistake({ street: 'river', costBb: 0 })] }));
+    const [decisions, sound, mistakes, bbLost] = life.decided.AJo;
+    equal(decisions, 4);
+    equal(sound, 1, 'a decision you were helped with is right but not yours');
+    equal(mistakes, 2);
+    close(bbLost, 1.4, 1e-9);
+    const kept = mistakesWith(life, 'AJo');
+    equal(kept.length, 2);
+    equal(kept[0].street, 'river', 'newest first');
+    equal(kept[1].head, 'Called without the odds');
+    equal(kept[1].better, 'Fold');
+    equal(kept[1].params.needed, '31%');
+    equal(kept[1].handId, 'h-1');
+    equal(kept[1].where, 'nl2');
+  });
+
+  it('keeps no more mistakes than it can show, and drops nothing it counts', () => {
+    const life = emptyLifetime();
+    for (let i = 0; i < MISTAKES_KEPT + 30; i++) recordHand(life, hand({ key: 'K7o', graded: [mistake()] }));
+    equal(life.mistakes.length, MISTAKES_KEPT);
+    equal(life.decided.K7o[2], MISTAKES_KEPT + 30, 'every mistake is still counted');
+  });
+
+  it('names the hands you go wrong with, and the ones you play best — not the ones you fold', () => {
+    const life = emptyLifetime();
+    for (let i = 0; i < 6; i++) recordHand(life, hand({ key: '93o', graded: [right({ action: 'fold' })] }));
+    for (let i = 0; i < 5; i++) recordHand(life, hand({ key: 'AKs', vpip: true, graded: [right(), right({ street: 'flop', action: 'bet' })] }));
+    for (let i = 0; i < 3; i++) recordHand(life, hand({ key: 'KJo', vpip: true, graded: [right(), mistake()] }));
+    recordHand(life, hand({ key: 'Q9s', vpip: true, graded: [mistake()] }));
+    const { worst, best } = handRatings(life);
+    equal(worst[0].key, 'KJo', 'three mistakes before one');
+    equal(worst[1].key, 'Q9s');
+    equal(best[0].key, 'AKs');
+    assert(!best.some((r) => r.key === '93o'), 'folding nine-three every time is right, and not what playing a hand well means');
+    assert(!best.some((r) => r.key === 'Q9s'), 'one decision is not enough to be your best');
+  });
+
+  it('reads mistakes back from a save as short strings and plain values only', () => {
+    const life = sanitizeLifetime({
+      decided: { AJo: [3, 1, 2, -5], 'not a hand at all': [1, 1, 1, 1] },
+      mistakes: [
+        { key: 'AJo', head: 'Called without the odds', params: { needed: '31%', nested: { x: 1 }, n: 3 }, costBb: 'lots', street: 'flop' },
+        { key: 'AJo', head: 'x'.repeat(500) },
+        { key: 'TOOLONG', head: 'Called' },
+        'junk', null,
+      ],
+    });
+    equal(life.decided.AJo[2], 2);
+    equal(life.decided.AJo[3], -5, 'a money column keeps its value as it was stored');
+    equal(life.decided['not a hand at all'], undefined);
+    equal(life.mistakes.length, 1);
+    equal(life.mistakes[0].params.needed, '31%');
+    equal(life.mistakes[0].params.n, 3);
+    equal(life.mistakes[0].params.nested, undefined, 'no objects inside a mistake');
+    equal(life.mistakes[0].costBb, 0);
+  });
+});
+
+describe('your seat: kept when you look away', () => {
+  const memoryProfile = () => new Profile({}, memory());
+
+  it('counts a hundred big blinds as one buy-in', () => {
+    equal(chipsValue(200, 2, 2), 2);
+    equal(chipsValue(420, 2, 2), 4.2);
+    equal(chipsValue(0, 2, 2), 0);
+    equal(chipsValue(150, 2, 5), 3.75);
+  });
+
+  it('takes the table at twice the buy-in, and says how far there is to go', () => {
+    const start = doublingTarget(200, 2, 2);
+    equal(start.have, 2);
+    equal(start.need, 4);
+    equal(start.reached, false);
+    close(start.share, 0.5, 1e-9);
+    equal(doublingTarget(399, 2, 2).reached, false, 'a chip short is short');
+    equal(doublingTarget(400, 2, 2).reached, true);
+    equal(doublingTarget(900, 2, 2).share, 1);
+  });
+
+  it('keeps a cash seat with the chips behind you, and gives it up', () => {
+    const p = memoryProfile();
+    keepSeat(p, { mode: 'grind', venue: 'nl2', table: 'owner', chips: 260, bigBlind: 2, buyIn: 2, buyInsUsed: 2 });
+    const kept = seatOf(p);
+    equal(kept.mode, 'grind');
+    equal(kept.chips, 260);
+    equal(kept.buyInsUsed, 2);
+    equal(seatValue(kept), 2.6);
+    clearSeat(p);
+    equal(seatOf(p), null);
+  });
+
+  it('reads a seat back only if it can be acted on', () => {
+    const p = memoryProfile();
+    for (const junk of [
+      'seat', 7, { mode: 'grind' }, { mode: 'grind', venue: 'nl2', table: 'owner', chips: -5, bigBlind: 2, buyIn: 2 },
+      { mode: 'grind', venue: 'nl2', table: 'owner', chips: 100, bigBlind: 0, buyIn: 2 },
+      { mode: 'duel', venue: 'nl2' }, { mode: 'regatta', venue: 'nl2', entry: 'ten' },
+    ]) {
+      p.data.seat = junk;
+      equal(seatOf(p), null, JSON.stringify(junk));
+    }
+    p.data.seat = { mode: 'regatta', venue: 'nl5', entry: 5, dealt: 3.4 };
+    equal(seatOf(p).dealt, 3);
+    equal(seatValue(seatOf(p)), 0, 'a Regatta entry is not chips you can cash out');
+  });
+});
+

@@ -26,7 +26,9 @@ import { renderHome } from './ui/screenHome.js';
 import { renderLearn, renderDrill, renderGauntletIntro } from './ui/screenDrill.js';
 import { renderWalkthrough } from './ui/screenWalkthrough.js';
 import { renderLab, renderLabIntro } from './ui/screenLab.js';
-import { renderTable } from './ui/screenTable.js';
+import { renderTable, waitingTable } from './ui/screenTable.js';
+import { seatOf, seatValue, clearSeat } from './state/seat.js';
+import { venueFor } from './data/venues.js';
 import { renderReview } from './ui/screenReview.js';
 import { renderStats, renderCharts, renderGlossary } from './ui/screenStats.js';
 import { renderLevels } from './ui/screenLevels.js';
@@ -488,7 +490,85 @@ function drawLedger({ entering = false } = {}) {
 
 function drawShell() {
   drawHud();
+  drawSeatBar();
   drawLedger();
+}
+
+/**
+ * The bar under the rail while a table waits for you: where you are sitting,
+ * what is on it, and the two ways out of anywhere — back to it, or up from it.
+ * Not on the table itself, where the table says all of that.
+ */
+function drawSeatBar() {
+  let bar = $('#seatbar');
+  if (!bar) {
+    bar = el('div#seatbar', { role: 'status' });
+    $('#topbar').after(bar);
+  }
+  const onTable = parseHash().route === 'play';
+  const waiting = onTable ? null : waitingTable();
+  const kept = onTable || waiting ? null : seatOf(profile);
+  if (!waiting && !(kept && kept.mode === 'grind' && kept.chips > 0)) {
+    bar.hidden = true;
+    mount(bar);
+    return;
+  }
+  bar.hidden = false;
+  if (waiting) {
+    const line = waiting.mode === 'grind'
+      ? (waiting.money > 0
+        ? t('You are still seated at {place}, with {money} in front of you.', { place: waiting.place, money: fmt.money(waiting.money) })
+        : t('You are still seated at {place}, out of chips.', { place: waiting.place }))
+      : waiting.mode === 'duel' ? t('Your duel is waiting: {place}.', { place: waiting.place })
+        : waiting.mode === 'regatta' ? t('Your Regatta is waiting: {place}.', { place: waiting.place })
+          : t('Your table is waiting: {place}.', { place: waiting.place });
+    mount(bar, el('div.seatbar-inner',
+      icon('cards', { size: 18 }),
+      el('span.seatbar-line', line),
+      el('div.seatbar-actions',
+        el('button.btn.sm.primary', { onclick: () => waiting.back() }, t('Back to the table')),
+        el('button.btn.sm.ghost', { onclick: () => waiting.getUp() }, t(waiting.getUpLabel)),
+      ),
+    ));
+    return;
+  }
+  mount(bar, el('div.seatbar-inner',
+    icon('cards', { size: 18 }),
+    el('span.seatbar-line', t('You still have a seat at {place}, with {money} on the table.',
+      { place: t(venueFor(kept.venue).name), money: fmt.money(seatValue(kept)) })),
+    el('div.seatbar-actions',
+      el('button.btn.sm.primary', { onclick: () => go('play', { mode: 'grind', table: kept.table, resume: '1' }) }, t('Back to the table')),
+      el('button.btn.sm.ghost', { onclick: () => go('play', { mode: 'grind', table: kept.table, resume: '1', cashout: '1' }) }, t('Cash out')),
+    ),
+  ));
+}
+
+/**
+ * What a closed tab left behind. A cash seat is kept as it was, for the bar to
+ * offer back. A Regatta cannot be dealt again where it stopped, so it is
+ * settled the way the Withdraw button settles one: the entry back if no card
+ * was dealt, otherwise a try with no place.
+ */
+function settleWhatWasLeft() {
+  const kept = seatOf(profile);
+  if (!kept) {
+    if (profile.data.seat) { clearSeat(profile); profile.save(); }
+    return;
+  }
+  if (kept.mode === 'grind' && kept.chips <= 0) {
+    clearSeat(profile);
+    profile.save();
+    return;
+  }
+  if (kept.mode !== 'regatta') return;
+  clearSeat(profile);
+  if (kept.dealt > 0) {
+    profile.noteRegatta(kept.venue, { place: null, entry: kept.entry, prize: 0 });
+    toast({ icon: '⛵', title: t('Your Regatta was interrupted'), desc: t('The page closed in the middle of it, so it counts as withdrawn. The entry stays in the pool.') });
+  } else {
+    profile.setBankroll(profile.data.bankroll + kept.entry, kept.venue);
+    toast({ icon: '⛵', title: t('Your Regatta was interrupted'), desc: t('No card had been dealt, so the entry is back in your bankroll.') });
+  }
 }
 
 /**
@@ -566,6 +646,10 @@ profile.onChange(() => {
   });
 });
 
+// Before the first screen: a reload that lands on a Regatta's own address
+// deals a new one, and the one the closed tab left must be settled first, not
+// taken for it.
+settleWhatWasLeft();
 render();
 
 // The first visit is welcomed by the river's prologue on the map, which

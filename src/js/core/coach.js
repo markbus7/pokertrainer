@@ -65,7 +65,11 @@ const UNPRICED = { cost: 0, costKnown: false };
 function judgePreflop(spot) {
   const { action, hole, position, raiser, firstIn } = spot;
   const hand = handKey(hole);
-  const advice = preflopAdvice(hand, position, firstIn ? { action: 'rfi' } : { action: 'vs_raise', raiser });
+  // A limp is not an open: there is no raise to answer. The hands worth raising
+  // over a limper are the ones worth raising first in from that seat, so the
+  // opening chart is the one that applies, and the rest are folds.
+  const limped = !firstIn && !raiser && Boolean(CHARTS.rfi[position]);
+  const advice = preflopAdvice(hand, position, firstIn || limped ? { action: 'rfi' } : { action: 'vs_raise', raiser });
   const params = { hand, seat: position, pct: chartPercent(position) };
 
   // Limping first in: the one preflop action that is wrong against every
@@ -83,7 +87,7 @@ function judgePreflop(spot) {
     };
   }
 
-  const wanted = advice.action === 'raise' ? (firstIn ? 'raise' : '3-bet') : advice.action;
+  const wanted = advice.action === 'raise' ? (firstIn || limped ? 'raise' : '3-bet') : advice.action;
   const did = action === 'bet' ? 'raise' : action;
   const right = (wanted === 'raise' || wanted === '3-bet') ? (did === 'raise') : did === wanted;
 
@@ -91,7 +95,7 @@ function judgePreflop(spot) {
     return {
       kind: 'preflop',
       level: 'good',
-      head: firstIn ? 'Right side of the chart' : 'Correct against the open',
+      head: firstIn ? 'Right side of the chart' : limped ? 'Right against the limp' : 'Correct against the open',
       body: advice.reason,
       params: {},
       better: null,
@@ -99,7 +103,68 @@ function judgePreflop(spot) {
     };
   }
 
+  // Behind a limper: raise the hands the seat opens, fold the rest. Limping
+  // along is neither.
+  if (limped && did === 'call') {
+    return advice.action === 'raise'
+      ? {
+        kind: 'preflop', level: 'ok', id: 'limped-behind', head: 'Raise the limper',
+        body: '{hand} is worth a raise from {seat}. Limping behind invites the whole table in and hands away the '
+          + 'lead: raise, and play the pot against one weak player instead.',
+        params, better: 'Raise', ...UNPRICED,
+      }
+      : {
+        kind: 'preflop', level: 'bad', id: 'over-limped', head: 'Limping behind with a fold',
+        body: '{hand} is not worth a raise from {seat}, and a hand that is not worth a raise is not worth a call: '
+          + 'it is behind, in a pot with several players, with nobody\'s lead to take.',
+        params, better: 'Fold', ...UNPRICED,
+      };
+  }
+
+  // Against an open the chart has three answers, and each has two wrong ones.
+  // A re-raise where it calls, and a call where it re-raises, are neither of
+  // them a fold, and are not graded as one.
+  if (!firstIn && !limped && did === 'raise' && advice.action === 'call') {
+    return {
+      kind: 'preflop', level: 'ok', id: 'raised-a-call', head: 'A call here, not a 3-bet',
+      body: '{hand} is a hand to play against this open, but as a call: too good to fold, not strong enough to '
+        + '3-bet for value. Re-raised, it folds out the hands it beats and is called by the ones that beat it.',
+      params, better: 'Call', ...UNPRICED,
+    };
+  }
+  if (!firstIn && !limped && did === 'call' && advice.action === 'raise') {
+    const value = advice.kind === 'value';
+    return value
+      ? {
+        kind: 'preflop', level: 'bad', id: 'flatted-value', head: 'Too strong to just call',
+        body: '{hand} 3-bets for value against this open. Calling lets the opener, and everybody still to act, see '
+          + 'a flop cheaply, and keeps small the pot your best hands are meant to build.',
+        params, better: '3-bet', ...UNPRICED,
+      }
+      : {
+        kind: 'preflop', level: 'ok', id: 'flatted-bluff', head: 'This one 3-bets as a bluff',
+        body: '{hand} is in the chart as a 3-bet bluff: it blocks the opener\'s best hands and plays well when it is '
+          + 'called. Flatted, it is a weak hand in a raised pot.',
+        params, better: '3-bet', ...UNPRICED,
+      };
+  }
+
   if (advice.action === 'fold') {
+    if (!firstIn && !limped) {
+      return {
+        kind: 'preflop',
+        level: 'bad',
+        id: 'continued-outside-range', head: 'Too weak against the open',
+        body: did === 'raise'
+          ? '{hand} is not in the range that 3-bets against this open, nor the one that calls it. Re-raised, it is '
+            + 'a bluff the opener\'s good hands are glad to see.'
+          : '{hand} is not in the range that continues against this open. Calling with it is how a stack drips '
+            + 'away: it is behind the hands that open, and often out of position.',
+        params,
+        better: 'Fold',
+        ...UNPRICED,
+      };
+    }
     return {
       kind: 'preflop',
       level: 'bad',
@@ -112,6 +177,7 @@ function judgePreflop(spot) {
     };
   }
 
+  // What is left is a fold of a hand the chart plays.
   return {
     kind: 'preflop',
     level: 'bad',
@@ -119,7 +185,7 @@ function judgePreflop(spot) {
     body: '{hand} is inside the range for {seat}. Folding it is not safe — it is passing up the pots this seat '
       + 'is supposed to win, which is where the money in position comes from.',
     params,
-    better: advice.action === 'call' ? 'Call' : 'Raise',
+    better: advice.action === 'call' ? 'Call' : firstIn || limped ? 'Raise' : '3-bet',
     ...UNPRICED,
   };
 }

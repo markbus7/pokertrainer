@@ -139,6 +139,79 @@ describe('preflop is graded against the chart, everywhere you play', () => {
   });
 });
 
+describe('preflop against an open or a limp says what you did, not something else', () => {
+  const vs = (hand, position, action, raiser = 'CO', extra = {}) => judgeSpot(at({
+    street: 'preflop', toCall: 4, pot: 9, currentBet: 6, firstIn: false, raiser, action,
+    hole: parseCards(hand), position, opponents: 2, ...extra,
+  }));
+
+  it('calls a 3-bet with a hand the chart flats a 3-bet, not a fold', () => {
+    // Pocket eights on the button, re-raising the cutoff: a reader raised and
+    // was told "You folded a hand this seat plays", because the grader had no
+    // answer for a raise where the chart calls and fell through to the fold.
+    const v = vs('8h 8d', 'BTN', 'raise');
+    equal(v.concept.id, 'preflop');
+    equal(v.id, 'raised-a-call');
+    equal(v.level, 'ok', 'a close spot, not a blunder');
+    equal(v.better, 'Call');
+    assert(!/fold/i.test(v.head), `a raise was described as a fold: ${v.head}`);
+  });
+
+  it('marks flatting a value 3-bet as a mistake, and flatting a bluff as close', () => {
+    const value = vs('Ah Ad', 'BTN', 'call');
+    equal(value.id, 'flatted-value');
+    equal(value.level, 'bad');
+    equal(value.better, '3-bet');
+    const bluffKey = [...CHARTS.threeBet.BTN.bluff][0];
+    const bluff = vs('2c 2d', 'BTN', 'call', 'CO', { hole: expandHandKey(bluffKey)[0] });
+    equal(bluff.id, 'flatted-bluff');
+    equal(bluff.level, 'ok');
+  });
+
+  it('calls continuing with a hand that folds to an open too weak', () => {
+    for (const action of ['call', 'raise']) {
+      const v = vs('7h 2d', 'BTN', action);
+      equal(v.id, 'continued-outside-range', action);
+      equal(v.better, 'Fold');
+    }
+  });
+
+  it('grades a raise over a limper against the seat\'s opening chart', () => {
+    const limp = (hand, action) => vs(hand, 'BTN', action, null, { toCall: 2, currentBet: 2, pot: 5 });
+    equal(limp('8h 8d', 'raise').level, 'good', 'raising eights over a limper on the button is right');
+    equal(limp('8h 8d', 'call').id, 'limped-behind');
+    equal(limp('7h 2d', 'call').id, 'over-limped');
+    equal(limp('7h 2d', 'raise').id, 'opened-outside-range');
+    equal(limp('7h 2d', 'fold').level, 'good');
+  });
+
+  it('never calls anything but a fold a fold, in any seat against any open', () => {
+    let checked = 0;
+    const seats = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+    for (const [i, raiser] of seats.slice(0, 5).entries()) {
+      for (const position of seats.slice(i + 1)) {
+        for (const key of ALL_HAND_KEYS) {
+          const hole = expandHandKey(key)[0];
+          for (const action of ['fold', 'call', 'raise']) {
+            const v = judgeSpot(at({
+              street: 'preflop', toCall: 4, pot: 9, currentBet: 6, firstIn: false, raiser, action,
+              hole, position, opponents: 2,
+            }));
+            const advice = preflopAdvice(key, position, { action: 'vs_raise', raiser });
+            if (action !== 'fold') assert(v.id !== 'folded-in-range', `${key} ${position} vs ${raiser}: a ${action} was called a fold`);
+            if (action === 'fold') assert(v.level === 'good' || v.id === 'folded-in-range', `${key} ${position} vs ${raiser}: a fold was called ${v.id}`);
+            const wanted = advice.action === 'raise' ? 'raise' : advice.action;
+            if (action === wanted) equal(v.level, 'good', `${key} ${position} vs ${raiser}: did what the chart says`);
+            else assert(v.better, `${key} ${position} vs ${raiser} ${action}: wrong, with nothing to do instead`);
+            checked++;
+          }
+        }
+      }
+    }
+    equal(checked, 15 * 169 * 3);
+  });
+});
+
 describe('a continuation bet is graded against the board', () => {
   const cbet = (hand, board, action, extra = {}) => judgeSpot(spotFor(hand, board, {
     toCall: 0, wasAggressor: true, action, pot: 20, currentBet: 0, ...extra,

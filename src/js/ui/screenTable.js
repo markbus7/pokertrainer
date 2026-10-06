@@ -6,7 +6,7 @@
 import { el, mount, toast, fmt } from './dom.js';
 import { icon } from './icons.js';
 import { rangeGridFor, priceSheet } from './reference.js';
-import { t } from '../i18n/index.js';
+import { t, getLang } from '../i18n/index.js';
 
 /**
  * What a metric says when the sample cannot support a number yet. Reads the
@@ -32,6 +32,7 @@ import {
 import { READ_BANDS, nearestBand, marginFor } from '../core/handRead.js';
 import { emptyMemory, watch, adaptationNote, ADAPT_FULL } from '../engine/adapt.js';
 import { lobbyFor, chosenRank } from '../state/lobby.js';
+import { seatOf, keepSeat, clearSeat, chipsValue, doublingTarget } from '../state/seat.js';
 import { remember as rivalRemembers, readOn as rivalRead } from '../state/rival.js';
 import { RIVAL } from '../data/rival.js';
 import { wandererFor } from '../data/wanderers.js';
@@ -150,7 +151,105 @@ export function resultLine(net) {
 /** How many chairs the practice table can be dealt for. */
 const TABLE_SIZES = [6, 3, 2];
 
+/**
+ * The table you are sitting at, while you look at something else.
+ *
+ * Leaving the table screen used to end the table: a look at the ledger, at
+ * your character or at a hand in the Log, and the chips you had bought in with
+ * were gone, and the next seat cost another buy-in. Now the table waits. It is
+ * kept here, paused where it was — mid-hand if that is where you left it — and
+ * the rail says so on every other screen, with the way back and the way to
+ * get up. One table at a time: sitting down somewhere else while chips or a
+ * match ride on this one asks you to deal with it first.
+ *
+ * A lesson table is still a page of its chapter and ends when you leave it.
+ */
+let live = null;
+
+/**
+ * The table waiting for you, for the rail: where it is, what it holds, and the
+ * two things you can do from anywhere — go back, or get up.
+ */
+export function waitingTable() {
+  if (!live || live.closed || live.finished()) return null;
+  return {
+    mode: live.mode,
+    place: live.place(),
+    money: live.money(),
+    back: live.back,
+    getUp: live.getUp,
+    getUpLabel: live.getUpLabel,
+  };
+}
+
+/** Which table a route asks for, so the one you left can be told from a new one. */
+function tableKey(params, profile) {
+  if (params.lesson) return null;
+  if (params.mode === 'grind') {
+    const kept = seatOf(profile);
+    const venueKey = params.at && VENUES.some((v) => v.key === params.at) ? params.at
+      : params.resume === '1' && kept && kept.mode === 'grind' ? kept.venue : profile.career.venue;
+    const tables = lobbyFor(venueFor(venueKey), profile.sittings).tables;
+    const seatId = (tables.find((x) => x.id === params.table) || tables[0]).id;
+    return `grind:${venueKey}:${seatId}`;
+  }
+  if (params.mode === 'duel') return `duel:${params.at}`;
+  if (params.mode === 'regatta') return params.bubble === '1' ? 'bubble' : `regatta:${params.at}`;
+  // "Play for pearls" asks for no table in particular: the practice table that
+  // is waiting is the one meant, whatever game and size it was dealing.
+  if (!params.variant && !params.seats && live && !live.closed && live.mode === 'free') return live.key;
+  const variant = params.variant && VARIANTS[params.variant] ? params.variant : 'holdem';
+  const size = TABLE_SIZES.includes(Number(params.seats)) ? Number(params.seats) : 6;
+  return `free:${variant}:${size}`;
+}
+
+/** You are already sitting somewhere else: go back to it, or get up from it first. */
+function seatedElsewhere({ place, back, getUp, getUpLabel, money }) {
+  return el('div.screen', el('div.panel.seated-elsewhere',
+    el('h1', t('You are still at {place}', { place })),
+    el('p.muted', money === null || money === undefined
+      ? t('One table at a time. Go back to it, or get up from it first.')
+      : t('Your {money} is still on that table. One table at a time: go back to it, or cash out first.', { money: fmt.money(money) })),
+    el('div.row',
+      el('button.btn.primary', { onclick: back }, t('Back to the table')),
+      el('button.btn.ghost', { onclick: getUp }, t(getUpLabel)),
+    ),
+  ));
+}
+
 export function renderTable(ctx, params = {}) {
+  // The table you got up from a moment ago is still there: pick it back up.
+  const key = tableKey(params, ctx.profile);
+  if (key && live && !live.closed) {
+    if (live.finished()) {
+      // A match that is over is not picked back up: asking for its table again
+      // — a rematch, another bubble — is asking for a new one.
+      live.discard();
+    } else if (live.key === key) {
+      return live.resume(ctx);
+    } else if (live.holds()) {
+      return seatedElsewhere({ place: live.place(), back: live.back, getUp: live.getUp, getUpLabel: live.getUpLabel, money: live.money() });
+    } else {
+      // A practice table holds nothing: it is let go.
+      live.discard();
+    }
+  }
+  // A cash seat kept in the save with no table in memory — the page was closed,
+  // or reloaded — is taken back up with the chips it had.
+  const kept = seatOf(ctx.profile);
+  const keptKey = kept && kept.mode === 'grind' ? `grind:${kept.venue}:${kept.table}` : null;
+  if (keptKey && !params.lesson && key !== keptKey) {
+    const keptVenue = venueFor(kept.venue);
+    const keptTable = lobbyFor(keptVenue, ctx.profile.sittings).tables.find((x) => x.id === kept.table);
+    return seatedElsewhere({
+      place: keptTable && !keptTable.owner ? `${t(keptVenue.name)} · ${t(keptTable.name)}` : t(keptVenue.name),
+      money: chipsValue(kept.chips, kept.bigBlind, kept.buyIn),
+      back: () => ctx.go('play', { mode: 'grind', table: kept.table, resume: '1' }),
+      getUp: () => ctx.go('play', { mode: 'grind', table: kept.table, resume: '1', cashout: '1' }),
+      getUpLabel: 'Cash out',
+    });
+  }
+  const resuming = Boolean(keptKey && key === keptKey);
   const grind = params.mode === 'grind';
   const { profile, rng, go } = ctx;
   // A duel: you against the owner of a stop's table, to the last chip, with the
@@ -190,11 +289,12 @@ export function renderTable(ctx, params = {}) {
   // the chips; what they share is here, and what they do not is under their own name.
   const match = duel || regatta;
   const variantKey = !match && params.variant && VARIANTS[params.variant] ? params.variant : 'holdem';
-  const stake = stakeFor(profile.data.stakeKey);
+  const stake = stakeFor(resuming ? kept.venue : profile.data.stakeKey);
 
   const bigBlind = regatta ? REGATTA_LEVELS[bubble ? BUBBLE.levelIndex : 0][1] : 2;
   const startingStack = regatta ? START_STACK : bigBlind * 100;
-  const buyInCost = grind ? stake.buyIn : 0;
+  // Taking a kept seat back up costs nothing: it was paid for when you first sat down.
+  const buyInCost = grind && !resuming ? stake.buyIn : 0;
 
   if (grind && profile.data.bankroll < buyInCost) {
     return el('div.screen', el('div.panel',
@@ -258,7 +358,7 @@ export function renderTable(ctx, params = {}) {
   // table, one of three the lobby offers. They play the style the stop was
   // built around: the boss is a face and a voice on one of the engine's six
   // players, not a seventh, so their seat takes that style's place and name.
-  const room = duel ? duelStop : regatta ? regattaStop : grind ? venueFor(profile.career.venue) : null;
+  const room = duel ? duelStop : regatta ? regattaStop : grind ? venueFor(resuming ? kept.venue : profile.career.venue) : null;
   const boss = room ? bossFor(room.boss) : null;
   // Which of the stop's tables this is. The same lobby the stop screen showed:
   // it is made from the stop and the count of sittings, not from a die.
@@ -276,7 +376,7 @@ export function renderTable(ctx, params = {}) {
   const rivalIndex = seat && seat.rivalSeat !== undefined ? seat.rivalSeat : -1;
   const rivalId = rivalIndex >= 0 ? `bot${rivalIndex}` : null;
   const rivalMemory = rivalId ? profile.rival.memory : null;
-  const firstMeeting = rivalId ? profile.noteRivalMet() : false;
+  const firstMeeting = rivalId && !resuming ? profile.noteRivalMet() : false;
   // A stranger passing through, if one is at this table.
   const wandererIndex = seat && seat.wandererSeat !== undefined ? seat.wandererSeat : -1;
   const wanderer = wandererIndex >= 0 ? wandererFor(seat.styles[wandererIndex]) : null;
@@ -290,7 +390,7 @@ export function renderTable(ctx, params = {}) {
     rng,
     lastStreet: lesson ? lesson.lastStreet : 'river',
     players: [
-      { id: HERO_ID, name: 'You', stack: bubble ? bubbleDeal[0] : startingStack, isHero: true },
+      { id: HERO_ID, name: 'You', stack: bubble ? bubbleDeal[0] : resuming ? kept.chips : startingStack, isHero: true },
       ...opponents.map((key, i) => {
         const p = getProfile(key);
         return {
@@ -326,7 +426,7 @@ export function renderTable(ctx, params = {}) {
     raiseAmount: 0,
     raiseKey: null,
     handStarted: false,
-    buyInsUsed: grind ? 1 : 0,
+    buyInsUsed: grind ? (resuming ? kept.buyInsUsed : 1) : 0,
     logLines: [],
     // Decisions graded across the whole session, not the current hand.
     // The chips you won are the one number at a table you do not control;
@@ -409,11 +509,31 @@ export function renderTable(ctx, params = {}) {
   };
   // The same object, not a copy: the opponents read what the reader does.
   table.readerMemory = session.readerMemory;
-  if (grind) profile.setBankroll(profile.data.bankroll - buyInCost);
+  if (grind && !resuming) profile.setBankroll(profile.data.bankroll - buyInCost);
   // The entry is paid before the first card, and the prize comes back at the end.
   if (regatta && !bubble) profile.setBankroll(profile.data.bankroll - room.entry, room.key);
 
   const hero = table.player(HERO_ID);
+
+  /**
+   * What is on this table, in the save: the chips behind you at a cash table
+   * (never the ones in the pot, so getting up mid-hand folds it), or the entry
+   * paid for a Regatta. Written after everything you do, so a closed tab costs
+   * no more than getting up would.
+   */
+  function keepTheSeat() {
+    if (session.cancelled) return;
+    if (grind) {
+      keepSeat(profile, {
+        mode: 'grind', venue: room.key, table: seat.id, chips: hero.stack, bigBlind, buyIn: stake.buyIn, buyInsUsed: session.buyInsUsed,
+      });
+      profile.save();
+    } else if (regatta && !bubble && !session.matchOver) {
+      keepSeat(profile, { mode: 'regatta', venue: room.key, entry: room.entry, dealt: session.dealt });
+      profile.save();
+    }
+  }
+  keepTheSeat();
   // A lesson table is a chapter, and a duel is a fight for the table: neither
   // pays pearls by the hand, and nobody at them carries a bounty.
   const pays = !lesson && !match;
@@ -432,8 +552,11 @@ export function renderTable(ctx, params = {}) {
   const coachHost = el('div.coach.paper');
   const lessonNoteHost = el('div');
   const matchHost = el('div');
-  const leaveButton = el('button.btn.sm.ghost', { onclick: () => leave() },
-    duel ? t('Forfeit') : bubble ? t('Leave') : regatta ? t('Withdraw') : grind ? 'Cash out' : 'Leave table');
+  const leaveLabel = duel ? 'Forfeit' : bubble ? 'Leave' : regatta ? 'Withdraw' : grind ? 'Cash out' : 'Leave table';
+  const leaveButton = el('button.btn.sm.ghost', { onclick: () => leave() }, leaveLabel);
+  // At the owner's table, until it is yours: what taking it asks, and how close you are.
+  const canTake = grind && ownerHere && !profile.career.beaten.includes(room.key);
+  const takeHost = el('div.take-host');
   // Under the felt: the help button, your companions, what this sitting has
   // paid so far — and the drawer they open.
   const trayHost = el('div.tray-host');
@@ -442,49 +565,55 @@ export function renderTable(ctx, params = {}) {
   const wrap = el(`div.table-wrap${liveCoach() ? '.with-coach' : '.free-play'}`,
     el('div.table-main', el('div.saloon-stage', lampNode(), feltHost), actionHost, trayHost, helpHost),
     liveCoach() ? coachHost : null);
-  const root = el('div.screen',
-    el('div.spread.table-head',
-      duel
-        ? el('div.row',
-          el('h1.sign.table-place', { style: { margin: 0 } }, t('{name}\'s duel', { name: boss.short })),
-          el('span.scene-stake', t(room.name)),
-          el('span.table-owner', t('Heads-up, to the last chip')),
-        )
-      : bubble
-        ? el('div.row',
-          el('h1.sign.table-place', { style: { margin: 0 } }, t('The bubble')),
-          el('span.scene-stake', t('Practice')),
-          el('span.table-owner', t('Four left, three are paid. Nothing is entered and nothing is won.')),
-        )
-      : regatta
-        ? el('div.row',
-          el('h1.sign.table-place', { style: { margin: 0 } }, t('Regatta at {place}', { place: t(room.name) })),
-          el('span.scene-stake', room.label),
-          el('span.table-owner', t('Six players, the top three are paid')),
-        )
-      : grind
-        ? el('div.row',
-          el('h1.sign.table-place', { style: { margin: 0 } }, t(room.name)),
-          el('span.scene-stake', room.label),
-          el('span.table-owner', ownerHere ? t('{name}\'s table', { name: boss.short }) : t(seat.name)),
-        )
-        : el('div.row',
-          el('h1.sign.table-place', { style: { margin: 0 } }, lessonMeta ? t(lessonMeta.name) : t('Silas\'s practice table')),
-          el('span.scene-stake', lesson ? t('Lesson table') : VARIANTS[variantKey].short,
-            !lesson && seats < 6 ? el('span.size-suffix', ` · ${t(SIZE_NAMES[seats])}`) : null),
-          lesson ? null : el('span.table-owner', t('No money on it — just hands.')),
-        ),
-      el('div.row',
-        !grind && !lesson && !match ? variantSwitcher(variantKey, seats, go) : null,
-        !grind && !lesson && !match ? sizeSwitcher(variantKey, seats, go) : null,
-        lesson ? null : coachToggle,
-        lesson
-          ? el('button.btn.sm.ghost', { onclick: () => go('walkthrough', { module: params.lesson }) },
-            t('Read the lesson'))
-          : null,
-        leaveButton,
+  // The sign over the table, built again if the language changed while the
+  // table waited: everything else on it is drawn fresh each time anyway.
+  const tableHead = () => el('div.spread.table-head',
+    duel
+      ? el('div.row',
+        el('h1.sign.table-place', { style: { margin: 0 } }, t('{name}\'s duel', { name: boss.short })),
+        el('span.scene-stake', t(room.name)),
+        el('span.table-owner', t('Heads-up, to the last chip')),
+      )
+    : bubble
+      ? el('div.row',
+        el('h1.sign.table-place', { style: { margin: 0 } }, t('The bubble')),
+        el('span.scene-stake', t('Practice')),
+        el('span.table-owner', t('Four left, three are paid. Nothing is entered and nothing is won.')),
+      )
+    : regatta
+      ? el('div.row',
+        el('h1.sign.table-place', { style: { margin: 0 } }, t('Regatta at {place}', { place: t(room.name) })),
+        el('span.scene-stake', room.label),
+        el('span.table-owner', t('Six players, the top three are paid')),
+      )
+    : grind
+      ? el('div.row',
+        el('h1.sign.table-place', { style: { margin: 0 } }, t(room.name)),
+        el('span.scene-stake', room.label),
+        el('span.table-owner', ownerHere ? t('{name}\'s table', { name: boss.short }) : t(seat.name)),
+      )
+      : el('div.row',
+        el('h1.sign.table-place', { style: { margin: 0 } }, lessonMeta ? t(lessonMeta.name) : t('Silas\'s practice table')),
+        el('span.scene-stake', lesson ? t('Lesson table') : VARIANTS[variantKey].short,
+          !lesson && seats < 6 ? el('span.size-suffix', ` · ${t(SIZE_NAMES[seats])}`) : null),
+        lesson ? null : el('span.table-owner', t('No money on it — just hands.')),
       ),
+    el('div.row',
+      canTake ? takeHost : null,
+      !grind && !lesson && !match ? variantSwitcher(variantKey, seats, go) : null,
+      !grind && !lesson && !match ? sizeSwitcher(variantKey, seats, go) : null,
+      lesson ? null : coachToggle,
+      lesson
+        ? el('button.btn.sm.ghost', { onclick: () => go('walkthrough', { module: params.lesson }) },
+          t('Read the lesson'))
+        : null,
+      leaveButton,
     ),
+  );
+  let head = tableHead();
+  let headLang = getLang();
+  const root = el('div.screen',
+    head,
     // What has been taken away, and why. A table with two seats and a hand
     // that stops on the flop is not the game — saying so is the difference
     // between a simplification and a lie.
@@ -512,12 +641,68 @@ export function renderTable(ctx, params = {}) {
       : t('Free play: Silas says nothing unless you ask, and leaves notes for when you get up.');
   }
 
-  ctx.onLeave = () => {
-    session.cancelled = true;
+  /** Look away: the table stops where it is, and waits. */
+  function park() {
+    if (session.cancelled) return;
+    session.parked = true;
     stopCountdown();
     clearTimeout(session.timer);
     clearTimeout(session.speechTimer);
-  };
+    session.speech = null;
+  }
+
+  /** End it for good: a lesson left, or a practice table let go for another. */
+  function discard() {
+    park();
+    session.cancelled = true;
+    if (live && live.key === key) live = null;
+  }
+
+  /** Back to the table: everything as it was, and the hand carries on. */
+  function resume(next) {
+    next.onLeave = park;
+    session.parked = false;
+    if (headLang !== getLang()) {
+      headLang = getLang();
+      mount(leaveButton, leaveLabel);
+      const fresh = tableHead();
+      head.replaceWith(fresh);
+      head = fresh;
+    }
+    draw();
+    if (session.matchOver) return root;
+    if (session.handStarted && !table.handOver) step();
+    else if (table.handOver && table.result && !session.handStarted) armAutoDeal(table.result);
+    return root;
+  }
+
+  // The way back to exactly this table, from anywhere: the stop it is at and
+  // the seat in its lobby, and none of the one-off flags that brought you here.
+  const backParams = Object.fromEntries(Object.entries(params).filter(([k]) => k !== 'resume' && k !== 'cashout'));
+  if (grind) Object.assign(backParams, { at: room.key, table: seat.id });
+
+  ctx.onLeave = lesson ? discard : park;
+  if (!lesson) {
+    live = {
+      key,
+      mode: grind ? 'grind' : duel ? 'duel' : bubble ? 'bubble' : regatta ? 'regatta' : 'free',
+      closed: false,
+      // Money or a match rides on it: sitting down elsewhere waits until it is dealt with.
+      holds: () => !session.matchOver && (grind || duel || (regatta && !bubble)),
+      finished: () => Boolean(session.matchOver),
+      place: () => (grind
+        ? (ownerHere ? t(room.name) : `${t(room.name)} · ${t(seat.name)}`)
+        : duel ? t('{name}\'s duel', { name: boss.short })
+          : regatta ? (bubble ? t('The bubble') : t('Regatta at {place}', { place: t(room.name) }))
+            : t('Silas\'s practice table')),
+      money: () => (grind ? chipsValue(hero.stack, bigBlind, stake.buyIn) : null),
+      back: () => go('play', backParams),
+      getUp: () => leave(),
+      getUpLabel: leaveLabel,
+      resume,
+      discard,
+    };
+  }
 
   /* ---------------- sound and voices ---------------- */
 
@@ -625,6 +810,8 @@ export function renderTable(ctx, params = {}) {
     if (wandererId && !session.wandererGreeted) greetTheWanderer();
     table.startHand();
     stats.startHand();
+    // The blinds are in: what is behind you now is what the seat holds.
+    keepTheSeat();
     // Who had chips when the cards were dealt, so a bust is counted once.
     session.stacksAtStart = Object.fromEntries(table.players.map((p) => [p.id, p.stack + p.committed]));
     session.recorder = new HandRecorder(table, HERO_ID, {
@@ -791,7 +978,7 @@ export function renderTable(ctx, params = {}) {
   }
 
   function step() {
-    if (session.cancelled) return;
+    if (session.cancelled || session.parked) return;
     if (table.handOver) return endHand();
 
     const actor = table.actor;
@@ -823,7 +1010,7 @@ export function renderTable(ctx, params = {}) {
     }
 
     session.timer = setTimeout(() => {
-      if (session.cancelled || table.handOver) return;
+      if (session.cancelled || session.parked || table.handOver) return;
       const action = botAction(table, actor, rng);
       // What they would have bet with, taken while they are still the one
       // deciding — after they pay, the same question returns "check".
@@ -985,6 +1172,12 @@ export function renderTable(ctx, params = {}) {
       costBb: verdict.cost ? verdict.cost / table.bigBlind : 0,
       hand: table.handNumber,
       handId: null,
+      // What was said, kept whole for your character's hand rating: why it was
+      // wrong, and what was right instead.
+      id: verdict.id || null,
+      body: verdict.body || null,
+      better: verdict.better || null,
+      params: verdict.params || {},
     });
     // Silas's contracts count sound decisions at a real table, for the skill they name.
     if (pays) payContracts(noteContract(profile, { type: 'decision', skill: verdict.concept.id, level: verdict.level, helped }));
@@ -1026,6 +1219,8 @@ export function renderTable(ctx, params = {}) {
 
     const label = describeAction(action, table, hero, null);
     session.recorder.act(table, action, snap);
+    // What you put in is in the pot: if you get up now, it stays there.
+    keepTheSeat();
     log(label);
     actionSound(action, hero);
     boardSound();
@@ -1089,6 +1284,17 @@ export function renderTable(ctx, params = {}) {
     if (!lesson || session.playedByReader) {
       profile.data.handsPlayed++;
       profile.save();
+    }
+    keepTheSeat();
+    // Doubled at the owner's table: say so once, while the button is right there.
+    if (canTake && !session.saidDoubled && doublingTarget(hero.stack, bigBlind, stake.buyIn).reached) {
+      session.saidDoubled = true;
+      toast({
+        icon: '🏆',
+        title: t('You have doubled your buy-in'),
+        desc: t('Cash out now and {place} is yours: {name} hands over the table.', { place: t(room.name), name: boss.short }),
+        duration: 9000,
+      });
     }
     // The road asks for hands at this stop's own table.
     if (grind || regatta) profile.noteHandAt(room.key);
@@ -1202,7 +1408,9 @@ export function renderTable(ctx, params = {}) {
       // Positive: they took chips off you. Negative: you took them off them.
       netBb: (-net * (Math.abs(result.net[p.id]) / total)) / bb,
     }));
-    const { decisions, sound } = soundShare(session.graded.filter((d) => d.hand === table.handNumber));
+    const mine = session.graded.filter((d) => d.hand === table.handNumber);
+    const { decisions, sound } = soundShare(mine);
+    const handId = session.savedHand ? session.savedHand.id : null;
     const acts = session.acts || { bets: 0, raises: 0, calls: 0, folds: 0 };
     profile.noteLifetimeHand({
       mode,
@@ -1227,6 +1435,7 @@ export function renderTable(ctx, params = {}) {
       bluff,
       decisions,
       sound,
+      graded: mine.map((d) => ({ ...d, handId })),
       opponents,
       at: Date.now(),
       where: bubble ? 'bubble' : room ? room.key : 'practice',
@@ -1374,6 +1583,9 @@ export function renderTable(ctx, params = {}) {
   }
 
   function leave() {
+    // Getting up: the table is not waiting any more, and the seat is given up.
+    if (live && live.key === key) { live.closed = true; live = null; }
+    if (grind || (regatta && !bubble)) clearSeat(profile);
     session.cancelled = true;
     stopCountdown();
     clearTimeout(session.timer);
@@ -1549,6 +1761,8 @@ export function renderTable(ctx, params = {}) {
   function finishRegatta(place) {
     const prize = prizeFor(place, room.entry);
     if (prize) profile.setBankroll(profile.data.bankroll + prize, room.key);
+    // Settled: the entry is spent or paid back with a prize, and nothing is kept for a closed tab to settle.
+    clearSeat(profile);
     const { bestBefore } = profile.noteRegatta(room.key, { place, entry: room.entry, prize });
     const pearlsEarned = placePearls(room.index, bestBefore, place);
     if (pearlsEarned) {
@@ -1681,7 +1895,7 @@ export function renderTable(ctx, params = {}) {
   function autoDealTick() {
     const wait = session.autoDeal;
     if (!wait) return;
-    if (session.cancelled) { stopCountdown(); return; }
+    if (session.cancelled || session.parked) { stopCountdown(); return; }
     // Nobody is watching a hidden tab, so the result is kept for when they
     // are back: the count starts again from the top instead of dealing a hand
     // into a page that is not on screen.
@@ -1750,6 +1964,7 @@ export function renderTable(ctx, params = {}) {
                       profile.setBankroll(profile.data.bankroll - stake.buyIn);
                       hero.stack = startingStack;
                       session.buyInsUsed++;
+                      keepTheSeat();
                       sound('chips');
                       startHand();
                     },
@@ -1791,7 +2006,31 @@ export function renderTable(ctx, params = {}) {
     ));
   }
 
+  /**
+   * Taking the table, counted out: cash out with twice what you sat down with
+   * and it is yours. Read between hands, from the chips behind you — in the
+   * middle of a hand what is in the pot is nobody's yet.
+   */
+  function drawTake() {
+    if (!canTake) return;
+    if (!session.handStarted || table.handOver) session.behind = hero.stack;
+    const target = doublingTarget(session.behind ?? hero.stack, bigBlind, stake.buyIn);
+    leaveButton.classList.toggle('primary', target.reached);
+    leaveButton.classList.toggle('ghost', !target.reached);
+    mount(takeHost, el(`div.take-meter${target.reached ? '.reached' : ''}`, {
+      title: t('Sit down with {buyin}, get up with {need} or more by cashing out, and {name} hands the table over.',
+        { buyin: fmt.money(stake.buyIn), need: fmt.money(target.need), name: boss.short }),
+    },
+      el('span.take-line', target.reached
+        ? t('Doubled! Cash out to take the table')
+        : t('Take the table: cash out with {need}', { need: fmt.money(target.need) })),
+      el('span.take-bar', el('span', { style: { width: `${Math.round(target.share * 100)}%` } })),
+      el('span.take-sub', t('You have {have}', { have: fmt.money(target.have) })),
+    ));
+  }
+
   function draw() {
+    drawTake();
     drawLessonNote();
     drawMatch();
     drawFelt();
@@ -2481,8 +2720,10 @@ export function renderTable(ctx, params = {}) {
   }
 
   // The owner of the table says hello when you sit down.
-  if (bossId) say(bossId, t(boss.hello), 6500);
+  if (bossId && !resuming) say(bossId, t(boss.hello), 6500);
   draw();
+  // Picked back up only to cash out: the table is there long enough to get up from.
+  if (resuming && params.cashout === '1') setTimeout(() => { if (!session.cancelled) leave(); }, 0);
   return root;
 }
 
