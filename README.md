@@ -170,6 +170,33 @@ daylight), the people have faces, and everything you hear — chips, cards, the
 ship's bell, a steam whistle and a ragtime piano — is synthesised in the
 browser, with separate switches for effects and music in the ledger.
 
+### 🎩 Your character
+
+The chip with your rank on the top bar opens a page about you, drawn head to toe.
+The figure is dressed by your rank, a new look every two ranks: a deckhand in a
+borrowed shirt, braces and a cap; a card-room grinder in a green visor and
+sleeve garters; a riverboat regular in a bowler and a tailored waistcoat; a
+riverboat shark in a long coat and a flat-brimmed hat; and at the top, a legend
+of the river in velvet, gold and smoked glasses. The looks still to come wait in
+silhouette. What is in the hands follows how you play (a nit nurses a cup of
+tea, a maniac flips a chip), the face follows your last three sittings, and a
+Regatta won puts the cup at your feet. Skin, hair, a beard, the colour you wear
+and the name on your plate are yours to choose, and free.
+
+Every hand you play at a real table is kept, so the page can say what kind of
+player you are: nit, tight and passive, tight-aggressive, solid regular,
+loose-aggressive, calling station or maniac — named from your VPIP and how much
+of it you raise, over thirty hands or more at a full Hold'em cash table, and
+placed on a map beside the river's six regulars (each of whom lands in a box of
+its own). Then the six numbers a HUD would show about you, against the band a
+winning regular sits in; your results; your favourite hand, the one that makes
+you money and the one that costs you; a 13×13 grid of how often you play each
+hand when you are dealt it; your best hand ever, biggest pot, biggest bluff and
+longest winning run; your best and worst seat, your favourite victim and your
+nemesis; and what you have done on the river. Nothing is named from too few
+hands: each number says how many more it needs. It is in the Ledger too, and on
+the river beside your boat.
+
 ### 📋 Interactive range charts
 
 The full 13×13 grid for every opening position and every 3-betting position,
@@ -229,7 +256,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.15.1`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.16.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

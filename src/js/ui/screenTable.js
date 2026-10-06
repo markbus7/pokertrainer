@@ -21,7 +21,7 @@ import { VARIANTS, VARIANT_KEYS } from '../engine/variants.js';
 import { equityVsField, outsToImprove } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, spr } from '../core/odds.js';
 import { sizingContext, potFraction, clampRaise, sizingOffers } from '../core/betSizing.js';
-import { evaluateHand, describeScore, shortCategoryName, categoryOf, CAT } from '../core/evaluator.js';
+import { evaluateHand, describeScore, shortCategoryName, categoryOf, standardScore, CAT } from '../core/evaluator.js';
 import { judgeSpot } from '../core/coach.js';
 import { conceptOf } from '../core/spotConcept.js';
 import { moduleMeta, MODULE_META } from '../data/curriculum.js';
@@ -632,6 +632,7 @@ export function renderTable(ctx, params = {}) {
       stake: grind ? stake.key : null,
     });
     session.handStarted = true;
+    session.acts = { bets: 0, raises: 0, calls: 0, folds: 0 };
     session.verdict = null;
     session.snapshot = null;
     session.readAsked = {};
@@ -1016,6 +1017,12 @@ export function renderTable(ctx, params = {}) {
     stats.recordDecision({ kind: action.type, verdict: verdict.level, street: table.street });
     stats.recordAction(table.street, action.type, { facingRaise: snap.toCall > table.bigBlind });
     if (table.street !== 'preflop') stats.markStreet(table.street);
+    // For your career's aggression: bets, raises and calls after the flop, the
+    // way a HUD counts them, and every fold.
+    if (session.acts) {
+      if (action.type === 'fold') session.acts.folds++;
+      else if (table.street !== 'preflop' && session.acts[`${action.type}s`] !== undefined) session.acts[`${action.type}s`]++;
+    }
 
     const label = describeAction(action, table, hero, null);
     session.recorder.act(table, action, snap);
@@ -1039,8 +1046,19 @@ export function renderTable(ctx, params = {}) {
     const net = result.net[HERO_ID] || 0;
     const showdown = result.reason === 'showdown';
     const won = (result.payouts[HERO_ID] || 0) > 0;
-    stats.markStreet(table.street);
-    stats.endHand({ net, showdown, won, potSize: result.pots.reduce((s, p) => s + p.amount, 0) });
+    // Still in at the end: you saw every street the hand reached. A hand you
+    // folded has already marked the streets you acted on, and no more — it
+    // used to mark the flop for a hand you folded before it, because the
+    // others went on to see one.
+    if (!hero.folded) stats.markStreet(table.street);
+    // What the hand was, before the sitting's numbers fold it into their totals.
+    const thisHand = { ...stats.currentHand };
+    // Going to showdown means being in it. The table's reason says only that
+    // somebody was: a hand you folded and two others took to the river used to
+    // count as one of yours, and Silas could tell a player who folds nearly
+    // everything that they went to showdown far too often.
+    const heroInShowdown = showdown && result.showdown.some((s) => s.id === HERO_ID);
+    stats.endHand({ net, showdown: heroInShowdown, won, potSize: result.pots.reduce((s, p) => s + p.amount, 0) });
 
     if (showdown) {
       for (const s of result.showdown) {
@@ -1066,6 +1084,8 @@ export function renderTable(ctx, params = {}) {
     // (The flag for this existed as `actedThisHand` and was deleted last
     // version as dead state; nothing read it because the thing that needed to
     // had not been written yet.)
+    // Your career (the Character screen): every hand at a real table. Saved with the count below.
+    if (!lesson) noteForTheRecord(result, thisHand, { net, showdown, won, potTotal });
     if (!lesson || session.playedByReader) {
       profile.data.handsPlayed++;
       profile.save();
@@ -1097,7 +1117,6 @@ export function renderTable(ctx, params = {}) {
 
     // The river runs out loud if everybody was all in before it was dealt.
     boardSound();
-    const heroInShowdown = showdown && result.showdown.some((s) => s.id === HERO_ID);
     if (won) sound('win');
     else if (heroInShowdown) sound('lose');
 
@@ -1144,6 +1163,74 @@ export function renderTable(ctx, params = {}) {
     armAutoDeal(result);
     draw();
 
+  }
+
+  /**
+   * What a hand says about you, for the Character screen (state/lifetime.js).
+   *
+   * Where the chips went is shared out by who they came from: a pot you won
+   * was paid for by the players who lost chips in it, each in proportion to
+   * what they lost, and a pot you lost went to its winners the same way. That
+   * is what "your favourite victim" means: whose chips ended up in your stack.
+   *
+   * The style numbers (VPIP and the rest) only count at a full Hold'em cash
+   * table — five or more dealt in — since short-handed, Omaha and tournament
+   * poker are different games where every number reads differently.
+   */
+  function noteForTheRecord(result, h, { net, showdown, won, potTotal }) {
+    const bb = table.bigBlind;
+    const mode = duel ? 'duel' : regatta ? 'regatta' : 'cash';
+    const heroShow = showdown ? result.showdown.find((s) => s.id === HERO_ID) : null;
+    let made = null;
+    if (heroShow) {
+      const score = standardScore(heroShow.score, table.variant.shortDeck);
+      const cat = categoryOf(score);
+      made = { score, cat, royal: cat === CAT.STRAIGHT_FLUSH && ((score >> 16) & 15) === 14 };
+    }
+    // Won without a showdown, holding nothing: the bluff that worked.
+    let bluff = false;
+    if (won && !showdown && table.board.length >= 3) {
+      const mine = evaluateHand(hero.hole, table.board, table.variant);
+      bluff = categoryOf(standardScore(mine, table.variant.shortDeck)) === CAT.HIGH_CARD;
+    }
+    const who = (p) => (p.id === rivalId ? RIVAL.key : typeof p.profile === 'string' ? p.profile : getProfile(p.profile).key);
+    const others = table.players.filter((p) => !p.isHero && (result.net[p.id] || 0) !== 0);
+    const counter = others.filter((p) => (net > 0 ? result.net[p.id] < 0 : result.net[p.id] > 0));
+    const total = counter.reduce((s, p) => s + Math.abs(result.net[p.id]), 0);
+    const opponents = net === 0 || !total ? [] : counter.map((p) => ({
+      who: who(p),
+      // Positive: they took chips off you. Negative: you took them off them.
+      netBb: (-net * (Math.abs(result.net[p.id]) / total)) / bb,
+    }));
+    const { decisions, sound } = soundShare(session.graded.filter((d) => d.hand === table.handNumber));
+    const acts = session.acts || { bets: 0, raises: 0, calls: 0, folds: 0 };
+    profile.noteLifetimeHand({
+      mode,
+      full: mode === 'cash' && variantKey === 'holdem' && seats >= 6 && session.aliveAtStart >= 5,
+      key: hero.hole.length === 2 ? handKey(hero.hole) : null,
+      position: hero.position,
+      vpip: Boolean(h.voluntary),
+      pfr: Boolean(h.raisedPreflop),
+      threeBet: Boolean(h.threeBet),
+      threeBetChance: Boolean(h.threeBetChance),
+      sawFlop: Boolean(h.sawFlop),
+      showdown: Boolean(heroShow),
+      won,
+      netBb: net / bb,
+      potBb: potTotal / bb,
+      bets: acts.bets,
+      raises: acts.raises,
+      calls: acts.calls,
+      folds: acts.folds,
+      allIn: Boolean(hero.allIn),
+      made,
+      bluff,
+      decisions,
+      sound,
+      opponents,
+      at: Date.now(),
+      where: bubble ? 'bubble' : room ? room.key : 'practice',
+    });
   }
 
   /**
@@ -1271,7 +1358,7 @@ export function renderTable(ctx, params = {}) {
     const report = buildReport({
       place: bubble
         ? { kind: 'practice', key: 'bubble', name: 'The bubble' }
-        : regatta
+        : regatta || duel
           ? { kind: 'stop', key: room.key, name: room.name, label: room.label }
           : grind
             ? { kind: 'stop', key: room.key, name: room.name, label: room.label, table: seat.id }

@@ -51,6 +51,13 @@ const applyVariant = (score, shortDeck) => {
 };
 
 /**
+ * A score with its category put back in the standard order (the swap is its
+ * own inverse), so a Short Deck flush is named and kept as a flush wherever
+ * hands from different games sit side by side — your best hand ever, say.
+ */
+export const standardScore = (score, shortDeck = false) => applyVariant(score, shortDeck);
+
+/**
  * Highest card of the best straight in a rank bitmask, or 0.
  * Bit i is set when rank i is present; the ace is additionally mirrored to
  * bit 5 so A-2-3-4-5 (and A-6-7-8-9 in Short Deck) fall out of the same scan.

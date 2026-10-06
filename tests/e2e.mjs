@@ -2140,13 +2140,18 @@ await step('a lesson run ends in a report and is remembered afterwards', async (
   }
 });
 
-await step('the rank chip opens the ladder, and locked ranks stay locked', async () => {
+await step('the rank chip opens your character, the rank on it opens the ladder, and locked ranks stay locked', async () => {
+  // The chip on the rail is you: it opens the Character screen, and the rank
+  // on that screen is the way to the papers.
   await page.goto(`${BASE}/#train`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);
   await page.click('.rank-chip');
   await page.waitForTimeout(400);
+  if (!/#character/.test(page.url())) throw new Error(`rank chip went to ${page.url()}`);
+  await page.click('button.char-fact');
+  await page.waitForTimeout(400);
   const url = page.url();
-  if (!/#levels/.test(url)) throw new Error(`rank chip went to ${url}`);
+  if (!/#levels/.test(url)) throw new Error(`the rank on your character went to ${url}`);
 
   const seen = await page.evaluate(() => {
     const rows = [...document.querySelectorAll('.panel')].map((p) => p.textContent).join(' ');
@@ -2603,7 +2608,7 @@ await step('no screen is half in English when the app is in Dutch', async () => 
     '#home', '#stop?at=nl10', '#stop?at=nl50', '#train', '#learn?module=pot-odds', '#boatyard',
     '#lab-run', '#review', '#charts?chart=BTN', '#glossary', '#stats',
     '#levels', '#gauntlet', '#drill?module=outs', '#walkthrough?module=pot-odds',
-    '#ranges', '#ranges-run', '#ranges-weak', '#store', '#report',
+    '#ranges', '#ranges-run', '#ranges-weak', '#store', '#report', '#character',
   ];
 
   // domcontentloaded rather than networkidle: the app fires an update check
@@ -3710,6 +3715,148 @@ await step('a duel with the owner of a table: the blinds climb, it ends, the sta
     const dutch = await text('.duel-block');
     if (!/Duel met Wade/.test(dutch) || /Rematch|stars/.test(dutch)) throw new Error(`the duel block in Dutch reads "${dutch}"`);
     console.log(`      the first visit tells the story once; a stranger is refused; Wade's blinds climb 1/2 → 2/4; a win took the table on duel ${tries} with ${stars} star${stars === 1 ? '' : 's'}; a forfeit counted as a loss; Dutch`);
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('your character: the hands you play make the player you are, and the look is yours', async () => {
+  // A player of their own, from nothing: one hand at the free table goes into
+  // the career; the Character screen draws the figure, says it is too soon to
+  // name a style, and fills in the one square of the grid that was dealt. A
+  // career of tight-aggressive hands then puts a dot on the map. The look is
+  // chosen, and survives a reload. The river carries a card that leads here.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const cp = await ctx.newPage();
+  const mine = [];
+  cp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const KEY = 'poker-trainer.profile.v1';
+  try {
+    await cp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await cp.evaluate((key) => {
+      const raw = JSON.parse(localStorage.getItem(key) || '{}');
+      raw.seenPrologue = true;
+      raw.settings = { ...(raw.settings || {}), autoDeal: false, liveCoach: false, lang: 'en' };
+      localStorage.setItem(key, JSON.stringify(raw));
+    }, KEY);
+    await cp.reload({ waitUntil: 'domcontentloaded' });
+
+    // One hand at the free table.
+    await cp.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+    await cp.waitForSelector('.felt', { timeout: 8000 });
+    await cp.click('button.btn.primary.lg');
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      const bar = await cp.textContent('.action-bar');
+      if (/Deal next hand/.test(bar)) break;
+      const band = await cp.$('.read-bands .btn');
+      if (band) { await band.click().catch(() => {}); await cp.waitForTimeout(200); continue; }
+      const btn = (await cp.$('.action-buttons .btn.success'))
+        || (await cp.$('.action-buttons .btn:not(.danger):not(.primary)'))
+        || (await cp.$('.action-buttons .btn.danger'));
+      if (btn) await btn.click().catch(() => {});
+      await cp.waitForTimeout(250);
+    }
+    const life = await cp.evaluate((key) => JSON.parse(localStorage.getItem(key)).lifetime, KEY);
+    if (!life || life.hands !== 1) throw new Error(`the hand did not go into the career: ${JSON.stringify(life && { hands: life.hands })}`);
+    if (life.style.hands !== 1) throw new Error('a hand at a full free table should count toward the style');
+    if (Object.keys(life.starting).length !== 1) throw new Error(`one hand dealt, ${Object.keys(life.starting).length} starting hands kept`);
+
+    // The rail's chip is the way in.
+    await cp.click('.rank-chip');
+    await cp.waitForSelector('.char-stage svg.character', { timeout: 5000 });
+    const first = await cp.evaluate(() => ({
+      type: document.querySelector('.type-name').textContent,
+      rookie: document.querySelector('.rookie-bar') ? document.querySelector('.rookie-bar').textContent.replace(/\s+/g, ' ') : '',
+      dealt: document.querySelectorAll('.hg-cell:not(.none)').length,
+      cells: document.querySelectorAll('.hg-cell').length,
+      regulars: document.querySelectorAll('.style-map .sm-regular').length,
+      you: document.querySelectorAll('.style-map .sm-you').length,
+      gauges: document.querySelectorAll('.cg').length,
+      looks: document.querySelectorAll('.char-evolution .evo').length,
+      ahead: document.querySelectorAll('.char-evolution .evo.ahead').length,
+      plaques: document.querySelectorAll('.char-river .stat').length,
+    }));
+    if (first.type !== 'Still finding out') throw new Error(`one hand named a style: ${first.type}`);
+    if (!/1 \/ 30/.test(first.rookie)) throw new Error(`the count to a style reads "${first.rookie}"`);
+    if (first.cells !== 169 || first.dealt !== 1) throw new Error(`the grid has ${first.cells} squares, ${first.dealt} filled after one hand`);
+    if (first.regulars !== 6 || first.you !== 0) throw new Error(`the map has ${first.regulars} regulars and ${first.you} of you before there is a style`);
+    if (first.gauges !== 6) throw new Error(`${first.gauges} gauges, not six`);
+    if (first.looks !== 5 || first.ahead !== 4) throw new Error(`${first.looks} looks with ${first.ahead} still to come; a new player wears the first`);
+    if (first.plaques !== 8) throw new Error(`${first.plaques} river records, not eight`);
+
+    // The look is yours: picked, drawn at once, and kept.
+    await cp.click('.char-editor summary');
+    await cp.click('.look-option[aria-label="Curly"]');
+    await cp.click('.look-option[aria-label="Navy"]');
+    await cp.fill('.look-name', 'Ada');
+    await cp.press('.look-name', 'Enter');
+    await cp.waitForTimeout(200);
+    const plate = (await cp.textContent('.char-plate-name')).trim();
+    const heading = await cp.textContent('.char-name');
+    if (plate !== 'Ada' || !/^Ada, /.test(heading)) throw new Error(`the name did not take: plate "${plate}", heading "${heading}"`);
+    await cp.reload({ waitUntil: 'domcontentloaded' });
+    await cp.waitForSelector('.char-name', { timeout: 5000 });
+    const kept = await cp.evaluate((key) => ({ look: JSON.parse(localStorage.getItem(key)).look, heading: document.querySelector('.char-name').textContent }), KEY);
+    if (kept.look.hair !== 'curly' || kept.look.colour !== 'navy' || kept.look.name !== 'Ada' || !/^Ada, /.test(kept.heading)) {
+      throw new Error(`the look did not survive a reload: ${JSON.stringify(kept)}`);
+    }
+
+    // A career of tight-aggressive hands, made by the code the table uses.
+    await cp.evaluate(async (key) => {
+      const { emptyLifetime, recordHand } = await import('/src/js/state/lifetime.js');
+      const life = emptyLifetime();
+      for (let i = 0; i < 60; i++) {
+        const played = i % 5 === 0;
+        recordHand(life, {
+          mode: 'cash', full: true, key: played ? 'AKs' : '93o', position: ['BTN', 'CO', 'HJ', 'UTG', 'SB', 'BB'][i % 6],
+          vpip: played, pfr: played, threeBet: false, threeBetChance: false, sawFlop: played, showdown: played && i % 10 === 0,
+          won: played, netBb: played ? 3 : -0.25, potBb: played ? 6 : 1.5, bets: played ? 1 : 0, raises: 0, calls: 0, folds: played ? 0 : 1,
+          allIn: false, made: null, bluff: false, decisions: 1, sound: 1, opponents: [], at: Date.now(), where: 'nl2',
+        });
+      }
+      const raw = JSON.parse(localStorage.getItem(key));
+      raw.lifetime = life;
+      localStorage.setItem(key, JSON.stringify(raw));
+    }, KEY);
+    await cp.reload({ waitUntil: 'domcontentloaded' });
+    await cp.waitForSelector('.style-map .sm-you', { timeout: 5000 });
+    const read = await cp.evaluate(() => ({
+      type: document.querySelector('.type-name').textContent,
+      legend: Boolean(document.querySelector('.style-map-figure .chart-legend')),
+      marks: document.querySelectorAll('.cg-mark').length,
+      inRange: [...document.querySelectorAll('.cg')].map((g) => g.className).join(' '),
+      favourite: document.querySelector('.hand-pick-name').textContent,
+    }));
+    if (read.type !== 'Tight-aggressive') throw new Error(`a fifth of hands, all raised, read as ${read.type}`);
+    if (!read.legend) throw new Error('two kinds of dot on the map and no key to them');
+    if (read.marks < 2) throw new Error(`only ${read.marks} gauges have a mark`);
+    if (!/Ace-King suited/.test(read.favourite)) throw new Error(`the favourite hand reads "${read.favourite}"`);
+    await cp.hover('.style-map .sm-you .dot');
+    await cp.waitForTimeout(150);
+    const tip = await cp.evaluate(() => {
+      const t = document.querySelector('.style-map-figure .chart-tip');
+      return t && !t.hidden ? t.textContent : null;
+    });
+    if (!tip || !/^You: plays 20% of hands, raises 100% of those/.test(tip)) throw new Error(`hovering your dot said: ${tip}`);
+
+    // The river has a card that says who you are and leads here.
+    await cp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await cp.waitForSelector('.you-card', { timeout: 5000 });
+    const card = await cp.textContent('.you-card');
+    if (!/Ada, the Hunter/.test(card)) throw new Error(`the river's card reads "${card.replace(/\s+/g, ' ')}"`);
+    await cp.click('.you-card');
+    await cp.waitForTimeout(300);
+    if (!/#character/.test(cp.url())) throw new Error(`the card went to ${cp.url()}`);
+
+    // On a phone nothing scrolls sideways.
+    await cp.setViewportSize({ width: 390, height: 844 });
+    await cp.goto(`${BASE}/#character`, { waitUntil: 'domcontentloaded' });
+    await cp.waitForSelector('.char-stage svg.character', { timeout: 5000 });
+    const wide = await cp.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    if (wide > 1) throw new Error(`the Character screen is ${wide}px wider than a phone`);
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log('      one hand counted; 169 squares, one filled; a TAG career puts you on the map; the look survives a reload');
   } finally {
     await ctx.close();
   }
