@@ -314,16 +314,30 @@ function stepPanel(hand, review, index, goTo) {
 
   const verdict = review.verdicts[step.decision];
   const d = verdict.decision;
+  // What you did, and — for a bet or a raise — how much, each with its own
+  // verdict; the card takes the colour of the worse of the two.
+  const did = verdict.action || verdict;
+  const size = verdict.size || null;
+  const badge = (v) => `span.badge${v.level === 'bad' ? '.red' : v.level === 'good' ? '.green' : ''}`;
 
   return el(`div.panel.paper.step-card.verdict-panel.${verdict.level}`,
     el('div.panel-title',
       el('h3', { style: { margin: 0 } }, line),
-      el('span.badge' + (verdict.level === 'bad' ? '.red' : verdict.level === 'good' ? '.green' : ''), verdict.head),
+      el(badge(did), t(did.head, did.params)),
     ),
-    el('div', { style: { marginTop: '4px' } }, t(verdict.body, verdict.params)),
-    verdict.better
+    el('div', { style: { marginTop: '4px' } }, t(did.body, did.params)),
+    did.better
       ? el('div.notice.warn', { style: { marginTop: '12px' } },
-          richText(`**${t('Instead:')}** ${t(verdict.better, verdict.params)}.`))
+          richText(`**${t('Instead:')}** ${t(did.better, did.params)}.`))
+      : null,
+    size
+      ? el('div.review-size', { style: { marginTop: '12px' } },
+          el('div', el('b', t('Size')), ' ', el(badge(size), t(size.head, size.params))),
+          el('div', { style: { marginTop: '4px' } }, t(size.body, size.params)),
+          size.better
+            ? el('div.notice.warn', { style: { marginTop: '8px' } },
+                richText(`**${t('Instead:')}** ${t(size.better, size.params)}.`))
+            : null)
       : null,
     d.toCall > 0
       ? el('div', { style: { marginTop: '12px' } },

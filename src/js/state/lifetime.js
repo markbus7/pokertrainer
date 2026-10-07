@@ -26,6 +26,9 @@
  */
 
 import { SAMPLE } from './stats.js';
+import { SIZE_KINDS } from '../core/sizing.js';
+
+const SIZE_KEYS = SIZE_KINDS.map((k) => k.key);
 
 export const LIFETIME_VERSION = 1;
 
@@ -40,6 +43,7 @@ export const LIFE_SAMPLE = {
   seat: 25,                  // hands in a seat before it can be your best
   victim: 10,                // hands against a style before it can be your victim or nemesis
   rating: 4,                 // graded decisions with a hand before it can be one you play best
+  sizes: 4,                  // bets or raises of a kind before it says which way you miss
 };
 
 /** How many of your mistakes are kept, with what was said about each. */
@@ -94,6 +98,10 @@ export function emptyLifetime() {
     // why, and what was right instead — so a hand that keeps costing you can
     // say how. Bounded at MISTAKES_KEPT.
     mistakes: [],
+    // How much you bet and raise, by kind of size (core/sizing.js SIZE_KINDS):
+    // kind -> [sized, right, too small, too big, Silas's]. The last are sizes
+    // taken from Silas's button: right, and not counted in the four before.
+    sizes: {},
     // What you do well with each hand: key -> { kind: [times, head, street, action] },
     // the decisions Silas called good without help, by kind, at most PRAISE_KINDS a hand.
     praise: {},
@@ -137,6 +145,7 @@ export function sanitizeLifetime(raw) {
   life.decided = table(raw.decided, 4, [3]);
   life.mistakes = (Array.isArray(raw.mistakes) ? raw.mistakes : []).slice(0, MISTAKES_KEPT).map(sanitizeMistake).filter(Boolean);
   life.praise = sanitizePraise(raw.praise);
+  life.sizes = Object.fromEntries(Object.entries(table(raw.sizes, 5, [])).filter(([k]) => SIZE_KEYS.includes(k)));
   life.seats = table(raw.seats, 2, [1]);
   life.against = table(raw.against, 3, [1, 2]);
   if (Array.isArray(raw.made)) life.made = life.made.map((_, i) => int(raw.made[i]));
@@ -234,6 +243,22 @@ export function recordHand(life, f) {
     if (f.bluff && (!life.biggestBluff || f.potBb > life.biggestBluff.bb)) {
       life.biggestBluff = { bb: round(f.potBb), key: f.key, at: f.at, where: f.where };
     }
+  }
+
+  // How much you bet and raised, by kind: right, too small or too big — and
+  // the sizes that were Silas's, which are not counted as yours.
+  for (const g of Array.isArray(f.graded) ? f.graded : []) {
+    const size = g && g.size;
+    if (!size || !SIZE_KEYS.includes(size.kind)) continue;
+    const row = life.sizes[size.kind] || (life.sizes[size.kind] = [0, 0, 0, 0, 0]);
+    if (size.helped) {
+      row[4] += 1;
+      continue;
+    }
+    const at = { right: 1, small: 2, big: 3 }[size.verdict];
+    if (!at) continue;
+    row[0] += 1;
+    row[at] += 1;
   }
 
   if (f.key) {
@@ -479,3 +504,26 @@ function sanitizePraise(raw) {
 export const praiseFor = (life, key) => Object.values(life.praise[key] || {})
   .map(([times, head, street, action]) => ({ times, head, street, action }))
   .sort((a, b) => b.times - a.times);
+
+
+/**
+ * How you size your bets and raises, kind by kind, in the order a hand meets
+ * them: how many were right, too small and too big, and which way you miss
+ * when you miss — said only once there are a few to say it from.
+ */
+export function sizeHabits(life) {
+  const rows = SIZE_KINDS.map(({ key, name }) => {
+    const [sized, right, small, big, silas] = life.sizes[key] || [0, 0, 0, 0, 0];
+    const miss = sized >= LIFE_SAMPLE.sizes && small + big > 0
+      ? (small >= 2 * big ? 'small' : big >= 2 * small ? 'big' : 'both')
+      : null;
+    return { key, name, sized, right, small, big, silas, share: sized ? right / sized : null, miss };
+  }).filter((r) => r.sized || r.silas);
+  const sized = rows.reduce((n, r) => n + r.sized, 0);
+  const right = rows.reduce((n, r) => n + r.right, 0);
+  const silas = rows.reduce((n, r) => n + r.silas, 0);
+  // The kind that goes wrong most, by share, from enough of them to say so.
+  const worst = rows.filter((r) => r.sized >= LIFE_SAMPLE.sizes && r.right < r.sized)
+    .sort((a, b) => a.share - b.share || b.sized - a.sized)[0] || null;
+  return { rows, sized, right, silas, share: sized ? right / sized : null, worst };
+}

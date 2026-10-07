@@ -21,6 +21,7 @@ import { equityVsField, equityVsHands, outsToImprove } from './equity.js';
 import { readRange, equityAgainst } from './handRead.js';
 import { evaluateHand, categoryOf, CAT } from './evaluator.js';
 import { requiredEquity, spr } from './odds.js';
+import { sizingContextOf } from './sizing.js';
 
 /**
  * Everything the coach needs to name the skill a spot is asking about.
@@ -40,7 +41,7 @@ export function snapshotOf(table, hero, { rng, aggressor = {}, opener = null, ra
   const toCall = Math.max(0, table.currentBet - hero.committed);
   const pot = table.totalPot;
   const previous = STREETS[Math.max(0, STREETS.indexOf(table.street) - 1)];
-  return {
+  const snap = {
     equity: heroEquity(table, hero, live, rng, ranges),
     toCall,
     pot,
@@ -72,6 +73,10 @@ export function snapshotOf(table, hero, { rng, aggressor = {}, opener = null, ra
       : CAT.HIGH_CARD,
     outs: table.board.length >= 3 ? outsToImprove(hero.hole, table.board, table.variant) : 0,
   };
+  // What a bet or raise here would be sized against, kept with the hand so the
+  // Log grades the size the way the table did.
+  snap.sizing = { ...sizingContextOf(table, hero), outs: snap.outs };
+  return snap;
 }
 
 /**

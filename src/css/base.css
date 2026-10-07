@@ -1210,6 +1210,10 @@ input, textarea, select { font-size: max(16px, 1rem); }
 .cheat-table td { color: var(--text); }
 /* The column the question is actually about. */
 .cheat-table .here { color: var(--gold); background: rgba(var(--accent-rgb), 0.08); }
+/* The bet sizes are sentences, not numbers: they wrap, and read left to right. */
+.cheat-table.size-sheet { font-family: var(--font); table-layout: fixed; }
+.cheat-table.size-sheet th, .cheat-table.size-sheet td { white-space: normal; text-align: left; vertical-align: top; line-height: 1.35; }
+.cheat-table.size-sheet tbody th { width: 38%; }
 
 /* One rung of a module's mastery ladder. */
 .rung { padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; }

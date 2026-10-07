@@ -5,7 +5,7 @@
 
 import { el, mount, toast, fmt } from './dom.js';
 import { icon } from './icons.js';
-import { rangeGridFor, priceSheet } from './reference.js';
+import { rangeGridFor, priceSheet, sizeSheet } from './reference.js';
 import { t, getLang } from '../i18n/index.js';
 
 /**
@@ -22,7 +22,8 @@ import { equityVsField, outsToImprove } from '../core/equity.js';
 import { requiredEquity, potOddsRatio, spr } from '../core/odds.js';
 import { sizingContext, potFraction, clampRaise, sizingOffers } from '../core/betSizing.js';
 import { evaluateHand, describeScore, shortCategoryName, categoryOf, standardScore, CAT } from '../core/evaluator.js';
-import { judgeSpot } from '../core/coach.js';
+import { judgeSpot, overall } from '../core/coach.js';
+import { sizingContextOf, sizeAdvice } from '../core/sizing.js';
 import { conceptOf } from '../core/spotConcept.js';
 import { moduleMeta, MODULE_META } from '../data/curriculum.js';
 import { lessonTable } from '../data/lessonTables.js';
@@ -106,6 +107,7 @@ function referenceDrawer(session, hero, table, draw) {
   const tabs = [
     preflop ? { key: 'chart', label: 'Chart' } : null,
     { key: 'price', label: 'The price' },
+    { key: 'sizes', label: 'Bet sizes' },
   ].filter(Boolean);
 
   if (!session.sheet) {
@@ -131,7 +133,7 @@ function referenceDrawer(session, hero, table, draw) {
       : null,
     open === 'chart'
       ? rangeGridFor({ seat, raiser, hand: mine })
-      : priceSheet(),
+      : open === 'sizes' ? sizeSheet() : priceSheet(),
     el('div.faint', t('Yours to look at. It costs you nothing — the range trainer is where it '
       + 'gets taken away on purpose.')),
   );
@@ -1168,41 +1170,48 @@ export function renderTable(ctx, params = {}) {
     // The Rival counts too, and what she counts is kept.
     if (rivalMemory) rivalRemembers(rivalMemory, { facingBet: snap.toCall > 0, action: action.type });
     const verdict = judgeSpot({ ...snap, action: action.type, amount: action.amount });
+    // A size taken from Silas's button is his: right, and not counted as yours.
+    if (verdict.size) verdict.size.helped = Boolean(session.silasPicked && action.amount === session.silasTarget);
+    // What the decision counts as: the worse of the action and its size.
+    const said = overall(verdict);
     session.verdict = verdict;
     session.said.unshift({ verdict, street: table.street, action: action.type, hand: table.handNumber });
     if (session.said.length > SAID_KEPT) session.said.length = SAID_KEPT;
     const helped = session.helped || session.peeked;
+    // The skill is the action's: a size has no chapter to be marked against.
     recordLearning(verdict, helped);
     // Into Silas's notes, said out loud or not; and the pearl, if it earned one.
     session.graded.push({
       skill: verdict.concept.id,
-      level: verdict.level,
+      level: said.level,
       street: table.street,
       action: action.type,
       helped,
-      head: verdict.head,
-      costBb: verdict.cost ? verdict.cost / table.bigBlind : 0,
+      head: said.head,
+      costBb: said.cost ? said.cost / table.bigBlind : 0,
       hand: table.handNumber,
       handId: null,
       // What was said, kept whole for your character's hand rating: why it was
       // wrong, and what was right instead.
-      id: verdict.id || null,
-      body: verdict.body || null,
-      better: verdict.better || null,
-      params: verdict.params || {},
+      id: said.id || null,
+      body: said.body || null,
+      better: said.better || null,
+      params: said.params || {},
+      // How much, apart from whether: for your character's bet sizes.
+      size: verdict.size ? { kind: verdict.size.sizeKind, verdict: verdict.size.verdict, helped: verdict.size.helped } : null,
     });
     // Silas's contracts count sound decisions at a real table, for the skill they name.
-    if (pays) payContracts(noteContract(profile, { type: 'decision', skill: verdict.concept.id, level: verdict.level, helped }));
+    if (pays) payContracts(noteContract(profile, { type: 'decision', skill: verdict.concept.id, level: said.level, helped }));
     // The Catch Book: a spot played right hooks the fish that lives in it.
     // Some only come in if the hand ends the right way; endHand says.
     if (pays) {
       const caughtHere = bites({
-        street: table.street, action: action.type, concept: verdict.concept.id, level: verdict.level,
+        street: table.street, action: action.type, concept: verdict.concept.id, level: said.level,
         helped, position: snap.position, firstIn: snap.firstIn, toCall: snap.toCall, seats: lesson ? 6 : seats,
       }, room ? room.index : null);
       for (const key of caughtHere) session.hooked.push({ key, pot: snap.pot });
     }
-    const earned = !pays ? 0 : paidForTable(decisionPearls({ level: verdict.level, street: table.street, action: action.type, helped }));
+    const earned = !pays ? 0 : paidForTable(decisionPearls({ level: said.level, street: table.street, action: action.type, helped }));
     if (earned) {
       session.pearls.decisions += earned;
       const extra = fromTheStrongbox(earned);
@@ -1219,7 +1228,7 @@ export function renderTable(ctx, params = {}) {
       if (runComplete(session.run)) finishRun();
     }
     if (action.type === 'bet' || action.type === 'raise') session.aggressor[table.street] = HERO_ID;
-    stats.recordDecision({ kind: action.type, verdict: verdict.level, street: table.street });
+    stats.recordDecision({ kind: action.type, verdict: said.level, street: table.street });
     stats.recordAction(table.street, action.type, { facingRaise: snap.toCall > table.bigBlind });
     if (table.street !== 'preflop') stats.markStreet(table.street);
     // For your career's aggression: bets, raises and calls after the flop, the
@@ -2159,8 +2168,12 @@ export function renderTable(ctx, params = {}) {
     }
     if (raiseSpec) {
       const context = sizingContext(table, hero, raiseSpec);
-      for (const f of [0.33, 0.75]) {
-        const amount = clampRaise(raiseSpec, potFraction(context, f));
+      // Silas's own size first, where the spot has one: the sizes graded below
+      // would otherwise offer a 3-bet to a third of the pot as "best".
+      const advised = sizeAdvice(snap.sizing || sizingContextOf(table, hero));
+      const silas = advised && advised.target !== null ? [advised.target] : [];
+      const amounts = [...silas, ...[0.33, 0.75].map((f) => clampRaise(raiseSpec, potFraction(context, f)))];
+      for (const amount of amounts) {
         const label = raiseSpec.type === 'bet'
           ? t('bet {amount}', { amount: fmt.chips(amount) })
           : t('raise to {amount}', { amount: fmt.chips(amount) });
@@ -2171,7 +2184,7 @@ export function renderTable(ctx, params = {}) {
     const rank = { good: 2, ok: 1, bad: 0 };
     let best = null;
     for (const c of candidates) {
-      const verdict = judgeSpot({ ...snap, action: c.type, amount: c.amount });
+      const verdict = overall(judgeSpot({ ...snap, action: c.type, amount: c.amount }));
       if (!best || rank[verdict.level] > rank[best.verdict.level]) best = { ...c, verdict };
     }
     return best;
@@ -2396,6 +2409,7 @@ export function renderTable(ctx, params = {}) {
       if (stale || session.raiseKey !== decision) {
         session.raiseAmount = potFraction(sizingContext(table, hero, raiseSpec), 0.5);
         session.raiseKey = decision;
+        session.silasPicked = false;
       }
     }
 
@@ -2439,6 +2453,7 @@ export function renderTable(ctx, params = {}) {
           const typed = e.target.value.replace(/[^0-9]/g, '');
           if (e.target.value !== typed) e.target.value = typed;
           if (typed === '') return;
+          session.silasPicked = false;
           setAmount(Number(typed), { keepTyping: true });
         },
         onchange: () => setAmount(session.raiseAmount),
@@ -2456,19 +2471,19 @@ export function renderTable(ctx, params = {}) {
         value: String(session.raiseAmount),
         step: '1',
         'aria-label': 'Raise size',
-        oninput: (e) => setAmount(Number(e.target.value)),
+        oninput: (e) => { session.silasPicked = false; setAmount(Number(e.target.value)); },
       });
       followers.push((amount) => { slider.value = String(amount); });
 
       const step = (by, label) => el('button.btn.sm.ghost.step-btn', {
         'aria-label': label,
-        onclick: () => setAmount(session.raiseAmount + by),
+        onclick: () => { session.silasPicked = false; setAmount(session.raiseAmount + by); },
       }, by > 0 ? '+1' : '−1');
 
       const offers = sizingOffers(ctx);
       const presets = offers.map((offer) => {
         const button = el('button.btn.sm.ghost.size-btn', {
-          onclick: () => setAmount(offer.amount),
+          onclick: () => { session.silasPicked = false; setAmount(offer.amount); },
         },
           el('span.size-name', offer.label),
           el('span.size-chips', fmt.chips(offer.amount)),
@@ -2481,6 +2496,24 @@ export function renderTable(ctx, params = {}) {
         });
         return button;
       });
+
+      // Silas's size, when he is at your shoulder and the size does not turn on
+      // the hand you hold: the rule is on the button, and in his panel.
+      const advice = liveCoach() ? sizeAdvice(sizingContextOf(table, hero)) : null;
+      session.silasTarget = advice && advice.target !== null ? advice.target : null;
+      if (session.silasTarget !== null) {
+        const target = session.silasTarget;
+        const silas = el('button.btn.sm.ghost.size-btn.size-silas', {
+          title: t(advice.rule, advice.params),
+          'aria-label': t('Silas\'s size: {amount}', { amount: fmt.chips(target) }),
+          onclick: () => { session.silasPicked = true; setAmount(target); },
+        },
+          el('span.size-name', icon('coach', { size: 12 }), ' Silas'),
+          el('span.size-chips', fmt.chips(target)),
+        );
+        followers.push((amount) => { silas.classList.toggle('is-active', amount === target && session.silasPicked); });
+        presets.unshift(silas);
+      }
 
       sizingRows = el('div.sizing',
         el('div.sizing-row.size-presets', presets),
@@ -2542,6 +2575,34 @@ export function renderTable(ctx, params = {}) {
   }
 
   /**
+   * Before you act, when you can bet or raise: Silas's rule for the size here.
+   * It names the rule for each kind of hand and leaves which kind yours is to you.
+   */
+  function sizeRule(snap) {
+    const advice = snap && snap.sizing ? sizeAdvice(snap.sizing) : null;
+    if (!advice) return null;
+    return el('div.size-advice',
+      icon('chip', { size: 15 }),
+      el('span', el('b', t('Size')), ' · ', t(advice.rule, advice.params)),
+    );
+  }
+
+  /** How much you bet or raised, said on its own line under the verdict on the decision. */
+  function sizeNote(size) {
+    if (!size) return null;
+    return el(`div.size-note.${size.level}`,
+      el('div.size-note-head',
+        el('span.size-mark', { 'aria-hidden': 'true' }, SAID_MARK[size.level] || '•'),
+        el('span.size-label', t('Size')),
+        el('b', t(size.head, size.params)),
+      ),
+      el('div', t(size.body, size.params)),
+      size.better ? el('div.verdict-better', t('Instead:'), ' ', t(size.better, size.params)) : null,
+      size.helped ? el('div.faint', t('Silas\'s size: it does not count as one of yours.')) : null,
+    );
+  }
+
+  /**
    * The verdicts before the one in the box, short: the street, what you did,
    * and whether Silas agreed. Tap one for the why and what was right.
    */
@@ -2550,18 +2611,24 @@ export function renderTable(ctx, params = {}) {
     if (!before.length) return null;
     return el('div.said-before',
       el('div.said-title', t('What Silas said before')),
-      before.map(({ verdict: v, street, action, hand }) => el(`details.said-row.${v.level}`,
+      before.map(({ verdict: v, street, action, hand }) => el(`details.said-row.${overall(v).level}`,
         el('summary',
-          el('span.said-mark', { 'aria-hidden': 'true' }, SAID_MARK[v.level] || '•'),
+          el('span.said-mark', { 'aria-hidden': 'true' }, SAID_MARK[overall(v).level] || '•'),
           el('span.said-when',
             el('b.said-street', street),
             DID[action] ? ` · ${t(DID[action])}` : '',
             hand !== table.handNumber
               ? el('span.faint', ` · ${hand === table.handNumber - 1 ? t('previous hand') : t('earlier hand')}`)
               : null),
-          el('span.said-head', t(v.head, v.params))),
+          el('span.said-head', t(overall(v).head, overall(v).params))),
+        // What you did, then how much: the summary names the worse of the two.
+        overall(v) !== v ? el('p.said-why', el('b', t(v.head, v.params))) : null,
         v.body ? el('p.said-why', t(v.body, v.params)) : null,
         v.better ? el('div.verdict-better', t('Instead:'), ' ', t(v.better, v.params)) : null,
+        v.size
+          ? el('p.said-why', el('b', t('Size'), ' · ', t(v.size.head, v.size.params)), ' — ', t(v.size.body, v.size.params))
+          : null,
+        v.size && v.size.better ? el('div.verdict-better', t('Instead:'), ' ', t(v.size.better, v.size.params)) : null,
       )));
   }
 
@@ -2647,6 +2714,7 @@ export function renderTable(ctx, params = {}) {
                 : hero.hole.length && table.board.length
                   ? describeScore(evaluateHand(hero.hole, table.board, table.variant), table.variant.shortDeck)
                   : 'Preflop'),
+            sizeRule(snap),
             session.peeked
               ? el('div', { style: { marginTop: '10px' } },
                   metric('Your equity', fmt.pct(snap.equity, 1)),
@@ -2670,6 +2738,7 @@ export function renderTable(ctx, params = {}) {
             session.verdict.better
               ? el('div.verdict-better', t('Instead:'), ' ', t(session.verdict.better, session.verdict.params))
               : null,
+            sizeNote(session.verdict.size),
             // Straight from the mistake into the chapter that explains it —
             // the moment you want the theory is the moment it cost you.
             session.verdict.level === 'bad' && moduleMeta(session.verdict.concept.id)
