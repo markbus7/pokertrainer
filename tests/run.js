@@ -34,6 +34,7 @@ const modules = [
   './lessonRuns.test.js',
   './coachEquity.test.js',
   './betSizing.test.js',
+  './sizing.test.js',
   './matchup.test.js',
   './contrast.test.js',
   './bots.test.js',

@@ -9,6 +9,10 @@ import { makeRng } from '../src/js/core/rng.js';
 import { judgeSpot } from '../src/js/core/coach.js';
 import { conceptOf } from '../src/js/core/spotConcept.js';
 import { parseCards } from '../src/js/core/cards.js';
+import { sizingContextOf, sizeAdvice, judgeSize, SIZE_RULES, SIZE_KINDS, SIZE_SHEET } from '../src/js/core/sizing.js';
+import { createTable } from '../src/js/engine/table.js';
+import { botAction } from '../src/js/engine/bots.js';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 
 describe('i18n: the mechanism', () => {
   it('falls back to English rather than showing a missing key', () => {
@@ -428,6 +432,7 @@ describe('i18n: the coach speaks Dutch too', () => {
     }
 
     function collect(v) {
+      if (v.size) collect(v.size);
       for (const text of [v.head, v.body, v.better, v.concept && v.concept.why]) {
         if (!text || KEEP_ENGLISH.has(text) || !needsTranslation(text)) continue;
         if (!covered(text)) missing.add(text);
@@ -436,6 +441,80 @@ describe('i18n: the coach speaks Dutch too', () => {
 
     assert(missing.size === 0,
       `no Dutch for:\n      ${[...missing].map((s) => s.slice(0, 80)).join('\n      ')}`);
+  });
+
+  it('has Dutch for every size the coach can grade, and every rule it gives', () => {
+    // How much to bet is said after every bet and raise, and the rules before
+    // them: walked over real hands, every kind of spot, every way of missing.
+    const templates = Object.keys(NL).filter((k) => /\{\w+\}/.test(k));
+    const missing = new Set();
+    const need = (text) => {
+      if (!text || KEEP_ENGLISH.has(text) || !needsTranslation(text)) return;
+      if (!NL[text]) missing.add(text);
+    };
+    const rng = makeRng(17);
+    for (let h = 0; h < 200; h++) {
+      const stack = [20, 40, 60, 200][h % 4];
+      const table = createTable({
+        smallBlind: 1, bigBlind: 2, rng,
+        players: ['a', 'b', 'c', 'd', 'e', 'f'].slice(0, h % 3 ? 6 : 2).map((id) => ({ id, name: id, stack })),
+      });
+      table.startHand();
+      let guard = 0;
+      while (!table.handOver && guard++ < 200) {
+        const actor = table.actor;
+        if (!actor) break;
+        const spec = table.legalActions(actor).find((a) => a.type === 'raise' || a.type === 'bet');
+        if (spec) {
+          const ctx = sizingContextOf(table, actor);
+          const advice = sizeAdvice(ctx);
+          if (advice) need(advice.rule);
+          const amounts = [spec.min, Math.round(spec.min * 1.5), Math.round((spec.min + spec.max) / 6), Math.round((spec.min + spec.max) / 2), spec.max];
+          for (const amount of amounts) {
+            for (const [equity, outs] of [[0.1, 0], [0.5, 0], [0.8, 0], [0.95, 0], [0.4, 9]]) {
+              const v = judgeSize({ sizing: ctx, action: spec.type, amount, street: table.street, equity, outs });
+              if (v) [v.head, v.body, v.better].forEach(need);
+            }
+          }
+        }
+        table.act(botAction(table, actor, rng));
+      }
+    }
+    Object.values(SIZE_RULES).forEach(need);
+    SIZE_KINDS.forEach((k) => need(k.name));
+    SIZE_SHEET.forEach(([spot, size]) => { need(spot); need(size); });
+    assert(templates.length > 0);
+    assert(missing.size === 0, `no Dutch for:\n      ${[...missing].map((x) => x.slice(0, 90)).join('\n      ')}`);
+  });
+
+  it('has Dutch for every sentence a screen asks for by name', () => {
+    // t('…') with the words written out is how a screen asks for a sentence.
+    // One with no Dutch entry turns up in English in the middle of a Dutch
+    // screen; the e2e walk only finds the ones on the screens it visits.
+    const files = [];
+    const walk = (dir) => {
+      for (const name of readdirSync(dir)) {
+        const path = `${dir}/${name}`;
+        if (statSync(path).isDirectory()) walk(path);
+        else if (name.endsWith('.js') && !path.includes('/i18n/')) files.push(path);
+      }
+    };
+    walk(new URL('../src/js', import.meta.url).pathname);
+    const literal = /\bt\(\s*((?:'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")(?:\s*\+\s*(?:'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"))*)\s*[,)]/g;
+    const missing = [];
+    let asked = 0;
+    for (const file of files) {
+      const source = readFileSync(file, 'utf8');
+      for (const m of source.matchAll(literal)) {
+        const key = [...m[1].matchAll(/'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"/g)]
+          .map((x) => (x[1] ?? x[2]).replace(/\\(['"\\])/g, '$1')).join('');
+        asked++;
+        if (!key || NL[key] || KEEP_ENGLISH.has(key) || !needsTranslation(key)) continue;
+        missing.push(`${file.split('/src/js/')[1]}: ${key.slice(0, 80)}`);
+      }
+    }
+    assert(asked > 1000, `expected the screens to ask for plenty of sentences, found ${asked}`);
+    assert(missing.length === 0, `no Dutch for:\n      ${missing.join('\n      ')}`);
   });
 
   it('keeps the poker Check apart from the verb', () => {

@@ -15,7 +15,7 @@ const deepEqual = (a, b, msg = '') => equal(JSON.stringify(a), JSON.stringify(b)
 import { Profile } from '../src/js/state/profile.js';
 import {
   emptyLifetime, sanitizeLifetime, recordHand, styleNumbers, styleFromReports, cashResults,
-  startingHands, seats, rivals, soundRate, handRatings, mistakesWith, praiseFor, LIFE_SAMPLE, MISTAKES_KEPT, PRAISE_KINDS,
+  startingHands, seats, rivals, soundRate, handRatings, mistakesWith, praiseFor, sizeHabits, LIFE_SAMPLE, MISTAKES_KEPT, PRAISE_KINDS,
 } from '../src/js/state/lifetime.js';
 import { seatOf, seatValue, chipsValue, doublingTarget, keepSeat, clearSeat } from '../src/js/state/seat.js';
 import { PLAYER_TYPES, REGULARS, BOUNDS, HEALTHY, playerType } from '../src/js/data/playerTypes.js';
@@ -655,3 +655,32 @@ describe('your seat: kept when you look away', () => {
   });
 });
 
+describe('your bet sizes: every bet and raise, measured', () => {
+  const sizedAs = (kind, verdict, helped = false) => ({ level: verdict === 'right' ? 'good' : 'ok', size: { kind, verdict, helped } });
+
+  it('counts each kind of size: right, too small, too big — and Silas\'s apart', () => {
+    const life = emptyLifetime();
+    for (let i = 0; i < 6; i++) recordHand(life, hand({ key: 'AKs', graded: [sizedAs('3bet', i < 4 ? 'small' : 'right'), sizedAs('open', 'right')] }));
+    recordHand(life, hand({ key: null, graded: [sizedAs('river', 'big'), sizedAs('3bet', 'right', true), { level: 'good' }] }));
+    deepEqual(life.sizes['3bet'], [6, 2, 4, 0, 1]);
+    deepEqual(life.sizes.open, [6, 6, 0, 0, 0]);
+    deepEqual(life.sizes.river, [1, 0, 0, 1, 0], 'a hand with no starting-hand key still counts its sizes');
+    const habits = sizeHabits(life);
+    equal(habits.sized, 13);
+    equal(habits.right, 8);
+    equal(habits.silas, 1);
+    equal(habits.worst.key, '3bet', 'two of six right is the worst, from enough of them');
+    equal(habits.worst.miss, 'small');
+    equal(habits.rows.find((r) => r.key === 'river').miss, null, 'one bet does not make a habit');
+    deepEqual(habits.rows.map((r) => r.key), ['open', '3bet', 'river'], 'in the order a hand meets them');
+  });
+
+  it('keeps only kinds it knows, and survives a save', () => {
+    const life = emptyLifetime();
+    recordHand(life, hand({ key: 'QQ', graded: [sizedAs('flop', 'right'), sizedAs('made-up', 'right')] }));
+    deepEqual(Object.keys(life.sizes), ['flop']);
+    const back = sanitizeLifetime(JSON.parse(JSON.stringify({ ...life, sizes: { ...life.sizes, bogus: [1, 1, 0, 0, 0] } })));
+    deepEqual(back.sizes, { flop: [1, 1, 0, 0, 0] });
+    deepEqual(sanitizeLifetime({}).sizes, {});
+  });
+});

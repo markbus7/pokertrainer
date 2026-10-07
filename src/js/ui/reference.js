@@ -24,6 +24,7 @@ import { t } from '../i18n/index.js';
 import { handGrid } from '../core/cards.js';
 import { CHARTS, POSITION_INFO, BOUNDARY_ROWS, rowBoundary } from '../data/ranges.js';
 import { PRICE_LADDER, requiredEquity } from '../core/odds.js';
+import { SIZE_SHEET } from '../core/sizing.js';
 
 const seatName = (seat) => (POSITION_INFO[seat] ? POSITION_INFO[seat].name : seat);
 
@@ -140,5 +141,20 @@ export function priceSheet() {
       })),
     )),
     el('div.faint', t('Worth knowing cold.')),
+  );
+}
+
+/**
+ * How much to bet, on one card: every rule the coach sizes a bet or a raise
+ * by (core/sizing.js), spot by spot.
+ */
+export function sizeSheet() {
+  return el('div.cheat-sheet',
+    el('div.faint', t('How much, spot by spot. Near the size is right; well off it, Silas says so.')),
+    el('div.cheat-scroll', el('table.cheat-table.size-sheet',
+      el('thead', el('tr', el('th', t('Spot')), el('th', t('Size')))),
+      el('tbody', SIZE_SHEET.map(([spot, size]) => el('tr', el('th', t(spot)), el('td', t(size))))),
+    )),
+    el('div.faint', t('Strong hands and bluffs bet the same size, so the size never tells them which you hold.')),
   );
 }

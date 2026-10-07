@@ -194,10 +194,16 @@ await step('every raise control agrees on one amount', async () => {
     slider: Number(document.querySelector('.raise-slider').value),
     button: Number((document.querySelector('.action-buttons .btn.primary').textContent.match(/\d+/) || [0])[0]),
     active: [...document.querySelectorAll('.size-btn.is-active .size-name')].map((n) => n.textContent),
-    offers: [...document.querySelectorAll('.size-btn')].map((b) => ({
+    // The five shares of the pot; Silas's own size, when he is at your
+    // shoulder, is checked on its own below.
+    offers: [...document.querySelectorAll('.size-btn:not(.size-silas)')].map((b) => ({
       name: b.querySelector('.size-name').textContent,
       chips: Number(b.querySelector('.size-chips').textContent),
     })),
+    silas: (() => {
+      const b = document.querySelector('.size-silas');
+      return b ? Number(b.querySelector('.size-chips').textContent) : null;
+    })(),
   }));
 
   const agree = (s, where) => {
@@ -220,6 +226,14 @@ await step('every raise control agrees on one amount', async () => {
     if (s.button !== offer.chips) throw new Error(`${offer.name} shows ${offer.chips} but sets ${s.button}`);
     if (!s.active.includes(offer.name)) throw new Error(`${offer.name} did not mark itself as chosen`);
     seen.push(s.button);
+  }
+  // Silas's size makes the same promise: the amount on it is the amount raised.
+  if (opened.silas !== null) {
+    await page.click('.size-silas');
+    const s = await state();
+    agree(s, 'after Silas\'s size');
+    if (s.button !== opened.silas) throw new Error(`Silas's size shows ${opened.silas} but sets ${s.button}`);
+    if (!(await page.$('.size-silas.is-active'))) throw new Error('Silas\'s size did not mark itself as chosen');
   }
   // In a pot with room, the presets must be four different prices, not one.
   const distinct = new Set(seen.slice(0, 4)).size;
@@ -3217,6 +3231,21 @@ await step('Silas posts contracts, today\'s question keeps a streak, and a stran
   }, patch);
   const OWNED = ['hand-rankings', 'pot-odds', 'outs', 'preflop', 'position', 'cbet'].map((id) => `lesson:${id}`);
   const WALKED = ['hand-rankings', 'pot-odds', 'outs', 'preflop', 'position', 'cbet'];
+  // Today's three are whatever the date draws: a choice to pick, or a number
+  // to type (the outs). Either is answered, and the feedback says it was.
+  const QUESTION = '.options .option:not([disabled]), .drill-entry-input';
+  const answerOne = async () => {
+    await post.waitForSelector(QUESTION, { timeout: 8000 });
+    if (await post.$('.options .option:not([disabled])')) {
+      await post.click('.options .option:not([disabled]) >> nth=0');
+    } else {
+      await post.fill('.drill-entry-input', '4');
+      await post.click('button.btn.primary:has-text("Answer")');
+    }
+    await post.waitForSelector('.feedback', { timeout: 5000 });
+    await post.keyboard.press('Enter');
+    await post.waitForTimeout(150);
+  };
   try {
     await post.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
     await seed({
@@ -3239,15 +3268,9 @@ await step('Silas posts contracts, today\'s question keeps a streak, and a stran
     // Answer today's three: they count once, the streak starts, and a second go pays nothing.
     const before = (await profile()).economy.pearls;
     await post.click('.daily-card .btn.primary');
-    await post.waitForSelector('.options .option', { timeout: 8000 });
+    await post.waitForSelector(QUESTION, { timeout: 8000 });
     if (!/Today's question/.test(await text('.book-bar'))) throw new Error('the set does not say it is today\'s');
-    for (let i = 0; i < 3; i++) {
-      await post.waitForSelector('.options .option:not([disabled])', { timeout: 8000 });
-      await post.click('.options .option:not([disabled]) >> nth=0');
-      await post.waitForSelector('.options .option[disabled]', { timeout: 5000 });
-      await post.keyboard.press('Enter');
-      await post.waitForTimeout(150);
-    }
+    for (let i = 0; i < 3; i++) await answerOne();
     await post.waitForSelector('.daily-prize', { timeout: 8000 });
     const prize = await text('.daily-prize');
     if (!/1 days in a row|1 day/.test(prize) && !/for today's set\. 1 days/.test(prize)) throw new Error(`the day's prize reads "${prize}"`);
@@ -3257,12 +3280,7 @@ await step('Silas posts contracts, today\'s question keeps a streak, and a stran
     await post.waitForSelector('.daily-card', { timeout: 5000 });
     if (!/Done for today/.test(await text('.daily-card'))) throw new Error('the card does not say today is done');
     await post.click('.daily-card .btn.primary');
-    await post.waitForSelector('.options .option', { timeout: 8000 });
-    for (let i = 0; i < 3; i++) {
-      await post.click('.options .option:not([disabled]) >> nth=0');
-      await post.keyboard.press('Enter');
-      await post.waitForTimeout(150);
-    }
+    for (let i = 0; i < 3; i++) await answerOne();
     await post.waitForSelector('.daily-prize', { timeout: 8000 });
     if (!/pays nothing/.test(await text('.daily-prize'))) throw new Error(`a second go the same day reads "${await text('.daily-prize')}"`);
     if ((await profile()).daily.days !== 1) throw new Error('a second go the same day counted');
@@ -4020,6 +4038,116 @@ await step('your hand rating names the hands you go wrong with, and opens each m
     if (!/You play this hand well/.test(aks) || !/Right bet on the right board/.test(aks) || !/4 times/.test(aks)) throw new Error(`AKs opened as "${aks.replace(/\s+/g, ' ').slice(0, 200)}"`);
     if (mine.length) throw new Error(mine.join(' | '));
     console.log('      KJo: 3 mistakes in 6, grouped, with why and what instead, and what it does well; AKs 8 of 8; taps open beside the list without moving the page');
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('Silas sizes your bets: the rule before, the size graded after, and your habits kept', async () => {
+  // A reader bet "what the box showed" and nothing ever said whether it was
+  // the right amount. Now Silas says the rule for the spot and offers his own
+  // size, every bet and raise is graded for its size too, and the profile
+  // keeps the habit.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const sp = await ctx.newPage();
+  const mine = [];
+  sp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const KEY = 'poker-trainer.profile.v1';
+  const saved = () => sp.evaluate((key) => JSON.parse(localStorage.getItem(key)), KEY);
+  const text = (sel) => sp.evaluate((q) => { const n = document.querySelector(q); return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
+  // Play on until a bet or raise is on offer, folding or checking anything else.
+  const toRaiseSpot = async () => {
+    for (let i = 0; i < 120; i++) {
+      if (await sp.$('.size-presets')) return true;
+      const deal = await sp.$('.action-bar button.btn.primary.lg');
+      if (deal && /Deal/.test(await deal.textContent())) { await deal.click(); await sp.waitForTimeout(400); continue; }
+      const band = await sp.$('.read-bands .btn');
+      if (band) { await band.click(); continue; }
+      const btn = await sp.$('.action-buttons .btn:not(.primary):not(.danger)') || await sp.$('.action-buttons .btn.danger');
+      if (btn) await btn.click().catch(() => {});
+      await sp.waitForTimeout(250);
+    }
+    return false;
+  };
+  const toHandEnd = async () => {
+    for (let i = 0; i < 120; i++) {
+      if (/Deal next hand/.test(await text('.action-bar'))) return;
+      const band = await sp.$('.read-bands .btn');
+      if (band) { await band.click(); continue; }
+      const btn = await sp.$('.action-buttons .btn.danger') || await sp.$('.action-buttons .btn:not(.primary)');
+      if (btn) await btn.click().catch(() => {});
+      await sp.waitForTimeout(250);
+    }
+    throw new Error('the hand never finished');
+  };
+  try {
+    await sp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await sp.evaluate((key) => {
+      const raw = JSON.parse(localStorage.getItem(key) || '{}');
+      raw.seenPrologue = true;
+      raw.settings = { ...(raw.settings || {}), autoDeal: false, liveCoach: true, lang: 'en' };
+      localStorage.setItem(key, JSON.stringify(raw));
+    }, KEY);
+    await sp.goto(`${BASE}/?sizes=1#play`, { waitUntil: 'domcontentloaded' });
+    await sp.waitForSelector('.felt', { timeout: 8000 });
+    await sp.click('button:has-text("Deal me in")');
+    if (!(await toRaiseSpot())) throw new Error('no bet or raise was ever on offer');
+
+    // Before: the rule in Silas's panel, and his size as a button of its own.
+    const rule = await text('.size-advice');
+    if (!/^Size/.test(rule)) throw new Error(`Silas's panel says "${rule}" about the size`);
+    const silas = await sp.$('.size-silas');
+    if (silas) {
+      const amount = (await silas.$eval('.size-chips', (n) => n.textContent)).replace(/\D/g, '');
+      if (!(await silas.getAttribute('title'))) throw new Error('Silas\'s size has no rule on it');
+      await silas.click();
+      if ((await sp.$eval('.raise-input', (n) => n.value)) !== amount) throw new Error('Silas\'s button did not set his size');
+      await sp.click('.action-buttons .btn.primary');
+      await sp.waitForSelector('.size-note', { timeout: 5000 });
+      const note = await text('.size-note');
+      if (!(await sp.$('.size-note.good')) || !/not count as one of yours/.test(note)) throw new Error(`Silas's own size was graded "${note}"`);
+    }
+
+    // A size far too big, typed in: graded, said, and what instead.
+    if (!(await toRaiseSpot())) throw new Error('no second bet or raise came');
+    const max = Number(await sp.$eval('.raise-slider', (n) => n.max));
+    await sp.fill('.raise-input', String(max - 1));
+    await sp.press('.raise-input', 'Tab');
+    await sp.click('.action-buttons .btn.primary');
+    await sp.waitForSelector('.size-note', { timeout: 5000 });
+    const off = await text('.size-note');
+    const offHead = await text('.size-note-head b');
+    if (await sp.$('.size-note.good')) throw new Error(`a bet of ${max - 1} was called the right size: "${off}"`);
+    if (!/Instead:/.test(off)) throw new Error(`a size well off says nothing instead: "${off}"`);
+    await toHandEnd();
+    const sizes = (await saved()).lifetime.sizes || {};
+    const rows = Object.values(sizes);
+    if (!rows.some((r) => r[0] > 0 && r[1] < r[0])) throw new Error(`the size that was off is not in the record: ${JSON.stringify(sizes)}`);
+    if (silas && !rows.some((r) => r[4] > 0)) throw new Error(`Silas's size was counted as yours: ${JSON.stringify(sizes)}`);
+
+    // The rules on one card.
+    await sp.click('button:has-text("Deal next hand")');
+    if (await toRaiseSpot()) {
+      await sp.click('button:has-text("Open the reference")');
+      await sp.click('.reference-tab:has-text("Bet sizes")');
+      const n = await sp.$$eval('.size-sheet tbody tr', (r) => r.length);
+      if (n !== 10) throw new Error(`the bet sizes card has ${n} rows`);
+    }
+
+    // The habit, on the profile.
+    await sp.evaluate((key) => {
+      const raw = JSON.parse(localStorage.getItem(key));
+      raw.lifetime.sizes = { open: [8, 8, 0, 0, 0], '3bet': [6, 2, 4, 0, 1] };
+      localStorage.setItem(key, JSON.stringify(raw));
+    }, KEY);
+    await sp.goto(`${BASE}/?sizes=2#character`, { waitUntil: 'domcontentloaded' });
+    await sp.waitForSelector('.char-sizes', { timeout: 5000 });
+    const panel = await text('.char-sizes');
+    if (!/right 71% of the time/.test(panel) || !/work on: 3-bets, 2 of 6 right, mostly too small/.test(panel)) {
+      throw new Error(`the bet sizes panel reads "${panel.slice(0, 220)}"`);
+    }
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log(`      the rule and Silas's size before; his size right and not yours; ${max - 1} graded "${offHead}"; the card; 3-bets mostly too small on the profile`);
   } finally {
     await ctx.close();
   }

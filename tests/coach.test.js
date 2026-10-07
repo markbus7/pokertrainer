@@ -14,7 +14,7 @@ import { parseCards, handKey, ALL_HAND_KEYS, expandHandKey } from '../src/js/cor
 import { evaluateHand, categoryOf, CAT } from '../src/js/core/evaluator.js';
 import { outsToImprove } from '../src/js/core/equity.js';
 import { conceptOf } from '../src/js/core/spotConcept.js';
-import { judgeSpot } from '../src/js/core/coach.js';
+import { judgeSpot, overall } from '../src/js/core/coach.js';
 import { CHARTS, preflopAdvice } from '../src/js/data/ranges.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
 
@@ -234,6 +234,25 @@ describe('a continuation bet is graded against the board', () => {
     const big = cbet('Kd Ks', '9h 8h 7h', 'bet', { equity: 0.75, amount: 15 });
     equal(small.level, 'ok', 'too small on a monotone board');
     equal(big.level, 'good');
+  });
+
+  it('leaves the size to the size grader when the spot carries one', () => {
+    // At a real table every bet carries the spot it was sized in, and the size
+    // is graded on its own: the bet is right, the size is too small, and the
+    // decision counts as the worse of the two.
+    const sizing = {
+      street: 'flop', bb: 2, pot: 20, currentBet: 0, toCall: 0, stack: 180, allInTo: 180, effective: 180,
+      minTo: 2, maxTo: 180, raises: 0, limpers: 0, callers: 0, inPosition: true, position: 'BTN',
+      opponents: 1, wet: true, tags: 'monotone, connected', potLimit: false, outs: 0,
+    };
+    const small = cbet('Kd Ks', '9h 8h 7h', 'bet', { equity: 0.75, amount: 4, sizing });
+    equal(small.level, 'good', 'betting the overpair is right');
+    equal(small.size.verdict, 'small');
+    equal(overall(small).level, 'ok');
+    equal(overall(small).head, 'Too small for this board');
+    const big = cbet('Kd Ks', '9h 8h 7h', 'bet', { equity: 0.75, amount: 15, sizing });
+    equal(big.size.verdict, 'right');
+    equal(overall(big), big);
   });
 
   it('never reports a cost it cannot compute', () => {

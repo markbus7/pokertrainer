@@ -2562,6 +2562,20 @@ button.char-fact:hover { border-color: var(--brass-lo); box-shadow: 0 0 0 1px va
 .made-bar { display: block; height: 100%; min-width: 0; background: var(--char-s3); border-radius: 0 3px 3px 0; }
 .made-n { text-align: right; color: var(--ink-dim); font-size: var(--t-xs); }
 .fun-facts { margin-top: var(--s-5); }
+
+/* Your bet sizes: one row a kind, how often it is right, and which way it misses. */
+.size-headline { font-family: var(--font-print); font-size: var(--t-md); margin: var(--s-2) 0 var(--s-3); }
+.size-habits { display: grid; gap: 6px; max-width: 780px; }
+.size-habit { display: grid; grid-template-columns: 170px minmax(0, 1fr) 110px 160px; gap: var(--s-2); align-items: center; font-size: var(--t-sm); }
+.size-habit-name { font-weight: 600; }
+.size-habit-n { text-align: right; font-variant-numeric: tabular-nums; }
+.size-habit-miss { font-size: var(--t-xs); }
+.size-habits + p { margin-top: var(--s-3); }
+@media (max-width: 640px) {
+  .size-habit { grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--s-2); }
+  .size-habit .made-track { grid-column: 1 / -1; grid-row: 2; }
+  .size-habit-miss { grid-column: 1 / -1; }
+}
 .fun-facts ul { margin: 6px 0 0; padding-left: 1.2em; font-family: var(--font-print); font-size: var(--t-md); line-height: 1.6; }
 
 /* Your hand rating: the hands you go wrong with, the ones you play best,

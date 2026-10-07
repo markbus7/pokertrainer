@@ -376,6 +376,30 @@ input[type="range"] {
 .paper .said-why, .paper .said-title { color: var(--ink-dim); }
 .said-row .verdict-better { margin-top: 4px; }
 
+/* How much: Silas's rule before you act, and the size graded after. */
+.size-advice { display: flex; gap: 6px; align-items: flex-start; margin-top: 10px; font-size: 0.82rem; line-height: 1.4; }
+.size-advice svg { flex: none; margin-top: 2px; color: var(--gold); }
+.size-note { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border-bright); font-size: 0.84rem; }
+.size-note-head { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; margin-bottom: 2px; }
+.size-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+.size-mark { font-weight: 700; width: 1em; }
+.size-note.good .size-mark { color: var(--green); }
+.size-note.ok .size-mark { color: var(--blue); }
+.size-note.bad .size-mark { color: var(--red); }
+.paper .size-label { color: var(--ink-dim); }
+/* The presets share one line, Silas's among them: on a phone they give up
+   padding rather than wrap, which would push the buttons off the screen.
+   (.sizing-row .btn.sm would otherwise hold each one at its own width.) */
+.sizing-row.size-presets { flex-wrap: nowrap; }
+.sizing-row.size-presets .btn.sm.size-btn { flex: 1 1 0; min-width: 0; }
+@media (max-width: 480px), (max-height: 420px) {
+  .sizing-row.size-presets .btn.sm.size-btn { padding: 5px 2px; }
+  .size-presets .size-name { font-size: var(--t-xs); white-space: nowrap; }
+}
+/* Silas's size sits first among the presets, marked as his. */
+.size-presets .size-btn.size-silas { border-style: dashed; }
+.size-presets .size-btn.size-silas .size-name { display: inline-flex; align-items: center; gap: 2px; }
+
 .log {
   font-family: var(--mono);
   font-size: 0.76rem;

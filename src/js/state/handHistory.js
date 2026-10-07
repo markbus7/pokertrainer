@@ -24,7 +24,7 @@
  * every one of those pushes. These stay on the device that played them.
  */
 
-import { judgeSpot } from '../core/coach.js';
+import { judgeSpot, overall } from '../core/coach.js';
 
 const STORAGE_KEY = 'poker-trainer.hands.v1';
 
@@ -115,6 +115,8 @@ export class HandRecorder {
         currentBet: table.currentBet,
         opponents: coach.opponents,
         spr: Number.isFinite(coach.spr) ? coach.spr : null,
+        // How much to bet is graded too, from the spot as it stood.
+        sizing: coach.sizing || null,
       });
     }
 
@@ -297,7 +299,12 @@ export const frameCount = (hand) => hand.steps.length + 1;
  * the ones from here on.
  */
 export function reviewOf(hand) {
-  const verdicts = (hand.decisions || []).map((d) => ({ ...judgeSpot(d), decision: d }));
+  // A decision counts by the worse of what you did and how much you put in;
+  // `action` keeps the first, and `size` the second, for the replay to show both.
+  const verdicts = (hand.decisions || []).map((d) => {
+    const v = judgeSpot(d);
+    return { ...overall(v), action: v, size: v.size, decision: d };
+  });
   const bb = hand.bigBlind || 1;
   const mistakes = verdicts.filter((v) => v.level === 'bad');
   // A priced mistake outranks an unpriced one however small it is. A range

@@ -69,6 +69,19 @@ it, so the last few stay underneath under **What Silas said before**: the
 street, what you did, a ✓, ≈ or ✗ for whether he agreed, and the verdict.
 Tap one to read why again and what was right.
 
+He grades how much as well as whether. Every bet and raise is sized against
+the spot: an open is about 2.5 big blinds, a raise over limpers 3 plus 1 for
+each limper, a 3-bet 3 times the raise in position and 4 times out of it, a
+dry flop a third of the pot, a wet one three quarters with a strong hand and a
+third with a medium one. A size well off the rule is said under the verdict,
+with the size that was right, and counts as the mistake it is. With Silas at
+your shoulder his panel gives the rule before you act, and the sizing buttons
+get one of his own wherever the size does not depend on what you hold; taking
+it is right, and not counted as yours. The reference has every rule on one
+card (**Bet sizes**), the Log grades the size of a hand you replay, and your
+character page keeps the habit: how often each kind of bet and raise is the
+right size, and which way the rest miss.
+
 At the end of a session it produces a **leak report** from your own stats —
 VPIP, PFR, aggression factor, WTSD — naming what you are doing wrong and what
 to do instead.
@@ -287,7 +300,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.17.2`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.18.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

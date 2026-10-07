@@ -21,6 +21,7 @@ import { conceptOf } from './spotConcept.js';
 import { describeTexture } from './board.js';
 import { handKey } from './cards.js';
 import { preflopAdvice, rangePercent, CHARTS } from '../data/ranges.js';
+import { judgeSize } from './sizing.js';
 
 /**
  * @param {object} spot everything conceptOf takes, plus:
@@ -30,7 +31,10 @@ import { preflopAdvice, rangePercent, CHARTS } from '../data/ranges.js';
  * @param {Array<number>} [spot.board]
  * @param {string} [spot.position] your seat, for the preflop charts
  * @param {string} [spot.raiser]   the seat that opened, when facing one
- * @returns {{concept: {id,why}} & ReturnType<typeof judgeDecision>}
+ * @param {object} [spot.sizing] the spot a bet or raise is sized in (core/sizing.js)
+ * @returns {{concept: {id,why}, size: object|null} & ReturnType<typeof judgeDecision>}
+ *   `size` grades how much you bet or raised, apart from whether you should
+ *   have; `overall` folds the two into the one verdict a decision is counted by.
  */
 export function judgeSpot(spot) {
   const concept = conceptOf(spot);
@@ -47,7 +51,32 @@ export function judgeSpot(spot) {
       : concept.id === 'cbet' && spot.board
         ? judgeCbet(spot)
         : judgeDecision(spot));
-  return { concept, ...verdict };
+  const size = spot.action === 'bet' || spot.action === 'raise' ? judgeSize(spot) : null;
+  return { concept, ...verdict, size };
+}
+
+const RANK = { bad: 0, ok: 1, skip: 1, good: 2 };
+
+/**
+ * A decision and its size, as one verdict: the size's, when the size is the
+ * worse of the two. A 3-bet with the right hand to twice the open is a right
+ * decision made the wrong size, and it counts as the mistake it is — in the
+ * notes, the hand rating and the Log — while the table still shows both.
+ */
+export function overall(verdict) {
+  const size = verdict && verdict.size;
+  if (!size || RANK[size.level] >= RANK[verdict.level]) return verdict;
+  return {
+    ...verdict,
+    level: size.level,
+    id: size.id,
+    head: size.head,
+    body: size.body,
+    better: size.better,
+    params: size.params,
+    cost: 0,
+    costKnown: false,
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -219,6 +248,16 @@ function judgeCbet(spot) {
         body: 'You have {equity} on a {tags} board and they have shown weakness. Checking here wins the smallest '
           + 'pot available with the best hand.',
         params, better: texture.wet ? 'Bet big' : 'Bet small', cost: equity * pot * 0.5, costKnown: true,
+      };
+    }
+    // With the size graded on its own (core/sizing.js), the bet is what is
+    // judged here; only a spot with nothing to size it by is sized here too.
+    if (spot.sizing) {
+      return {
+        kind: 'cbet', level: 'good', id: 'value-cbet', head: 'Right to bet a strong hand',
+        body: 'You have {equity} on a {tags} board and they have shown weakness: betting builds the pot while you are '
+          + 'ahead.',
+        params, better: null, cost: 0, costKnown: true,
       };
     }
     const wantsBig = texture.wet;

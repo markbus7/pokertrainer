@@ -29,7 +29,7 @@ import {
   TIERS, SKINS, HAIRS, HAIR_COLOURS, BEARDS, COLOURS, LOOK_LABELS, NAME_MAX, PROPS_TEXT, FORM_TEXT,
 } from '../data/looks.js';
 import { PLAYER_TYPES, REGULARS, BOUNDS, HEALTHY } from '../data/playerTypes.js';
-import { startingHands, seats as seatRecords, rivals, handRatings, mistakesWith, praiseFor, LIFE_SAMPLE } from '../state/lifetime.js';
+import { startingHands, seats as seatRecords, rivals, handRatings, mistakesWith, praiseFor, sizeHabits, LIFE_SAMPLE } from '../state/lifetime.js';
 import { findHand } from '../state/handHistory.js';
 import { whoYouAre, riverRecords } from '../state/character.js';
 import { RANKS } from '../state/profile.js';
@@ -55,6 +55,7 @@ export function renderCharacter(ctx) {
     numbersPanel(me),
     resultsPanel(me),
     handsPanel(me, go),
+    sizesPanel(me),
     famePanel(me),
     tablePanel(me),
     riverPanel(profile),
@@ -938,6 +939,62 @@ function madeBars(me) {
       el('span.made-track', el('span.made-bar', { style: { width: `${top ? (made[i] / top) * 100 : 0}%` } })),
       el('span.made-n.mono', made[i] ? `${made[i]} · ${pct(made[i] / total)}` : '0'),
     ))),
+  );
+}
+
+/* ---- your bet sizes ---------------------------------------------------- */
+
+const MISS = { small: 'mostly too small', big: 'mostly too big', both: 'too small and too big alike' };
+
+/** What the misses of one kind were: "5 too small", "1 too small, 2 too big". */
+const misses = (r) => [
+  r.small ? t('{n} too small', { n: r.small }) : null,
+  r.big ? t('{n} too big', { n: r.big }) : null,
+].filter(Boolean).join(', ');
+
+/**
+ * How much you bet and raise, kind by kind: every bet and raise at a real
+ * table is measured against the size the spot calls for, and this is where
+ * the habit shows — a 3-bet that is always too small is one fix, not fifty.
+ */
+function sizesPanel(me) {
+  const habits = sizeHabits(me.life);
+  return el('section.panel.paper.char-sizes',
+    el('div.panel-title',
+      el('h2', t('Your bet sizes')),
+      habits.sized ? el('span.faint', t('{n} bets and raises sized', { n: fmt.chips(habits.sized) })) : null,
+    ),
+    el('p.faint', t('Every bet and raise at a real table is measured against the size the spot calls for. Too small, and '
+      + 'they call cheaply; too big, and only the hands that beat you pay.')),
+    habits.rows.length
+      ? el('div',
+        habits.share !== null
+          ? el('p.size-headline',
+            t('Your sizes are right {pct} of the time.', { pct: pct(habits.share) }),
+            habits.worst
+              ? [' ', t('The one to work on: {kind}, {right} of {n} right, {miss}.', {
+                kind: t(habits.worst.name).toLowerCase(),
+                right: habits.worst.right,
+                n: habits.worst.sized,
+                miss: t(MISS[habits.worst.miss] || MISS.both),
+              })]
+              : null)
+          : null,
+        el('div.size-habits', habits.rows.map((r) => el('div.size-habit',
+          el('span.size-habit-name', t(r.name)),
+          el('span.made-track', r.sized
+            ? el('span.made-bar', { style: { width: `${Math.round(r.share * 100)}%` } })
+            : null),
+          el('span.size-habit-n', r.sized ? t('{n} of {d} right', { n: r.right, d: r.sized }) : '—'),
+          el('span.size-habit-miss.faint', misses(r)),
+        ))),
+        habits.silas
+          ? el('p.faint', t('Silas\'s size taken {n} times: right, and not counted as yours.', { n: habits.silas }))
+          : null,
+      )
+      : el('p', t('Nothing sized yet. Bet or raise at a real table, and the size lands here.')),
+    el('p.faint', t('The rules are at the table: with Silas at your shoulder he says the size for each spot, and the '
+      + 'reference has them all, under Bet sizes.')),
   );
 }
 
