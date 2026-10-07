@@ -197,6 +197,18 @@ get right — folding before the flop is the default and pays nothing, and a
 table with fewer than six players pays half. The practice table can be dealt
 for a full table, three players or heads-up.
 
+Pearls keep their worth once the shelves are bought. Delphine at the Trading
+Post buys them for money, at what they fetch where your boat is moored, and
+every seat and Regatta entry on the river can be paid in them. A seat costs
+2,500 pearls at the first two stops and 2,500 more every two stops after, so a
+thousand pearls fetch $0.80 at Mud Landing and $50 at the Delta Crown: the
+further down the river, the more a pearl is worth, and keeping some for the far
+end pays. Measured, an hour's pearls is worth about a third of what an hour of
+faultless play wins at the same stop — enough to matter, never enough to
+replace playing well. Nothing sells pearls back: they are only earned at the
+tables. Your character page says what your purse would fetch where you are,
+and at the delta.
+
 The river is drawn in the hour of the day you pick (night, bayou, dusk or
 daylight), the people have faces, and everything you hear — chips, cards, the
 ship's bell, a steam whistle and a ragtime piano — is synthesised in the
@@ -300,7 +312,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.18.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.19.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

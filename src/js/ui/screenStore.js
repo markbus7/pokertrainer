@@ -8,13 +8,18 @@
  * price is never different depending on where you read it.
  */
 
-import { el, fmt } from './dom.js';
+import { el, fmt, toast, mount } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
 import { TRADER } from '../data/characters.js';
-import { CATALOGUE, COMPANIONS, SHOPS, itemState, crewAboard } from '../state/economy.js';
+import {
+  CATALOGUE, COMPANIONS, SHOPS, itemState, crewAboard,
+  pricedAt, perThousand, seatInPearls, saleValue, sellPearls, furthestStop,
+} from '../state/economy.js';
+import { VENUES } from '../data/venues.js';
+import * as audio from '../audio/engine.js';
 import { sceneBanner, says, svgNode } from './place.js';
 import { portraitSvg } from './portraits.js';
 import { buyControl, pearls, itemName } from './shop.js';
@@ -44,9 +49,13 @@ export function renderStore(ctx) {
         pearls(profile.pearls, { className: 'big' }),
         el('span.faint', t('{n} earned at the tables so far', { n: fmt.chips(profile.economy.earned) })),
         el('button.btn.sm.ghost', { onclick: () => go('play') }, icon('cards', { size: 14 }), ' ', t('Play for pearls')),
+        el('button.btn.sm.ghost', {
+          onclick: () => document.querySelector('.exchange') && document.querySelector('.exchange').scrollIntoView({ behavior: 'smooth', block: 'start' }),
+        }, icon('chip', { size: 14 }), ' ', t('Pearls for money')),
       ),
     ),
     SECTIONS.map((section) => shelf(section, profile, go, redraw)),
+    exchangePanel(profile, redraw),
     el('div.panel.page.paper.store-earn',
       el('h3', icon('pearl', { size: 18 }), t('Where pearls come from')),
       el('ul.lesson-points',
@@ -114,4 +123,72 @@ function companionCard(item, profile, go, redraw) {
         : el('div.companion-buy', buyControl(profile, item.key, { go, onBought: redraw })),
     ),
   );
+}
+
+/**
+ * Delphine buys pearls, at what they fetch where your boat is moored — more
+ * the further down the river — and the money goes in the bankroll. Nothing
+ * sells them back: the purse is only ever filled at the tables. The board
+ * shows the whole river, because the far end is the reason to keep some.
+ */
+function exchangePanel(profile, redraw) {
+  const node = el('div.panel.page.paper.exchange');
+  let pending = null;
+  const paint = () => {
+    const at = pricedAt(profile);
+    const here = VENUES[at];
+    const have = profile.pearls;
+    const reached = furthestStop(profile);
+    const offers = [...new Set([1000, 5000, 20000].filter((n) => n < have).concat(have > 0 ? [have] : []))]
+      .filter((n) => saleValue(n, at) > 0);
+    const sold = profile.economy.sold || 0;
+    const sell = (n) => {
+      const result = sellPearls(profile, n);
+      if (!result.ok) return;
+      audio.sfx('chips');
+      toast({
+        icon: 'chip',
+        title: t('Sold {n} pearls for {money}', { n: fmt.chips(result.pearls), money: fmt.money(result.money) }),
+        desc: t('Into your bankroll, at the {place} price.', { place: t(here.name) }),
+      });
+      redraw();
+    };
+    mount(node,
+      el('div.panel-title',
+        el('h2', icon('chip', { size: 18 }), ' ', t('Pearls for money')),
+        el('span.faint', t('Your boat is at {place}', { place: t(here.name) })),
+      ),
+      el('p.muted', t('Delphine buys pearls for what they fetch where your boat is moored: {money} a thousand at {place}. '
+        + 'The further down the river, the more a pearl is worth. Any seat or Regatta entry on the river can be paid in them too.',
+      { money: fmt.money(perThousand(at)), place: t(here.name) })),
+      have > 0
+        ? el('div.exchange-have', t('Your {n} pearls fetch {money} here.', { n: fmt.chips(have), money: fmt.money(saleValue(have, at)) }))
+        : el('div.exchange-have.faint', t('No pearls to sell. The tables pay them.')),
+      pending !== null
+        ? el('div.exchange-confirm',
+          el('span', t('Sell {n} pearls for {money}? It cannot be undone.', { n: fmt.chips(pending), money: fmt.money(saleValue(pending, at)) })),
+          el('button.btn.primary', { onclick: () => { const n = pending; pending = null; sell(n); } }, t('Sell')),
+          el('button.btn.ghost', { onclick: () => { pending = null; paint(); } }, t('Not now')),
+        )
+        : offers.length
+          ? el('div.exchange-offers', offers.map((n) => el('button.btn.ghost.exchange-offer', {
+            onclick: () => { pending = n; paint(); },
+          },
+            el('span.exchange-n', n === have ? t('All {n}', { n: fmt.chips(n) }) : fmt.chips(n)),
+            el('span.exchange-money', fmt.money(saleValue(n, at))))))
+          : null,
+      el('div.cheat-scroll', el('table.cheat-table.exchange-board',
+        el('thead', el('tr', el('th', t('Where your boat is')), el('th', t('A seat in pearls')), el('th', t('1,000 pearls fetch')))),
+        el('tbody', VENUES.map((v) => el(`tr${v.index === at ? '.here' : ''}${v.index > reached ? '.ahead' : ''}`,
+          el('th', t(v.name), ' ', el('span.faint', v.label)),
+          el('td', fmt.chips(seatInPearls(v.index))),
+          el('td', fmt.money(perThousand(v.index))),
+        ))),
+      )),
+      sold ? el('p.faint', t('Sold so far: {n} pearls for {money}.', { n: fmt.chips(sold), money: fmt.money(profile.economy.soldFor || 0) })) : null,
+      el('p.faint', t('Nobody on the river sells pearls: they are only ever earned at the tables, by how well you play.')),
+    );
+  };
+  paint();
+  return node;
 }

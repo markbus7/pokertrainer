@@ -349,7 +349,7 @@ function drawHud() {
     purse(),
     el('button.pearl-chip', {
       onclick: () => go('store'),
-      title: t('Your pearls. The tables pay them; the Trading Post takes them.'),
+      title: t('Your pearls. The tables pay them; the Trading Post takes them, and buys them for money.'),
       'aria-label': t('{n} pearls — the Trading Post', { n: profile.pearls }),
     }, pearl(18), el('span.pearl-count', fmt.chips(profile.pearls))),
     // The chip is you: your rank, and the way to your character — the figure,
@@ -563,8 +563,12 @@ function settleWhatWasLeft() {
   if (kept.mode !== 'regatta') return;
   clearSeat(profile);
   if (kept.dealt > 0) {
-    profile.noteRegatta(kept.venue, { place: null, entry: kept.entry, prize: 0 });
+    // An entry paid in pearls cost no money, and the try counts the money.
+    profile.noteRegatta(kept.venue, { place: null, entry: kept.pearls ? 0 : kept.entry, prize: 0 });
     toast({ icon: '⛵', title: t('Your Regatta was interrupted'), desc: t('The page closed in the middle of it, so it counts as withdrawn. The entry stays in the pool.') });
+  } else if (kept.pearls) {
+    profile.refundPearls(kept.pearls);
+    toast({ icon: '⛵', title: t('Your Regatta was interrupted'), desc: t('No card had been dealt, so the pearls you entered with are back in your purse.') });
   } else {
     profile.setBankroll(profile.data.bankroll + kept.entry, kept.venue);
     toast({ icon: '⛵', title: t('Your Regatta was interrupted'), desc: t('No card had been dealt, so the entry is back in your bankroll.') });

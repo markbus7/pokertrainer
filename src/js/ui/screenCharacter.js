@@ -37,6 +37,7 @@ import { moduleMeta } from '../data/curriculum.js';
 import { describeScore, CAT_NAMES } from '../core/evaluator.js';
 import { RANK_CHARS, RANK_PLURALS, RANK_NAMES } from '../core/cards.js';
 import { VENUES } from '../data/venues.js';
+import { purseWorth } from '../state/economy.js';
 import { PROFILES, WANDERER_PROFILES } from '../engine/bots.js';
 import { RIVAL } from '../data/rival.js';
 import { SPECIES } from '../data/fish.js';
@@ -1084,5 +1085,21 @@ function riverPanel(profile) {
       plaque('Pearls earned', fmt.chips(r.pearls), t('all told')),
       plaque('Nights with Nell', String(r.rivalMet), t('sittings with the Rival')),
     ),
+    pearlWorthLine(profile),
   );
+}
+
+/** What the purse would fetch: where the boat is, and at the far end of the river. */
+function pearlWorthLine(profile) {
+  if (!profile.pearls) return null;
+  const worth = purseWorth(profile);
+  const last = VENUES[VENUES.length - 1];
+  return el('p.faint.pearl-worth', worth.at === last.index
+    ? t('Your {n} pearls fetch {money} here at {place}, where a pearl is worth the most.', {
+      n: fmt.chips(profile.pearls), money: fmt.money(worth.here), place: t(last.name),
+    })
+    : t('Your {n} pearls fetch {money} at {place}, and {delta} at {last}: a pearl is worth more the further down the river you sell it.', {
+      n: fmt.chips(profile.pearls), money: fmt.money(worth.here), place: t(VENUES[worth.at].name),
+      delta: fmt.money(worth.delta), last: t(last.name),
+    }));
 }

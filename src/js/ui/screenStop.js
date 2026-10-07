@@ -21,8 +21,8 @@ import { riverState } from './screenRiver.js';
 import { svgNode, typedText } from './place.js';
 import * as audio from '../audio/engine.js';
 import { reportsOf } from '../state/sessionReport.js';
-import { EARN } from '../state/economy.js';
-import { pearls } from './shop.js';
+import { EARN, seatInPearls } from '../state/economy.js';
+import { pearls, pearl } from './shop.js';
 import { MENTOR } from '../data/characters.js';
 import { gatedBy, duelStatus } from '../state/journey.js';
 import { starPearls, LEVEL_HANDS, STAR_SHARE } from '../state/match.js';
@@ -103,7 +103,8 @@ function tableBlock(venue, state, profile, go) {
   const boss = bossFor(venue.boss);
   const here = venue.index === state.here.index;
   const canReach = state.bankroll >= venue.stake.minBankroll;
-  const canSit = state.bankroll >= venue.entry;
+  // A seat is paid in money, or in pearls at what they fetch here.
+  const canSit = state.bankroll >= venue.entry || profile.pearls >= seatInPearls(venue.index);
   const lesson = moduleMeta(boss.lesson);
 
   const facts = el('div.here-facts',
@@ -291,14 +292,38 @@ function lobbyCard(table, venue, lobby, { state, profile, go }) {
       ? el('p.faint.lobby-note', t('Sit down for {buyin} and cash out with {target} or more, double what you sat down with, or beat {name} in a duel, and the table is yours.',
         { buyin: fmt.money(venue.entry), target: fmt.money(venue.entry * 2), name: boss.short }))
       : el('p.faint.lobby-note', t('Nobody owns this game, so there is no table to take. A place to build your roll.')),
-    el(`button.btn${table.owner ? '.primary.plank' : '.ghost'}`, {
-      onclick: () => {
-        audio.sfx('chips');
+    el('div.lobby-pay',
+      el(`button.btn${table.owner ? '.primary.plank' : '.ghost'}`, {
+        disabled: state.bankroll < venue.entry,
+        onclick: () => {
+          audio.sfx('chips');
+          profile.setBankroll(state.bankroll, venue.key);
+          go('play', { mode: 'grind', table: table.id });
+        },
+      }, t('Take a seat — {money}', { money: fmt.money(venue.entry) })),
+      payInPearls(profile, venue, () => {
         profile.setBankroll(state.bankroll, venue.key);
-        go('play', { mode: 'grind', table: table.id });
-      },
-    }, t('Take a seat — {money}', { money: fmt.money(venue.entry) })),
+        go('play', { mode: 'grind', table: table.id, pay: 'pearls' });
+      }),
+    ),
   );
+}
+
+/**
+ * The same seat, or the same entry, paid in pearls: what they fetch where
+ * the boat is moored, so it is the same money either way. Shut, and saying
+ * how many you have, when the purse is short.
+ */
+function payInPearls(profile, venue, onPay) {
+  const price = seatInPearls(venue.index);
+  const short = profile.pearls < price;
+  return el('button.btn.sm.ghost.pay-pearls', {
+    disabled: short,
+    title: short
+      ? t('{n} pearls, and you have {have}', { n: fmt.chips(price), have: fmt.chips(profile.pearls) })
+      : t('Pay in pearls instead of money: what {n} pearls fetch here is a seat', { n: fmt.chips(price) }),
+    onclick: () => { audio.sfx('chips'); onPay(); },
+  }, pearl(), ' ', t('Pay in pearls: {n}', { n: fmt.chips(price) }));
 }
 
 /** The three tables at a stop. */
@@ -377,6 +402,7 @@ function regattaBlock(venue, state, profile, go) {
   const record = profile.regattaRecord(venue.key);
   const prizes = regattaPayouts(venue.entry);
   const canEnter = state.bankroll >= venue.entry;
+  const enterInPearls = payInPearls(profile, venue, () => go('play', { mode: 'regatta', at: venue.key, pay: 'pearls' }));
   return el('div.panel.regatta-block',
     el('div.panel-title', el('h3', icon('anchor', { size: 16 }), t('The Regatta')),
       record.wins ? el('span.regatta-trophies', { title: t('Won {n}', { n: record.wins }) }, '🏆'.repeat(Math.min(record.wins, 5))) : null),
@@ -398,6 +424,7 @@ function regattaBlock(venue, state, profile, go) {
         disabled: !canEnter,
         onclick: () => { audio.sfx('chips'); go('play', { mode: 'regatta', at: venue.key }); },
       }, icon('anchor', { size: 16 }), t('Enter the Regatta — {money}', { money: fmt.money(venue.entry) })),
+      enterInPearls,
       canEnter ? null : el('span.faint', t('The entry is {cost} and you have {have}.', { cost: fmt.money(venue.entry), have: fmt.money(state.bankroll) })),
     ),
   );

@@ -38,7 +38,7 @@ import { remember as rivalRemembers, readOn as rivalRead } from '../state/rival.
 import { RIVAL } from '../data/rival.js';
 import { wandererFor } from '../data/wanderers.js';
 import { ensureContracts, noteEvent as noteContract, contractText } from '../state/contracts.js';
-import { furthestStop } from '../state/economy.js';
+import { furthestStop, seatInPearls } from '../state/economy.js';
 import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
@@ -286,7 +286,17 @@ export function renderTable(ctx, params = {}) {
   const prizeEntry = bubble ? BUBBLE.entry : entryFee;
   const fieldSize = bubble ? BUBBLE.field : FIELD;
   if (params.mode === 'regatta' && !regatta) return el('div.screen', el('div.panel', el('h1', t('Not yet')), el('button.btn.primary', { onclick: () => go('home') }, t('Back'))));
-  if (regatta && !bubble && ctx.profile.data.bankroll < regattaStop.entry) {
+  // A seat or an entry can be paid in pearls: what they fetch where the boat is moored.
+  const payPearls = params.pay === 'pearls' && !resuming && (params.mode === 'grind' || (regatta && !bubble));
+  const pearlPrice = payPearls ? seatInPearls((regatta ? regattaStop : venueFor(ctx.profile.career.venue)).index) : 0;
+  if (payPearls && ctx.profile.pearls < pearlPrice) {
+    return el('div.screen', el('div.panel',
+      el('h1', t('Not enough pearls')),
+      el('p.muted', t('A seat here is {n} pearls and you have {have}.', { n: fmt.chips(pearlPrice), have: fmt.chips(ctx.profile.pearls) })),
+      el('button.btn.primary', { onclick: () => go('stop', { at: regatta ? regattaStop.key : ctx.profile.career.venue }) }, t('Back')),
+    ));
+  }
+  if (regatta && !bubble && !payPearls && ctx.profile.data.bankroll < regattaStop.entry) {
     return el('div.screen', el('div.panel',
       el('h1', t('Not enough bankroll')),
       el('p.muted', t('The entry is {cost} and you have {have}.', { cost: fmt.money(regattaStop.entry), have: fmt.money(ctx.profile.data.bankroll) })),
@@ -302,7 +312,7 @@ export function renderTable(ctx, params = {}) {
   const bigBlind = regatta ? REGATTA_LEVELS[bubble ? BUBBLE.levelIndex : 0][1] : 2;
   const startingStack = regatta ? START_STACK : bigBlind * 100;
   // Taking a kept seat back up costs nothing: it was paid for when you first sat down.
-  const buyInCost = grind && !resuming ? stake.buyIn : 0;
+  const buyInCost = grind && !resuming && !payPearls ? stake.buyIn : 0;
 
   if (grind && profile.data.bankroll < buyInCost) {
     return el('div.screen', el('div.panel',
@@ -435,6 +445,11 @@ export function renderTable(ctx, params = {}) {
     raiseKey: null,
     handStarted: false,
     buyInsUsed: grind ? (resuming ? kept.buyInsUsed : 1) : 0,
+    // Of those, how many were paid in pearls, and what they cost: the money in
+    // and out of a sitting stays money, and a refund goes back the way it came.
+    pearlSeats: grind ? (resuming ? kept.pearlSeats || 0 : payPearls ? 1 : 0) : 0,
+    pearlsSpent: grind && payPearls && !resuming ? pearlPrice : 0,
+    entryPearls: regatta && !bubble && payPearls ? pearlPrice : 0,
     logLines: [],
     // Decisions graded across the whole session, not the current hand.
     // The chips you won are the one number at a table you do not control;
@@ -521,9 +536,19 @@ export function renderTable(ctx, params = {}) {
   };
   // The same object, not a copy: the opponents read what the reader does.
   table.readerMemory = session.readerMemory;
-  if (grind && !resuming) profile.setBankroll(profile.data.bankroll - buyInCost);
+  if (grind && !resuming) {
+    if (payPearls) profile.spendPearls(pearlPrice);
+    else profile.setBankroll(profile.data.bankroll - buyInCost);
+  }
   // The entry is paid before the first card, and the prize comes back at the end.
-  if (regatta && !bubble) profile.setBankroll(profile.data.bankroll - room.entry, room.key);
+  if (regatta && !bubble) {
+    if (payPearls) {
+      profile.spendPearls(pearlPrice);
+      profile.setBankroll(profile.data.bankroll, room.key);
+    } else profile.setBankroll(profile.data.bankroll - room.entry, room.key);
+  }
+  // What the entry cost in money: nothing, when it was paid in pearls.
+  const moneyEntry = regatta && !bubble && !session.entryPearls ? room.entry : 0;
 
   const hero = table.player(HERO_ID);
 
@@ -538,10 +563,11 @@ export function renderTable(ctx, params = {}) {
     if (grind) {
       keepSeat(profile, {
         mode: 'grind', venue: room.key, table: seat.id, chips: hero.stack, bigBlind, buyIn: stake.buyIn, buyInsUsed: session.buyInsUsed,
+        pearlSeats: session.pearlSeats,
       });
       profile.save();
     } else if (regatta && !bubble && !session.matchOver) {
-      keepSeat(profile, { mode: 'regatta', venue: room.key, entry: room.entry, dealt: session.dealt });
+      keepSeat(profile, { mode: 'regatta', venue: room.key, entry: room.entry, dealt: session.dealt, pearls: session.entryPearls });
       profile.save();
     }
   }
@@ -690,7 +716,7 @@ export function renderTable(ctx, params = {}) {
 
   // The way back to exactly this table, from anywhere: the stop it is at and
   // the seat in its lobby, and none of the one-off flags that brought you here.
-  const backParams = Object.fromEntries(Object.entries(params).filter(([k]) => k !== 'resume' && k !== 'cashout'));
+  const backParams = Object.fromEntries(Object.entries(params).filter(([k]) => k !== 'resume' && k !== 'cashout' && k !== 'pay'));
   if (grind) Object.assign(backParams, { at: room.key, table: seat.id });
 
   ctx.onLeave = lesson ? discard : park;
@@ -1628,7 +1654,8 @@ export function renderTable(ctx, params = {}) {
       // Getting up before the end gives up the entry: a try at no place, no prize. Before a
       // card is dealt, nothing has been played and the entry comes back.
       if (!session.matchOver) {
-        if (session.dealt) profile.noteRegatta(room.key, { place: null, entry: room.entry, prize: 0 });
+        if (session.dealt) profile.noteRegatta(room.key, { place: null, entry: moneyEntry, prize: 0 });
+        else if (session.entryPearls) profile.refundPearls(session.entryPearls);
         else profile.setBankroll(profile.data.bankroll + room.entry, room.key);
       }
       const m = session.matchOver;
@@ -1655,7 +1682,8 @@ export function renderTable(ctx, params = {}) {
       // You take a table by leaving it with a buy-in of its money. A stake
       // you merely sat at is a number; a table you took is somewhere you
       // have been, and its owner gives you something to remember it by.
-      const spent = session.buyInsUsed * stake.buyIn;
+      const spent = (session.buyInsUsed - session.pearlSeats) * stake.buyIn;
+      const worth = session.buyInsUsed * stake.buyIn;
       // Doubling the buy-in takes the table, and the owner's purse with it.
       // Only at the owner's table: a side game has nobody to take it from.
       const doubled = cashOut - stake.buyIn >= stake.buyIn;
@@ -1672,8 +1700,8 @@ export function renderTable(ctx, params = {}) {
       profile.noteSitting();
       // Taking somebody's table is the biggest thing the river pays for.
       if (took) session.pearls.bonus += profile.earnPearls(EARN.tableTaken);
-      const after = took ? 'took' : cashOut > spent ? 'up' : cashOut < spent ? 'down' : 'even';
-      const notes = writeReport({ spent, back: cashOut });
+      const after = took ? 'took' : cashOut > worth ? 'up' : cashOut < worth ? 'down' : 'even';
+      const notes = writeReport({ spent, back: cashOut, pearls: session.pearlsSpent });
       go('stop', { at: room.key, after, ...(notes === null ? {} : { notes }), ...(purse ? { purse } : {}) });
       return;
     } else if (stats.hands) {
@@ -1784,14 +1812,14 @@ export function renderTable(ctx, params = {}) {
     if (prize) profile.setBankroll(profile.data.bankroll + prize, room.key);
     // Settled: the entry is spent or paid back with a prize, and nothing is kept for a closed tab to settle.
     clearSeat(profile);
-    const { bestBefore } = profile.noteRegatta(room.key, { place, entry: room.entry, prize });
+    const { bestBefore } = profile.noteRegatta(room.key, { place, entry: moneyEntry, prize });
     const pearlsEarned = placePearls(room.index, bestBefore, place);
     if (pearlsEarned) {
       session.pearls.bonus += profile.earnPearls(pearlsEarned);
       pearlPop(pearlsEarned, trayHost);
     }
     const { decisions, sound: soundCount, share } = soundShare(session.graded);
-    session.matchOver = { place, prize, pearlsEarned, decisions, sound: soundCount, share, net: Math.round((prize - room.entry) * 100) / 100 };
+    session.matchOver = { place, prize, pearlsEarned, decisions, sound: soundCount, share, net: Math.round((prize - moneyEntry) * 100) / 100 };
     sound(place <= 3 ? 'win' : 'lose');
     if (place <= 3) {
       toast({ icon: place === 1 ? '🏆' : '🥈', title: t('You finished {place}', { place: t(ordinal(place)) }), desc: t('{money} paid', { money: fmt.money(prize) }) });
@@ -1837,14 +1865,22 @@ export function renderTable(ctx, params = {}) {
       result ? el('div.faint', resultHeadline(result, table)) : null,
       el('div.regatta-money',
         el(`span.regatta-net.${m.net >= 0 ? 'up' : 'down'}`, `${m.net >= 0 ? '+' : '−'}${fmt.money(Math.abs(m.net))}`),
-        el('span.faint', m.prize
-          ? t('{prize} paid on a {entry} entry', { prize: fmt.money(m.prize), entry: fmt.money(room.entry) })
-          : t('Nothing paid outside the top three. The entry was {entry}.', { entry: fmt.money(room.entry) }))),
+        el('span.faint', session.entryPearls
+          ? (m.prize
+            ? t('{prize} paid on an entry of {n} pearls', { prize: fmt.money(m.prize), n: fmt.chips(session.entryPearls) })
+            : t('Nothing paid outside the top three. The entry was {n} pearls.', { n: fmt.chips(session.entryPearls) }))
+          : m.prize
+            ? t('{prize} paid on a {entry} entry', { prize: fmt.money(m.prize), entry: fmt.money(room.entry) })
+            : t('Nothing paid outside the top three. The entry was {entry}.', { entry: fmt.money(room.entry) }))),
       el('p.faint', t('Prizes: {first} / {second} / {third}', { first: fmt.money(prizes[0]), second: fmt.money(prizes[1]), third: fmt.money(prizes[2]) })),
       m.pearlsEarned ? el('p.duel-pearls', t('Paid:'), ' ', pearlsNode(m.pearlsEarned)) : null,
       el('div.row',
         el('button.btn.primary.lg', { disabled: !canAgain, onclick: () => go('play', { mode: 'regatta', at: room.key }) },
           icon('repeat', { size: 16 }), canAgain ? t('Enter again — {money}', { money: fmt.money(room.entry) }) : t('Not enough for another entry')),
+        profile.pearls >= seatInPearls(room.index)
+          ? el('button.btn.ghost', { onclick: () => go('play', { mode: 'regatta', at: room.key, pay: 'pearls' }) },
+            pearl(), ' ', t('Pay in pearls: {n}', { n: fmt.chips(seatInPearls(room.index)) }))
+          : null,
         el('button.btn.ghost', { onclick: () => leave() }, t('Back to {place}', { place: t(room.name) })),
       ),
     ));
@@ -1990,7 +2026,24 @@ export function renderTable(ctx, params = {}) {
                       startHand();
                     },
                   }, t('Rebuy {money}', { money: fmt.money(stake.buyIn) }))
-                : el('div.notice.warn', 'Your bankroll cannot cover another buy-in at this stake. Move down.'),
+                : profile.pearls >= seatInPearls(room.index)
+                  ? null
+                  : el('div.notice.warn', 'Your bankroll cannot cover another buy-in at this stake. Move down.'),
+              profile.pearls >= seatInPearls(room.index)
+                ? el('button.btn.ghost', {
+                    onclick: () => {
+                      const price = seatInPearls(room.index);
+                      if (!profile.spendPearls(price)) return;
+                      hero.stack = startingStack;
+                      session.buyInsUsed++;
+                      session.pearlSeats++;
+                      session.pearlsSpent += price;
+                      keepTheSeat();
+                      sound('chips');
+                      startHand();
+                    },
+                  }, pearl(), ' ', t('Rebuy in pearls: {n}', { n: fmt.chips(seatInPearls(room.index)) }))
+                : null,
               el('button.btn.ghost', { onclick: leave }, 'Leave'),
             ),
           )

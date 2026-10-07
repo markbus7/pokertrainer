@@ -4153,6 +4153,81 @@ await step('Silas sizes your bets: the rule before, the size graded after, and y
   }
 });
 
+await step('pearls keep their worth: Delphine buys them, and a seat or an entry can be paid in them', async () => {
+  // The shelves hold about five thousand pearls of things; after that the
+  // purse filled up with pearls that bought nothing. Now they sell for money
+  // — more the further down the river — and pay for seats and entries.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const pp = await ctx.newPage();
+  const mine = [];
+  pp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const KEY = 'poker-trainer.profile.v1';
+  const saved = () => pp.evaluate((key) => JSON.parse(localStorage.getItem(key)), KEY);
+  const text = (sel) => pp.evaluate((q) => { const n = document.querySelector(q); return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
+  try {
+    await pp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await pp.evaluate((key) => {
+      const raw = JSON.parse(localStorage.getItem(key) || '{}');
+      Object.assign(raw, {
+        seenPrologue: true,
+        bankroll: 200,
+        economy: { version: 3, pearls: 30000, earned: 30000, spent: 0, owned: ['lesson:hand-rankings'], boat: 'rowboat', crew: [] },
+        career: { venue: 'nl5', best: 'nl5', busted: 0, staked: 0, beaten: ['nl2'], played: { nl2: 30 } },
+        walkthroughs: ['hand-rankings', 'pot-odds'],
+        settings: { ...(raw.settings || {}), autoDeal: false, lang: 'en' },
+      });
+      localStorage.setItem(key, JSON.stringify(raw));
+    }, KEY);
+
+    // The Trading Post: the price where the boat is, the river's prices, and a sale.
+    await pp.goto(`${BASE}/?pearls=1#store`, { waitUntil: 'domcontentloaded' });
+    await pp.waitForSelector('.exchange', { timeout: 8000 });
+    const ex = await text('.exchange');
+    if (!/\$2\.00 a thousand at Fisher's Rest/.test(ex) || !/Your 30,000 pearls fetch \$60\.00 here/.test(ex)) throw new Error(`the exchange reads "${ex.slice(0, 220)}"`);
+    const board = await pp.$$eval('.exchange-board tbody tr', (rows) => rows.map((r) => r.textContent.replace(/\s+/g, ' ').trim()));
+    if (board.length !== 8 || !/Delta Crown.*10,000.*\$50\.00/.test(board[7])) throw new Error(`the river's prices read ${board.join(' | ')}`);
+    await pp.click('.exchange-offer:has-text("5,000")');
+    if (!/Sell 5,000 pearls for \$10\.00\? It cannot be undone/.test(await text('.exchange-confirm'))) throw new Error('a sale was not confirmed first');
+    await pp.click('.exchange-confirm .btn.primary');
+    await pp.waitForFunction((key) => JSON.parse(localStorage.getItem(key)).economy.pearls === 25000, KEY, { timeout: 5000 });
+    const sold = await saved();
+    if (sold.bankroll !== 210 || sold.economy.sold !== 5000) throw new Error(`the sale left $${sold.bankroll} and ${sold.economy.sold} sold`);
+
+    // A seat paid in pearls: the purse pays, the bankroll does not, and cashing out pays money.
+    await pp.goto(`${BASE}/?pearls=2#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+    await pp.waitForSelector('.lobby-card .pay-pearls', { timeout: 8000 });
+    if (!/Pay in pearls: 2,500/.test(await text('.lobby-card .pay-pearls'))) throw new Error('the seat is not offered in pearls');
+    await pp.click('.lobby-card .pay-pearls');
+    await pp.waitForSelector('.felt', { timeout: 8000 });
+    const sat = await saved();
+    if (sat.economy.pearls !== 22500 || sat.bankroll !== 210) throw new Error(`a pearl seat took ${25000 - sat.economy.pearls} pearls and $${210 - sat.bankroll}`);
+    if (!sat.seat || sat.seat.pearlSeats !== 1) throw new Error(`the seat does not say it was paid in pearls: ${JSON.stringify(sat.seat)}`);
+    await pp.click('.table-head .btn:has-text("Cash out")');
+    await pp.waitForFunction(() => !/#play/.test(location.hash), null, { timeout: 5000 });
+    if ((await saved()).bankroll !== 215) throw new Error(`cashing out a pearl seat paid $${(await saved()).bankroll - 210}, not the $5 seat`);
+
+    // A Regatta entered in pearls and left before a card: the pearls come back.
+    await pp.goto(`${BASE}/?pearls=3#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+    await pp.waitForSelector('.regatta-block .pay-pearls', { timeout: 8000 });
+    await pp.click('.regatta-block .pay-pearls');
+    await pp.waitForSelector('.felt', { timeout: 8000 });
+    if ((await saved()).economy.pearls !== 20000) throw new Error('the Regatta entry was not paid in pearls');
+    await pp.click('.table-head .btn:has-text("Withdraw")');
+    await pp.waitForFunction((key) => JSON.parse(localStorage.getItem(key)).economy.pearls === 22500, KEY, { timeout: 5000 });
+    if ((await saved()).bankroll !== 215) throw new Error('a pearl entry touched the bankroll');
+
+    // The profile says what the purse is worth, here and at the far end.
+    await pp.goto(`${BASE}/?pearls=4#character`, { waitUntil: 'domcontentloaded' });
+    await pp.waitForSelector('.pearl-worth', { timeout: 5000 });
+    const worth = await text('.pearl-worth');
+    if (!/22,500 pearls fetch \$45\.00 at Fisher's Rest/.test(worth) || !/Delta Crown/.test(worth)) throw new Error(`the profile says "${worth}"`);
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log('      $2.00 a thousand at Fisher\'s Rest, $50 at the delta; 5,000 sold for $10; a seat for 2,500 pearls cashed out to money; a pearl entry refunded; the purse\'s worth on the profile');
+  } finally {
+    await ctx.close();
+  }
+});
+
 await step('the rail says which build this is, on a desktop and on a phone', async () => {
   // "Do I have the right one?" has to be a glance. The version was inside the
   // ledger; it is now on the rail of every screen, under the crest, and the

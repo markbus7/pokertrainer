@@ -17,6 +17,11 @@
  * where it stopped, so one interrupted by a closed tab is settled the way the
  * Withdraw button settles it: the entry back if no card was dealt, a try with
  * no place if one was.
+ *
+ * A seat or an entry can be paid in pearls (state/economy.js). The record
+ * says so — `pearlSeats` is how many of a cash seat's buy-ins were, `pearls`
+ * is what a Regatta's entry cost in them — so a refund goes back the way the
+ * entry came, and the money in and out stays money.
  */
 
 const num = (x, min = 0) => (Number.isFinite(x) && x >= min ? x : null);
@@ -38,13 +43,16 @@ export function seatOf(profile) {
       bigBlind,
       buyIn,
       buyInsUsed: Math.max(1, Math.round(num(s.buyInsUsed, 1) ?? 1)),
+      pearlSeats: Math.round(num(s.pearlSeats) ?? 0),
       at: num(s.at) ?? 0,
     };
   }
   if (s.mode === 'regatta') {
     const entry = num(s.entry);
     if (entry === null || typeof s.venue !== 'string') return null;
-    return { mode: 'regatta', venue: s.venue, entry, dealt: Math.round(num(s.dealt) ?? 0), at: num(s.at) ?? 0 };
+    return {
+      mode: 'regatta', venue: s.venue, entry, dealt: Math.round(num(s.dealt) ?? 0), pearls: Math.round(num(s.pearls) ?? 0), at: num(s.at) ?? 0,
+    };
   }
   return null;
 }
