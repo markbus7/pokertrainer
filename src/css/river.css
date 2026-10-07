@@ -2855,6 +2855,26 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
   border-top: 1px dashed var(--border-bright);
 }
 .store-purse-label { font-family: var(--font-print); font-style: italic; color: var(--text-dim); }
+
+/* Pearls for money: what the purse fetches here, the offers, and the river's prices. */
+.exchange { scroll-margin-top: 88px; }
+.exchange-have { font-family: var(--font-print); font-size: var(--t-md); margin: var(--s-2) 0 var(--s-3); }
+.exchange-offers { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-4); }
+.exchange-offer { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 104px; }
+.exchange-n { font-weight: 700; }
+.exchange-money { font-family: var(--mono); font-size: var(--t-xs); opacity: 0.8; }
+.exchange-confirm {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2);
+  margin-bottom: var(--s-4); padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--brass-lo); border-radius: 8px; background: var(--paper-2);
+}
+.exchange-confirm span { flex: 1 1 260px; }
+.exchange-board { font-family: var(--font); }
+.exchange-board th, .exchange-board td { text-align: left; }
+.exchange-board tbody td { font-family: var(--mono); }
+.exchange-board tr.here th, .exchange-board tr.here td { font-weight: 700; box-shadow: inset 0 -2px 0 var(--brass-lo); }
+.exchange-board tr.ahead { opacity: 0.6; }
+.pearl-worth { margin: var(--s-3) 0 0; }
 .shelf h2 { font-family: var(--font-print); }
 .shelf-items { display: grid; gap: var(--s-2); }
 .shelf-row {
@@ -4003,6 +4023,10 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .lobby-note { margin: 0; font-size: var(--t-xs); flex: 1; }
 .lobby-card .btn { width: 100%; justify-content: center; }
 .lobby-wrap { flex-direction: column; align-items: stretch; }
+/* The seat in money, and the same seat in pearls under it. */
+.lobby-pay { display: grid; gap: 6px; }
+.pay-pearls { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.regatta-block .pay-pearls { width: auto; }
 
 .rival-block { display: grid; gap: var(--s-2); }
 .rival-head { display: flex; align-items: center; gap: var(--s-3); }

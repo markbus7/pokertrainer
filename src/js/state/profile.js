@@ -553,6 +553,36 @@ export class Profile {
   }
 
   /**
+   * Pay pearls out for something that is not kept: a seat, an entry, a sale
+   * to Delphine. Refuses — returns false — rather than going below nothing.
+   * A sale is counted, with what it fetched, so the Trading Post can say so.
+   */
+  spendPearls(amount, { sold = 0 } = {}) {
+    const n = Math.round(amount);
+    const e = this.economy;
+    if (!(n > 0) || n > e.pearls) return false;
+    e.pearls -= n;
+    e.spent += n;
+    if (sold > 0) {
+      e.sold = (Number.isFinite(e.sold) ? e.sold : 0) + n;
+      e.soldFor = Math.round(((Number.isFinite(e.soldFor) ? e.soldFor : 0) + sold) * 100) / 100;
+    }
+    this.save();
+    return true;
+  }
+
+  /** An entry paid in pearls that comes back: a Regatta left before its first card. */
+  refundPearls(amount) {
+    const n = Math.max(0, Math.round(amount));
+    if (!n) return 0;
+    const e = this.economy;
+    e.pearls += n;
+    e.spent = Math.max(0, e.spent - n);
+    this.save();
+    return n;
+  }
+
+  /**
    * Take something off the shelf. The price and whether it may be bought at
    * all are the economy's business (state/economy.js); this only refuses what
    * would corrupt the purse — buying twice, or on credit.

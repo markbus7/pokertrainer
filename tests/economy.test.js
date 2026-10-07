@@ -5,7 +5,10 @@ import {
   purchase, ownsLesson, ownedModules, nextPurchase, missingFor,
   currentBoat, crewAboard, crewAshore, toggleCrew, strongbox, somethingToBuy, boatBerths, boatBonus, UPGRADES,
   seatBounty, bountyPaid,
+  PEARLS_PER_SEAT, seatInPearls, pearlPrice, perThousand, saleValue, sellPearls, purseWorth, pricedAt,
 } from '../src/js/state/economy.js';
+import { VENUES } from '../src/js/data/venues.js';
+import { seatOf, keepSeat } from '../src/js/state/seat.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
 import { buildReport, strongestAndWeakest, keepReport, reportsOf, KEEP_REPORTS } from '../src/js/state/sessionReport.js';
 import { SessionStats } from '../src/js/state/stats.js';
@@ -316,5 +319,88 @@ describe('economy: every player carries a bounty, paid on how the hand was playe
     equal(bountyPaid(20, 2), 0);
     equal(bountyPaid(20, 4), 0);
     equal(bountyPaid(0, 0), 0, 'a bounty already taken pays nothing');
+  });
+});
+
+describe('economy: pearls keep their worth — Delphine buys them, and seats can be paid in them', () => {
+  const at = (stop, data = {}) => fresh({ career: { venue: VENUES[stop].key, best: VENUES[stop].key, busted: 0, staked: 0, beaten: [], played: {} }, ...data });
+  const rich = (stop, pearls, bankroll = 100) => {
+    const p = at(stop, { bankroll });
+    p.earnPearls(pearls);
+    return p;
+  };
+
+  it('prices a seat at 2,500 pearls a tier, so a pearl is worth more the further down the river', () => {
+    equal(PEARLS_PER_SEAT, 2500);
+    equal(VENUES.map((v) => seatInPearls(v.index)).join(','), '2500,2500,5000,5000,7500,7500,10000,10000');
+    equal(VENUES.map((v) => perThousand(v.index)).join(','), '0.8,2,2,5,6.66,13.33,20,50');
+    for (let i = 1; i < VENUES.length; i++) assert(pearlPrice(i) >= pearlPrice(i - 1), `a pearl fetches less at ${VENUES[i].key} than upriver`);
+    // What a seat costs in pearls fetches exactly that seat in money.
+    for (const v of VENUES) equal(saleValue(seatInPearls(v.index), v.index), v.entry);
+    // In big blinds, a thousand pearls is never nothing and never a buy-in.
+    for (const v of VENUES) {
+      const bb = perThousand(v.index) / v.stake.bb;
+      assert(bb >= 10 && bb <= 40, `${v.key}: a thousand pearls fetch ${bb.toFixed(1)} bb`);
+    }
+  });
+
+  it('pays to the cent below, and never for nothing', () => {
+    equal(saleValue(1, 0), 0, 'a single pearl at Mud Landing is not a cent');
+    equal(saleValue(13, 0), 0.01);
+    equal(saleValue(1000, 4), 6.66, 'rounded down, not up');
+    equal(saleValue(-5, 7), 0);
+  });
+
+  it('sells at the price where your boat is moored, into the bankroll, and counts the sale', () => {
+    const p = rich(7, 4000, 100);
+    equal(pricedAt(p), 7);
+    const sale = sellPearls(p, 1000);
+    equal(sale.ok, true);
+    equal(sale.money, 50);
+    equal(p.pearls, 3000);
+    equal(p.data.bankroll, 150);
+    equal(p.economy.sold, 1000);
+    equal(p.economy.soldFor, 50);
+    equal(p.economy.spent, 1000, 'a sale is pearls spent');
+    const upriver = rich(0, 4000, 100);
+    equal(sellPearls(upriver, 1000).money, 0.8, 'the same pearls fetch less upriver');
+  });
+
+  it('refuses a sale it cannot make, and says why', () => {
+    const p = rich(0, 500, 10);
+    equal(sellPearls(p, 0).reason, 'none');
+    equal(sellPearls(p, 600).reason, 'short');
+    equal(sellPearls(p, 5).reason, 'too-few', 'five pearls at Mud Landing fetch no cent');
+    equal(p.pearls, 500);
+    equal(p.data.bankroll, 10);
+  });
+
+  it('says what the purse is worth here and at the far end', () => {
+    const p = rich(2, 10000, 0);
+    const worth = purseWorth(p);
+    equal(worth.at, 2);
+    equal(worth.here, 20);
+    equal(worth.delta, 500);
+  });
+
+  it('pays and refunds in pearls without ever going below nothing', () => {
+    const p = rich(3, 6000);
+    equal(p.spendPearls(5000), true);
+    equal(p.pearls, 1000);
+    equal(p.spendPearls(5000), false, 'a seat on credit');
+    equal(p.pearls, 1000);
+    equal(p.refundPearls(5000), 5000);
+    equal(p.pearls, 6000);
+    equal(p.economy.spent, 0, 'a refunded entry was never spent');
+  });
+
+  it('keeps how a seat was paid in the save, so a refund goes back the way it came', () => {
+    const p = fresh();
+    keepSeat(p, { mode: 'grind', venue: 'nl2', table: 't1', chips: 200, bigBlind: 2, buyIn: 2, buyInsUsed: 2, pearlSeats: 1 });
+    equal(seatOf(p).pearlSeats, 1);
+    keepSeat(p, { mode: 'regatta', venue: 'nl5', entry: 5, dealt: 0, pearls: 2500 });
+    equal(seatOf(p).pearls, 2500);
+    keepSeat(p, { mode: 'regatta', venue: 'nl5', entry: 5, dealt: 0 });
+    equal(seatOf(p).pearls, 0, 'an entry paid in money');
   });
 });

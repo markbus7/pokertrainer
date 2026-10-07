@@ -157,6 +157,85 @@ export function decisionPearls({ level, street, action, helped = false }) {
 }
 
 /* ------------------------------------------------------------------ *
+ * What a pearl is worth in money
+ * ------------------------------------------------------------------ */
+
+/**
+ * The shelves hold about five thousand pearls of things, and the tables pay
+ * five hundred to fifteen hundred an hour: a few evenings in, everything was
+ * bought and the purse filled up with pearls that bought nothing. The reader
+ * asked for them to keep their worth to the end of the river.
+ *
+ * So Delphine buys them, for money, and every seat and Regatta entry on the
+ * river can be paid in them. What a pearl fetches is set by where your boat
+ * is moored: a seat costs PEARLS_PER_SEAT pearls a tier, the tier being what
+ * a hand pays there (handPearls), so a seat costs about the same hours of
+ * play in pearls at every stop — and a pearl is worth more money the further
+ * down the river you are: 0.80 a thousand at Mud Landing, 50 at the delta.
+ * Saving them for the far end pays.
+ *
+ * How much: measured with tools/measure-pearls.mjs, an hour's pearls is worth
+ * about a third of what an hour of faultless play wins at the same stop (half
+ * at the first two). Enough that the purse always matters; never enough that
+ * it replaces playing well, which is what the bankroll is for. The money only
+ * goes one way: nobody sells pearls, so the purse is still only filled at the
+ * tables, by how well you play.
+ */
+export const PEARLS_PER_SEAT = 2500;
+
+const stopAt = (i) => VENUES[Math.max(0, Math.min(VENUES.length - 1, Math.round(Number(i) || 0)))];
+
+/** A seat's price in pearls at a stop — and a Regatta's entry, which costs a seat. */
+export function seatInPearls(stopIndex) {
+  return PEARLS_PER_SEAT * handPearls(stopAt(stopIndex).index);
+}
+
+/** What one pearl fetches at a stop, in money. */
+export function pearlPrice(stopIndex) {
+  const venue = stopAt(stopIndex);
+  return venue.entry / seatInPearls(venue.index);
+}
+
+/** What a thousand pearls fetch at a stop: the price as the Trading Post shows it. */
+export const perThousand = (stopIndex) => saleValue(1000, stopIndex);
+
+/** What selling `n` pearls at a stop pays, to the cent below. */
+export function saleValue(n, stopIndex) {
+  const count = Math.max(0, Math.floor(Number(n) || 0));
+  return Math.floor(count * pearlPrice(stopIndex) * 100 + 1e-9) / 100;
+}
+
+/** The stop whose price you get: where your boat is moored. */
+export const pricedAt = (profile) => venueFor(profile.career.venue).index;
+
+/**
+ * Sell pearls to Delphine at the price where your boat is moored. Refuses,
+ * and says why, rather than throwing: every caller is a button.
+ * @returns {{ok:boolean, reason?:string, money?:number, pearls?:number, at?:number}}
+ */
+export function sellPearls(profile, n) {
+  const count = Math.floor(Number(n) || 0);
+  if (!(count > 0)) return { ok: false, reason: 'none' };
+  if (count > profile.pearls) return { ok: false, reason: 'short' };
+  const at = pricedAt(profile);
+  const money = saleValue(count, at);
+  if (!(money > 0)) return { ok: false, reason: 'too-few' };
+  if (!profile.spendPearls(count, { sold: money })) return { ok: false, reason: 'short' };
+  profile.setBankroll(profile.data.bankroll + money);
+  return { ok: true, money, pearls: count, at };
+}
+
+/** What your purse would fetch where your boat is, and at the far end. */
+export function purseWorth(profile) {
+  const here = pricedAt(profile);
+  return {
+    here: saleValue(profile.pearls, here),
+    at: here,
+    delta: saleValue(profile.pearls, VENUES.length - 1),
+  };
+}
+
+/* ------------------------------------------------------------------ *
  * What things cost
  * ------------------------------------------------------------------ */
 
