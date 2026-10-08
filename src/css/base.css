@@ -2015,58 +2015,85 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
 
 /* ---------------- Silas at your side (ui/guide.js) ---------------- */
 
-/* He stands in the page, in a row of his own: never over anything. */
-.guide-slot { margin: 0 0 16px; }
-.guide-slot:empty { display: none; }
-.guide { display: flex; align-items: center; }
-.guide-body {
-  flex: none; padding: 0; border: 0; background: none; cursor: pointer;
+/* The dock: along the bottom of every screen but the table, always in view.
+   The page keeps the room it stands in, so it covers nothing: scroll to the
+   end and the last of the page is above him. */
+body.guide-docked main { padding-bottom: 132px; }
+body.guide-docked #toasts { bottom: 122px; }
+/* Over the page, under everything that opens over it: the Ledger (150), a
+   hand's details on a phone (60), the pop-ups. */
+#guide-host { position: relative; z-index: 55; }
+
+.guide-dock {
+  position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: min(1180px, 100%); height: 106px; box-sizing: border-box;
+  display: flex; align-items: flex-end; gap: 14px;
+  padding: 0 18px 10px 14px;
+  background: var(--bg-card); border: 1px solid var(--border-bright); border-bottom: 0;
+  border-radius: 16px 16px 0 0; box-shadow: var(--shadow);
 }
+.guide-body { flex: none; padding: 0; border: 0; background: none; cursor: pointer; align-self: flex-end; }
 /* He sways, the button under him does not: a still target to tap. */
 .guide-body svg {
-  display: block; width: 70px; height: auto; filter: drop-shadow(var(--shadow-sm));
+  display: block; filter: drop-shadow(var(--shadow-sm));
   animation: guide-sway 6s ease-in-out infinite; transform-origin: 50% 100%;
 }
 @keyframes guide-sway { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-1.2deg); } }
 @media (prefers-reduced-motion: reduce) { .guide-body svg { animation: none; } }
 
-.guide-bubble {
-  order: 1; position: relative; flex: 0 1 640px; min-width: 0;
-  background: var(--bg-card); border: 1px solid var(--border-bright);
-  border-radius: 14px; padding: 10px 12px 12px;
-  box-shadow: var(--shadow-sm);
+.dock-word {
+  flex: 1; min-width: 0; align-self: center; text-align: left;
+  border: 0; background: none; color: var(--text); font: inherit; cursor: pointer; padding: 4px 0;
 }
-.guide-bubble::before {
-  content: ''; position: absolute; left: -8px; top: 50%; margin-top: -7px;
-  width: 14px; height: 14px; background: var(--bg-card);
-  border-left: 1px solid var(--border-bright); border-bottom: 1px solid var(--border-bright);
-  transform: rotate(45deg);
+.dock-name { display: block; font-weight: 650; font-size: var(--t-xs); color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; }
+.dock-says {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-size: var(--t-sm); line-height: 1.4;
 }
-.guide-who { display: flex; align-items: center; gap: 8px; font-size: var(--t-sm); }
-.guide-who .faint { font-size: var(--t-xs); }
-.guide-mini { display: none; }
+.dock-word:hover .dock-says { color: var(--accent); }
+.dock-actions { flex: none; display: flex; gap: 8px; align-self: center; }
+
+/* The conversation: above the dock, on his side, only while it is open. */
+.ask-sheet {
+  position: fixed; bottom: 114px; left: max(12px, calc(50% - 590px));
+  width: min(460px, calc(100vw - 24px)); max-height: min(70vh, 620px);
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--bg-card); border: 1px solid var(--border-bright); border-radius: 16px;
+  padding: 12px; box-shadow: var(--shadow); box-sizing: border-box;
+}
+.ask-head { display: flex; align-items: center; gap: 10px; font-size: var(--t-sm); }
+.ask-head .faint { font-size: var(--t-xs); }
+.ask-face svg { display: block; border-radius: 50%; }
 .guide-close {
-  margin-left: auto; border: 0; background: none; color: var(--text-faint);
-  font-size: 20px; line-height: 1; cursor: pointer; padding: 2px 6px;
+  margin-left: auto; align-self: flex-start; border: 0; background: none; color: var(--text-faint);
+  font-size: 22px; line-height: 1; cursor: pointer; padding: 2px 6px;
 }
 .guide-close:hover { color: var(--text); }
-.guide-says { margin: 6px 0 10px; font-size: var(--t-sm); line-height: 1.45; }
-.guide-actions { display: flex; flex-wrap: wrap; gap: 6px; }
-
-/* Sat back: his face and a word that he has one, small, in the same row. */
-.guide-call {
-  position: relative; display: inline-flex; align-items: center; gap: 10px;
-  padding: 3px 14px 3px 3px; border: 1px solid var(--border-bright); border-radius: 99px;
-  background: var(--bg-card); color: var(--text-dim); font: inherit; font-size: var(--t-sm);
-  cursor: pointer; box-shadow: var(--shadow-sm);
-}
-.guide-call:hover { color: var(--text); border-color: var(--accent); }
-.guide-call .guide-face svg { display: block; border-radius: 50%; }
-.guide-dot {
-  position: absolute; left: 32px; top: 2px; width: 10px; height: 10px;
-  border-radius: 50%; background: var(--accent); border: 2px solid var(--bg-card);
+.ask-log { flex: 1; min-height: 60px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
+.ask-q, .ask-a { max-width: 88%; border-radius: 12px; padding: 8px 11px; font-size: var(--t-sm); line-height: 1.45; }
+.ask-q { align-self: flex-end; background: var(--bg); border: 1px solid var(--border); }
+.ask-a { align-self: flex-start; background: var(--bg); border: 1px solid var(--border-bright); }
+.ask-a p { margin: 0 0 6px; }
+.ask-a p:last-of-type { margin-bottom: 0; }
+.ask-a .btn { margin-top: 8px; }
+.ask-term { display: block; margin-bottom: 4px; }
+.ask-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ask-form { display: flex; gap: 8px; }
+.ask-input {
+  flex: 1; min-width: 0; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid var(--border-bright); background: var(--bg); color: var(--text);
 }
 
+/* A phone: a lower dock, his face rather than all of him, one button. */
 @media (max-width: 760px) {
-  .guide-body svg { width: 52px; }
+  body.guide-docked main { padding-bottom: 96px; }
+  body.guide-docked #toasts { bottom: 84px; }
+  .guide-dock { height: 70px; padding: 0 10px calc(6px + env(safe-area-inset-bottom)) 6px; gap: 8px; border-radius: 14px 14px 0 0; height: calc(70px + env(safe-area-inset-bottom)); }
+  .guide-body svg { width: 34px; height: auto; }
+  .dock-go { display: none; }
+  .dock-says { font-size: var(--t-xs); }
+  .ask-sheet { bottom: calc(78px + env(safe-area-inset-bottom)); left: 12px; max-height: 72vh; }
+  .ask-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .ask-chips::-webkit-scrollbar { display: none; }
+  .ask-chips .btn { flex: none; }
 }
