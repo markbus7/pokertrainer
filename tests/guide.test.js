@@ -16,11 +16,14 @@ const memory = () => { const m = new Map(); return { getItem: (k) => m.get(k) ??
 const fresh = () => new Profile({}, memory());
 
 describe('Silas at your side', () => {
-  it('always has a word, and the road comes first on the river', () => {
+  it('always has a word: the road first at a stop, today\'s questions first on the river', () => {
     const p = fresh();
-    const said = sayings(p, 'home', new Date('2026-10-08T12:00:00'));
+    const now = new Date('2026-10-08T12:00:00');
+    const said = sayings(p, 'stop', now);
     assert(said.length > RULES.length, 'the rules, and more');
     equal(said[0].key, 'road');
+    // The river has the road on its own banner, so he starts elsewhere there.
+    equal(sayings(p, 'home', now)[0].key, 'daily');
     assert(said.some((s) => s.key === 'daily'), 'today\'s questions while they are to do');
   });
 

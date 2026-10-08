@@ -2015,33 +2015,29 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
 
 /* ---------------- Silas at your side (ui/guide.js) ---------------- */
 
-#guide-host { position: fixed; left: 14px; bottom: 14px; z-index: 150; pointer-events: none; }
-#guide-host > * { pointer-events: auto; }
-body.guide-open main { padding-bottom: 260px; }
-
-.guide { display: flex; align-items: flex-end; gap: 0; }
+/* He stands in the page, in a row of his own: never over anything. */
+.guide-slot { margin: 0 0 16px; }
+.guide-slot:empty { display: none; }
+.guide { display: flex; align-items: center; }
 .guide-body {
-  order: 0; flex: none; padding: 0; border: 0; background: none; cursor: pointer;
-  margin-right: -10px;
+  flex: none; padding: 0; border: 0; background: none; cursor: pointer;
 }
 /* He sways, the button under him does not: a still target to tap. */
 .guide-body svg {
-  display: block; filter: drop-shadow(var(--shadow-sm));
+  display: block; width: 70px; height: auto; filter: drop-shadow(var(--shadow-sm));
   animation: guide-sway 6s ease-in-out infinite; transform-origin: 50% 100%;
 }
 @keyframes guide-sway { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-1.2deg); } }
 @media (prefers-reduced-motion: reduce) { .guide-body svg { animation: none; } }
 
 .guide-bubble {
-  order: 1; position: relative;
-  width: min(320px, calc(100vw - 150px));
-  margin-bottom: 120px;
+  order: 1; position: relative; flex: 0 1 640px; min-width: 0;
   background: var(--bg-card); border: 1px solid var(--border-bright);
   border-radius: 14px; padding: 10px 12px 12px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
 }
 .guide-bubble::before {
-  content: ''; position: absolute; left: -8px; bottom: 22px;
+  content: ''; position: absolute; left: -8px; top: 50%; margin-top: -7px;
   width: 14px; height: 14px; background: var(--bg-card);
   border-left: 1px solid var(--border-bright); border-bottom: 1px solid var(--border-bright);
   transform: rotate(45deg);
@@ -2049,7 +2045,6 @@ body.guide-open main { padding-bottom: 260px; }
 .guide-who { display: flex; align-items: center; gap: 8px; font-size: var(--t-sm); }
 .guide-who .faint { font-size: var(--t-xs); }
 .guide-mini { display: none; }
-.guide-mini svg { display: block; border-radius: 50%; }
 .guide-close {
   margin-left: auto; border: 0; background: none; color: var(--text-faint);
   font-size: 20px; line-height: 1; cursor: pointer; padding: 2px 6px;
@@ -2058,38 +2053,20 @@ body.guide-open main { padding-bottom: 260px; }
 .guide-says { margin: 6px 0 10px; font-size: var(--t-sm); line-height: 1.45; }
 .guide-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 
+/* Sat back: his face and a word that he has one, small, in the same row. */
 .guide-call {
-  position: relative; padding: 0; border: 2px solid var(--accent); border-radius: 50%;
-  background: var(--bg-card); cursor: pointer; box-shadow: var(--shadow-sm);
-  width: 58px; height: 58px; overflow: hidden;
+  position: relative; display: inline-flex; align-items: center; gap: 10px;
+  padding: 3px 14px 3px 3px; border: 1px solid var(--border-bright); border-radius: 99px;
+  background: var(--bg-card); color: var(--text-dim); font: inherit; font-size: var(--t-sm);
+  cursor: pointer; box-shadow: var(--shadow-sm);
 }
-.guide-call .guide-face svg { display: block; }
+.guide-call:hover { color: var(--text); border-color: var(--accent); }
+.guide-call .guide-face svg { display: block; border-radius: 50%; }
 .guide-dot {
-  position: absolute; right: 4px; top: 4px; width: 10px; height: 10px;
+  position: absolute; left: 32px; top: 2px; width: 10px; height: 10px;
   border-radius: 50%; background: var(--accent); border: 2px solid var(--bg-card);
 }
 
-/* A phone has no corner to spare: no full figure, the bubble along the bottom. */
 @media (max-width: 760px) {
-  #guide-host { left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); }
-  #guide-host:has(.guide-call) { right: auto; }
-  .guide-body { display: none; }
-  .guide-bubble { width: 100%; margin-bottom: 0; }
-  .guide-bubble::before { display: none; }
-  .guide-mini { display: block; }
-  body.guide-open main { padding-bottom: 200px; }
-}
-
-/* In the page (a .guide-slot): a row above the content, covering nothing. */
-.guide-slot { margin: 0 0 14px; }
-.guide-slot:empty { display: none; }
-.guide-slot .guide { align-items: center; }
-.guide-slot .guide-body { display: block; margin-right: 0; }
-.guide-slot .guide-body svg { width: 70px; height: auto; }
-.guide-slot .guide-bubble { width: auto; max-width: 640px; margin-bottom: 0; box-shadow: var(--shadow-sm); }
-.guide-slot .guide-bubble::before { display: block; bottom: auto; top: 50%; margin-top: -7px; }
-.guide-slot .guide-mini { display: none; }
-@media (max-width: 760px) {
-  .guide-slot .guide-body svg { width: 54px; }
-  .guide-slot .guide-bubble { width: auto; flex: 1; }
+  .guide-body svg { width: 52px; }
 }

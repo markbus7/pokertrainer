@@ -138,7 +138,7 @@ export function sayings(profile, route, now = new Date()) {
   RULES.forEach((text, i) => said.push({ key: `rule${i}`, text, params: {} }));
 
   // What this screen is about goes first.
-  const first = { character: ['leak', 'sizes'], stats: ['leak', 'sizes'], review: ['leak'], store: ['pearls'], home: ['road', 'daily'], stop: ['road'] }[route] || [];
+  const first = { character: ['leak', 'sizes'], stats: ['leak', 'sizes'], review: ['leak'], store: ['pearls'], home: ['daily', 'leak', 'sizes'], stop: ['road'] }[route] || [];
   const rank = (s) => {
     const i = first.indexOf(s.key);
     return i === -1 ? first.length : i;
@@ -155,26 +155,24 @@ function isOpen(profile) {
 }
 
 /**
- * Draw him into #guide-host for this screen.
+ * Draw him into this screen, in the page.
  * @param {{profile, route:string, focus:boolean, go:Function}} ctx
  */
 export function drawGuide({ profile, route, focus, go }) {
-  let host = document.getElementById('guide-host');
-  if (!host) {
-    host = el('div#guide-host');
-    document.body.appendChild(host);
+  const root = document.querySelector('#screen') && document.querySelector('#screen').firstElementChild;
+  if (hiddenOn(route, focus) || !root) return;
+  // He stands in the page, never over it: in the place a screen keeps for
+  // him (a .guide-slot), or else in a row under the screen's sign. A screen
+  // where he is already talking in the page has him once, not twice.
+  let slot = root.querySelector('.guide-slot');
+  if (!slot) {
+    if (root.querySelector('.says[data-who="silas"]')) return;
+    slot = el('div.guide-slot');
+    const first = root.firstElementChild;
+    if (first && first.matches('.room-sign, .scene, .region-bar')) first.after(slot);
+    else root.prepend(slot);
   }
-  document.body.classList.remove('guide-open');
-  if (hiddenOn(route, focus)) {
-    mount(host);
-    return;
-  }
-
-  // A screen with a place kept for him (a .guide-slot) has him in the page,
-  // where he covers nothing; everywhere else he stands in the corner.
-  const slot = document.querySelector('#screen .guide-slot');
-  const target = slot || host;
-  if (slot) mount(host);
+  const target = slot;
 
   const list = sayings(profile, route);
   // A new screen starts at the top of what matters there; "another word" walks on.
@@ -182,14 +180,13 @@ export function drawGuide({ profile, route, focus, go }) {
 
   const draw = () => {
     const open = isOpen(profile);
-    document.body.classList.toggle('guide-open', open && !slot);
     if (!open) {
       mount(target, el('button.guide-call', {
         type: 'button',
         title: t('Silas has a word for you'),
         'aria-label': t('Silas has a word for you'),
         onclick: () => { profile.updateSettings({ guide: 'open' }); draw(); },
-      }, svgNode(portraitSvg('silas', { size: 54 }), 'guide-face'), el('span.guide-dot', { 'aria-hidden': 'true' })));
+      }, svgNode(portraitSvg('silas', { size: 40 }), 'guide-face'), el('span.guide-call-label', t('Silas has a word for you')), el('span.guide-dot', { 'aria-hidden': 'true' })));
       return;
     }
     const say = list[turn % list.length];
