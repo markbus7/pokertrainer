@@ -115,7 +115,7 @@ const neckAndCollar = (skin, collar) => `<path d="M93 78V98Q100 104 107 98V78Z" 
 function face(skin, form, { glasses = false } = {}) {
   const brow = '#2a1d16';
   const brows = form === 'cold'
-    ? `<path d="M85 53q6 1 12 4M115 53q-6 1-12 4" stroke="${brow}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`
+    ? `<path d="M85 54q6-2 12-0.6M103 53.4q6-1.4 12 0.6" stroke="${brow}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`
     : form === 'hot'
       ? `<path d="M85 52q6-4 12-1M103 51q6-3 12 1" stroke="${brow}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`
       : `<path d="M85 54q6-3 12-1M103 53q6-2 12 1" stroke="${brow}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
@@ -130,7 +130,7 @@ function face(skin, form, { glasses = false } = {}) {
   const mouth = form === 'hot'
     ? '<path d="M90.5 75q9.5 9 19 0z" fill="#6e2a24" stroke="#5a211c" stroke-width="1"/><path d="M92 75.6h16" stroke="#fbf6ee" stroke-width="1.6"/>'
     : form === 'cold'
-      ? '<path d="M92.5 79q7.5-3.6 15 0" stroke="#7a3b30" stroke-width="1.8" fill="none" stroke-linecap="round"/>'
+      ? '<path d="M93 77.4q7 1.8 14-0.4" stroke="#7a3b30" stroke-width="1.8" fill="none" stroke-linecap="round"/>'
       : '<path d="M92 76.5q7 4 16-1" stroke="#7a3b30" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
   const cheeks = form === 'hot' ? '<circle cx="85" cy="70" r="3.6" fill="#e07a6a" opacity=".22"/><circle cx="115" cy="70" r="3.6" fill="#e07a6a" opacity=".22"/>' : '';
   return brows + eyes + nose + mouth + cheeks;

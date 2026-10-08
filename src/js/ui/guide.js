@@ -25,9 +25,12 @@ import { dateKey, doneToday, liveStreak } from '../state/daily.js';
 /** Him, head to toe: the long coat and the wide hat, white whiskers, a cup of tea. */
 const SILAS_LOOK = { skin: 'light', hair: 'bald', hairColour: 'white', beard: 'moustache', colour: 'crimson', name: '' };
 
-export const silasFigure = (width = 120) => characterSvg({
-  tier: 3, form: 'steady', look: SILAS_LOOK, props: 'tea', width, label: `${MENTOR.name}, ${t(MENTOR.title)}`,
+export const silasFigure = (width = 120, form = 'steady') => characterSvg({
+  tier: 3, form, look: SILAS_LOOK, props: 'tea', width, label: `${MENTOR.name}, ${t(MENTOR.title)}`,
 });
+
+/** His face for a verdict: pleased with a good one, concerned by a mistake. */
+export const moodFor = (level) => (level === 'good' ? 'hot' : level === 'bad' ? 'cold' : 'steady');
 
 /** What he has to teach when there is nothing in particular to say. */
 export const RULES = [

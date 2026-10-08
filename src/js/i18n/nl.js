@@ -6050,4 +6050,8 @@ export const NL = {
   "A draw wants a cheap price or a big pot later. Without one of the two, let it go.": "Een draw wil een goedkope prijs of later een grote pot. Zonder een van de twee laat je hem gaan.",
   "Tired, angry or chasing a loss: get up. The table will still be there tomorrow.": "Moe, boos of achter een verlies aan: sta op. De tafel is er morgen ook nog.",
   "Size your bet for what you hold and what they might call with, not for the button nearest your thumb.": "Kies je inzet op wat je hebt en waarmee zij kunnen callen, niet op de knop die het dichtst bij je duim zit.",
+  // v3.21.1: Silas at the table.
+  'Pleased with that one.': 'Daar is hij blij mee.',
+  'Not happy with that one.': 'Daar is hij niet blij mee.',
+  'Close enough.': 'Dichtbij genoeg.',
 };

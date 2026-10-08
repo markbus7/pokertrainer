@@ -4322,8 +4322,13 @@ await step('your money decisions on your character, you on the rail, and Silas a
     await gp.goto(`${BASE}/?guide=3#play`, { waitUntil: 'domcontentloaded' });
     await gp.waitForSelector('.felt', { timeout: 8000 });
     if (await gp.$('#guide-host .guide, #guide-host .guide-call')) throw new Error('Silas is in the corner at the table');
+    // There he stands beside the felt in free play, saying a rule, and a tap gives another.
+    await gp.waitForSelector('.silas-stand .stand-figure svg.character', { state: 'visible', timeout: 5000 });
+    const rule = await text('.stand-bubble');
+    await gp.click('.stand-figure');
+    if (await text('.stand-bubble') === rule) throw new Error('tapping Silas at the table did not give another word');
     if (mine.length) throw new Error(mine.join(' | '));
-    console.log('      money panel read; figure on the rail; Silas on the river, on the leak, sat back and called again; not at the table');
+    console.log('      money panel read; figure on the rail; Silas on the river, on the leak, sat back and called again; beside the felt at the table');
   } finally {
     await ctx.close();
   }
