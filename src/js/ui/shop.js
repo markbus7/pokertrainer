@@ -14,6 +14,7 @@ import { t } from '../i18n/index.js';
 import * as audio from '../audio/engine.js';
 import { itemByKey, itemState, purchase, companionByKey, upgradeByKey } from '../state/economy.js';
 import { boatByKey } from '../data/characters.js';
+import { venueFor } from '../data/venues.js';
 import { moduleMeta } from '../data/curriculum.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
 import { RANKS } from '../state/profile.js';
@@ -41,6 +42,7 @@ export function itemName(item) {
   }
   if (item.kind === 'boat') return t(boatByKey(item.boat).name);
   if (item.kind === 'upgrade') return t(upgradeByKey(item.upgrade).name);
+  if (item.kind === 'room') return t('The card room at {place}', { place: t(venueFor(item.venue).name) });
   return item.key;
 }
 
@@ -55,7 +57,7 @@ export function requirementText(missing) {
     const meta = moduleMeta(p.module);
     return t(missing.text, { module: meta ? t(meta.name) : p.module });
   }
-  if (missing.key === 'reach') return t(missing.text, { place: t(p.place) });
+  if (missing.key === 'reach' || missing.key === 'tableAt') return t(missing.text, { place: t(p.place) });
   return t(missing.text, p);
 }
 

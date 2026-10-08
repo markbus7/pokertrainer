@@ -3805,7 +3805,7 @@ await step('your character: the hands you play make the player you are, and the 
     if (first.regulars !== 6 || first.you !== 0) throw new Error(`the map has ${first.regulars} regulars and ${first.you} of you before there is a style`);
     if (first.gauges !== 6) throw new Error(`${first.gauges} gauges, not six`);
     if (first.looks !== 5 || first.ahead !== 4) throw new Error(`${first.looks} looks with ${first.ahead} still to come; a new player wears the first`);
-    if (first.plaques !== 8) throw new Error(`${first.plaques} river records, not eight`);
+    if (first.plaques !== 10) throw new Error(`${first.plaques} river records, not ten`);
 
     // The look is yours: picked, drawn at once, and kept.
     await cp.click('.char-editor summary');
@@ -4223,6 +4223,47 @@ await step('pearls keep their worth: Delphine buys them, and a seat or an entry 
     if (!/22,500 pearls fetch \$45\.00 at Fisher's Rest/.test(worth) || !/Delta Crown/.test(worth)) throw new Error(`the profile says "${worth}"`);
     if (mine.length) throw new Error(mine.join(' | '));
     console.log('      $2.00 a thousand at Fisher\'s Rest, $50 at the delta; 5,000 sold for $10; a seat for 2,500 pearls cashed out to money; a pearl entry refunded; the purse\'s worth on the profile');
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('the card rooms: for sale once the table is yours, and counted on the profile', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const rp = await ctx.newPage();
+  const mine = [];
+  rp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const KEY = 'poker-trainer.profile.v1';
+  const saved = () => rp.evaluate((key) => JSON.parse(localStorage.getItem(key)), KEY);
+  const text = (sel) => rp.evaluate((q) => { const n = document.querySelector(q); return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
+  try {
+    await rp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await rp.evaluate((key) => {
+      const raw = JSON.parse(localStorage.getItem(key) || '{}');
+      Object.assign(raw, {
+        seenPrologue: true, bankroll: 200,
+        economy: { version: 3, pearls: 9000, earned: 9000, spent: 0, owned: ['lesson:hand-rankings'], boat: 'rowboat', crew: [] },
+        career: { venue: 'nl5', best: 'nl5', busted: 0, staked: 0, beaten: ['nl2'], played: { nl2: 30 } },
+        settings: { ...(raw.settings || {}), autoDeal: false, lang: 'en' },
+      });
+      localStorage.setItem(key, JSON.stringify(raw));
+    }, KEY);
+    await rp.goto(`${BASE}/?rooms=1#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+    await rp.waitForSelector('.room-block', { timeout: 8000 });
+    const locked = await text('.room-block');
+    if (!/Take the table at Fisher's Rest first/.test(locked) || await rp.$('.room-block .buy-btn')) throw new Error(`a room was for sale before its table was taken: "${locked}"`);
+    await rp.goto(`${BASE}/?rooms=2#stop?at=nl2`, { waitUntil: 'domcontentloaded' });
+    await rp.waitForSelector('.room-block .buy-btn', { timeout: 8000 });
+    await rp.click('.room-block .buy-btn');
+    await rp.waitForSelector('.room-block.owned', { timeout: 5000 });
+    if (!/Mud Landing is your room/.test(await text('.room-block')) || !/1 of 8 rooms/.test(await text('.room-block'))) throw new Error(`the bought room reads "${await text('.room-block')}"`);
+    const after = await saved();
+    if (after.economy.pearls !== 6000 || !after.economy.owned.includes('room:nl2')) throw new Error(`buying the room left ${after.economy.pearls} pearls`);
+    await rp.goto(`${BASE}/?rooms=3#character`, { waitUntil: 'domcontentloaded' });
+    await rp.waitForSelector('.char-river', { timeout: 5000 });
+    if (!/Card rooms\s*1 \/ 8/.test(await text('.char-river'))) throw new Error('the profile does not count the room');
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log('      shut until the table is taken; Mud Landing bought for 3,000 pearls; 1 of 8 on the profile');
   } finally {
     await ctx.close();
   }

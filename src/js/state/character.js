@@ -85,5 +85,8 @@ export function riverRecords(profile) {
     pearls: n(profile.economy.earned),
     rivalMet: n(profile.data.rival && profile.data.rival.met),
     busted: n(career.busted),
+    rooms: VENUES.filter((v) => profile.owns(`room:${v.key}`)).length,
+    roomIncome: Object.values(profile.data.roomIncome && typeof profile.data.roomIncome === 'object' ? profile.data.roomIncome : {})
+      .reduce((sum, x) => sum + (Number.isFinite(x) && x > 0 ? x : 0), 0),
   };
 }

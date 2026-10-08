@@ -5,9 +5,11 @@ import {
   purchase, ownsLesson, ownedModules, nextPurchase, missingFor,
   currentBoat, crewAboard, crewAshore, toggleCrew, strongbox, somethingToBuy, boatBerths, boatBonus, UPGRADES,
   seatBounty, bountyPaid,
+  ROOM_PRICES, ROOM_CUT, roomKey, ownsRoom, roomsOwned, roomCut, payRoomCut, roomIncome,
   PEARLS_PER_SEAT, seatInPearls, pearlPrice, perThousand, saleValue, sellPearls, purseWorth, pricedAt,
 } from '../src/js/state/economy.js';
 import { VENUES } from '../src/js/data/venues.js';
+import { SHOPS as SHOPS_KINDS } from '../src/js/state/economy.js';
 import { seatOf, keepSeat } from '../src/js/state/seat.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
 import { buildReport, strongestAndWeakest, keepReport, reportsOf, KEEP_REPORTS } from '../src/js/state/sessionReport.js';
@@ -402,5 +404,48 @@ describe('economy: pearls keep their worth — Delphine buys them, and seats can
     equal(seatOf(p).pearls, 2500);
     keepSeat(p, { mode: 'regatta', venue: 'nl5', entry: 5, dealt: 0 });
     equal(seatOf(p).pearls, 0, 'an entry paid in money');
+  });
+});
+
+describe('economy: the card rooms, the far end of the purse', () => {
+  const owner = (beaten, pearls = 0, bankroll = 100) => {
+    const p = fresh({ bankroll, career: { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten, played: {} } });
+    if (pearls) p.earnPearls(pearls);
+    return p;
+  };
+
+  it('costs more down the river, about 150,000 pearls for all eight', () => {
+    equal(ROOM_PRICES.length, VENUES.length);
+    for (let i = 1; i < ROOM_PRICES.length; i++) assert(ROOM_PRICES[i] > ROOM_PRICES[i - 1]);
+    equal(ROOM_PRICES.reduce((a, b) => a + b, 0), 150000);
+    for (const v of VENUES) equal(itemByKey(roomKey(v.key)).price, ROOM_PRICES[v.index]);
+  });
+
+  it('is only for sale once the table in it is yours', () => {
+    const p = owner([], 10000);
+    const state = itemState(p, itemByKey(roomKey('nl2')));
+    equal(state.missing[0].key, 'tableAt');
+    equal(purchase(p, roomKey('nl2')).reason, 'locked');
+    const q = owner(['nl2'], 10000);
+    equal(purchase(q, roomKey('nl2')).ok, true);
+    assert(ownsRoom(q, 'nl2'));
+    equal(q.pearls, 7000);
+    equal(roomsOwned(q), 1);
+    assert(!CATALOGUE.some((i) => i.kind === 'room' && Object.values(SHOPS_KINDS).flat().includes(i.kind)), 'rooms are sold at their stops, not on a shelf');
+  });
+
+  it('pays the house\'s cut on the hands dealt there, to the cent below, and keeps count', () => {
+    equal(ROOM_CUT, 0.02);
+    equal(roomCut(300, 0.02), 0.12);
+    equal(roomCut(300, 5), 30);
+    equal(roomCut(10, 0.02), 0, 'ten hands at Mud Landing are not a cent');
+    const p = owner(['nl500'], 45000, 1000);
+    equal(payRoomCut(p, 'nl500', 200, 5), 0, 'a room you do not own pays nothing');
+    purchase(p, roomKey('nl500'));
+    equal(payRoomCut(p, 'nl500', 200, 5), 20);
+    equal(payRoomCut(p, 'nl500', 100, 5), 10);
+    equal(p.data.bankroll, 1030);
+    equal(roomIncome(p, 'nl500'), 30);
+    equal(roomIncome(p, 'nl2'), 0);
   });
 });
