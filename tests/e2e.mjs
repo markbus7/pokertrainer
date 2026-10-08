@@ -4111,15 +4111,29 @@ await step('Silas sizes your bets: the rule before, the size graded after, and y
       if (!(await sp.$('.size-note.good')) || !/not count as one of yours/.test(note)) throw new Error(`Silas's own size was graded "${note}"`);
     }
 
-    // A size far too big, typed in: graded, said, and what instead.
-    if (!(await toRaiseSpot())) throw new Error('no second bet or raise came');
-    const max = Number(await sp.$eval('.raise-slider', (n) => n.max));
-    await sp.fill('.raise-input', String(max - 1));
-    await sp.press('.raise-input', 'Tab');
-    await sp.click('.action-buttons .btn.primary');
-    await sp.waitForSelector('.size-note', { timeout: 5000 });
-    const off = await text('.size-note');
-    const offHead = await text('.size-note-head b');
+    // A size far too big, typed in: graded, said, and what instead. Nearly
+    // all-in is far too big unless the stack is short enough that it is
+    // the right raise anyway, so deal on until a spot where it is not.
+    let off = '';
+    let offHead = '';
+    let max = 0;
+    for (let tries = 0; tries < 10; tries++) {
+      if (!(await toRaiseSpot())) throw new Error('no second bet or raise came');
+      max = Number(await sp.$eval('.raise-slider', (n) => n.max));
+      const pot = await sp.$$eval('.size-presets button', (bs) => {
+        const b = bs.find((x) => /^\s*Pot/.test(x.textContent));
+        return b ? Number(b.textContent.replace(/[^0-9]/g, '')) : 0;
+      });
+      // A short stack: nearly all-in is no bigger than a big raise. Next hand.
+      if (max - 1 < pot * 2.5) { await toHandEnd(); continue; }
+      await sp.fill('.raise-input', String(max - 1));
+      await sp.press('.raise-input', 'Tab');
+      await sp.click('.action-buttons .btn.primary');
+      await sp.waitForSelector('.size-note', { timeout: 5000 });
+      off = await text('.size-note');
+      offHead = await text('.size-note-head b');
+      if (!(await sp.$('.size-note.good'))) break;
+    }
     if (await sp.$('.size-note.good')) throw new Error(`a bet of ${max - 1} was called the right size: "${off}"`);
     if (!/Instead:/.test(off)) throw new Error(`a size well off says nothing instead: "${off}"`);
     await toHandEnd();
@@ -4288,16 +4302,24 @@ await step('your money decisions on your character, you on the rail, and Silas a
         seenPrologue: true, bankroll: 200,
         lifetime: { version: 1, actions: { fold: [20, 18, 2, 1], call: [10, 6, 4, 7.5] },
           leaks: { 'called-short': [4, 7.5, 'Calling without the price', 1], 'opened-outside-range': [6, 0, 'Outside the range', 0] } },
-        settings: { ...(raw.settings || {}), autoDeal: false, lang: 'en', guide: undefined },
+        settings: { ...(raw.settings || {}), autoDeal: false, lang: 'en' },
       });
       localStorage.setItem(key, JSON.stringify(raw));
     }, KEY);
-    // On the river: Silas stands in the page, in a row of his own, with
-    // today's questions (the road has its own banner there).
+    // On the river: Silas stands in the dock along the bottom, in view,
+    // with today's questions (the road has its own banner there).
     await gp.goto(`${BASE}/?guide=1#home`, { waitUntil: 'domcontentloaded' });
-    await gp.waitForSelector('.guide-slot .guide .guide-body svg.character', { timeout: 8000 });
-    if (!/Today's three questions/.test(await text('.guide-says'))) throw new Error(`on the river Silas says "${await text('.guide-says')}"`);
-    if (await gp.evaluate(() => [...document.querySelectorAll('.guide, .guide *')].some((n) => getComputedStyle(n).position === 'fixed'))) throw new Error('Silas floats over the page');
+    await gp.waitForSelector('.guide-dock .guide-body svg.character', { timeout: 8000 });
+    if (!/Today's three questions/.test(await text('.dock-says'))) throw new Error(`on the river Silas says "${await text('.dock-says')}"`);
+    // He covers nothing: scrolled to the end, the page stops above him.
+    const clear = await gp.evaluate(() => {
+      window.scrollTo(0, 1e6);
+      const top = document.querySelector('.guide-dock').getBoundingClientRect().top;
+      const fixedUp = (n) => { for (let x = n; x && x !== document.body; x = x.parentElement) if (['fixed', 'sticky'].includes(getComputedStyle(x).position)) return true; return false; };
+      const leaves = [...document.querySelectorAll('#screen *')].filter((n) => !n.children.length && n.getBoundingClientRect().height && !fixedUp(n));
+      return Math.max(...leaves.map((n) => n.getBoundingClientRect().bottom)) <= top + 1;
+    });
+    if (!clear) throw new Error('the end of the river is under the dock');
     // The rail has you on it, and it opens your character.
     if (!await gp.$('.rank-chip .chip-figure svg.character')) throw new Error('no figure on the rail');
     await gp.click('.rank-chip');
@@ -4307,32 +4329,38 @@ await step('your money decisions on your character, you on the rail, and Silas a
       if (!money.includes(want)) throw new Error(`the money panel misses "${want}": "${money.slice(0, 300)}"`);
     }
     if (!await gp.$('.char-nav')) throw new Error('no links along the top of the character page');
-    // On your character he talks about the leak, and the button takes you to it.
-    if (!/costliest mistake so far: “Calling without the price”/.test(await text('.guide-says'))) throw new Error(`on the character page Silas says "${await text('.guide-says')}"`);
-    // There he stands in the page, above your figure, not in the corner over it.
-    if (!await gp.$('.guide-slot .guide') || await gp.$('#guide-host .guide')) throw new Error('on the character page Silas is in the corner, over the figure');
-    const before = await text('.guide-says');
+    // On your character he talks about the leak; a tap on the word is another word.
+    if (!/costliest mistake so far: “Calling without the price”/.test(await text('.dock-says'))) throw new Error(`on the character page Silas says "${await text('.dock-says')}"`);
+    const before = await text('.dock-says');
+    await gp.click('.dock-word');
+    if (await text('.dock-says') === before) throw new Error('"another word" did not change what he says');
+    // Tap him and you can talk to him: a question, a word from the tables, a typed question.
     await gp.click('.guide-body');
-    if (await text('.guide-says') === before) throw new Error('"another word" did not change what he says');
-    // Sent to sit back he is a portrait, kept so, and called back with a tap.
-    await gp.click('.guide-close');
-    await gp.waitForSelector('.guide-call', { timeout: 3000 });
-    if ((await saved()).settings.guide !== 'small') throw new Error('sitting back was not kept');
-    await gp.goto(`${BASE}/?guide=2#store`, { waitUntil: 'domcontentloaded' });
-    await gp.waitForSelector('.guide-call', { timeout: 5000 });
-    await gp.click('.guide-call');
-    await gp.waitForSelector('.guide .guide-says', { timeout: 3000 });
+    await gp.waitForSelector('.ask-sheet', { timeout: 3000 });
+    await gp.click('.ask-chips .btn:has-text("How am I doing?")');
+    if (!/24 of 30 decisions right: 80%/.test(await text('.ask-log')) || !/Your weakest: Calls, 60% right/.test(await text('.ask-log'))) throw new Error(`"how am I doing" was answered "${await text('.ask-log')}"`);
+    await gp.fill('.ask-input', 'what are pot odds?');
+    await gp.press('.ask-input', 'Enter');
+    await gp.waitForFunction(() => /Pot odds/.test(document.querySelector('.ask-log').textContent), null, { timeout: 3000 });
+    await gp.fill('.ask-input', 'where am I losing money');
+    await gp.press('.ask-input', 'Enter');
+    await gp.waitForFunction(() => document.querySelectorAll('.ask-log .ask-q').length === 3, null, { timeout: 3000 });
+    if (!/Calling without the price/.test((await gp.$$eval('.ask-log .ask-a', (n) => n.at(-1).textContent)))) throw new Error('a typed question about losing money was not answered with the leak');
+    // His answer takes you there.
+    await gp.click('.ask-log .ask-a:last-child .btn');
+    await gp.waitForFunction(() => !document.querySelector('.ask-sheet'), null, { timeout: 3000 });
+    await gp.keyboard.press('Escape');
     // Not at the table: there he is at your shoulder already.
     await gp.goto(`${BASE}/?guide=3#play`, { waitUntil: 'domcontentloaded' });
     await gp.waitForSelector('.felt', { timeout: 8000 });
-    if (await gp.$('#guide-host .guide, #guide-host .guide-call')) throw new Error('Silas is in the corner at the table');
+    if (await gp.$('.guide-dock')) throw new Error('Silas is in the dock at the table');
     // There he stands beside the felt in free play, saying a rule, and a tap gives another.
     await gp.waitForSelector('.silas-stand .stand-figure svg.character', { state: 'visible', timeout: 5000 });
     const rule = await text('.stand-bubble');
     await gp.click('.stand-figure');
     if (await text('.stand-bubble') === rule) throw new Error('tapping Silas at the table did not give another word');
     if (mine.length) throw new Error(mine.join(' | '));
-    console.log('      money panel read; figure on the rail; Silas on the river, on the leak, sat back and called again; beside the felt at the table');
+    console.log('      money panel read; figure on the rail; Silas docked on the river, on the leak, asked three things; beside the felt at the table');
   } finally {
     await ctx.close();
   }

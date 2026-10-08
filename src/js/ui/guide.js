@@ -1,13 +1,15 @@
 /**
  * Silas at your side.
  *
- * Away from the table he stands in the corner of every screen, head to toe,
- * with one thing to say: the next step on the road, the habit that costs you
- * the most, today's questions, what your pearls are worth, or one of the
- * rules he has played by for thirty years. A word from him is a button to the
- * place it is about. Sent to sit back, he is a portrait in the corner until
- * you call him again. At the table he is already at your shoulder, so he is
- * not here twice.
+ * Away from the table he stands in a dock along the bottom of every screen,
+ * head to toe, always in view and never over anything: the page keeps the
+ * room he stands in. He has one thing to say at a time — the next step on
+ * the road, the habit that costs you the most, today's questions, what your
+ * pearls are worth, or one of the rules he has played by for thirty years —
+ * and a tap on the word is another word. Tap him, or "Ask Silas", and you
+ * can talk to him: pick a question about your game, or type one, or any word
+ * from the tables, and he answers from your own numbers. At the table he is
+ * already at your shoulder, so he is not here twice.
  */
 
 import { el, mount, fmt } from './dom.js';
@@ -20,6 +22,8 @@ import { journeyState } from '../state/journey.js';
 import { goalText, goLabel } from './roadView.js';
 import { moneyHabits, sizeHabits } from '../state/lifetime.js';
 import { purseWorth } from '../state/economy.js';
+import { whoYouAre } from '../state/character.js';
+import { allTerms } from '../data/glossary.js';
 import { dateKey, doneToday, liveStreak } from '../state/daily.js';
 
 /** Him, head to toe: the long coat and the wide hat, white whiskers, a cup of tea. */
@@ -146,79 +150,217 @@ export function sayings(profile, route, now = new Date()) {
   return said.map((s, i) => ({ s, i })).sort((a, b) => rank(a.s) - rank(b.s) || a.i - b.i).map(({ s }) => s);
 }
 
-/** Open or sat back: the setting if you have chosen, else open where there is room for him. */
-function isOpen(profile) {
-  const s = profile.settings.guide;
-  if (s === 'open') return true;
-  if (s === 'small') return false;
-  return typeof window === 'undefined' || !window.matchMedia || window.matchMedia('(min-width: 1100px)').matches;
-}
+/* ---- talking to him ------------------------------------------------------ */
+
+const ACTION_NAMES = { fold: 'Folds', check: 'Checks', call: 'Calls', bet: 'Bets', raise: 'Raises' };
+const pctOf = (x) => `${Math.round(x * 100)}%`;
+const bbOf = (x) => `${x.toFixed(1)} bb`;
+
+/** What you can ask him, in the order the chips show them. */
+export const QUESTIONS = [
+  { key: 'doing', q: 'How am I doing?' },
+  { key: 'next', q: 'What should I do next?' },
+  { key: 'leak', q: 'Where am I losing money?' },
+  { key: 'size', q: 'Am I betting the right size?' },
+  { key: 'type', q: 'What kind of player am I?' },
+  { key: 'pearls', q: 'What are my pearls worth?' },
+  { key: 'teach', q: 'Teach me something' },
+];
 
 /**
- * Draw him into this screen, in the page.
+ * His answer to one of the questions, from your own numbers.
+ * @returns {{lines:Array<{text:string, params?:object}>, to?:{route, params}, label?:string}}
+ */
+export function answer(profile, key, rng = Math.random) {
+  const life = profile.lifetime;
+  if (key === 'doing') {
+    const m = moneyHabits(life);
+    if (!m.decisions) return { lines: [{ text: 'Nothing to judge yet. Sit down at a real table and play: I grade every decision and keep the count.' }], to: { route: 'home' }, label: 'The river' };
+    const lines = [{ text: '{right} of {n} decisions right: {pct}. The mistakes have cost about {bb}.', params: { right: fmt.chips(m.right), n: fmt.chips(m.decisions), pct: pctOf(m.share), bb: bbOf(m.bbLost) } }];
+    const weakest = m.actions.filter((r) => r.decisions >= 10).sort((a, b) => a.share - b.share)[0];
+    if (weakest && weakest.share < 1) lines.push({ text: 'Your weakest: {action}, {pct} right.', params: { action: t(ACTION_NAMES[weakest.key]), pct: pctOf(weakest.share) } });
+    return { lines, to: { route: 'character', params: { at: 'money' } }, label: 'Your money decisions' };
+  }
+  if (key === 'next') {
+    const road = journeyState(profile).next;
+    if (!road || !road.goal) return { lines: [{ text: 'The road is done. Now it is the tables, and every decision at them.' }] };
+    return { lines: [{ text: 'Next on the road: {goal}', params: { goal: goalText(road.goal) } }], to: road.goal.to, label: goLabel(road.goal) };
+  }
+  if (key === 'leak') {
+    const m = moneyHabits(life);
+    const to = { route: 'character', params: { at: 'money' } };
+    if (m.costly[0]) return { lines: [{ text: 'Your costliest mistake so far: “{head}”. About {bb} gone. That is the one we fix first.', params: { head: t(m.costly[0].head), bb: bbOf(m.costly[0].bbLost) } }], to, label: 'Your money decisions' };
+    if (m.often[0]) return { lines: [{ text: 'The mistake you make most: “{head}”, {n} times now.', params: { head: t(m.often[0].head), n: m.often[0].times } }], to, label: 'Your money decisions' };
+    return { lines: [{ text: 'No leak I can put a price on yet. Play more hands at a real table and I will find one — everybody has one.' }] };
+  }
+  if (key === 'size') {
+    const h = sizeHabits(life);
+    const to = { route: 'character', params: { at: 'sizes' } };
+    if (!h.sized) return { lines: [{ text: 'No bets of yours measured yet. A place to start: a third of the pot on a dry board, two thirds when the board is wet or you want to be paid.' }] };
+    if (h.worst && (h.worst.miss === 'small' || h.worst.miss === 'big')) {
+      return {
+        lines: [{ text: h.worst.miss === 'small'
+          ? 'Your sizes run small on this one: {kind}. A small bet gives them a cheap price to draw and to catch up.'
+          : 'Your sizes run big on this one: {kind}. Too big, and only the hands that beat you stay in.', params: { kind: t(h.worst.name) } }],
+        to, label: 'Bet sizes',
+      };
+    }
+    return { lines: [{ text: 'Your bets are the right size {pct} of the time. Keep sizing for a reason, not out of habit.', params: { pct: pctOf(h.share) } }], to, label: 'Bet sizes' };
+  }
+  if (key === 'type') {
+    const me = whoYouAre(profile);
+    if (me.toRead > 0) return { lines: [{ text: 'Too early to say. {n} more hands at a full table and I will know what kind of player you are.', params: { n: me.toRead } }] };
+    return { lines: [{ text: 'You play like this: {name}.', params: { name: t(me.type.name) } }, { text: me.type.watch }], to: { route: 'character' }, label: 'Your character' };
+  }
+  if (key === 'pearls') {
+    if (!(profile.pearls > 0)) return { lines: [{ text: 'No pearls yet. The tables pay them: a pearl for every hand you play through, and more for every decision made well.' }] };
+    const worth = purseWorth(profile);
+    return {
+      lines: [{ text: 'Your {n} pearls fetch {here} here, and {far} at the far end of the river. No hurry to sell.', params: { n: fmt.chips(profile.pearls), here: fmt.money(worth.here), far: fmt.money(worth.delta) } }],
+      to: { route: 'store' }, label: 'To the Trading Post',
+    };
+  }
+  // 'teach', and anything else: one of his rules.
+  return { lines: [{ text: RULES[Math.floor(rng() * RULES.length)] }] };
+}
+
+/** Words that mean one of the questions, in either language. */
+const ASKS = [
+  ['leak', /leak|losing|lose|lost|mistake|lek|verlie|fout/],
+  ['size', /size|how much|too much|too little|too big|too small|betting|sizing|inzet|hoeveel|te veel|te weinig/],
+  ['next', /next|what now|what should|volgende|wat nu|wat moet/],
+  ['type', /kind of player|what player|style|type|speler|stijl/],
+  ['pearls', /pearl|parel/],
+  ['doing', /how am i|doing|progress|hoe doe|hoe gaat|gaat het/],
+  ['teach', /teach|tip|rule|leer|regel/],
+];
+
+/**
+ * Anything typed: a word from the tables is looked up in the almanac (the
+ * longest one named wins), else a question about your game, else he says
+ * what he can talk about.
+ */
+export function askFree(profile, text, rng = Math.random) {
+  const q = String(text || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  if (!q) return null;
+  let best = null;
+  for (const entry of allTerms()) {
+    for (const name of [entry.term, t(entry.term)]) {
+      const n = name.toLowerCase();
+      // A whole word or phrase only: "spr" is not in "spread".
+      const at = q.indexOf(n);
+      const whole = at >= 0 && !/[a-z0-9]/.test(q[at - 1] || '') && !/[a-z0-9]/.test(q[at + n.length] || '');
+      if (n.length >= 3 && whole && (!best || n.length > best.len)) best = { entry, len: n.length };
+    }
+  }
+  if (best) return { lines: [{ text: best.entry.term, strong: true }, { text: best.entry.full }], to: { route: 'glossary' }, label: 'The Almanac' };
+  const hit = ASKS.find(([, re]) => re.test(q));
+  if (hit) return answer(profile, hit[0], rng);
+  return { lines: [{ text: 'I do not know that one. Ask me about a word from the tables — pot odds, equity, a 3-bet — or about your own game, or pick one of the questions.' }] };
+}
+
+/* ---- the dock and the conversation --------------------------------------- */
+
+/** The conversation, kept while the app is open: the last few exchanges. */
+const talk = [];
+const TALK_KEPT = 6;
+let sheetOpen = false;
+let rotate = null;
+let escHooked = false;
+
+/**
+ * Draw him for this screen: the dock, and the conversation if it is open.
  * @param {{profile, route:string, focus:boolean, go:Function}} ctx
  */
 export function drawGuide({ profile, route, focus, go }) {
-  const root = document.querySelector('#screen') && document.querySelector('#screen').firstElementChild;
-  if (hiddenOn(route, focus) || !root) return;
-  // He stands in the page, never over it: in the place a screen keeps for
-  // him (a .guide-slot), or else in a row under the screen's sign. A screen
-  // where he is already talking in the page has him once, not twice.
-  let slot = root.querySelector('.guide-slot');
-  if (!slot) {
-    if (root.querySelector('.says[data-who="silas"]')) return;
-    slot = el('div.guide-slot');
-    const first = root.firstElementChild;
-    if (first && first.matches('.room-sign, .scene, .region-bar')) first.after(slot);
-    else root.prepend(slot);
+  let host = document.getElementById('guide-host');
+  if (!host) {
+    host = el('div#guide-host');
+    document.body.appendChild(host);
   }
-  const target = slot;
-
+  if (rotate) { clearInterval(rotate); rotate = null; }
+  sheetOpen = false;
+  if (hiddenOn(route, focus)) {
+    document.body.classList.remove('guide-docked');
+    mount(host);
+    return;
+  }
+  document.body.classList.add('guide-docked');
   const list = sayings(profile, route);
-  // A new screen starts at the top of what matters there; "another word" walks on.
   turn = 0;
 
+  const ask = (q, reply) => {
+    talk.push({ q, reply });
+    if (talk.length > TALK_KEPT) talk.shift();
+    draw();
+    const log = host.querySelector('.ask-log');
+    if (log) log.scrollTop = log.scrollHeight;
+  };
+  const goTo = (to) => { sheetOpen = false; go(to.route, to.params || {}); };
+  const lineNodes = (reply) => reply.lines.map((l) => (l.strong
+    ? el('strong.ask-term', t(l.text))
+    : el('p', t(l.text, l.params || {}))));
+
+  const sheet = () => {
+    const input = el('input.ask-input', { type: 'text', placeholder: 'Ask about a word or your game…', 'aria-label': 'Ask Silas', maxlength: '120' });
+    return el('section.ask-sheet', { role: 'dialog', 'aria-label': t('Ask Silas') },
+      el('div.ask-head',
+        svgNode(portraitSvg('silas', { size: 40 }), 'ask-face'),
+        el('div',
+          el('strong', MENTOR.short),
+          el('div.faint', t('Ask me about your game, or a word from the tables'))),
+        el('button.guide-close', { type: 'button', title: 'Close', 'aria-label': 'Close', onclick: () => { sheetOpen = false; draw(); } }, '×'),
+      ),
+      el('div.ask-log',
+        talk.length ? null : el('div.ask-a', el('p', t(MENTOR.school))),
+        talk.map(({ q, reply }) => [
+          el('div.ask-q', q),
+          el('div.ask-a', lineNodes(reply),
+            reply.to ? el('button.btn.sm.primary', { type: 'button', onclick: () => goTo(reply.to) }, t(reply.label)) : null),
+        ]),
+      ),
+      el('div.ask-chips', QUESTIONS.map(({ key, q }) => el('button.btn.sm.ghost', {
+        type: 'button', onclick: () => ask(t(q), answer(profile, key)),
+      }, t(q)))),
+      el('form.ask-form', {
+        onsubmit: (e) => {
+          e.preventDefault();
+          const text = input.value.trim();
+          const reply = askFree(profile, text);
+          if (reply) ask(text, reply);
+        },
+      }, input, el('button.btn.sm.primary', { type: 'submit' }, 'Ask')),
+    );
+  };
+
   const draw = () => {
-    const open = isOpen(profile);
-    if (!open) {
-      mount(target, el('button.guide-call', {
-        type: 'button',
-        title: t('Silas has a word for you'),
-        'aria-label': t('Silas has a word for you'),
-        onclick: () => { profile.updateSettings({ guide: 'open' }); draw(); },
-      }, svgNode(portraitSvg('silas', { size: 40 }), 'guide-face'), el('span.guide-call-label', t('Silas has a word for you')), el('span.guide-dot', { 'aria-hidden': 'true' })));
-      return;
-    }
     const say = list[turn % list.length];
     const another = () => { turn += 1; draw(); };
-    mount(target, el('aside.guide', { 'aria-label': t('Silas, your guide') },
-      el('div.guide-bubble', { role: 'status' },
-        el('div.guide-who',
-          svgNode(portraitSvg('silas', { size: 30 }), 'guide-mini'),
-          el('strong', MENTOR.short),
-          el('span.faint', t(MENTOR.title)),
-          el('button.guide-close', {
-            type: 'button',
-            title: t('Let Silas sit back'),
-            'aria-label': t('Let Silas sit back'),
-            onclick: () => { profile.updateSettings({ guide: 'small' }); draw(); },
-          }, '×'),
-        ),
-        el('p.guide-says', t(say.text, say.params)),
-        el('div.guide-actions',
+    const open = () => { sheetOpen = !sheetOpen; draw(); if (sheetOpen) { const i = host.querySelector('.ask-input'); if (i && window.matchMedia('(min-width: 761px)').matches) i.focus(); } };
+    mount(host,
+      sheetOpen ? sheet() : null,
+      el('aside.guide-dock', { 'aria-label': t('Silas, your guide') },
+        el('button.guide-body', { type: 'button', title: t('Ask Silas'), 'aria-label': t('Ask Silas'), onclick: open },
+          svgNode(silasFigure(52), 'guide-figure')),
+        el('button.dock-word', { type: 'button', title: t('Another word'), onclick: another },
+          el('span.dock-name', MENTOR.short),
+          el('span.dock-says', t(say.text, say.params))),
+        el('div.dock-actions',
           say.to && !(say.to.route === route && !say.to.params)
-            ? el('button.btn.sm.primary', { type: 'button', onclick: () => go(say.to.route, say.to.params || {}) }, t(say.label))
+            ? el('button.btn.sm.ghost.dock-go', { type: 'button', onclick: () => goTo(say.to) }, t(say.label))
             : null,
-          el('button.btn.sm.ghost', { type: 'button', onclick: another }, t('Another word')),
+          el(`button.btn.sm${sheetOpen ? '' : '.primary'}.dock-ask`, { type: 'button', onclick: open }, sheetOpen ? t('Close') : t('Ask Silas')),
         ),
       ),
-      el('button.guide-body', {
-        type: 'button',
-        title: t('Another word'),
-        'aria-label': t('Another word from Silas'),
-        onclick: another,
-      }, svgNode(silasFigure(118), 'guide-figure')),
-    ));
+    );
   };
   draw();
+  // A word every so often while you read, so he is not a painting.
+  rotate = setInterval(() => { if (!sheetOpen && document.visibilityState !== 'hidden') { turn += 1; draw(); } }, 45000);
+  if (!escHooked) {
+    escHooked = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sheetOpen) { sheetOpen = false; const c = host.querySelector('.guide-close'); if (c) c.click(); }
+    });
+  }
 }

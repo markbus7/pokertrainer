@@ -60,8 +60,6 @@ export function renderCharacter(ctx) {
   return el('div.screen.character',
     roomSign({ glyph: 'person', kicker: t('Who you are at the table'), title: t('Your character') }),
     pageNav(),
-    // Silas stands here on this page, not in the corner over your figure.
-    el('div.guide-slot'),
     heroPanel(profile, me, go),
     typePanel(me, go),
     numbersPanel(me),

@@ -276,17 +276,25 @@ the right size, and whether you go too small or too big.
 
 ### 🧓 Silas at your side
 
-Away from the table Silas stands at the top of every screen, head to toe —
-long coat, wide hat, white whiskers, a cup of tea — with one thing to say and
-a button to the place it is about: the next step on the road, the mistake that
-costs you the most, a kind of bet you size too small or too big, today's three
+Away from the table Silas stands in a dock along the bottom of every screen,
+head to toe — long coat, wide hat, white whiskers, a cup of tea — always in
+view and never over anything: the page keeps the room he stands in, so its
+end is always above him. He has one thing to say at a time, with a button to
+the place it is about: the next step on the road, the mistake that costs you
+the most, a kind of bet you size too small or too big, today's three
 questions, what your pearls fetch, or one of the rules he has played by for
-thirty years. What a screen is about comes first (your leak on your character,
-your pearls at the Trading Post). Tap him for another word, or send him to sit
-back: he waits as a small portrait in his row until you call him. He is in
-the page, in a row of his own under its sign, never floating over it, and on
-the screens where he is already talking (the school, the Pilot House, the
-log) he is there once, not twice. On a phone he starts sat back. At the
+thirty years. What a screen is about comes first (your leak on your
+character, your pearls at the Trading Post). Tap what he says for another
+word; every so often he says another by himself.
+
+Tap him, or **Ask Silas**, and you can talk to him. Pick a question — *How am
+I doing? What should I do next? Where am I losing money? Am I betting the
+right size? What kind of player am I? What are my pearls worth? Teach me
+something* — and he answers from your own numbers, with a button to where it
+is. Or type one: any word from the tables (pot odds, equity, a 3-bet, VPIP…)
+and he explains it from the almanac; a question about your game in your own
+words and he answers it, in English or Dutch. On a phone the dock is lower
+and the questions scroll in a row. At the
 table, with live coaching on he stands head to toe at
 the top of his notebook, and his face follows your last decision — pleased
 with a good one, concerned by a mistake. In free play he stands with the
@@ -353,7 +361,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.21.4`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.22.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is
