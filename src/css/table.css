@@ -753,16 +753,36 @@ input[type="range"] {
 .coach-mood.bad { color: var(--ink-red); }
 .coach-mood.ok { color: var(--ink-dim); }
 
-/* Free play: the table is a centred column (river.css), and Silas stands
-   just outside it, beside the felt — only where the screen has that much
-   room to spare, so he never pushes the table or the buttons aside. */
+/* Free play: Silas stands with the table. Under the buttons as a row by
+   default; beside the felt in the space left of the centred table where
+   the screen has it; and in the column beside the felt when a short laptop
+   screen puts the buttons there. Never on a phone, where the buttons need
+   every pixel. */
 .table-wrap.free-play { position: relative; }
 .silas-stand { display: none; }
-@media (min-width: 1340px) and (min-height: 861px), (min-width: 1760px) {
+@media (min-width: 1000px) {
+  .silas-stand { display: flex; align-items: flex-end; gap: 10px; justify-content: center; }
+  .silas-stand .stand-figure { order: -1; }
+  .silas-stand .stand-figure svg { width: 84px; height: auto; }
+  .silas-stand .stand-bubble { max-width: 360px; margin-bottom: 70px; }
+  .silas-stand .stand-bubble::after { left: -7px; bottom: 14px; margin-left: 0; transform: rotate(135deg); }
+}
+/* Tall enough to keep the table centred, with room either side of it. */
+@media (min-width: 1240px) and (min-height: 861px) {
   .silas-stand {
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-    position: absolute; top: 60px; left: calc(100% + 18px); width: 150px;
+    position: absolute; top: 60px; left: calc(100% + 12px);
+    width: min(150px, calc((100vw - 980px) / 2 - 24px));
+    flex-direction: column; align-items: center; gap: 8px;
   }
+  .silas-stand .stand-figure { order: 0; }
+  .silas-stand .stand-figure svg { width: 100%; max-width: 118px; }
+  .silas-stand .stand-bubble { margin-bottom: 0; }
+  .silas-stand .stand-bubble::after { left: 50%; bottom: -7px; margin-left: -6px; transform: rotate(45deg); }
+}
+/* A laptop: short, so the buttons sit beside the felt (river.css) and
+   Silas stands under them in that column. A phone on its side is too short. */
+@media (min-width: 1000px) and (max-height: 860px) and (min-height: 520px) and (orientation: landscape) {
+  .silas-stand { justify-content: flex-start; }
 }
 .stand-bubble {
   position: relative; background: var(--bg-card); border: 1px solid var(--border-bright);

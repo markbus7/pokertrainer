@@ -616,8 +616,10 @@ export function renderTable(ctx, params = {}) {
   );
   drawStand();
   const wrap = el(`div.table-wrap${liveCoach() ? '.with-coach' : '.free-play'}`,
-    el('div.table-main', el('div.saloon-stage', lampNode(), feltHost), actionHost, trayHost, helpHost),
-    liveCoach() ? coachHost : standHost);
+    // Silas stands in the table's own column, so a short screen that puts
+    // the buttons beside the felt puts him with them.
+    el('div.table-main', el('div.saloon-stage', lampNode(), feltHost), actionHost, trayHost, helpHost, liveCoach() ? null : standHost),
+    liveCoach() ? coachHost : null);
   // The sign over the table, built again if the language changed while the
   // table waited: everything else on it is drawn fresh each time anyway.
   const tableHead = () => el('div.spread.table-head',
@@ -684,7 +686,7 @@ export function renderTable(ctx, params = {}) {
     if (on && !coachHost.isConnected) wrap.appendChild(coachHost);
     if (!on && coachHost.isConnected) coachHost.remove();
     if (on && standHost.isConnected) standHost.remove();
-    if (!on && !standHost.isConnected) wrap.appendChild(standHost);
+    if (!on && !standHost.isConnected) wrap.querySelector('.table-main').appendChild(standHost);
     draw();
   }
   function drawCoachToggle() {

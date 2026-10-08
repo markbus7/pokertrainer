@@ -287,9 +287,10 @@ back: he waits as a portrait in the corner until you call him. On a phone the
 word runs along the bottom without the figure, and he starts sat back. At the
 table he is not in the corner: with live coaching on he stands head to toe at
 the top of his notebook, and his face follows your last decision — pleased
-with a good one, concerned by a mistake. In free play he stands beside the
-felt where the screen has room for him, saying one of his rules and nothing
-about your decisions.
+with a good one, concerned by a mistake. In free play he stands with the
+table, saying one of his rules and nothing about your decisions: beside the
+felt on a big screen, under the buttons in the column beside the felt on a
+laptop, and nowhere on a phone, where the buttons need the room.
 
 ### 📋 Interactive range charts
 
@@ -350,7 +351,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.21.1`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.21.2`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is
