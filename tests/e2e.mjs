@@ -4307,6 +4307,8 @@ await step('your money decisions on your character, you on the rail, and Silas a
     if (!await gp.$('.char-nav')) throw new Error('no links along the top of the character page');
     // On your character he talks about the leak, and the button takes you to it.
     if (!/costliest mistake so far: “Calling without the price”/.test(await text('.guide-says'))) throw new Error(`on the character page Silas says "${await text('.guide-says')}"`);
+    // There he stands in the page, above your figure, not in the corner over it.
+    if (!await gp.$('.guide-slot .guide') || await gp.$('#guide-host .guide')) throw new Error('on the character page Silas is in the corner, over the figure');
     const before = await text('.guide-says');
     await gp.click('.guide-body');
     if (await text('.guide-says') === before) throw new Error('"another word" did not change what he says');
