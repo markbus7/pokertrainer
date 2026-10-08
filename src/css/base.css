@@ -2079,3 +2079,17 @@ body.guide-open main { padding-bottom: 260px; }
   .guide-mini { display: block; }
   body.guide-open main { padding-bottom: 200px; }
 }
+
+/* In the page (a .guide-slot): a row above the content, covering nothing. */
+.guide-slot { margin: 0 0 14px; }
+.guide-slot:empty { display: none; }
+.guide-slot .guide { align-items: center; }
+.guide-slot .guide-body { display: block; margin-right: 0; }
+.guide-slot .guide-body svg { width: 70px; height: auto; }
+.guide-slot .guide-bubble { width: auto; max-width: 640px; margin-bottom: 0; box-shadow: var(--shadow-sm); }
+.guide-slot .guide-bubble::before { display: block; bottom: auto; top: 50%; margin-top: -7px; }
+.guide-slot .guide-mini { display: none; }
+@media (max-width: 760px) {
+  .guide-slot .guide-body svg { width: 54px; }
+  .guide-slot .guide-bubble { width: auto; flex: 1; }
+}

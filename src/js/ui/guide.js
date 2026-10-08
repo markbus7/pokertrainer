@@ -170,15 +170,21 @@ export function drawGuide({ profile, route, focus, go }) {
     return;
   }
 
+  // A screen with a place kept for him (a .guide-slot) has him in the page,
+  // where he covers nothing; everywhere else he stands in the corner.
+  const slot = document.querySelector('#screen .guide-slot');
+  const target = slot || host;
+  if (slot) mount(host);
+
   const list = sayings(profile, route);
   // A new screen starts at the top of what matters there; "another word" walks on.
   turn = 0;
 
   const draw = () => {
     const open = isOpen(profile);
-    document.body.classList.toggle('guide-open', open);
+    document.body.classList.toggle('guide-open', open && !slot);
     if (!open) {
-      mount(host, el('button.guide-call', {
+      mount(target, el('button.guide-call', {
         type: 'button',
         title: t('Silas has a word for you'),
         'aria-label': t('Silas has a word for you'),
@@ -188,7 +194,7 @@ export function drawGuide({ profile, route, focus, go }) {
     }
     const say = list[turn % list.length];
     const another = () => { turn += 1; draw(); };
-    mount(host, el('aside.guide', { 'aria-label': t('Silas, your guide') },
+    mount(target, el('aside.guide', { 'aria-label': t('Silas, your guide') },
       el('div.guide-bubble', { role: 'status' },
         el('div.guide-who',
           svgNode(portraitSvg('silas', { size: 30 }), 'guide-mini'),
