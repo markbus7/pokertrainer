@@ -224,7 +224,11 @@ browser, with separate switches for effects and music in the ledger.
 
 ### 🎩 Your character
 
-The chip with your rank on the top bar opens a page about you, drawn head to toe.
+The chip on the top bar is you: your face as your figure wears it, your rank
+and your XP, under the words *Your character*. Tap it for a page about you,
+drawn head to toe, with a row of links along the top to the parts people come
+looking for: your money decisions, your bet sizes, your hands, your results
+and the river.
 The figure is dressed by your rank, a new look every two ranks: a deckhand in a
 borrowed shirt, braces and a cap; a card-room grinder in a green visor and
 sleeve garters; a riverboat regular in a bowler and a tailored waistcoat; a
@@ -260,6 +264,28 @@ the mistakes, grouped by kind — what you did and on which street, why it was a
 mistake, what was right instead, what it cost, and the hand itself to replay
 if the Log kept it. On a phone the hand opens in a sheet over the bottom of
 the screen.
+
+**Your money decisions** is where the money is made and where it leaks. Every
+fold, check, call, bet and raise at a real table is graded against the price
+and your equity, and counted by what you did: how many of your calls were
+right, how many were mistakes and what they cost in big blinds, and the same
+for every other action. Beside it, the kinds of mistake that cost you the most
+(calling without the price, too strong to just call…) and the ones you repeat
+the most, with how often. Your bet sizes follow: how often each kind of bet is
+the right size, and whether you go too small or too big.
+
+### 🧓 Silas at your side
+
+Away from the table Silas stands in the corner of every screen, head to toe —
+long coat, wide hat, white whiskers, a cup of tea — with one thing to say and
+a button to the place it is about: the next step on the road, the mistake that
+costs you the most, a kind of bet you size too small or too big, today's three
+questions, what your pearls fetch, or one of the rules he has played by for
+thirty years. What a screen is about comes first (your leak on your character,
+your pearls at the Trading Post). Tap him for another word, or send him to sit
+back: he waits as a portrait in the corner until you call him. On a phone the
+word runs along the bottom without the figure, and he starts sat back. At the
+table he is at your shoulder already, so he is not in the corner too.
 
 ### 📋 Interactive range charts
 
@@ -320,7 +346,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.20.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.21.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

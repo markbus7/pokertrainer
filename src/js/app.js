@@ -38,6 +38,10 @@ import { renderBoatyard } from './ui/screenBoatyard.js';
 import { renderCatchBook } from './ui/screenCatchBook.js';
 import { renderReport } from './ui/screenReport.js';
 import { pearl } from './ui/shop.js';
+import { bustSvg } from './ui/characterArt.js';
+import { svgNode } from './ui/place.js';
+import { tierFor } from './data/looks.js';
+import { drawGuide } from './ui/guide.js';
 import * as audio from './audio/engine.js';
 import { STYLES, styleFor } from './audio/tunes.js';
 
@@ -171,6 +175,7 @@ function render() {
   document.body.classList.toggle('focus', !!def.focus);
   document.body.dataset.route = route;
   drawShell();
+  drawGuide({ profile, route, focus: !!def.focus, go });
   // The river has a tune, a table has a piano in the corner, and a lesson is
   // quiet: music under reading is noise, whatever it is.
   audio.setMusic(def.music || null);
@@ -358,9 +363,10 @@ function drawHud() {
       onclick: () => go('character'),
       title: t('{blurb} — your character', { blurb: t(rank.blurb) }),
     },
-      el('span.emoji', rank.emoji),
+      svgNode(bustSvg({ tier: tierFor(profile.level), look: profile.look }, 38), 'chip-figure'),
       el('div.meta',
-        el('span.name', rank.name),
+        el('span.chip-kicker', 'Your character'),
+        el('span.name', el('span.emoji', rank.emoji), ' ', rank.name),
         el('span.xp', next ? `${fmt.chips(profile.xp)} / ${fmt.chips(next.xp)} XP` : `${fmt.chips(profile.xp)} XP`),
       ),
     ),

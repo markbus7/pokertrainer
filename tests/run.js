@@ -20,6 +20,7 @@ const modules = [
   './regatta.test.js',
   './icm.test.js',
   './character.test.js',
+  './guide.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',
