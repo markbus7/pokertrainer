@@ -21,7 +21,8 @@ import { riverState } from './screenRiver.js';
 import { svgNode, typedText } from './place.js';
 import * as audio from '../audio/engine.js';
 import { reportsOf } from '../state/sessionReport.js';
-import { EARN, seatInPearls } from '../state/economy.js';
+import { EARN, seatInPearls, ROOM_CUT, roomKey, ownsRoom, roomsOwned, roomIncome } from '../state/economy.js';
+import { buyControl } from './shop.js';
 import { pearls, pearl } from './shop.js';
 import { MENTOR } from '../data/characters.js';
 import { gatedBy, duelStatus } from '../state/journey.js';
@@ -430,6 +431,29 @@ function regattaBlock(venue, state, profile, go) {
   );
 }
 
+/**
+ * The card room the table stands in: for sale once the table is yours, and
+ * then paying you the house's cut on every hand you are dealt at it.
+ */
+function roomBlock(venue, profile, go) {
+  const owned = ownsRoom(profile, venue.key);
+  const per100 = Math.round(100 * ROOM_CUT * venue.stake.bb * 100) / 100;
+  const count = roomsOwned(profile);
+  return el(`div.panel.room-block${owned ? '.owned' : ''}`,
+    el('div.panel-title', el('h3', icon('anchor', { size: 16 }), ' ', t('The card room')),
+      el('span.faint', t('{n} of {total} rooms on the river are yours', { n: count, total: VENUES.length }))),
+    owned
+      ? el('p', t('{place} is your room. The house\'s cut is yours: {cut} for every hundred hands you are dealt at its tables. It has paid you {money} so far.',
+        { place: t(venue.name), cut: fmt.money(per100), money: fmt.money(roomIncome(profile, venue.key)) }))
+      : el('p.muted', t('Buy the house the table stands in, and the house\'s cut is yours: {cut} for every hundred hands you are dealt at its tables, paid when you cash out. Own all {total}, and the river is yours.',
+        { cut: fmt.money(per100), total: VENUES.length })),
+    count === VENUES.length ? el('p.room-crown', t('Every room on the river is yours.')) : null,
+    el('div.stop-actions', buyControl(profile, roomKey(venue.key), {
+      go, label: t('Buy the room'), onBought: () => go('stop', { at: venue.key, bought: Date.now() }),
+    })),
+  );
+}
+
 /** What you took from this table, if you took it. */
 function keepsakeBlock(venue, state) {
   if (!state.beaten.has(venue.index)) return null;
@@ -554,6 +578,7 @@ export function renderStop(ctx, params = {}) {
     rivalBlock(venue, profile),
     wandererBlock(venue, profile),
     duelBlock(venue, state, profile, go),
+    roomBlock(venue, profile, go),
     regattaBlock(venue, state, profile, go),
     roadBlock(venue, state, go),
     neighbours(venue, go),

@@ -2446,7 +2446,8 @@ button.char-fact:hover { border-color: var(--brass-lo); box-shadow: 0 0 0 1px va
 
 /* Plaques on paper. */
 .char-plaques .stat { background: var(--paper-2); border-color: var(--ink-rule); }
-.char-river .grid.char-plaques { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.char-river .grid.char-plaques { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .char-river .grid.char-plaques { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .char-results .grid.char-plaques { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 760px) {
   .char-river .grid.char-plaques, .char-results .grid.char-plaques { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-2); }

@@ -209,6 +209,14 @@ replace playing well. Nothing sells pearls back: they are only earned at the
 tables. Your character page says what your purse would fetch where you are,
 and at the delta.
 
+And then there are the card rooms: the far end of the purse. Once a stop's
+table is yours, the house it stands in is for sale — 3,000 pearls at Mud
+Landing up to 45,000 at the Delta Crown, about 150,000 for all eight. A room
+you own pays you the house's cut, 2% of a big blind for every hand you are
+dealt at its cash tables, paid when you cash out, and your character page
+counts the rooms you own and what they have paid. Own all eight, and the river
+is yours.
+
 The river is drawn in the hour of the day you pick (night, bayou, dusk or
 daylight), the people have faces, and everything you hear — chips, cards, the
 ship's bell, a steam whistle and a ragtime piano — is synthesised in the
@@ -312,7 +320,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.19.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.20.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

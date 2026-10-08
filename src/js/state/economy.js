@@ -315,6 +315,31 @@ export const UPGRADES = [
 
 export const upgradeByKey = (key) => UPGRADES.find((u) => u.key === key) || null;
 
+/* ------------------------------------------------------------------ *
+ * The card rooms: the far end of the purse
+ * ------------------------------------------------------------------ */
+
+/**
+ * Once a stop's table is yours, the house it stands in can be bought: the
+ * long game, the way Governor of Poker sells the town's buildings. Each room
+ * costs more pearls the further down the river — about 150,000 for all eight,
+ * a hundred hours and more at the tables — and pays its owner the house's
+ * cut: ROOM_CUT of a big blind for every hand you are dealt at its cash
+ * tables, paid when you cash out. A room is mostly a flag on the river; the
+ * cut makes it one that pays back, slowly.
+ */
+export const ROOM_PRICES = [3000, 5000, 8000, 12000, 18000, 25000, 34000, 45000];
+export const ROOM_CUT = 0.02;
+export const roomKey = (venueKey) => `room:${venueKey}`;
+export const ownsRoom = (profile, venueKey) => profile.owns(roomKey(venueKey));
+export const roomsOwned = (profile) => VENUES.filter((v) => ownsRoom(profile, v.key)).length;
+
+/** The cut for a sitting: hands dealt at the room's tables, in money, to the cent below. */
+export function roomCut(hands, bigBlind) {
+  const n = Math.max(0, Math.floor(Number(hands) || 0));
+  return Math.floor(n * ROOM_CUT * bigBlind * 100 + 1e-9) / 100;
+}
+
 /**
  * Everything on the shelves, in the order it is shown. The Trading Post
  * sells the chapters, charts and companions; the boatyard the boats and
@@ -334,7 +359,29 @@ export const CATALOGUE = [
     key: `boat:${b.key}`, kind: 'boat', boat: b.key, price: b.price, needs: { reach: b.reach },
   })),
   ...UPGRADES.map((u) => ({ key: `up:${u.key}`, kind: 'upgrade', upgrade: u.key, price: u.price, needs: u.needs || {} })),
+  ...VENUES.map((v) => ({ key: roomKey(v.key), kind: 'room', venue: v.key, price: ROOM_PRICES[v.index], needs: { tableAt: v.key } })),
 ];
+
+/**
+ * Pay the cut for a sitting at a room you own, into the bankroll, and keep
+ * the running total the room's panel shows. Nothing for a room you do not own.
+ */
+export function payRoomCut(profile, venueKey, hands, bigBlind) {
+  if (!ownsRoom(profile, venueKey)) return 0;
+  const money = roomCut(hands, bigBlind);
+  if (!(money > 0)) return 0;
+  const earned = profile.data.roomIncome && typeof profile.data.roomIncome === 'object' ? profile.data.roomIncome : {};
+  earned[venueKey] = Math.round(((Number(earned[venueKey]) || 0) + money) * 100) / 100;
+  profile.data.roomIncome = earned;
+  profile.setBankroll(profile.data.bankroll + money);
+  return money;
+}
+
+/** What a room has paid its owner so far. */
+export const roomIncome = (profile, venueKey) => {
+  const earned = profile.data.roomIncome;
+  return earned && Number.isFinite(earned[venueKey]) ? earned[venueKey] : 0;
+};
 
 /** Which kinds each shop sells. */
 export const SHOPS = {
@@ -394,6 +441,9 @@ export function missingFor(profile, item) {
   }
   if (needs.reach && furthestStop(profile) < needs.reach) {
     missing.push({ key: 'reach', text: 'Take your boat as far as {place}', params: { place: VENUES[needs.reach].name } });
+  }
+  if (needs.tableAt && !(profile.career.beaten || []).includes(needs.tableAt)) {
+    missing.push({ key: 'tableAt', text: 'Take the table at {place} first', params: { place: venueFor(needs.tableAt).name } });
   }
   if (needs.taken && tablesTaken(profile) < needs.taken) {
     missing.push({ key: 'taken', text: 'Take a table from the one who owns it', params: {} });

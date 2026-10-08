@@ -1084,6 +1084,8 @@ function riverPanel(profile) {
       plaque('Daily puzzle', t('{n} days', { n: r.dailyBest }), t('your best run')),
       plaque('Pearls earned', fmt.chips(r.pearls), t('all told')),
       plaque('Nights with Nell', String(r.rivalMet), t('sittings with the Rival')),
+      plaque('Card rooms', `${r.rooms} / ${r.stops}`, r.rooms === r.stops ? t('the river is yours') : t('houses you own')),
+      plaque('The house\'s cut', fmt.money(r.roomIncome), t('paid by your rooms')),
     ),
     pearlWorthLine(profile),
   );

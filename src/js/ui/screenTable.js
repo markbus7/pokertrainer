@@ -38,7 +38,7 @@ import { remember as rivalRemembers, readOn as rivalRead } from '../state/rival.
 import { RIVAL } from '../data/rival.js';
 import { wandererFor } from '../data/wanderers.js';
 import { ensureContracts, noteEvent as noteContract, contractText } from '../state/contracts.js';
-import { furthestStop, seatInPearls } from '../state/economy.js';
+import { furthestStop, seatInPearls, payRoomCut } from '../state/economy.js';
 import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
@@ -1666,6 +1666,15 @@ export function renderTable(ctx, params = {}) {
     if (grind) {
       const cashOut = (hero.stack / (bigBlind * 100)) * stake.buyIn;
       profile.setBankroll(profile.data.bankroll + cashOut);
+      // The house's cut, when the house is yours.
+      const cut = payRoomCut(profile, room.key, stats.hands, stake.bb);
+      if (cut > 0) {
+        toast({
+          icon: '🏛',
+          title: t('Your card room\'s cut: {money}', { money: fmt.money(cut) }),
+          desc: t('{n} hands dealt at your room at {place}.', { n: stats.hands, place: t(room.name) }),
+        });
+      }
       profile.recordSession({
         hands: stats.hands,
         profitBb: stats.profitBb,
