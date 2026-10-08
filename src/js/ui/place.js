@@ -69,7 +69,7 @@ export function typedText(text) {
  */
 export function says(who, line, { name = null, size = 72, typed = true, className = '', after = null } = {}) {
   const text = typed ? typedText(line) : line;
-  return el(`div.says${className ? `.${className}` : ''}`,
+  return el(`div.says${className ? `.${className}` : ''}`, { 'data-who': who },
     svgNode(portraitSvg(who, { size }), 'says-face'),
     el('div.bubble.paper',
       name ? el('div.says-name', name) : null,

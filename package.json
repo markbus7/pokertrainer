@@ -1,6 +1,6 @@
 {
   "name": "poker-trainer",
-  "version": "3.21.3",
+  "version": "3.21.4",
   "private": true,
   "type": "module",
   "description": "Poker Trainer — a browser game that takes you from beginner to crushing online tables.",

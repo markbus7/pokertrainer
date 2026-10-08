@@ -4292,10 +4292,12 @@ await step('your money decisions on your character, you on the rail, and Silas a
       });
       localStorage.setItem(key, JSON.stringify(raw));
     }, KEY);
-    // On the river: Silas stands in the corner with the road's next step.
+    // On the river: Silas stands in the page, in a row of his own, with
+    // today's questions (the road has its own banner there).
     await gp.goto(`${BASE}/?guide=1#home`, { waitUntil: 'domcontentloaded' });
-    await gp.waitForSelector('.guide .guide-body svg.character', { timeout: 8000 });
-    if (!/Next on the road/.test(await text('.guide-says'))) throw new Error(`on the river Silas says "${await text('.guide-says')}"`);
+    await gp.waitForSelector('.guide-slot .guide .guide-body svg.character', { timeout: 8000 });
+    if (!/Today's three questions/.test(await text('.guide-says'))) throw new Error(`on the river Silas says "${await text('.guide-says')}"`);
+    if (await gp.evaluate(() => [...document.querySelectorAll('.guide, .guide *')].some((n) => getComputedStyle(n).position === 'fixed'))) throw new Error('Silas floats over the page');
     // The rail has you on it, and it opens your character.
     if (!await gp.$('.rank-chip .chip-figure svg.character')) throw new Error('no figure on the rail');
     await gp.click('.rank-chip');
