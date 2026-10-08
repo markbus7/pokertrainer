@@ -742,3 +742,38 @@ input[type="range"] {
   pointer-events: auto;
 }
 .seat.hero .seat-bounty { display: none; }
+
+/* ---- Silas at the table, head to toe (ui/guide.js) ---- */
+
+/* In his notebook: standing beside his name, his face on your last decision. */
+.silas-stood { line-height: 0; flex: none; margin: -6px 0 -4px; }
+.silas-stood svg { display: block; }
+.coach-mood { font-family: var(--font-print); font-size: var(--t-xs); margin-top: 4px; }
+.coach-mood.good { color: var(--ink-green); }
+.coach-mood.bad { color: var(--ink-red); }
+.coach-mood.ok { color: var(--ink-dim); }
+
+/* Free play: the table is a centred column (river.css), and Silas stands
+   just outside it, beside the felt — only where the screen has that much
+   room to spare, so he never pushes the table or the buttons aside. */
+.table-wrap.free-play { position: relative; }
+.silas-stand { display: none; }
+@media (min-width: 1340px) and (min-height: 861px), (min-width: 1760px) {
+  .silas-stand {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    position: absolute; top: 60px; left: calc(100% + 18px); width: 150px;
+  }
+}
+.stand-bubble {
+  position: relative; background: var(--bg-card); border: 1px solid var(--border-bright);
+  border-radius: 12px; padding: 8px 10px; font-size: var(--t-xs); line-height: 1.4;
+  box-shadow: var(--shadow-sm);
+}
+.stand-bubble::after {
+  content: ''; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px; margin-left: -6px;
+  background: var(--bg-card); border-right: 1px solid var(--border-bright); border-bottom: 1px solid var(--border-bright);
+  transform: rotate(45deg);
+}
+.stand-figure { padding: 0; border: 0; background: none; cursor: pointer; }
+.stand-figure svg { display: block; filter: drop-shadow(var(--shadow-sm)); animation: guide-sway 6s ease-in-out infinite; transform-origin: 50% 100%; }
+@media (prefers-reduced-motion: reduce) { .stand-figure svg { animation: none; } }

@@ -285,7 +285,11 @@ thirty years. What a screen is about comes first (your leak on your character,
 your pearls at the Trading Post). Tap him for another word, or send him to sit
 back: he waits as a portrait in the corner until you call him. On a phone the
 word runs along the bottom without the figure, and he starts sat back. At the
-table he is at your shoulder already, so he is not in the corner too.
+table he is not in the corner: with live coaching on he stands head to toe at
+the top of his notebook, and his face follows your last decision — pleased
+with a good one, concerned by a mistake. In free play he stands beside the
+felt where the screen has room for him, saying one of his rules and nothing
+about your decisions.
 
 ### 📋 Interactive range charts
 
@@ -346,7 +350,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.21.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.21.1`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

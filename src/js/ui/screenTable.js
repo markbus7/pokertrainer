@@ -51,6 +51,7 @@ import { checkAchievements } from '../state/achievements.js';
 import { IDK, dontKnowButton } from './dontKnow.js';
 import { bossFor, MENTOR } from '../data/characters.js';
 import { svgNode, lampNode } from './place.js';
+import { silasFigure, moodFor, RULES } from './guide.js';
 import { fishSvg } from './fishArt.js';
 import { autoDealEnabled, autoDealDelay, autoDealReady, countdown } from '../state/autoDeal.js';
 import { takeTable, duelStatus } from '../state/journey.js';
@@ -600,9 +601,23 @@ export function renderTable(ctx, params = {}) {
   const trayHost = el('div.tray-host');
   const helpHost = el('div.help-host');
   const coachToggle = el('button.btn.sm.ghost.coach-toggle', { onclick: () => setLiveCoach(!profile.settings.liveCoach) });
+  // Free play: Silas stands beside the felt, quiet about your decisions,
+  // with one of his rules. A tap for another. Only where there is room.
+  let ruleAt = Math.floor(Math.random() * RULES.length);
+  const standHost = el('aside.silas-stand', { 'aria-label': t('Silas, your guide') });
+  const drawStand = () => mount(standHost,
+    el('div.stand-bubble', t(RULES[ruleAt % RULES.length])),
+    el('button.stand-figure', {
+      type: 'button',
+      title: t('Another word'),
+      'aria-label': t('Another word from Silas'),
+      onclick: () => { ruleAt += 1; drawStand(); },
+    }, svgNode(silasFigure(118), 'guide-figure')),
+  );
+  drawStand();
   const wrap = el(`div.table-wrap${liveCoach() ? '.with-coach' : '.free-play'}`,
     el('div.table-main', el('div.saloon-stage', lampNode(), feltHost), actionHost, trayHost, helpHost),
-    liveCoach() ? coachHost : null);
+    liveCoach() ? coachHost : standHost);
   // The sign over the table, built again if the language changed while the
   // table waited: everything else on it is drawn fresh each time anyway.
   const tableHead = () => el('div.spread.table-head',
@@ -668,6 +683,8 @@ export function renderTable(ctx, params = {}) {
     wrap.classList.toggle('with-coach', on);
     if (on && !coachHost.isConnected) wrap.appendChild(coachHost);
     if (!on && coachHost.isConnected) coachHost.remove();
+    if (on && standHost.isConnected) standHost.remove();
+    if (!on && !standHost.isConnected) wrap.appendChild(standHost);
     draw();
   }
   function drawCoachToggle() {
@@ -2723,11 +2740,16 @@ export function renderTable(ctx, params = {}) {
     mount(coachHost,
       // The coach is Silas: the same teacher as the school and the pilot
       // house, standing at your shoulder. His name and face, not a label.
+      // Head to toe, and his face follows your last decision.
       el('h3.coach-head',
-        svgNode(portraitSvg(MENTOR.key, { size: 44 }), 'silas-face'),
+        svgNode(silasFigure(64, moodFor(session.verdict && session.verdict.level)), 'silas-stood'),
         el('span.coach-who',
           el('span.coach-name', MENTOR.short),
           el('span.coach-role', t(MENTOR.table)),
+          session.verdict
+            ? el(`span.coach-mood.${session.verdict.level}`, t(session.verdict.level === 'good' ? 'Pleased with that one.'
+              : session.verdict.level === 'bad' ? 'Not happy with that one.' : 'Close enough.'))
+            : null,
         ),
       ),
       adjusted.length
