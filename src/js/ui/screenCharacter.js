@@ -29,7 +29,7 @@ import {
   TIERS, SKINS, HAIRS, HAIR_COLOURS, BEARDS, COLOURS, LOOK_LABELS, NAME_MAX, PROPS_TEXT, FORM_TEXT,
 } from '../data/looks.js';
 import { PLAYER_TYPES, REGULARS, BOUNDS, HEALTHY } from '../data/playerTypes.js';
-import { startingHands, seats as seatRecords, rivals, handRatings, mistakesWith, praiseFor, sizeHabits, LIFE_SAMPLE } from '../state/lifetime.js';
+import { startingHands, seats as seatRecords, rivals, handRatings, mistakesWith, praiseFor, sizeHabits, moneyHabits, LIFE_SAMPLE } from '../state/lifetime.js';
 import { findHand } from '../state/handHistory.js';
 import { whoYouAre, riverRecords } from '../state/character.js';
 import { RANKS } from '../state/profile.js';
@@ -49,14 +49,24 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').repl
 export function renderCharacter(ctx) {
   const { profile, go } = ctx;
   const me = whoYouAre(profile);
+  // Sent to one part of the page (Silas does that): there, once it is drawn.
+  const at = { money: 'char-money', sizes: 'char-sizes', hands: 'char-hands' }[ctx.params && ctx.params.at];
+  if (at) {
+    setTimeout(() => {
+      const node = document.querySelector(`.${at}`);
+      if (node) node.scrollIntoView({ block: 'start' });
+    }, 0);
+  }
   return el('div.screen.character',
     roomSign({ glyph: 'person', kicker: t('Who you are at the table'), title: t('Your character') }),
+    pageNav(),
     heroPanel(profile, me, go),
     typePanel(me, go),
     numbersPanel(me),
     resultsPanel(me),
-    handsPanel(me, go),
+    moneyPanel(me),
     sizesPanel(me),
+    handsPanel(me, go),
     famePanel(me),
     tablePanel(me),
     riverPanel(profile),
@@ -940,6 +950,75 @@ function madeBars(me) {
       el('span.made-track', el('span.made-bar', { style: { width: `${top ? (made[i] / top) * 100 : 0}%` } })),
       el('span.made-n.mono', made[i] ? `${made[i]} · ${pct(made[i] / total)}` : '0'),
     ))),
+  );
+}
+
+/* ---- the way round the page ----------------------------------------------- */
+
+/** The page is long: a row of links to the parts people come looking for. */
+const SECTIONS_NAV = [
+  ['char-money', 'Money decisions'],
+  ['char-sizes', 'Bet sizes'],
+  ['char-hands', 'Your hands'],
+  ['char-results', 'Results'],
+  ['char-river', 'On the river'],
+];
+function pageNav() {
+  return el('nav.char-nav', { 'aria-label': t('On this page') },
+    SECTIONS_NAV.map(([cls, label]) => el('button.btn.sm.ghost', {
+      type: 'button',
+      onclick: () => {
+        const node = document.querySelector(`.${cls}`);
+        if (node) node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      },
+    }, t(label))));
+}
+
+/* ---- your money decisions ---------------------------------------------- */
+
+const ACTION_NAMES = { fold: 'Folds', check: 'Checks', call: 'Calls', bet: 'Bets', raise: 'Raises' };
+
+/**
+ * Where the money goes: every decision you make at a real table, by what you
+ * did — how often it was right, how many were mistakes and what they cost —
+ * and the kinds of mistake that cost the most, and the ones you repeat.
+ */
+function moneyPanel(me) {
+  const m = moneyHabits(me.life);
+  const leakRow = (l) => el('li.leak',
+    el('span.leak-head', t(l.head)),
+    el('span.leak-times', t('{n} times', { n: l.times })),
+    el('span.leak-cost', l.bbLost > 0 ? t('about {bb} lost', { bb: `${l.bbLost.toFixed(1)} bb` }) : ''),
+  );
+  return el('section.panel.paper.char-money',
+    el('div.panel-title',
+      el('h2', t('Your money decisions')),
+      m.decisions ? el('span.faint', t('{n} decisions graded', { n: fmt.chips(m.decisions) })) : null),
+    el('p.faint', t('Every call, fold, bet and raise at a real table is graded against the price and your equity. This is where your money is made, and where it leaks.')),
+    m.decisions
+      ? el('div',
+        el('p.size-headline', t('{right} of {n} decisions right: {pct}. The mistakes have cost about {bb}.', {
+          right: fmt.chips(m.right), n: fmt.chips(m.decisions), pct: pct(m.share), bb: `${m.bbLost.toFixed(1)} bb`,
+        })),
+        el('div.size-habits', m.actions.map((r) => el('div.size-habit',
+          el('span.size-habit-name', t(ACTION_NAMES[r.key])),
+          el('span.made-track', el('span.made-bar', { style: { width: `${Math.round(r.share * 100)}%` } })),
+          el('span.size-habit-n', t('{n} of {d} right', { n: r.right, d: r.decisions })),
+          el('span.size-habit-miss.faint', r.mistakes
+            ? (r.bbLost > 0 ? t('{n} mistakes, about {bb} lost', { n: r.mistakes, bb: `${r.bbLost.toFixed(1)} bb` }) : t('{n} mistakes', { n: r.mistakes }))
+            : ''),
+        ))),
+        el('div.leak-cols',
+          el('div',
+            el('h3.rate-title', icon('warn', { size: 16 }), ' ', t('Where the money leaks')),
+            m.costly.length ? el('ul.leaks', m.costly.map(leakRow)) : el('p.faint', t('Nothing has cost you a measurable price yet.'))),
+          el('div',
+            el('h3.rate-title', icon('repeat', { size: 16 }), ' ', t('Mistakes you repeat')),
+            m.often.length ? el('ul.leaks', m.often.map(leakRow)) : el('p.faint', t('No other mistakes yet.')),
+            el('p.faint', t('Chart and size mistakes have no price in one hand: they cost over thousands.'))),
+        ),
+      )
+      : el('p', t('Nothing graded yet. Play at a real table, and every decision lands here.')),
   );
 }
 

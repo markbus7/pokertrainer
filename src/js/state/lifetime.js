@@ -102,6 +102,12 @@ export function emptyLifetime() {
     // kind -> [sized, right, too small, too big, Silas's]. The last are sizes
     // taken from Silas's button: right, and not counted in the four before.
     sizes: {},
+    // Every graded decision by what you did: action -> [decisions, right, mistakes, bb lost].
+    // Right is sound and unaided; bb lost is what the mistakes were priced at.
+    actions: {},
+    // Every kind of mistake, counted for good (the full mistakes are only kept
+    // for the last MISTAKES_KEPT): id -> [times, bb lost, head, priced (1/0)].
+    leaks: {},
     // What you do well with each hand: key -> { kind: [times, head, street, action] },
     // the decisions Silas called good without help, by kind, at most PRAISE_KINDS a hand.
     praise: {},
@@ -146,6 +152,8 @@ export function sanitizeLifetime(raw) {
   life.mistakes = (Array.isArray(raw.mistakes) ? raw.mistakes : []).slice(0, MISTAKES_KEPT).map(sanitizeMistake).filter(Boolean);
   life.praise = sanitizePraise(raw.praise);
   life.sizes = Object.fromEntries(Object.entries(table(raw.sizes, 5, [])).filter(([k]) => SIZE_KEYS.includes(k)));
+  life.actions = Object.fromEntries(Object.entries(table(raw.actions, 4, [3])).filter(([k]) => ACTION_KEYS.includes(k)));
+  life.leaks = sanitizeLeaks(raw.leaks);
   life.seats = table(raw.seats, 2, [1]);
   life.against = table(raw.against, 3, [1, 2]);
   if (Array.isArray(raw.made)) life.made = life.made.map((_, i) => int(raw.made[i]));
@@ -243,6 +251,19 @@ export function recordHand(life, f) {
     if (f.bluff && (!life.biggestBluff || f.potBb > life.biggestBluff.bb)) {
       life.biggestBluff = { bb: round(f.potBb), key: f.key, at: f.at, where: f.where };
     }
+  }
+
+  // Every decision by what you did, and every kind of mistake, counted for good.
+  for (const g of Array.isArray(f.graded) ? f.graded : []) {
+    if (!g || typeof g !== 'object' || !ACTION_KEYS.includes(g.action)) continue;
+    const row = life.actions[g.action] || (life.actions[g.action] = [0, 0, 0, 0]);
+    row[0] += 1;
+    if (g.level !== 'bad' && !g.helped) row[1] += 1;
+    if (g.level !== 'bad') continue;
+    const cost = Math.max(0, money(g.costBb));
+    row[2] += 1;
+    row[3] = round(row[3] + cost);
+    noteLeak(life, g, cost);
   }
 
   // How much you bet and raised, by kind: right, too small or too big — and
@@ -526,4 +547,56 @@ export function sizeHabits(life) {
   const worst = rows.filter((r) => r.sized >= LIFE_SAMPLE.sizes && r.right < r.sized)
     .sort((a, b) => a.share - b.share || b.sized - a.sized)[0] || null;
   return { rows, sized, right, silas, share: sized ? right / sized : null, worst };
+}
+
+const ACTION_KEYS = ['fold', 'check', 'call', 'bet', 'raise'];
+const LEAK_KINDS = 80;
+
+/** One more of a kind of mistake; the rarest kind gives way when there are too many. */
+function noteLeak(life, g, cost) {
+  const head = typeof g.head === 'string' && g.head.length <= 160 ? g.head : null;
+  if (!head) return;
+  const kind = typeof g.id === 'string' && g.id && g.id.length <= 40 ? g.id : head;
+  if (!life.leaks[kind]) {
+    const kinds = Object.keys(life.leaks);
+    if (kinds.length >= LEAK_KINDS) {
+      const rarest = kinds.reduce((a, b) => (life.leaks[b][0] < life.leaks[a][0] ? b : a));
+      delete life.leaks[rarest];
+    }
+    life.leaks[kind] = [0, 0, head, 0];
+  }
+  const leak = life.leaks[kind];
+  leak[0] += 1;
+  leak[1] = round(leak[1] + cost);
+  if (g.costKnown !== false && cost > 0) leak[3] = 1;
+}
+
+function sanitizeLeaks(raw) {
+  const out = {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const [kind, v] of Object.entries(raw).slice(0, LEAK_KINDS)) {
+    if (kind.length > 160 || !Array.isArray(v) || typeof v[2] !== 'string' || v[2].length > 160) continue;
+    out[kind] = [int(v[0]), Number.isFinite(v[1]) ? round(Math.max(0, v[1])) : 0, v[2], v[3] ? 1 : 0];
+  }
+  return out;
+}
+
+/**
+ * Where the money goes: every decision by what you did — how often it was
+ * right, how many mistakes, what they cost — and the kinds of mistake that
+ * cost the most, the priced ones by big blinds, the rest by how often.
+ */
+export function moneyHabits(life) {
+  const actions = ACTION_KEYS.map((key) => {
+    const [decisions, right, mistakes, bbLost] = life.actions[key] || [0, 0, 0, 0];
+    return { key, decisions, right, mistakes, bbLost, share: decisions ? right / decisions : null };
+  }).filter((r) => r.decisions);
+  const leaks = Object.entries(life.leaks)
+    .map(([id, [times, bbLost, head, priced]]) => ({ id, times, bbLost, head, priced: Boolean(priced) }));
+  const costly = leaks.filter((l) => l.bbLost > 0).sort((a, b) => b.bbLost - a.bbLost || b.times - a.times).slice(0, 5);
+  const often = leaks.filter((l) => !costly.includes(l)).sort((a, b) => b.times - a.times).slice(0, 5);
+  const decisions = actions.reduce((n, r) => n + r.decisions, 0);
+  const right = actions.reduce((n, r) => n + r.right, 0);
+  const bbLost = round(actions.reduce((n, r) => n + r.bbLost, 0));
+  return { actions, costly, often, decisions, right, bbLost, share: decisions ? right / decisions : null };
 }

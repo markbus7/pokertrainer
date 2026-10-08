@@ -154,7 +154,15 @@ main {
   text-align: left;
 }
 .rank-chip:hover { border-color: var(--border-bright); }
-.rank-chip .emoji { font-size: var(--t-lg); }
+.rank-chip .emoji { font-size: var(--t-sm); }
+.rank-chip { padding-left: 4px; }
+.chip-figure {
+  display: block; width: 38px; height: 38px; flex: none;
+  border-radius: 50%; overflow: hidden;
+  background: var(--bg); border: 1px solid var(--border);
+}
+.chip-figure svg { display: block; }
+.rank-chip .chip-kicker { font-size: var(--t-xs); color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; }
 .rank-chip .meta { display: flex; flex-direction: column; line-height: 1.15; }
 .rank-chip .name { font-weight: 650; font-size: var(--t-sm); }
 .rank-chip .xp { font-size: var(--t-xs); color: var(--text-faint); font-variant-numeric: tabular-nums; }
@@ -2004,3 +2012,70 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
    feature exists to make safe to do. */
 .feedback.skip { border-left-color: var(--border-bright); }
 .feedback.skip .verdict { color: var(--text-dim); }
+
+/* ---------------- Silas at your side (ui/guide.js) ---------------- */
+
+#guide-host { position: fixed; left: 14px; bottom: 14px; z-index: 150; pointer-events: none; }
+#guide-host > * { pointer-events: auto; }
+body.guide-open main { padding-bottom: 260px; }
+
+.guide { display: flex; align-items: flex-end; gap: 0; }
+.guide-body {
+  order: 0; flex: none; padding: 0; border: 0; background: none; cursor: pointer;
+  margin-right: -10px;
+}
+/* He sways, the button under him does not: a still target to tap. */
+.guide-body svg {
+  display: block; filter: drop-shadow(var(--shadow-sm));
+  animation: guide-sway 6s ease-in-out infinite; transform-origin: 50% 100%;
+}
+@keyframes guide-sway { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-1.2deg); } }
+@media (prefers-reduced-motion: reduce) { .guide-body svg { animation: none; } }
+
+.guide-bubble {
+  order: 1; position: relative;
+  width: min(320px, calc(100vw - 150px));
+  margin-bottom: 120px;
+  background: var(--bg-card); border: 1px solid var(--border-bright);
+  border-radius: 14px; padding: 10px 12px 12px;
+  box-shadow: var(--shadow);
+}
+.guide-bubble::before {
+  content: ''; position: absolute; left: -8px; bottom: 22px;
+  width: 14px; height: 14px; background: var(--bg-card);
+  border-left: 1px solid var(--border-bright); border-bottom: 1px solid var(--border-bright);
+  transform: rotate(45deg);
+}
+.guide-who { display: flex; align-items: center; gap: 8px; font-size: var(--t-sm); }
+.guide-who .faint { font-size: var(--t-xs); }
+.guide-mini { display: none; }
+.guide-mini svg { display: block; border-radius: 50%; }
+.guide-close {
+  margin-left: auto; border: 0; background: none; color: var(--text-faint);
+  font-size: 20px; line-height: 1; cursor: pointer; padding: 2px 6px;
+}
+.guide-close:hover { color: var(--text); }
+.guide-says { margin: 6px 0 10px; font-size: var(--t-sm); line-height: 1.45; }
+.guide-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.guide-call {
+  position: relative; padding: 0; border: 2px solid var(--accent); border-radius: 50%;
+  background: var(--bg-card); cursor: pointer; box-shadow: var(--shadow-sm);
+  width: 58px; height: 58px; overflow: hidden;
+}
+.guide-call .guide-face svg { display: block; }
+.guide-dot {
+  position: absolute; right: 4px; top: 4px; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--accent); border: 2px solid var(--bg-card);
+}
+
+/* A phone has no corner to spare: no full figure, the bubble along the bottom. */
+@media (max-width: 760px) {
+  #guide-host { left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); }
+  #guide-host:has(.guide-call) { right: auto; }
+  .guide-body { display: none; }
+  .guide-bubble { width: 100%; margin-bottom: 0; }
+  .guide-bubble::before { display: none; }
+  .guide-mini { display: block; }
+  body.guide-open main { padding-bottom: 200px; }
+}

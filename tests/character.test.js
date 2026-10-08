@@ -15,7 +15,7 @@ const deepEqual = (a, b, msg = '') => equal(JSON.stringify(a), JSON.stringify(b)
 import { Profile } from '../src/js/state/profile.js';
 import {
   emptyLifetime, sanitizeLifetime, recordHand, styleNumbers, styleFromReports, cashResults,
-  startingHands, seats, rivals, soundRate, handRatings, mistakesWith, praiseFor, sizeHabits, LIFE_SAMPLE, MISTAKES_KEPT, PRAISE_KINDS,
+  startingHands, seats, rivals, soundRate, handRatings, mistakesWith, praiseFor, sizeHabits, moneyHabits, LIFE_SAMPLE, MISTAKES_KEPT, PRAISE_KINDS,
 } from '../src/js/state/lifetime.js';
 import { seatOf, seatValue, chipsValue, doublingTarget, keepSeat, clearSeat } from '../src/js/state/seat.js';
 import { PLAYER_TYPES, REGULARS, BOUNDS, HEALTHY, playerType } from '../src/js/data/playerTypes.js';
@@ -682,5 +682,69 @@ describe('your bet sizes: every bet and raise, measured', () => {
     const back = sanitizeLifetime(JSON.parse(JSON.stringify({ ...life, sizes: { ...life.sizes, bogus: [1, 1, 0, 0, 0] } })));
     deepEqual(back.sizes, { flop: [1, 1, 0, 0, 0] });
     deepEqual(sanitizeLifetime({}).sizes, {});
+  });
+});
+
+describe('your money decisions: every call, fold, bet and raise, and what the mistakes cost', () => {
+  const g = (action, over = {}) => ({ street: 'flop', action, level: 'good', helped: false, head: 'Right', ...over });
+  const bad = (action, over = {}) => g(action, { level: 'bad', id: `${action}-wrong`, head: `Wrong ${action}`, costBb: 2, ...over });
+
+  it('counts each decision by what you did: right, mistakes and the big blinds they cost', () => {
+    const life = emptyLifetime();
+    recordHand(life, hand({ graded: [g('call'), bad('call', { costBb: 3.5 }), g('fold'), g('raise', { helped: true }), bad('bet', { costBb: 0 })] }));
+    deepEqual(life.actions.call, [2, 1, 1, 3.5]);
+    deepEqual(life.actions.fold, [1, 1, 0, 0]);
+    deepEqual(life.actions.raise, [1, 0, 0, 0], 'a decision made with help is not yours');
+    deepEqual(life.actions.bet, [1, 0, 1, 0]);
+    equal(life.actions.check, undefined, 'nothing for what you never did');
+    recordHand(life, hand({ graded: [{ action: 'shove', level: 'bad', costBb: 9 }, null, 'x'] }));
+    equal(life.actions.shove, undefined, 'only the five actions are kept');
+  });
+
+  it('keeps each kind of mistake: how often, what it cost, and whether it has a price', () => {
+    const life = emptyLifetime();
+    for (let i = 0; i < 3; i++) recordHand(life, hand({ graded: [bad('call', { costBb: 1.5 })] }));
+    recordHand(life, hand({ graded: [bad('raise', { id: 'opened-outside-range', head: 'Outside the range', costBb: 0, costKnown: false })] }));
+    deepEqual(life.leaks['call-wrong'], [3, 4.5, 'Wrong call', 1]);
+    deepEqual(life.leaks['opened-outside-range'], [1, 0, 'Outside the range', 0]);
+  });
+
+  it('reads the costly kinds first by big blinds, the rest by how often, and the totals', () => {
+    const life = emptyLifetime();
+    recordHand(life, hand({ graded: [bad('call', { costBb: 4 }), bad('bet', { id: 'b', head: 'B', costBb: 6 }), g('fold'), g('check')] }));
+    for (let i = 0; i < 5; i++) recordHand(life, hand({ graded: [bad('raise', { id: 'r', head: 'R', costBb: 0 })] }));
+    const m = moneyHabits(life);
+    deepEqual(m.costly.map((l) => l.id), ['b', 'call-wrong']);
+    deepEqual(m.often.map((l) => [l.id, l.times]), [['r', 5]]);
+    equal(m.decisions, 9);
+    equal(m.right, 2);
+    close(m.bbLost, 10, 1e-9);
+    close(m.share, 2 / 9, 1e-9);
+    deepEqual(m.actions.map((r) => r.key), ['fold', 'check', 'call', 'bet', 'raise'], 'in the order you make them, only those made');
+    const empty = moneyHabits(emptyLifetime());
+    equal(empty.decisions, 0);
+    equal(empty.share, null);
+    equal(empty.costly.length + empty.often.length + empty.actions.length, 0);
+  });
+
+  it('survives anything stored in a save', () => {
+    const life = sanitizeLifetime({
+      actions: { call: [5, 3, 2, 4.4], shove: [1, 1, 0, 0], fold: 'lots', bet: [-3, 'x', 2, -1] },
+      leaks: { ok: [2, 1.5, 'Called short', 1], bad1: [1, 1, 42, 1], bad2: 'x', bad3: [1, -4, 'Neg', 0] },
+    });
+    deepEqual(life.actions.call, [5, 3, 2, 4.4]);
+    equal(life.actions.shove, undefined);
+    deepEqual(Object.keys(life.leaks).sort(), ['bad3', 'ok']);
+    deepEqual(life.leaks.bad3, [1, 0, 'Neg', 0]);
+    moneyHabits(life);
+    const none = sanitizeLifetime({ actions: [1, 2], leaks: [1] });
+    deepEqual(none.actions, {});
+    deepEqual(none.leaks, {});
+  });
+
+  it('keeps a bounded number of kinds: the rarest gives way', () => {
+    const life = emptyLifetime();
+    for (let i = 0; i < 100; i++) recordHand(life, hand({ graded: [bad('call', { id: `k${i}`, head: `K${i}`, costBb: 1 })] }));
+    assert(Object.keys(life.leaks).length <= 80, 'no more than eighty kinds');
   });
 });

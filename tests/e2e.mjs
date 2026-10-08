@@ -2306,16 +2306,19 @@ await step('the table is free play: help is asked for, and costs the decision it
   await page.waitForTimeout(200);
   if (await page.$('.help-drawer')) throw new Error('the help stayed open for the next decision');
   if (await page.$('.verdict-box')) throw new Error('free play graded the decision out loud');
-  // Play the hand out, and a few more.
-  for (let i = 0, hands = 0; i < 300 && hands < 4; i++) {
+  // Play the hand out, and a few more. A hand folded wrong pays nothing, and
+  // four dealt at random can all be folded wrong: deal on until the purse moves.
+  const purse = () => page.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).economy.pearls);
+  for (let i = 0, hands = 0; i < 900 && hands < 12; i++) {
     const deal = await page.$('button:has-text("Deal next hand")');
+    if (deal && hands >= 4 && await purse() > before) break;
     if (deal) { hands++; await deal.click(); await page.waitForTimeout(100); continue; }
     const next = await page.$('.action-buttons .btn:has-text("Check")') || await page.$('.action-buttons .btn:has-text("Fold")');
     if (next) await next.click().catch(() => {});
     await page.waitForTimeout(120);
   }
   const after = await page.evaluate(() => JSON.parse(localStorage.getItem('poker-trainer.profile.v1')).economy);
-  if (after.pearls <= before) throw new Error(`four hands paid nothing: ${before} → ${after.pearls}`);
+  if (after.pearls <= before) throw new Error(`a dozen hands paid nothing: ${before} → ${after.pearls}`);
   console.log(`      the purse went ${before} → ${after.pearls} over the sitting`);
 });
 
@@ -4264,6 +4267,63 @@ await step('the card rooms: for sale once the table is yours, and counted on the
     if (!/Card rooms\s*1 \/ 8/.test(await text('.char-river'))) throw new Error('the profile does not count the room');
     if (mine.length) throw new Error(mine.join(' | '));
     console.log('      shut until the table is taken; Mud Landing bought for 3,000 pearls; 1 of 8 on the profile');
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('your money decisions on your character, you on the rail, and Silas at your side', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const gp = await ctx.newPage();
+  const mine = [];
+  gp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const KEY = 'poker-trainer.profile.v1';
+  const saved = () => gp.evaluate((key) => JSON.parse(localStorage.getItem(key)), KEY);
+  const text = (sel) => gp.evaluate((q) => { const n = document.querySelector(q); return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
+  try {
+    await gp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await gp.evaluate((key) => {
+      const raw = JSON.parse(localStorage.getItem(key) || '{}');
+      Object.assign(raw, {
+        seenPrologue: true, bankroll: 200,
+        lifetime: { version: 1, actions: { fold: [20, 18, 2, 1], call: [10, 6, 4, 7.5] },
+          leaks: { 'called-short': [4, 7.5, 'Calling without the price', 1], 'opened-outside-range': [6, 0, 'Outside the range', 0] } },
+        settings: { ...(raw.settings || {}), autoDeal: false, lang: 'en', guide: undefined },
+      });
+      localStorage.setItem(key, JSON.stringify(raw));
+    }, KEY);
+    // On the river: Silas stands in the corner with the road's next step.
+    await gp.goto(`${BASE}/?guide=1#home`, { waitUntil: 'domcontentloaded' });
+    await gp.waitForSelector('.guide .guide-body svg.character', { timeout: 8000 });
+    if (!/Next on the road/.test(await text('.guide-says'))) throw new Error(`on the river Silas says "${await text('.guide-says')}"`);
+    // The rail has you on it, and it opens your character.
+    if (!await gp.$('.rank-chip .chip-figure svg.character')) throw new Error('no figure on the rail');
+    await gp.click('.rank-chip');
+    await gp.waitForSelector('.char-money', { timeout: 5000 });
+    const money = await text('.char-money');
+    for (const want of ['24 of 30 decisions right', 'Calls', '6 of 10 right', 'Where the money leaks', 'Calling without the price', 'Mistakes you repeat', 'Outside the range']) {
+      if (!money.includes(want)) throw new Error(`the money panel misses "${want}": "${money.slice(0, 300)}"`);
+    }
+    if (!await gp.$('.char-nav')) throw new Error('no links along the top of the character page');
+    // On your character he talks about the leak, and the button takes you to it.
+    if (!/costliest mistake so far: “Calling without the price”/.test(await text('.guide-says'))) throw new Error(`on the character page Silas says "${await text('.guide-says')}"`);
+    const before = await text('.guide-says');
+    await gp.click('.guide-body');
+    if (await text('.guide-says') === before) throw new Error('"another word" did not change what he says');
+    // Sent to sit back he is a portrait, kept so, and called back with a tap.
+    await gp.click('.guide-close');
+    await gp.waitForSelector('.guide-call', { timeout: 3000 });
+    if ((await saved()).settings.guide !== 'small') throw new Error('sitting back was not kept');
+    await gp.goto(`${BASE}/?guide=2#store`, { waitUntil: 'domcontentloaded' });
+    await gp.waitForSelector('.guide-call', { timeout: 5000 });
+    await gp.click('.guide-call');
+    await gp.waitForSelector('.guide .guide-says', { timeout: 3000 });
+    // Not at the table: there he is at your shoulder already.
+    await gp.goto(`${BASE}/?guide=3#play`, { waitUntil: 'domcontentloaded' });
+    await gp.waitForSelector('.felt', { timeout: 8000 });
+    if (await gp.$('#guide-host .guide, #guide-host .guide-call')) throw new Error('Silas is in the corner at the table');
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log('      money panel read; figure on the rail; Silas on the river, on the leak, sat back and called again; not at the table');
   } finally {
     await ctx.close();
   }

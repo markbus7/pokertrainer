@@ -2572,6 +2572,15 @@ button.char-fact:hover { border-color: var(--brass-lo); box-shadow: 0 0 0 1px va
 .size-habit-n { text-align: right; font-variant-numeric: tabular-nums; }
 .size-habit-miss { font-size: var(--t-xs); }
 .size-habits + p { margin-top: var(--s-3); }
+/* The way round the character page, and your money decisions. */
+.char-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 var(--s-2); }
+.char-money, .char-sizes, .char-hands, .char-results, .char-river { scroll-margin-top: 84px; }
+.leak-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--s-4); margin-top: var(--s-4); }
+.leaks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.leak { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--s-2); padding: 6px var(--s-3); border-left: 3px solid var(--ink-red); background: var(--paper-2); border-radius: 0 8px 8px 0; }
+.leak-head { font-family: var(--font-print); font-weight: 700; }
+.leak-times { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-size: var(--t-sm); font-weight: 700; }
+.leak-cost { font-size: var(--t-xs); color: var(--ink-dim); }
 @media (max-width: 640px) {
   .size-habit { grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--s-2); }
   .size-habit .made-track { grid-column: 1 / -1; grid-row: 2; }

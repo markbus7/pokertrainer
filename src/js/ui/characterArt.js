@@ -396,3 +396,13 @@ export function characterSvg({ tier = 0, form = 'steady', look = DEFAULT_LOOK, p
   return `<svg class="character" viewBox="0 0 200 360" width="${width}" height="${height}" role="img"${label ? ` aria-label="${said}"` : ' aria-hidden="true"'}>`
     + back + body + '</svg>';
 }
+
+/**
+ * Head and shoulders only, for small places (the top bar, a dock): the same
+ * figure, framed by its viewBox.
+ */
+export function bustSvg(opts = {}, size = 40) {
+  return characterSvg({ ...opts, stage: false })
+    .replace('viewBox="0 0 200 360"', 'viewBox="45 4 110 110"')
+    .replace(/width="\d+" height="\d+"/, `width="${size}" height="${size}"`);
+}
