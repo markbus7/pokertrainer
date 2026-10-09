@@ -2574,7 +2574,7 @@ button.char-fact:hover { border-color: var(--brass-lo); box-shadow: 0 0 0 1px va
 .size-habits + p { margin-top: var(--s-3); }
 /* The way round the character page, and your money decisions. */
 .char-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 var(--s-2); }
-.char-money, .char-sizes, .char-hands, .char-results, .char-river { scroll-margin-top: 84px; }
+.char-money, .char-snags, .char-sizes, .char-hands, .char-results, .char-river { scroll-margin-top: 84px; }
 .leak-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--s-4); margin-top: var(--s-4); }
 .leaks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .leak { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--s-2); padding: 6px var(--s-3); border-left: 3px solid var(--ink-red); background: var(--paper-2); border-radius: 0 8px 8px 0; }
@@ -4130,3 +4130,23 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .take-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--brass-lo), var(--brass-hi)); }
 .take-meter.reached { border-color: var(--brass-hi); box-shadow: 0 0 0 1px var(--brass-hi), 0 0 14px rgba(255, 255, 255, 0.18); }
 .take-meter.reached .take-line { color: var(--brass-hi); }
+
+/* ---- Your snags (screenCharacter.js snagsPanel) ---- */
+.snags { list-style: none; padding: 0; margin: var(--s-3) 0; display: grid; gap: 6px; }
+.snag {
+  display: grid; grid-template-columns: 3.4em minmax(0, 1fr) auto auto; gap: 2px var(--s-3); align-items: center;
+  padding: 6px var(--s-3); border-left: 3px solid var(--brass-lo); background: var(--paper-2); border-radius: 0 8px 8px 0;
+}
+.snag-hand { grid-row: 1 / span 2; font-family: var(--font-print); font-weight: 700; font-size: var(--t-lg); }
+.snag-where { font-weight: 650; }
+.snag-head { grid-column: 2; font-size: var(--t-xs); }
+.snag-times { grid-row: 1 / span 2; grid-column: 3; font-size: var(--t-sm); font-weight: 700; }
+.snag-streak { grid-row: 1 / span 2; grid-column: 4; display: flex; gap: 4px; }
+.snag-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--ink-dim); }
+.snag-dot.lit { background: var(--ink-green); border-color: var(--ink-green); }
+.snag-note { margin-top: 10px; font-size: var(--t-sm); font-weight: 650; display: flex; align-items: center; gap: 4px; }
+@media (max-width: 640px) {
+  .snag { grid-template-columns: 3em minmax(0, 1fr) auto; }
+  .snag-times { grid-column: 3; grid-row: 1; }
+  .snag-streak { grid-column: 3; grid-row: 2; }
+}

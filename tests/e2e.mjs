@@ -4426,6 +4426,52 @@ await step('the cat remembers: a hand gone wrong before warns you in the same sp
   }
 });
 
+await step('your snags: a spot gone wrong at a table, sailed three times right, comes off the list and pays', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const np = await ctx.newPage();
+  const mine = [];
+  np.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const KEY = 'poker-trainer.profile.v1';
+  const saved = () => np.evaluate((key) => JSON.parse(localStorage.getItem(key)), KEY);
+  const text = (sel) => np.evaluate((q) => { const n = document.querySelector(q); return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
+  try {
+    await np.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    // Folded aces under the gun once: the opening chart says raise, every time.
+    await np.evaluate((key) => localStorage.setItem(key, JSON.stringify({
+      seenPrologue: true, economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: [], boat: 'rowboat', crew: [] },
+      lifetime: { version: 1, mistakes: [{ key: 'AA', street: 'preflop', action: 'fold', id: 'folded-open', head: 'Inside the opening range', better: 'Raise', position: 'UTG', facing: 'first', at: Date.now() - 1000 }] },
+      settings: { lang: 'en' },
+    })), KEY);
+    await np.goto(`${BASE}/?snags=1#character?at=snags`, { waitUntil: 'domcontentloaded' });
+    await np.waitForSelector('.char-snags .snag', { timeout: 8000 });
+    const panel = await text('.char-snags');
+    if (!/AA\s*under the gun, first in/.test(panel) || !/once/.test(panel)) throw new Error(`the snags panel reads "${panel.slice(0, 200)}"`);
+    if (!/One snag on your list/.test(await text('.dock-says')) && !/costliest|Today/.test(await text('.dock-says'))) throw new Error(`Silas says "${await text('.dock-says')}"`);
+    await np.click('.char-snags .btn.primary');
+    for (let i = 1; i <= 3; i++) {
+      await np.waitForSelector('.options .option:not([disabled])', { timeout: 5000 });
+      if (!/It folds to you in the Under the Gun/.test(await text('.question'))) throw new Error(`question ${i} asks "${await text('.question')}"`);
+      await np.click('.options .option:has(span:text-is("Raise"))');
+      await np.waitForSelector('.feedback.correct', { timeout: 3000 });
+      const note = await text('.snag-note');
+      const want = i < 3 ? `${i} of 3 in a row on this snag` : 'Cleared: off the list, and 15 pearls';
+      if (!note.includes(want)) throw new Error(`after answer ${i} the snag says "${note}"`);
+      await np.click('.row .btn.primary');
+    }
+    await np.waitForFunction(() => /Snags sailed/.test(document.querySelector('#screen').textContent), null, { timeout: 5000 });
+    if (!/1 cleared this time; 0 still on the list/.test(await text('#screen'))) throw new Error('the end of the sitting does not count the snag cleared');
+    const after = await saved();
+    if (after.economy.pearls !== 15) throw new Error(`clearing paid ${after.economy.pearls} pearls`);
+    await np.goto(`${BASE}/?snags=2#character?at=snags`, { waitUntil: 'domcontentloaded' });
+    await np.waitForSelector('.char-snags', { timeout: 5000 });
+    if (!/No snags/.test(await text('.char-snags'))) throw new Error('the cleared snag is still on the list');
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log('      AA under the gun, first in: raised three times, cleared, 15 pearls, off the list');
+  } finally {
+    await ctx.close();
+  }
+});
+
 await step('the rail says which build this is, on a desktop and on a phone', async () => {
   // "Do I have the right one?" has to be a glance. The version was inside the
   // ledger; it is now on the rail of every screen, under the crest, and the

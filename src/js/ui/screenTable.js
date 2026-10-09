@@ -40,6 +40,7 @@ import { wandererFor } from '../data/wanderers.js';
 import { ensureContracts, noteEvent as noteContract, contractText } from '../state/contracts.js';
 import { furthestStop, seatInPearls, payRoomCut, companionByKey } from '../state/economy.js';
 import { facingOf, mistakesHere } from '../state/lifetime.js';
+import { SEAT_WORDS, FACING_WORDS } from '../state/snags.js';
 import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
@@ -142,9 +143,9 @@ function referenceDrawer(session, hero, table, draw) {
 }
 
 /** The spot, in words, for the cat: what was in front of you, and on which street. */
-const SPOT_TEXT = { first: 'first in', raised: 'facing a raise', limped: 'after a limp', bet: 'facing a bet', checked: 'checked to you' };
+const SPOT_TEXT = FACING_WORDS;
 const STREET_TEXT = { flop: 'on the flop', turn: 'on the turn', river: 'on the river' };
-const SEAT_TEXT = { UTG: 'under the gun', HJ: 'in the hijack', CO: 'in the cutoff', BTN: 'on the button', SB: 'in the small blind', BB: 'in the big blind' };
+const SEAT_TEXT = SEAT_WORDS;
 
 /**
  * What the hand came to for you, in words. Nothing won and nothing lost is a
@@ -1253,6 +1254,7 @@ export function renderTable(ctx, params = {}) {
       // The spot, for the cat to know it again.
       position: snap.position || null,
       facing: facingOf(snap, table.street),
+      raiser: snap.raiser || null,
     });
     // Silas's contracts count sound decisions at a real table, for the skill they name.
     if (pays) payContracts(noteContract(profile, { type: 'decision', skill: verdict.concept.id, level: said.level, helped }));

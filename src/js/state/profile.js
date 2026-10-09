@@ -226,6 +226,8 @@ const emptyProfile = () => ({
   economy: emptyEconomy(),
   // The Catch Book: species key -> { count, best (lb), where, first }.
   catchBook: {},
+  // Your snags in practice (state/snags.js): spot id -> { streak, cleared }.
+  snags: {},
   // lang and theme both live in settings so they travel with the cloud
   // sync: pick Dutch and Daylight on the iPad and the iPhone matches,
   // without setting either twice.

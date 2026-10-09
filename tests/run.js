@@ -21,6 +21,7 @@ const modules = [
   './icm.test.js',
   './character.test.js',
   './guide.test.js',
+  './snags.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',
