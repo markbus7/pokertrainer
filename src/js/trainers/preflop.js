@@ -474,3 +474,60 @@ export function chartBoundaryDrill(rng, difficulty = 2) {
     xp: 10 + difficulty * 2,
   };
 }
+
+/** Seats in the order they act before the flop, for who can have opened or limped in front of you. */
+const ACT_ORDER = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+
+/**
+ * One of your snags, asked again: the same hand in the same seat with the
+ * same thing in front of you, the suits dealt fresh. A raise comes from the
+ * seat that raised last time when it is known, else from a seat that could
+ * have. What it was last time comes after the answer, not before — the
+ * question is whether you know it now.
+ *
+ * @param {{id:string, key:string, position:string, facing:string, raiser?:string, head?:string, params?:object}} spot
+ */
+export function snagQuestion(spot, rng) {
+  const { key: hand, position, facing } = spot;
+  const combos = expandHandKey(hand);
+  const hole = combos[randInt(rng, combos.length)];
+  const seat = t(POSITION_INFO[position].name);
+  const before = ACT_ORDER.slice(0, ACT_ORDER.indexOf(position));
+  const earlier = before.length ? before : ['UTG'];
+  let advice;
+  let question;
+  let labels;
+  let correct;
+  let raiser = null;
+  if (facing === 'raised') {
+    raiser = spot.raiser && earlier.includes(spot.raiser) ? spot.raiser : earlier[randInt(rng, earlier.length)];
+    advice = preflopAdvice(hand, position, { action: 'vs_raise', raiser });
+    correct = advice.action === 'raise' ? '3-bet' : advice.action === 'call' ? t('Call') : t('Fold');
+    labels = ['3-bet', t('Call'), t('Fold')];
+    question = t('{raiser} opens to 2.5 big blinds and it folds to you in the {seat}. What is your move?', { raiser, seat });
+  } else if (facing === 'limped') {
+    const limper = earlier[randInt(rng, earlier.length)];
+    advice = preflopAdvice(hand, position);
+    correct = advice.action === 'raise' ? t('Raise') : t('Fold');
+    labels = [t('Raise'), t('Call'), t('Fold')];
+    question = t('{limper} limps in and it folds to you in the {seat}. What is your move?', { limper, seat });
+  } else {
+    advice = preflopAdvice(hand, position);
+    correct = advice.action === 'raise' ? t('Raise') : t('Fold');
+    labels = [t('Raise'), t('Fold'), t('Limp (call the big blind)')];
+    question = t('It folds to you in the {seat}. What is your move?', { seat });
+  }
+  const { options, answer } = buildChoices(rng, correct, labels);
+  const last = spot.head ? ` ${t('Last time at a table: “{head}”.', { head: t(spot.head, spot.params || {}) })}` : '';
+  return {
+    module: 'preflop',
+    difficulty: 3,
+    snag: spot.id,
+    scenario: { hole, position, heroSeat: position, positionName: seat, ...(raiser ? { raiser } : {}) },
+    question,
+    options,
+    answer,
+    explanation: `${advice.reason}${last}`,
+    xp: 15,
+  };
+}

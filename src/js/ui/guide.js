@@ -24,6 +24,7 @@ import { moneyHabits, sizeHabits } from '../state/lifetime.js';
 import { purseWorth } from '../state/economy.js';
 import { whoYouAre } from '../state/character.js';
 import { allTerms } from '../data/glossary.js';
+import { openSnags, SEAT_WORDS, FACING_WORDS } from '../state/snags.js';
 import { dateKey, doneToday, liveStreak } from '../state/daily.js';
 
 /** Him, head to toe: the long coat and the wide hat, white whiskers, a cup of tea. */
@@ -97,6 +98,20 @@ export function sayings(profile, route, now = new Date()) {
     });
   }
 
+  // The snags: the spots before the flop you keep going wrong in.
+  const snags = openSnags(profile);
+  if (snags.length) {
+    said.push({
+      key: 'snags',
+      text: snags.length === 1
+        ? 'One snag on your list: a spot before the flop you went wrong in at a table. Sail it with me — three right in a row and it comes off.'
+        : 'You have {n} snags: spots before the flop you keep going wrong in. Sail them with me — three right in a row and each one comes off the list.',
+      params: { n: snags.length },
+      to: { route: 'drill', params: { mode: 'snags' } },
+      label: 'Sail your snags',
+    });
+  }
+
   // The sizes: which kind of bet runs small or big.
   const worst = sizeHabits(life).worst;
   if (worst && (worst.miss === 'small' || worst.miss === 'big')) {
@@ -142,7 +157,7 @@ export function sayings(profile, route, now = new Date()) {
   RULES.forEach((text, i) => said.push({ key: `rule${i}`, text, params: {} }));
 
   // What this screen is about goes first.
-  const first = { character: ['leak', 'sizes'], stats: ['leak', 'sizes'], review: ['leak'], store: ['pearls'], home: ['daily', 'leak', 'sizes'], stop: ['road'] }[route] || [];
+  const first = { character: ['leak', 'snags', 'sizes'], stats: ['leak', 'snags', 'sizes'], review: ['snags', 'leak'], store: ['pearls'], home: ['daily', 'snags', 'leak', 'sizes'], stop: ['road'] }[route] || [];
   const rank = (s) => {
     const i = first.indexOf(s.key);
     return i === -1 ? first.length : i;
@@ -161,6 +176,7 @@ export const QUESTIONS = [
   { key: 'doing', q: 'How am I doing?' },
   { key: 'next', q: 'What should I do next?' },
   { key: 'leak', q: 'Where am I losing money?' },
+  { key: 'snags', q: 'Where do I keep going wrong?' },
   { key: 'size', q: 'Am I betting the right size?' },
   { key: 'type', q: 'What kind of player am I?' },
   { key: 'pearls', q: 'What are my pearls worth?' },
@@ -185,6 +201,14 @@ export function answer(profile, key, rng = Math.random) {
     const road = journeyState(profile).next;
     if (!road || !road.goal) return { lines: [{ text: 'The road is done. Now it is the tables, and every decision at them.' }] };
     return { lines: [{ text: 'Next on the road: {goal}', params: { goal: goalText(road.goal) } }], to: road.goal.to, label: goLabel(road.goal) };
+  }
+  if (key === 'snags') {
+    const snags = openSnags(profile);
+    if (!snags.length) return { lines: [{ text: 'No snags: no spot before the flop you keep going wrong in. Keep playing, and I will keep watching.' }] };
+    const s = snags[0];
+    const lines = [{ text: 'Your worst snag: {hand} {seat}, {spot}, {n} times now — “{head}”.', params: { hand: s.key, seat: t(SEAT_WORDS[s.position]), spot: t(FACING_WORDS[s.facing]), n: s.times, head: t(s.head, s.params || {}) } }];
+    if (snags.length > 1) lines.push({ text: 'And {n} more on the list.', params: { n: snags.length - 1 } });
+    return { lines, to: { route: 'drill', params: { mode: 'snags' } }, label: 'Sail your snags' };
   }
   if (key === 'leak') {
     const m = moneyHabits(life);
@@ -226,6 +250,7 @@ export function answer(profile, key, rng = Math.random) {
 
 /** Words that mean one of the questions, in either language. */
 const ASKS = [
+  ['snags', /keep going wrong|keep getting|again and again|over and over|snag|steeds|telkens|keer op keer/],
   ['leak', /leak|losing|lose|lost|mistake|lek|verlie|fout/],
   ['size', /size|how much|too much|too little|too big|too small|betting|sizing|inzet|hoeveel|te veel|te weinig/],
   ['next', /next|what now|what should|volgende|wat nu|wat moet/],

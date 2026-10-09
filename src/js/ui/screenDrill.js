@@ -8,6 +8,8 @@ import { copyButton } from './copySpot.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
 import { generateQuestion, generateGauntlet, difficultyForLevel, DRILL_MODULE_IDS } from '../trainers/index.js';
 import { dateKey, dailyQuestions, recordDaily, DAILY_PASS } from '../state/daily.js';
+import { openSnags, snagSitting, noteSnag, SNAG_CLEAR, SNAG_PEARLS } from '../state/snags.js';
+import { snagQuestion } from '../trainers/preflop.js';
 import { checkAchievements } from '../state/achievements.js';
 import {
   masteryTier, nextTierGoal, promotion, tierByKey, EVIDENCE_BAR, tierPlan, REQUIREMENTS,
@@ -260,7 +262,9 @@ export function renderDrill(ctx, params) {
   const gauntlet = params.mode === 'gauntlet';
   // Today's three questions: a short mixed set, like the race but not a race.
   const daily = params.mode === 'daily';
-  const mixed = gauntlet || daily;
+  // Your snags: the spots before the flop you went wrong in at a table, asked again.
+  const snags = params.mode === 'snags';
+  const mixed = gauntlet || daily || snags;
   const meta = mixed ? null : moduleMeta(params.module);
   if (!mixed && !meta) return el('div.empty', 'Unknown module.');
   if (!mixed && !ownsLesson(ctx.profile, meta.id)) return lockedChapter(ctx, meta);
@@ -271,7 +275,19 @@ export function renderDrill(ctx, params) {
   // still on the shelf would be a test of something nobody has taught you.
   const queue = gauntlet ? generateGauntlet(rng, profile.level, 10, ownedModules(profile).map((m) => m.id))
     : daily ? dailyQuestions(dateKey(), ownedModules(profile).map((m) => m.id).filter((id) => DRILL_MODULE_IDS.includes(id)), difficultyForLevel(profile.level))
-      : [];
+      : snags ? snagSitting(openSnags(profile), rng).map((spot) => ({
+        ...snagQuestion(spot, rng), moduleName: moduleMeta('preflop').name, icon: moduleMeta('preflop').icon,
+      }))
+        : [];
+  if (snags && !queue.length) {
+    return el('div.screen.test', el('div.panel.page.paper',
+      el('h1', t('No snags')),
+      silasSays(t('Nothing on the list. Every spot before the flop you went wrong in at a table is cleared. Go and play: a new one turns up here the moment you run into it.'), { typed: false, size: 60 }),
+      el('div.row', { style: { marginTop: '16px' } },
+        el('button.btn.primary', { onclick: () => go('home') }, t('Back to the river')),
+        el('button.btn.ghost', { onclick: () => go('character', { at: 'snags' }) }, t('Your character'))),
+    ));
+  }
 
   // A session used to run forever, so there was no moment of having finished
   // and no target to aim at. It is now a fixed length with a stated pass mark,
@@ -279,7 +295,7 @@ export function renderDrill(ctx, params) {
   // only mode available.
   const endless = params.endless === '1';
   const SESSION_LENGTH = 10;
-  const PASS_MARK = daily ? DAILY_PASS : 8;
+  const PASS_MARK = daily ? DAILY_PASS : snags ? Math.max(1, Math.ceil(queue.length * 0.75)) : 8;
   // The Gauntlet is run as a race against the Belle, in whatever boat you
   // have worked your way up to. Her pace is the pass mark.
   const raceBoat = gauntlet ? riverState(profile).boat.key : null;
@@ -300,6 +316,10 @@ export function renderDrill(ctx, params) {
     // Right or wrong, per question, for the lanterns along the top.
     results: [],
     verdictLine: null,
+    // Snags: where this one stands after the answer, and how many came off the list.
+    snagNote: null,
+    cleared: 0,
+    snagPearls: 0,
   };
 
   const sessionLength = mixed ? queue.length : SESSION_LENGTH;
@@ -365,6 +385,7 @@ export function renderDrill(ctx, params) {
         el('div',
           el('h1', { style: { margin: 0 } }, gauntlet
             ? (passed ? t('You beat the Belle') : t('The Belle got there first'))
+            : snags ? t('Snags sailed')
             : daily ? (passed ? t('A good day on the river') : t('That is today\'s set'))
               : passed ? 'Session passed' : 'Session complete'),
           el('div.muted', t('{correct} of {answered} correct — {pct}',
@@ -394,6 +415,11 @@ export function renderDrill(ctx, params) {
           el('span', day.counted
             ? t('for today\'s set. {n} days in a row, and your best is {best}.', { n: day.streak, best: day.best })
             : t('You did today\'s set already, so this one was practice and pays nothing. Your streak is {n}.', { n: day.streak })))
+        : null,
+      snags
+        ? el('div.race-prize.daily-prize',
+          state.snagPearls ? pearls(state.snagPearls, { className: 'big' }) : null,
+          el('span', t('{n} cleared this time; {left} still on the list.', { n: state.cleared, left: openSnags(profile).length })))
         : null,
       silasSays(t(verdictText(pct, gauntlet)), { typed: false, size: 60 }),
       el('div.grid.cols-3',
@@ -436,14 +462,18 @@ export function renderDrill(ctx, params) {
     );
 
     mount(footer,
-      daily
+      snags
+        ? el('button.btn.primary', { onclick: () => go('drill', { mode: 'snags' }) }, t('Sail them again'))
+      : daily
         ? el('button.btn.primary', { onclick: () => go('home') }, t('Back to the river'))
         : el('button.btn.primary', { onclick: () => go(gauntlet ? 'gauntlet' : 'drill', { module: params.module }) },
           gauntlet ? t('Race again') : 'Another session'),
       !mixed
         ? el('button.btn.ghost', { onclick: () => go('drill', { module: params.module, endless: '1' }) }, 'Endless practice')
         : null,
-      daily
+      snags
+        ? el('button.btn.ghost', { onclick: () => go('character', { at: 'snags' }) }, t('Your character'))
+      : daily
         ? el('button.btn.ghost', { onclick: () => go('drill', { mode: 'daily' }) }, t('Go through them again'))
         : gauntlet
           ? el('button.btn.ghost', { onclick: () => go('home') }, 'Back to the river')
@@ -532,6 +562,17 @@ export function renderDrill(ctx, params) {
     // place — but crediting it would let mastery be earned by lookup.
     profile.recordDrill(q.module, wasCorrect && !state.peeked);
     review(profile, q.module, wasCorrect);
+    if (q.snag) {
+      const r = noteSnag(profile, q.snag, wasCorrect && !state.peeked);
+      state.snagNote = r;
+      if (r.cleared) {
+        state.cleared += 1;
+        state.snagPearls += r.pearls;
+        audio.sfx('bell');
+        if (r.pearls) pearlPop(r.pearls);
+        toast({ icon: '⚓', title: t('Snag cleared'), desc: t('{hand} comes off the list — until you go wrong in it at a table again.', { hand: q.scenario.positionName ? `${handKey(q.scenario.hole)}, ${q.scenario.positionName}` : handKey(q.scenario.hole) }) });
+      }
+    }
     checkAchievements(profile).forEach((a) => toast({ icon: a.icon, title: a.name, desc: a.description }));
     draw(key);
   };
@@ -543,7 +584,7 @@ export function renderDrill(ctx, params) {
         el('div.row',
           el('span.module-glyph', icon(q.icon, { size: 20 })),
           el('div',
-            el('div.book-title', gauntlet ? t('The Race') : daily ? t('Today\'s question') : t(q.moduleName)),
+            el('div.book-title', gauntlet ? t('The Race') : daily ? t('Today\'s question') : snags ? t('Your snags') : t(q.moduleName)),
             el('div.faint', mixed
               ? t('Question {n} of {total} · {module}', { n: state.index, total: queue.length, module: t(q.moduleName) })
               : bounded
@@ -602,6 +643,13 @@ export function renderDrill(ctx, params) {
         // Through richText, not as a bare string: the explanations carry
         // **emphasis**, and every jargon word in them can explain itself.
         el('div', richText(q.explanation)),
+        q.snag && state.snagNote
+          ? el('div.snag-note', icon('anchor', { size: 14 }), ' ', state.snagNote.cleared
+            ? t('Cleared: off the list, and {n} pearls.', { n: SNAG_PEARLS })
+            : state.snagNote.streak
+              ? t('{n} of {of} in a row on this snag.', { n: state.snagNote.streak, of: SNAG_CLEAR })
+              : t('Back to the start on this snag: {of} in a row clears it.', { of: SNAG_CLEAR }))
+          : null,
       ),
     );
 

@@ -103,6 +103,20 @@ Think twice."* That is free: it says you were wrong here, not what is right.
 Tap **What was right?** and she tells you — what was right instead, and the
 chart for your seat with your hand ringed — and that is help like any other.
 
+### ⚓ Your snags
+
+A snag is a spot before the flop you went wrong in at a real table: the same
+hand, in the same seat, with the same thing in front of you (first in, a
+raise, a limp). Your character page lists them, the most often first, with
+what went wrong last time and a streak of three dots. **Sail your snags**
+deals them again on purpose — your hand, your seat, the raise from the seat
+that raised — and asks what you do, graded against the chart. Right three
+times in a row and a snag comes off the list, for 15 pearls; wrong, and its
+streak starts again. A cleared snag stays off until you go wrong in it at a
+table again. Practice never adds one, so it cannot be farmed. Silas points
+you there when you have some, and *Where do I keep going wrong?* is one of
+the things you can ask him.
+
 ### 🦈 Opponents with real leaks
 
 Six profiles, each statistically distinct and each beatable a different way:
@@ -378,7 +392,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.23.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.24.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

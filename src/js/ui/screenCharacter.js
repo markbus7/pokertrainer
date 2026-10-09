@@ -38,6 +38,7 @@ import { describeScore, CAT_NAMES } from '../core/evaluator.js';
 import { RANK_CHARS, RANK_PLURALS, RANK_NAMES } from '../core/cards.js';
 import { VENUES } from '../data/venues.js';
 import { purseWorth } from '../state/economy.js';
+import { openSnags, SNAG_CLEAR, SNAG_PEARLS, SEAT_WORDS, FACING_WORDS } from '../state/snags.js';
 import { PROFILES, WANDERER_PROFILES } from '../engine/bots.js';
 import { RIVAL } from '../data/rival.js';
 import { SPECIES } from '../data/fish.js';
@@ -50,7 +51,7 @@ export function renderCharacter(ctx) {
   const { profile, go } = ctx;
   const me = whoYouAre(profile);
   // Sent to one part of the page (Silas does that): there, once it is drawn.
-  const at = { money: 'char-money', sizes: 'char-sizes', hands: 'char-hands' }[ctx.params && ctx.params.at];
+  const at = { money: 'char-money', snags: 'char-snags', sizes: 'char-sizes', hands: 'char-hands' }[ctx.params && ctx.params.at];
   if (at) {
     setTimeout(() => {
       const node = document.querySelector(`.${at}`);
@@ -65,6 +66,7 @@ export function renderCharacter(ctx) {
     numbersPanel(me),
     resultsPanel(me),
     moneyPanel(me),
+    snagsPanel(profile, go),
     sizesPanel(me),
     handsPanel(me, go),
     famePanel(me),
@@ -958,6 +960,7 @@ function madeBars(me) {
 /** The page is long: a row of links to the parts people come looking for. */
 const SECTIONS_NAV = [
   ['char-money', 'Money decisions'],
+  ['char-snags', 'Your snags'],
   ['char-sizes', 'Bet sizes'],
   ['char-hands', 'Your hands'],
   ['char-results', 'Results'],
@@ -972,6 +975,38 @@ function pageNav() {
         if (node) node.scrollIntoView({ behavior: 'smooth', block: 'start' });
       },
     }, t(label))));
+}
+
+/* ---- your snags -------------------------------------------------------- */
+
+/**
+ * The spots before the flop you keep going wrong in at a table, and the way
+ * to sail them: practice deals each again until it is right three times in a
+ * row, and then it comes off the list.
+ */
+function snagsPanel(profile, go) {
+  const snags = openSnags(profile);
+  const shown = snags.slice(0, 8);
+  return el('section.panel.paper.char-snags',
+    el('div.panel-title',
+      el('h2', t('Your snags')),
+      snags.length ? el('span.faint', t('{n} on the list', { n: snags.length })) : null),
+    el('p.faint', t('The spots before the flop you went wrong in at a real table: the same hand, the same seat, the same thing in front of you. Practise them until each is right {n} times in a row, and it comes off the list — {pearls} pearls each.', { n: SNAG_CLEAR, pearls: SNAG_PEARLS })),
+    snags.length
+      ? el('div',
+        el('ul.snags', shown.map((s) => el('li.snag',
+          el('span.snag-hand', s.key),
+          el('span.snag-where', `${t(SEAT_WORDS[s.position])}, ${t(FACING_WORDS[s.facing])}`),
+          el('span.snag-head.faint', `“${t(s.head, s.params || {})}”`),
+          el('span.snag-times', s.times === 1 ? t('once') : t('{n} times', { n: s.times })),
+          el('span.snag-streak', { title: t('{n} of {of} in a row', { n: s.streak, of: SNAG_CLEAR }) },
+            Array.from({ length: SNAG_CLEAR }, (_, i) => el(`span.snag-dot${i < s.streak ? '.lit' : ''}`))),
+        ))),
+        snags.length > shown.length ? el('p.faint', t('And {n} more.', { n: snags.length - shown.length })) : null,
+        el('button.btn.primary', { type: 'button', onclick: () => go('drill', { mode: 'snags' }) }, icon('anchor', { size: 16 }), ' ', t('Sail your snags')),
+      )
+      : el('p.faint', t('No snags. Every spot before the flop you went wrong in at a table is cleared — or you have not gone wrong in one yet.')),
+  );
 }
 
 /* ---- your money decisions ---------------------------------------------- */

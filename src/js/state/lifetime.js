@@ -465,6 +465,8 @@ function sanitizeMistake(m) {
     // what makes it the same spot when the hand comes back.
     position: text(m.position, 4),
     facing: FACINGS.includes(m.facing) ? m.facing : null,
+    // Who raised, when it was a raise you faced: so the spot can be dealt again.
+    raiser: text(m.raiser, 4),
   };
 }
 
@@ -479,6 +481,41 @@ export function facingOf(snap, street) {
   if (!snap) return null;
   if (street === 'preflop') return snap.firstIn ? 'first' : snap.raiser ? 'raised' : 'limped';
   return snap.toCall > 0 ? 'bet' : 'checked';
+}
+
+/** The spots before the flop the snags are made of: a seat and what was in front of you. */
+const SNAG_FACINGS = ['first', 'raised', 'limped'];
+const SNAG_SEATS = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+
+/**
+ * Your snags: every spot before the flop you went wrong in, the same hand in
+ * the same seat with the same thing in front of you, gathered into one with
+ * how often and when last. A snag cleared in practice stays off the list
+ * until you go wrong in it again at a table. The most often first.
+ *
+ * @param {object} life
+ * @param {Object<string,{cleared:number}>} [practice]  profile.data.snags
+ */
+export function snagsOf(life, practice = {}) {
+  const spots = new Map();
+  for (const m of life.mistakes) {
+    if (m.street !== 'preflop' || !SNAG_SEATS.includes(m.position) || !SNAG_FACINGS.includes(m.facing)) continue;
+    // The big blind is never first in, and with only limpers in front of it there is no chart to ask.
+    if (m.position === 'BB' && m.facing !== 'raised') continue;
+    const id = `${m.key}|${m.position}|${m.facing}`;
+    const at = Number.isFinite(m.at) ? m.at : 0;
+    const spot = spots.get(id);
+    if (!spot) {
+      spots.set(id, { id, key: m.key, position: m.position, facing: m.facing, raiser: m.raiser || null, times: 1, last: at, head: m.head, better: m.better, params: m.params });
+    } else {
+      spot.times += 1;
+      if (at > spot.last) Object.assign(spot, { last: at, head: m.head, better: m.better, params: m.params, raiser: m.raiser || spot.raiser });
+      if (!spot.raiser && m.raiser) spot.raiser = m.raiser;
+    }
+  }
+  return [...spots.values()]
+    .filter((s) => !(practice[s.id] && practice[s.id].cleared >= s.last))
+    .sort((a, b) => b.times - a.times || b.last - a.last);
 }
 
 /**
