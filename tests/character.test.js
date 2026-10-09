@@ -15,7 +15,7 @@ const deepEqual = (a, b, msg = '') => equal(JSON.stringify(a), JSON.stringify(b)
 import { Profile } from '../src/js/state/profile.js';
 import {
   emptyLifetime, sanitizeLifetime, recordHand, styleNumbers, styleFromReports, cashResults,
-  startingHands, seats, rivals, soundRate, handRatings, mistakesWith, praiseFor, sizeHabits, moneyHabits, LIFE_SAMPLE, MISTAKES_KEPT, PRAISE_KINDS,
+  startingHands, seats, rivals, soundRate, handRatings, mistakesWith, praiseFor, sizeHabits, moneyHabits, mistakesHere, facingOf, LIFE_SAMPLE, MISTAKES_KEPT, PRAISE_KINDS,
 } from '../src/js/state/lifetime.js';
 import { seatOf, seatValue, chipsValue, doublingTarget, keepSeat, clearSeat } from '../src/js/state/seat.js';
 import { PLAYER_TYPES, REGULARS, BOUNDS, HEALTHY, playerType } from '../src/js/data/playerTypes.js';
@@ -748,3 +748,47 @@ describe('your money decisions: every call, fold, bet and raise, and what the mi
     assert(Object.keys(life.leaks).length <= 80, 'no more than eighty kinds');
   });
 });
+
+describe('the cat remembers: a mistake kept with its seat and what was in front of you', () => {
+  const bad = (over = {}) => ({
+    street: 'preflop', action: 'call', level: 'bad', helped: false, id: 'flatted-value', head: 'Too strong to just call',
+    better: '3-bet', costBb: 1, position: 'BTN', facing: 'raised', ...over,
+  });
+
+  it('names the spot from a decision: first in, after a raise or a limp, facing a bet or checked to', () => {
+    equal(facingOf({ firstIn: true }, 'preflop'), 'first');
+    equal(facingOf({ firstIn: false, raiser: 'CO' }, 'preflop'), 'raised');
+    equal(facingOf({ firstIn: false, raiser: null }, 'preflop'), 'limped');
+    equal(facingOf({ toCall: 4 }, 'flop'), 'bet');
+    equal(facingOf({ toCall: 0 }, 'river'), 'checked');
+    equal(facingOf(null, 'flop'), null);
+  });
+
+  it('finds the mistakes made before in the very same spot, and no other', () => {
+    const life = emptyLifetime();
+    recordHand(life, hand({ key: 'AQo', vpip: true, graded: [bad(), bad({ street: 'flop', facing: 'bet' })] }));
+    recordHand(life, hand({ key: 'AQo', vpip: true, graded: [bad({ position: 'CO' })] }));
+    recordHand(life, hand({ key: 'AQo', vpip: true, graded: [bad()] }));
+    const here = { key: 'AQo', street: 'preflop', position: 'BTN', facing: 'raised' };
+    equal(mistakesHere(life, here).length, 2, 'twice on the button against a raise');
+    equal(mistakesHere(life, { ...here, facing: 'first' }).length, 0, 'first in is a different spot');
+    equal(mistakesHere(life, { ...here, position: 'CO' }).length, 1);
+    equal(mistakesHere(life, { ...here, key: 'AQs' }).length, 0, 'a different hand');
+    equal(mistakesHere(life, { key: 'AQo', street: 'flop', position: 'BTN', facing: 'bet' }).length, 1);
+    equal(mistakesHere(life, { ...here, position: null }).length, 0, 'nothing without a seat');
+  });
+
+  it('keeps the seat and the spot through a save, and drops what is not one', () => {
+    const life = sanitizeLifetime({ mistakes: [
+      { key: 'KJs', head: 'Outside the range', position: 'UTG', facing: 'first' },
+      { key: 'KJs', head: 'Outside the range', position: 'UTG-LONG', facing: 'sideways' },
+      { key: 'KJs', head: 'Outside the range' },
+    ] });
+    equal(life.mistakes[0].position, 'UTG');
+    equal(life.mistakes[0].facing, 'first');
+    equal(life.mistakes[1].position, null);
+    equal(life.mistakes[1].facing, null);
+    equal(life.mistakes[2].facing, null, 'a mistake from before the cat remembered is kept, without a spot');
+  });
+});
+

@@ -275,7 +275,7 @@ export const COMPANIONS = [
   },
   {
     key: 'cat', name: 'Whiskers', kind: 'Cat', price: 120, needs: { lesson: 'preflop' },
-    does: 'Sits on the chart for your seat, with your hand ringed on it.',
+    does: 'Remembers the hands you went wrong with. When one comes back in the same seat and spot, she warns you to think twice — free. Ask her, and she says what was right, on the chart for your seat.',
   },
   {
     key: 'raccoon', name: 'Bandit', kind: 'Raccoon', price: 140, needs: { lesson: 'outs' },

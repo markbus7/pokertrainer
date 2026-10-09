@@ -797,3 +797,22 @@ input[type="range"] {
 .stand-figure { padding: 0; border: 0; background: none; cursor: pointer; }
 .stand-figure svg { display: block; filter: drop-shadow(var(--shadow-sm)); animation: guide-sway 6s ease-in-out infinite; transform-origin: 50% 100%; }
 @media (prefers-reduced-motion: reduce) { .stand-figure svg { animation: none; } }
+
+/* ---- The cat remembers (screenTable.js catWarning) ---- */
+.cat-warn {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 0 10px; padding: 8px 10px;
+  background: var(--bg-card); border: 1px solid var(--accent); border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  animation: cat-in .35s ease-out;
+}
+@keyframes cat-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cat-warn { animation: none; } }
+.cat-face svg { display: block; border-radius: 50%; }
+.cat-says { flex: 1; min-width: 0; font-size: var(--t-sm); line-height: 1.4; }
+.cat-says strong { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); }
+.cat-says p { margin: 2px 0 0; }
+.cat-actions { display: flex; align-items: center; gap: 4px; flex: none; }
+.cat-hush { border: 0; background: none; color: var(--text-faint); font-size: 20px; line-height: 1; cursor: pointer; padding: 4px 8px; min-height: 36px; }
+.cat-hush:hover { color: var(--text); }
+.cat-memory { margin-bottom: 8px; }

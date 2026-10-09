@@ -4366,6 +4366,66 @@ await step('your money decisions on your character, you on the rail, and Silas a
   }
 });
 
+await step('the cat remembers: a hand gone wrong before warns you in the same spot, and asking her is help', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+  const cp = await ctx.newPage();
+  const mine = [];
+  cp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const text = (sel) => cp.evaluate((q) => { const n = document.querySelector(q); return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
+  // Thirty-three offsuit hands, gone wrong first in from every seat: one of
+  // them comes round soon enough to see her without playing all night.
+  const R = 'AKQJT98765432';
+  const keys = [];
+  for (let i = 0; i < 13 && keys.length < 33; i++) for (let j = i + 1; j < 13 && keys.length < 33; j++) keys.push(`${R[i]}${R[j]}o`);
+  const mistakes = [];
+  for (const position of ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB']) {
+    for (const key of keys) mistakes.push({ key, street: 'preflop', action: 'call', id: 'limped', head: 'Limping gives the pot away', better: 'Raise', position, facing: 'first', at: 1 });
+  }
+  const toWarning = async () => {
+    for (let i = 0; i < 600; i++) {
+      if (await cp.$('.cat-warn')) return true;
+      const deal = await cp.$('button:has-text("Deal next hand")');
+      if (deal) { await deal.click(); await cp.waitForTimeout(120); continue; }
+      const b = await cp.$('.action-buttons .btn:has-text("Fold")') || await cp.$('.action-buttons .btn:has-text("Check")');
+      if (b) await b.click().catch(() => {});
+      await cp.waitForTimeout(120);
+    }
+    return false;
+  };
+  try {
+    await cp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await cp.evaluate((m) => localStorage.setItem('poker-trainer.profile.v1', JSON.stringify({
+      seenPrologue: true, walkthroughs: ['hand-rankings', 'preflop'],
+      economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: ['lesson:hand-rankings', 'lesson:preflop', 'pet:cat'], boat: 'rowboat', crew: ['cat'] },
+      lifetime: { version: 1, mistakes: m }, settings: { lang: 'en', autoDeal: false, liveCoach: false },
+    })), mistakes.slice(0, 198));
+    await cp.goto(`${BASE}/?cat=1#play`, { waitUntil: 'domcontentloaded' });
+    await cp.waitForSelector('.felt', { timeout: 8000 });
+    await cp.click('button:has-text("Deal me in")');
+    if (!(await toWarning())) throw new Error('the cat never spoke up');
+    const said = await text('.cat-warn');
+    if (!/Careful\. [AKQJT2-9]{2}o (under the gun|in the hijack|in the cutoff|on the button|in the small blind|in the big blind), first in: you went wrong here before — “Limping gives the pot away”\./.test(said)) throw new Error(`the cat said "${said}"`);
+    if (/Raise/.test(said)) throw new Error('the free warning gave the answer away');
+    if (await cp.$('.help-btn.used')) throw new Error('the warning counted as help');
+    // Closed, she is quiet for this decision.
+    await cp.click('.cat-hush');
+    if (await cp.$('.cat-warn')) throw new Error('closing the cat did not close her');
+    // The next time, ask her: the answer, and it is help.
+    const b = await cp.$('.action-buttons .btn:has-text("Fold")');
+    if (b) await b.click();
+    if (!(await toWarning())) throw new Error('the cat did not speak up a second time');
+    await cp.click('.cat-warn .btn');
+    await cp.waitForSelector('.help-drawer [data-helper="cat"]', { timeout: 3000 });
+    const help = await text('.help-drawer [data-helper="cat"]');
+    if (!/in this very spot/.test(help) || !/Instead: Raise/.test(help)) throw new Error(`asked, the cat said "${help.slice(0, 200)}"`);
+    if (!(await cp.$('.help-btn.used'))) throw new Error('asking the cat did not count as help');
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log(`      "${said.slice(0, 90)}…"; closed; asked the second time, and it counted as help`);
+  } finally {
+    await ctx.close();
+  }
+});
+
 await step('the rail says which build this is, on a desktop and on a phone', async () => {
   // "Do I have the right one?" has to be a glance. The version was inside the
   // ledger; it is now on the rail of every screen, under the crest, and the
