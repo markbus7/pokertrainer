@@ -38,7 +38,8 @@ import { remember as rivalRemembers, readOn as rivalRead } from '../state/rival.
 import { RIVAL } from '../data/rival.js';
 import { wandererFor } from '../data/wanderers.js';
 import { ensureContracts, noteEvent as noteContract, contractText } from '../state/contracts.js';
-import { furthestStop, seatInPearls, payRoomCut } from '../state/economy.js';
+import { furthestStop, seatInPearls, payRoomCut, companionByKey } from '../state/economy.js';
+import { facingOf, mistakesHere } from '../state/lifetime.js';
 import {
   startRun, recordSpot, runComplete, scoreRun, saveRun, watchFor, runHistory, RUN_LENGTH,
 } from '../state/lessonRuns.js';
@@ -139,6 +140,11 @@ function referenceDrawer(session, hero, table, draw) {
       + 'gets taken away on purpose.')),
   );
 }
+
+/** The spot, in words, for the cat: what was in front of you, and on which street. */
+const SPOT_TEXT = { first: 'first in', raised: 'facing a raise', limped: 'after a limp', bet: 'facing a bet', checked: 'checked to you' };
+const STREET_TEXT = { flop: 'on the flop', turn: 'on the turn', river: 'on the river' };
+const SEAT_TEXT = { UTG: 'under the gun', HJ: 'in the hijack', CO: 'in the cutoff', BTN: 'on the button', SB: 'in the small blind', BB: 'in the big blind' };
 
 /**
  * What the hand came to for you, in words. Nothing won and nothing lost is a
@@ -1244,6 +1250,9 @@ export function renderTable(ctx, params = {}) {
       params: said.params || {},
       // How much, apart from whether: for your character's bet sizes.
       size: verdict.size ? { kind: verdict.size.sizeKind, verdict: verdict.size.verdict, helped: verdict.size.helped } : null,
+      // The spot, for the cat to know it again.
+      position: snap.position || null,
+      facing: facingOf(snap, table.street),
     });
     // Silas's contracts count sound decisions at a real table, for the skill they name.
     if (pays) payContracts(noteContract(profile, { type: 'decision', skill: verdict.concept.id, level: said.level, helped }));
@@ -2171,12 +2180,66 @@ export function renderTable(ctx, params = {}) {
    * sitting has paid so far. The hand log folds away here in free play,
    * where there is no coach panel for it to live in.
    */
+  /** The mistakes you made before in the spot in front of you now: the same hand, street, seat and what was in front of you. */
+  function pastHere() {
+    const snap = session.snapshot;
+    if (!snap || hero.hole.length !== 2) return [];
+    return mistakesHere(profile.lifetime, {
+      key: handKey(hero.hole), street: table.street, position: snap.position, facing: facingOf(snap, table.street),
+    });
+  }
+
+  /**
+   * The cat remembers. When a hand you went wrong with comes back in the same
+   * seat and the same spot, she says so before you act: think twice. Free —
+   * it says you were wrong here once, not what is right now. Asking her what
+   * is right is help, and costs the decision its pearl like any help.
+   */
+  function catWarning(owned, yourTurn) {
+    if (lesson || !yourTurn || session.helped || !owned.some((c) => c.key === 'cat')) return null;
+    const here = `${table.handNumber}:${table.street}`;
+    if (session.catHushed === here) return null;
+    const past = pastHere();
+    if (!past.length) return null;
+    const snap = session.snapshot;
+    const latest = past[0];
+    const cat = companionByKey('cat');
+    const params = {
+      hand: handKey(hero.hole),
+      seat: SEAT_TEXT[snap.position] ? t(SEAT_TEXT[snap.position]) : snap.position,
+      spot: t(SPOT_TEXT[facingOf(snap, table.street)]),
+      street: t(STREET_TEXT[table.street] || ''),
+      head: t(latest.head, latest.params),
+    };
+    return el('div.cat-warn', { role: 'status' },
+      svgNode(portraitSvg('cat', { size: 40 }), 'cat-face'),
+      el('div.cat-says',
+        el('strong', cat.name),
+        el('p', table.street === 'preflop'
+          ? t('Careful. {hand} {seat}, {spot}: you went wrong here before — “{head}”.', params)
+          : t('Careful. {hand} {street}, {spot}: you went wrong here before — “{head}”.', params)),
+        el('p.faint', past.length > 1 ? t('{n} times now. Think twice.', { n: past.length }) : t('Think twice.')),
+      ),
+      el('div.cat-actions',
+        el('button.btn.sm', {
+          type: 'button',
+          title: t('Help with this decision. It costs the decision its pearl.'),
+          onclick: () => openHelp('cat'),
+        }, t('What was right?')),
+        el('button.cat-hush', {
+          type: 'button', title: t('Close'), 'aria-label': t('Close'),
+          onclick: () => { session.catHushed = here; draw(); },
+        }, '×'),
+      ),
+    );
+  }
+
   function drawTray() {
     const owned = crewAboard(profile);
     const yourTurn = isHeroTurn();
     const total = session.pearls.hands + session.pearls.decisions + session.pearls.bonus + session.pearls.boat + session.pearls.bounty
       + session.pearls.catches;
-    mount(trayHost, el('div.companion-tray',
+    mount(trayHost, catWarning(owned, yourTurn), el('div.companion-tray',
       el(`button.btn.help-btn${session.helped ? '.used' : ''}`, {
         disabled: !yourTurn,
         onclick: () => openHelp(null),
@@ -2228,6 +2291,7 @@ export function renderTable(ctx, params = {}) {
         };
       }),
       bestAction: () => bestAction(snap),
+      pastHere: pastHere(),
       focus: session.helpFocus,
       onClose: () => { session.helpOpen = false; draw(); },
     }));

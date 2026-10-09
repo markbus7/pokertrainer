@@ -86,6 +86,23 @@ At the end of a session it produces a **leak report** from your own stats —
 VPIP, PFR, aggression factor, WTSD — naming what you are doing wrong and what
 to do instead.
 
+### 🐈 Help, and the cat who remembers
+
+In free play nobody talks you through a hand: **Help** is a button, and
+asking costs that decision its pearl (it still teaches, it just does not
+count as solved on your own). The companions aboard your boat add to it —
+the owl does the sum, the raccoon counts outs, the turtle knows the stacks,
+the hound reads the table, the parrot says what Silas would do.
+
+The cat remembers. Every mistake is kept with the seat you were in and what
+was in front of you (first in, a raise, a limp, a bet, checked to you). With
+her aboard, when a hand you went wrong with comes back in the very same
+spot, she speaks up before you act — *"Careful. AJo on the button, facing a
+raise: you went wrong here before — 'Too strong to just call'. 2 times now.
+Think twice."* That is free: it says you were wrong here, not what is right.
+Tap **What was right?** and she tells you — what was right instead, and the
+chart for your seat with your hand ringed — and that is help like any other.
+
 ### 🦈 Opponents with real leaks
 
 Six profiles, each statistically distinct and each beatable a different way:
@@ -361,7 +378,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.22.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v3.23.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

@@ -11,7 +11,7 @@
  * question the spot is asking and repeats the facts on the felt; he does not
  * do the sum. Each companion does one thing the chapters teach, and only for
  * somebody who has read that chapter to the end — the owl works out the
- * price, the cat sits on the chart, the raccoon counts outs, the turtle
+ * price, the cat remembers your mistakes and sits on the chart, the raccoon counts outs, the turtle
  * knows the stack depth, the hound reads the table, and the parrot says what
  * Silas would do outright.
  */
@@ -119,10 +119,31 @@ function owlSays({ snap }) {
   );
 }
 
-/** The cat sits on the chart for your seat, with your hand ringed. */
-function catSays({ snap }) {
+/**
+ * What the cat remembers about this spot: your mistakes here before, and
+ * what was right instead. Asked for, so the answer is hers to give.
+ */
+function catMemory(pastHere = []) {
+  const seen = new Set();
+  const rows = pastHere.filter((m) => !seen.has(m.head) && seen.add(m.head)).slice(0, 2);
+  if (!rows.length) return null;
+  return el('div.cat-memory',
+    el('div.help-said', pastHere.length > 1
+      ? t('You have gone wrong in this very spot {n} times.', { n: pastHere.length })
+      : t('You went wrong in this very spot once before.')),
+    rows.map((m) => el('div.help-said',
+      `“${t(m.head, m.params)}”`,
+      m.better ? el('span', ' ', t('Instead:'), ' ', el('b', t(m.better, m.params))) : null)),
+  );
+}
+
+/** The cat sits on the chart for your seat, with your hand ringed, and remembers. */
+function catSays({ snap, pastHere }) {
+  const memory = catMemory(pastHere);
   if (snap.street !== 'preflop') {
-    return el('div.help-said', t('The charts are for before the flop. Now the board decides what your hand is worth.'));
+    return el('div',
+      el('div.help-said', t('The charts are for before the flop. Now the board decides what your hand is worth.')),
+      memory);
   }
   if (!snap.position || !snap.hole || snap.hole.length !== 2) {
     return el('div.help-said', t('No chart for this seat.'));
@@ -132,6 +153,7 @@ function catSays({ snap }) {
     return el('div.help-said', t('Everybody limped or folded to you in the big blind — there is no chart for this one.'));
   }
   return el('div',
+    memory,
     el('div.help-said', snap.seats != null && snap.seats < 6
       ? t('The charts are drawn for six players. With fewer at the table everybody plays more hands, so this is the tight end of what you could play. Your hand is ringed.')
       : t('Your hand is ringed. Find it and read the colour.')),

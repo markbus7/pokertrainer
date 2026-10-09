@@ -461,7 +461,33 @@ function sanitizeMistake(m) {
     handId: text(m.handId, 64),
     at: Number.isFinite(m.at) ? m.at : null,
     where: text(m.where, 24),
+    // The seat, and what was in front of you (first in, a raise, a bet…):
+    // what makes it the same spot when the hand comes back.
+    position: text(m.position, 4),
+    facing: FACINGS.includes(m.facing) ? m.facing : null,
   };
+}
+
+/** What was in front of you at a decision: the spot, apart from the hand. */
+export const FACINGS = ['first', 'raised', 'limped', 'bet', 'checked'];
+
+/**
+ * Which of FACINGS a decision snapshot was: before the flop, first in, after
+ * a raise or after a limp; after it, facing a bet or checked to.
+ */
+export function facingOf(snap, street) {
+  if (!snap) return null;
+  if (street === 'preflop') return snap.firstIn ? 'first' : snap.raiser ? 'raised' : 'limped';
+  return snap.toCall > 0 ? 'bet' : 'checked';
+}
+
+/**
+ * The mistakes you made before in this very spot: the same hand, street,
+ * seat and what was in front of you. Newest first, with how many there are.
+ */
+export function mistakesHere(life, { key, street, position, facing }) {
+  if (!key || !position || !facing) return [];
+  return life.mistakes.filter((m) => m.key === key && m.street === street && m.position === position && m.facing === facing);
 }
 
 /**
