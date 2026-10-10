@@ -77,6 +77,10 @@ export const ICON_PATHS = {
   'k-pearl': 'M12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM9.5 10a2 2 0 0 1 2-1.5M4 20c3-2 13-2 16 0',
   'k-cutlass': 'M5 19l3-3M6 14l4 4M8 16c4-4 7-9 11-13-1 5-4 10-9 15',
   'k-medal': 'M8 3l4 6 4-6M12 9a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 11.5l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z',
+  // The backwaters' trophies: a gold nugget, a gator's tooth on a string, a hymnal.
+  'k-nugget': 'M5 14l3-6 5-2 5 3 1 6-4 4H9zM9 10l2 2M14 9l1 3M11 15l3 1',
+  'k-tooth': 'M4 5c4 4 12 4 16 0M10 8c0 6 1 10 2 12 1-2 2-6 2-12M11 11h2',
+  'k-hymnal': 'M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM5 18a2 2 0 0 1 2-2h11M11 7v6M9 9h4',
 
   /* --- one per training module, drawn for the thing it teaches ---- */
   'm-hand-rankings': 'M7 4h10v16H7zM10 8h4M10 12h4M10 16h4',

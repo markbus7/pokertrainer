@@ -15,6 +15,8 @@ import { el, mount, $, toast, fmt } from './ui/dom.js';
 import { icon } from './ui/icons.js';
 import { renderRiver } from './ui/screenRiver.js';
 import { renderStop } from './ui/screenStop.js';
+import { renderTown } from './ui/screenTown.js';
+import { backwaterFor } from './data/backwaters.js';
 import { renderRangeLadder, renderRangeRun, renderRangeWeak } from './ui/screenRangeTrainer.js';
 import { Profile } from './state/profile.js';
 import * as cloudSync from './state/cloudSync.js';
@@ -54,6 +56,7 @@ import { STYLES, styleFor } from './audio/tunes.js';
 const ROUTES = {
   home: { render: renderRiver, title: 'The river', music: 'river' },
   stop: { render: renderStop, title: 'The river', music: 'river' },
+  town: { render: renderTown, title: 'The river', music: 'river' },
   train: { render: renderHome, title: 'Lessons' },
   learn: { render: renderLearn, title: 'Lesson' },
   walkthrough: { render: renderWalkthrough, title: 'Guided lesson', focus: true },
@@ -541,7 +544,7 @@ function drawSeatBar() {
   mount(bar, el('div.seatbar-inner',
     icon('cards', { size: 18 }),
     el('span.seatbar-line', t('You still have a seat at {place}, with {money} on the table.',
-      { place: t(venueFor(kept.venue).name), money: fmt.money(seatValue(kept)) })),
+      { place: t((backwaterFor(kept.table) || venueFor(kept.venue)).name), money: fmt.money(seatValue(kept)) })),
     el('div.seatbar-actions',
       el('button.btn.sm.primary', { onclick: () => go('play', { mode: 'grind', table: kept.table, resume: '1' }) }, t('Back to the table')),
       el('button.btn.sm.ghost', { onclick: () => go('play', { mode: 'grind', table: kept.table, resume: '1', cashout: '1' }) }, t('Cash out')),

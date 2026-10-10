@@ -23,6 +23,7 @@ const modules = [
   './guide.test.js',
   './snags.test.js',
   './gulf.test.js',
+  './backwaters.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',

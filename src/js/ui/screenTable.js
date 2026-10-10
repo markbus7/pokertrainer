@@ -33,6 +33,8 @@ import {
 import { READ_BANDS, nearestBand, marginFor } from '../core/handRead.js';
 import { emptyMemory, watch, adaptationNote, ADAPT_FULL } from '../engine/adapt.js';
 import { lobbyFor, chosenRank } from '../state/lobby.js';
+import { tableAt, handsKey, noteTownSitting } from '../state/backwaters.js';
+import { backwaterFor } from '../data/backwaters.js';
 import { seatOf, keepSeat, clearSeat, chipsValue, doublingTarget } from '../state/seat.js';
 import { remember as rivalRemembers, readOn as rivalRead } from '../state/rival.js';
 import { RIVAL } from '../data/rival.js';
@@ -205,8 +207,7 @@ function tableKey(params, profile) {
     const kept = seatOf(profile);
     const venueKey = params.at && VENUES.some((v) => v.key === params.at) ? params.at
       : params.resume === '1' && kept && kept.mode === 'grind' ? kept.venue : profile.career.venue;
-    const tables = lobbyFor(venueFor(venueKey), profile.sittings).tables;
-    const seatId = (tables.find((x) => x.id === params.table) || tables[0]).id;
+    const seatId = tableAt(venueFor(venueKey), profile.sittings, params.table).id;
     return `grind:${venueKey}:${seatId}`;
   }
   if (params.mode === 'duel') return `duel:${params.at}`;
@@ -256,9 +257,9 @@ export function renderTable(ctx, params = {}) {
   const keptKey = kept && kept.mode === 'grind' ? `grind:${kept.venue}:${kept.table}` : null;
   if (keptKey && !params.lesson && key !== keptKey) {
     const keptVenue = venueFor(kept.venue);
-    const keptTable = lobbyFor(keptVenue, ctx.profile.sittings).tables.find((x) => x.id === kept.table);
+    const keptTable = tableAt(keptVenue, ctx.profile.sittings, kept.table);
     return seatedElsewhere({
-      place: keptTable && !keptTable.owner ? `${t(keptVenue.name)} · ${t(keptTable.name)}` : t(keptVenue.name),
+      place: keptTable.town ? t(keptTable.name) : !keptTable.owner ? `${t(keptVenue.name)} · ${t(keptTable.name)}` : t(keptVenue.name),
       money: chipsValue(kept.chips, kept.bigBlind, kept.buyIn),
       back: () => ctx.go('play', { mode: 'grind', table: kept.table, resume: '1' }),
       getUp: () => ctx.go('play', { mode: 'grind', table: kept.table, resume: '1', cashout: '1' }),
@@ -389,7 +390,10 @@ export function renderTable(ctx, params = {}) {
   // Which of the stop's tables this is. The same lobby the stop screen showed:
   // it is made from the stop and the count of sittings, not from a die.
   const lobby = grind || (regatta && !bubble) ? lobbyFor(room, profile.sittings) : null;
-  const seat = lobby ? (regatta ? lobby.tables[0] : lobby.tables.find((x) => x.id === params.table) || lobby.tables[0]) : null;
+  // A cash seat may also be at the table of a town off the river, which plays
+  // at this stop's stakes (state/backwaters.js).
+  const seat = lobby ? (regatta ? lobby.tables[0] : tableAt(room, profile.sittings, params.table)) : null;
+  const town = seat && seat.town ? backwaterFor(seat.id) : null;
   const ownerHere = duel || !seat || seat.owner;
   const opponents = duel ? [room.resident] : seat ? seat.styles.slice() : pickOpponents(seats - 1, rng);
   const bubbleDeal = bubble ? bubbleStacks(rng) : null;
@@ -407,8 +411,11 @@ export function renderTable(ctx, params = {}) {
   const wandererIndex = seat && seat.wandererSeat !== undefined ? seat.wandererSeat : -1;
   const wanderer = wandererIndex >= 0 ? wandererFor(seat.styles[wandererIndex]) : null;
   const wandererId = wanderer ? `bot${wandererIndex}` : null;
+  // The one who keeps a town's game, in their own chair and their own face.
+  const localIndex = seat && seat.local ? seat.local.seat : -1;
+  const localId = localIndex >= 0 ? `bot${localIndex}` : null;
   // Whose face each seat wears: the boss's own, the Rival's, or the style's regular.
-  const faces = Object.fromEntries(opponents.map((key, i) => [`bot${i}`, i === bossIndex ? boss.key : i === rivalIndex ? RIVAL.key : i === wandererIndex ? wanderer.key : key]));
+  const faces = Object.fromEntries(opponents.map((key, i) => [`bot${i}`, i === bossIndex ? boss.key : i === rivalIndex ? RIVAL.key : i === wandererIndex ? wanderer.key : i === localIndex ? seat.local.key : key]));
   const table = createTable({
     variant: variantKey,
     smallBlind: bigBlind / 2,
@@ -421,7 +428,8 @@ export function renderTable(ctx, params = {}) {
         const p = getProfile(key);
         return {
           id: `bot${i}`,
-          name: i === bossIndex ? boss.short : i === rivalIndex ? RIVAL.short : i === wandererIndex ? wanderer.short : p.name,
+          name: i === bossIndex ? boss.short : i === rivalIndex ? RIVAL.short : i === wandererIndex ? wanderer.short : i === localIndex ? seat.local.short
+            : seat && seat.names && seat.names[i] ? seat.names[i] : p.name,
           stack: bubble ? bubbleDeal[i + 1] : startingStack,
           profile: key,
           memory: i === rivalIndex ? rivalMemory : null,
@@ -587,7 +595,7 @@ export function renderTable(ctx, params = {}) {
     for (const p of table.players) {
       if (p.isHero) continue;
       // A stranger passing through carries a purse twice an owner's: they are not staying.
-      const owner = p.id === bossId || p.id === rivalId || p.id === wandererId;
+      const owner = p.id === bossId || p.id === rivalId || p.id === wandererId || p.id === localId;
       session.bounties[p.id] = seatBounty(room ? room.index : null, owner) * (p.id === wandererId ? 2 : 1);
     }
   }
@@ -647,6 +655,12 @@ export function renderTable(ctx, params = {}) {
         el('h1.sign.table-place', { style: { margin: 0 } }, t('Regatta at {place}', { place: t(room.name) })),
         el('span.scene-stake', room.label),
         el('span.table-owner', t('Six players, the top three are paid')),
+      )
+    : town
+      ? el('div.row',
+        el('h1.sign.table-place', { style: { margin: 0 } }, t(town.name)),
+        el('span.scene-stake', room.label),
+        el('span.table-owner', t('{name}\'s game', { name: town.local.short })),
       )
     : grind
       ? el('div.row',
@@ -755,7 +769,7 @@ export function renderTable(ctx, params = {}) {
       holds: () => !session.matchOver && (grind || duel || (regatta && !bubble)),
       finished: () => Boolean(session.matchOver),
       place: () => (grind
-        ? (ownerHere ? t(room.name) : `${t(room.name)} · ${t(seat.name)}`)
+        ? (town ? t(town.name) : ownerHere ? t(room.name) : `${t(room.name)} · ${t(seat.name)}`)
         : duel ? t('{name}\'s duel', { name: boss.short })
           : regatta ? (bubble ? t('The bubble') : t('Regatta at {place}', { place: t(room.name) }))
             : t('Silas\'s practice table')),
@@ -1374,7 +1388,8 @@ export function renderTable(ctx, params = {}) {
       });
     }
     // The road asks for hands at this stop's own table.
-    if (grind || regatta) profile.noteHandAt(room.key);
+    // A town's hands are its own, counted for its list rather than the stop's.
+    if (grind || regatta) profile.noteHandAt(town ? handsKey(town.key) : room.key);
     // A pearl for the hand — more at the stops further down the river. A
     // lesson table pays in XP only: it is a chapter, not a game.
     if (pays) {
@@ -1729,7 +1744,7 @@ export function renderTable(ctx, params = {}) {
       const { first: took, purse } = doubled && ownerHere
         ? takeTable(profile, room.index)
         : { first: false, purse: 0 };
-      if (doubled && !ownerHere && !profile.career.beaten.includes(room.key)) {
+      if (doubled && !ownerHere && !town && !profile.career.beaten.includes(room.key)) {
         toast({
           icon: '🪑',
           title: t('Doubled up at {table}', { table: t(seat.name) }),
@@ -1740,6 +1755,25 @@ export function renderTable(ctx, params = {}) {
       // Taking somebody's table is the biggest thing the river pays for.
       if (took) session.pearls.bonus += profile.earnPearls(EARN.tableTaken);
       const after = took ? 'took' : cashOut > worth ? 'up' : cashOut < worth ? 'down' : 'even';
+      if (town) {
+        // A town keeps its own list: the best sitting, and what each goal paid.
+        const result = stats.hands
+          ? noteTownSitting(profile, town.key, {
+            hands: stats.hands, netBb: stats.profitBb, right: session.decisions.right, total: session.decisions.total,
+          })
+          : { paid: [], finished: false };
+        for (const goal of result.paid) {
+          session.pearls.bonus += goal.pearls;
+          toast({
+            icon: '⭐',
+            title: t('Done in {place}', { place: t(town.name) }),
+            desc: t('{n} pearls for it.', { n: goal.pearls }),
+          });
+        }
+        const notes = writeReport({ spent, back: cashOut, pearls: session.pearlsSpent });
+        go('town', { at: town.key, after: result.finished ? 'done' : after, ...(notes === null ? {} : { notes }) });
+        return;
+      }
       const notes = writeReport({ spent, back: cashOut, pearls: session.pearlsSpent });
       go('stop', { at: room.key, after, ...(notes === null ? {} : { notes }), ...(purse ? { purse } : {}) });
       return;

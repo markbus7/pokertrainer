@@ -284,6 +284,33 @@ the delta is yours, with a guided lesson and drills each — four from a bank of
 worked spots, and push or fold generated from the same shoving shares the bots
 use. The top rank now asks for every one of the seventeen chapters mastered.
 
+### 🗺️ The backwaters: towns off the river
+
+The river is a line, and a line is quickly played out. Off it are three towns
+that are not on the road and are not needed to finish. Each is worth the trip
+for what it teaches, because the whole town plays one way:
+
+| Town | Off | Stakes | Who keeps the game | The town plays | What it teaches |
+| --- | --- | --- | --- | --- | --- |
+| Placer Gulch | Fisher's Rest, up the wagon road | NL5 | Big Ike Mulvaney, prospector | calling stations | bet your good hands big, never bluff |
+| Cypress Bayou | the Belle, down the creek below the Racing Chute | NL50 | Mama Odile, card reader | maniacs | tighten up and call them down |
+| Bethel | the Grand Hotel, up the Black River | NL100 | Deacon Amos Pruitt | rocks | steal their blinds, fold to their bets |
+
+They are found, not listed. On the chart each one starts as a question mark
+over uncharted water, with a note saying who to ask. Play ten hands at that
+stop's table (or take it) and its owner leans over and tells you what is up
+there: **Mark it on your chart**, and the town is drawn in. Sail up (or take
+the wagon road), and the boat moors at the town until you go back to a stop.
+
+A town plays at its stop's stakes and seat price, at one table whose numbers
+in the lobby read just like the town: loose, wild or tight. The local sits in
+the first chair with their own face, and the townsfolk have names of their
+own. Each town has three things to do — play its hands, get up from its table
+a set number of big blinds ahead, and play a sitting with most of your
+decisions sound — and each pays pearls once, more for the towns further down
+the river. Do all three and the local hands over a trophy: Big Ike's gold
+nugget, Mama Odile's gator tooth, the Deacon's hymnal.
+
 ### 🎩 Your character
 
 The chip on the top bar is you: your face as your figure wears it, your rank
@@ -423,7 +450,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.0.2`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.1.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is
