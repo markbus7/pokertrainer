@@ -24,6 +24,7 @@ const modules = [
   './snags.test.js',
   './gulf.test.js',
   './backwaters.test.js',
+  './townJobs.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',

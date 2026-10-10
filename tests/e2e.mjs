@@ -17,6 +17,13 @@ try {
 
 const SHOT = process.env.SHOT_DIR || null;
 const BASE = process.env.BASE_URL || 'http://localhost:8000';
+
+/** A stop is a town: open one of its doors (card room, owner, regatta, deeds, board, street), if it is not open already. */
+async function door(pg, key) {
+  await pg.waitForSelector(`.town-door[data-place="${key}"]`, { timeout: 8000 });
+  if (!(await pg.$(`.town-door.active[data-place="${key}"]`))) await pg.click(`.town-door[data-place="${key}"]`);
+  await pg.waitForSelector(`.town-door.active[data-place="${key}"]`, { timeout: 3000 });
+}
 // The bundled browser build and the one this machine has installed do not
 // always match — CI images pin their own. Fall back to it by path rather than
 // failing the whole suite over a version number.
@@ -3028,10 +3035,12 @@ await step('the road says what to do next, a city at a time', async () => {
 
     // A shut city says so on its own screen, and offers no way in.
     await fresh.goto(`${BASE}/#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
-    await fresh.waitForSelector('.road-stop', { timeout: 5000 });
+    await fresh.waitForSelector('.stop-actions', { timeout: 5000 });
     const shut = await text('.stop-actions');
     if (!/opens when Mud Landing is finished/.test(shut)) throw new Error(`a shut city says: ${shut}`);
     if (await fresh.$('.stop-actions .btn:has-text("Steam down")')) throw new Error('a shut city offers a way in');
+    await door(fresh, 'board');
+    await fresh.waitForSelector('.road-stop', { timeout: 5000 });
     if (await fresh.$('.road-stop .road-goal .btn')) throw new Error('a shut city has buttons on its list');
 
     // Playing at the table counts, hand by hand.
@@ -3178,9 +3187,11 @@ await step('the stop has three tables with numbers, and the Rival sits at one of
     await lob.waitForSelector('.lobby-card', { timeout: 5000 });
     const tags = await lob.$$eval('.lobby-tag.rival', (n) => n.map((x) => x.textContent.trim()));
     if (tags.join() !== 'Nell is here') throw new Error(`the Rival tag reads ${tags}`);
+    if ((await lob.$$('.lobby-card .lobby-face.rival')).length !== 1) throw new Error('the Rival is not in exactly one seat');
+    await door(lob, 'street');
     const tease = await text('.rival-block');
     if (!/Nell Corbin/.test(tease) || !/not a regular/.test(tease)) throw new Error(`the Rival's card before you have met reads "${tease}"`);
-    if ((await lob.$$('.lobby-card .lobby-face.rival')).length !== 1) throw new Error('the Rival is not in exactly one seat');
+    await door(lob, 'room');
 
     // Sit with her: she introduces herself once, her name is on a seat, and she counts.
     await lob.click('.lobby-card:has(.lobby-tag.rival) .btn');
@@ -3204,6 +3215,7 @@ await step('the stop has three tables with numbers, and the Rival sits at one of
     const saved = (await profile()).rival;
     if (saved.met !== 1 || saved.memory.facedBet < 3) throw new Error(`the Rival has met you ${saved.met} times and counted ${saved.memory.facedBet} bets`);
     await lob.click('.table-head button:has-text("Cash out")');
+    await door(lob, 'street');
     await lob.waitForSelector('.rival-block', { timeout: 8000 });
     const after = await text('.rival-block');
     if (!/Still watching you/.test(after) || !/mix it up/.test(after)) throw new Error(`the Rival's card after a sitting reads "${after}"`);
@@ -3211,6 +3223,7 @@ await step('the stop has three tables with numbers, and the Rival sits at one of
     // And her card speaks Dutch.
     await seed({ settings: { lang: 'nl' } });
     await lob.reload({ waitUntil: 'domcontentloaded' });
+    await door(lob, 'street');
     await lob.waitForSelector('.rival-block', { timeout: 5000 });
     const dutch = await text('.rival-block');
     if (!/Nog een zwerver/.test(dutch) || /watching|drifter/.test(dutch)) throw new Error(`the Rival's card in Dutch reads "${dutch}"`);
@@ -3337,8 +3350,10 @@ await step('Silas posts contracts, today\'s question keeps a streak, and a stran
     await post.waitForSelector('.lobby-card', { timeout: 8000 });
     const tag = await post.$$eval('.lobby-tag.wanderer', (n) => n.map((x) => x.textContent.trim()));
     if (tag.length !== 1 || !/is here/.test(tag[0])) throw new Error(`the stranger's tag reads ${tag}`);
+    await door(post, 'street');
     const card = await text('.wanderer-block');
     if (!/Passing through/.test(card) || !/How to beat/.test(card) || !/twice an owner/.test(card)) throw new Error(`the stranger's card reads "${card}"`);
+    await door(post, 'room');
     await post.click(`.lobby-card:has(.lobby-tag.wanderer) .btn`);
     await post.waitForSelector('.felt', { timeout: 5000 });
     await post.click('button:has-text("Deal me in")');
@@ -3387,7 +3402,7 @@ await step('a Regatta: six players, the entry paid up front, the top three paid,
       bankroll: 1000,
     });
     await reg.reload({ waitUntil: 'domcontentloaded' });
-    await reg.goto(`${BASE}/#stop?at=nl10`, { waitUntil: 'domcontentloaded' });
+    await reg.goto(`${BASE}/#stop?at=nl10&place=regatta`, { waitUntil: 'domcontentloaded' });
     await reg.waitForSelector('.regatta-block', { timeout: 8000 });
     const block = await text('.regatta-block');
     if (!/Six players/.test(block) || !/Entry\s*\$10\.00/.test(block) || !/First\s*\$30\.00/.test(block) || !/Third\s*\$12\.00/.test(block)) throw new Error(`the Regatta block reads "${block}"`);
@@ -3409,6 +3424,7 @@ await step('a Regatta: six players, the entry paid up front, the top three paid,
     if (refunded.career.regattas && refunded.career.regattas.nl10) throw new Error('an entry never dealt was counted');
 
     // Play one to the end by shoving: out, or the last one standing.
+    await door(reg, 'regatta');
     await reg.waitForSelector('.regatta-block .btn.primary', { timeout: 5000 });
     await reg.click('.regatta-block .btn.primary');
     await reg.waitForSelector('.felt', { timeout: 8000 });
@@ -3453,6 +3469,7 @@ await step('a Regatta: six players, the entry paid up front, the top three paid,
     // And in Dutch.
     await seed({ settings: { lang: 'nl' } });
     await reg.reload({ waitUntil: 'domcontentloaded' });
+    await door(reg, 'regatta');
     await reg.waitForSelector('.regatta-block', { timeout: 8000 });
     const dutch = await text('.regatta-block');
     if (!/De Regatta/.test(dutch) || /Six players|Entry/.test(dutch)) throw new Error(`the Regatta block in Dutch reads "${dutch.slice(0, 160)}"`);
@@ -3653,11 +3670,13 @@ await step('a duel with the owner of a table: the blinds climb, it ends, the sta
     if (await duel.$('.story-card')) throw new Error('the arrival scene is told every time');
 
     // With the city done the owner offers a duel; before that they do not.
+    await door(duel, 'owner');
     const block = await text('.duel-block');
     if (!/Duel Wade/.test(block) || !/Challenge Wade/.test(block)) throw new Error(`the duel block reads "${block}"`);
     if (!/Win it and the table is yours/.test(block)) throw new Error(`a duel for the table does not say what it wins: ${block}`);
     await seed({ career: { ...READY.career, played: { nl2: 3 } } });
     await duel.reload({ waitUntil: 'domcontentloaded' });
+    await door(duel, 'owner');
     await duel.waitForSelector('.duel-block', { timeout: 5000 });
     const shut = await text('.duel-block');
     if (!/will not duel a stranger/.test(shut) || !/Play 25 hands/.test(shut)) throw new Error(`before the hands are played: "${shut}"`);
@@ -3669,7 +3688,7 @@ await step('a duel with the owner of a table: the blinds climb, it ends, the sta
     await duel.reload({ waitUntil: 'domcontentloaded' });
 
     // Challenge them: two seats, a blind clock, the owner's opening line.
-    await duel.goto(`${BASE}/#stop?at=nl2`, { waitUntil: 'domcontentloaded' });
+    await duel.goto(`${BASE}/#stop?at=nl2&place=owner`, { waitUntil: 'domcontentloaded' });
     await duel.waitForSelector('.duel-block .btn.primary', { timeout: 5000 });
     await duel.click('.duel-block .btn.primary');
     await duel.waitForSelector('.felt', { timeout: 5000 });
@@ -3721,6 +3740,7 @@ await step('a duel with the owner of a table: the blinds climb, it ends, the sta
     await duel.waitForSelector('.stop-screen', { timeout: 5000 });
     await duel.waitForSelector('.took-scrim', { timeout: 5000 });
     await duel.click('.took .btn.primary');
+    await door(duel, 'owner');
     await duel.waitForSelector('.duel-block .star-row', { timeout: 5000 });
     const after = await text('.duel-block');
     if (!/Rematch Wade/.test(after) || !new RegExp(`${tries > 1 ? tries : 1} won of ${tries}|1 won of ${tries}`).test(after)) throw new Error(`after the duel the block reads "${after}"`);
@@ -3741,6 +3761,7 @@ await step('a duel with the owner of a table: the blinds climb, it ends, the sta
     // And it all speaks Dutch.
     await seed({ settings: { lang: 'nl' } });
     await duel.reload({ waitUntil: 'domcontentloaded' });
+    await door(duel, 'owner');
     await duel.waitForSelector('.duel-block', { timeout: 5000 });
     const dutch = await text('.duel-block');
     if (!/Duel met Wade/.test(dutch) || /Rematch|stars/.test(dutch)) throw new Error(`the duel block in Dutch reads "${dutch}"`);
@@ -4229,7 +4250,7 @@ await step('pearls keep their worth: Delphine buys them, and a seat or an entry 
     if ((await saved()).bankroll !== 215) throw new Error(`cashing out a pearl seat paid $${(await saved()).bankroll - 210}, not the $5 seat`);
 
     // A Regatta entered in pearls and left before a card: the pearls come back.
-    await pp.goto(`${BASE}/?pearls=3#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+    await pp.goto(`${BASE}/?pearls=3#stop?at=nl5&place=regatta`, { waitUntil: 'domcontentloaded' });
     await pp.waitForSelector('.regatta-block .pay-pearls', { timeout: 8000 });
     await pp.click('.regatta-block .pay-pearls');
     await pp.waitForSelector('.felt', { timeout: 8000 });
@@ -4270,11 +4291,11 @@ await step('the card rooms: for sale once the table is yours, and counted on the
       });
       localStorage.setItem(key, JSON.stringify(raw));
     }, KEY);
-    await rp.goto(`${BASE}/?rooms=1#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+    await rp.goto(`${BASE}/?rooms=1#stop?at=nl5&place=deeds`, { waitUntil: 'domcontentloaded' });
     await rp.waitForSelector('.room-block', { timeout: 8000 });
     const locked = await text('.room-block');
     if (!/Take the table at Fisher's Rest first/.test(locked) || await rp.$('.room-block .buy-btn')) throw new Error(`a room was for sale before its table was taken: "${locked}"`);
-    await rp.goto(`${BASE}/?rooms=2#stop?at=nl2`, { waitUntil: 'domcontentloaded' });
+    await rp.goto(`${BASE}/?rooms=2#stop?at=nl2&place=deeds`, { waitUntil: 'domcontentloaded' });
     await rp.waitForSelector('.room-block .buy-btn', { timeout: 8000 });
     await rp.click('.room-block .buy-btn');
     await rp.waitForSelector('.room-block.owned', { timeout: 5000 });
@@ -4666,6 +4687,66 @@ await step('fog over the chart: the river past the next stop is unexplored, and 
     if ((await clear()).fog) throw new Error('the river is still under fog at the delta');
     if (mine.length) throw new Error(mine.join(' | '));
     console.log('      a new chart clear to Fisher\'s Rest; at Cotton Row the fog draws back to the Belle once, and says so; none at the delta');
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('a stop is a town: places down one street, and a job on the notice board', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const tp = await ctx.newPage();
+  const mine = [];
+  tp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const text = (sel) => tp.evaluate((q) => { const n = document.querySelector(q); return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
+  const KEY = 'poker-trainer.profile.v1';
+  const seed = (extra = {}) => tp.evaluate(({ key, extra }) => localStorage.setItem(key, JSON.stringify({
+    seenPrologue: true, bankroll: 900, stakeKey: 'nl25', settings: { lang: 'en' },
+    career: { venue: 'nl25', best: 'nl25', busted: 0, staked: 0, beaten: ['nl2', 'nl5', 'nl10'], played: { nl25: 12 }, sittings: 4 },
+    scenes: { 'arrive-nl25': true },
+    jobs: { nl25: { have: 3 } },
+    ...extra,
+  })), { key: KEY, extra });
+  try {
+    await tp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await seed();
+    await tp.goto(`${BASE}/?town=1#stop?at=nl25`, { waitUntil: 'domcontentloaded' });
+    await tp.waitForSelector('.town-doors', { timeout: 8000 });
+    const doors = await tp.$$eval('.town-door', (n) => n.map((x) => x.dataset.place));
+    for (const want of ['room', 'owner', 'regatta', 'deeds', 'board']) if (!doors.includes(want)) throw new Error(`Cotton Row has no ${want}: ${doors.join(', ')}`);
+    // It opens on the card room, with the lobby in it and nothing from the other places.
+    if (!(await tp.$('.town-door.active[data-place="room"]')) || (await tp.$$('.lobby-card')).length !== 3) throw new Error('the town does not open on the card room');
+    if (await tp.$('.duel-block') || await tp.$('.room-block')) throw new Error('the other places are open at once');
+    // Walk to the notice board: the job is there, and the address says where you are.
+    await door(tp, 'board');
+    if (!/place=board/.test(await tp.evaluate(() => location.hash))) throw new Error('the address does not keep the door');
+    const job = await text('.job-card');
+    if (!/Mr\. Delaune/.test(job) || !/Make 8 sound Continuation Betting decisions at the tables here/.test(job) || !/3 of 8/.test(job)) throw new Error(`the job reads "${job}"`);
+    if (!(await tp.$('.road-stop'))) throw new Error('the notice board has no list of what to do here');
+    if (!/a job going/.test(await text('.town-door[data-place="board"]'))) throw new Error('the board\'s door does not say there is a job');
+    // A reload comes back to the same door.
+    await tp.reload({ waitUntil: 'domcontentloaded' });
+    await tp.waitForSelector('.town-door.active[data-place="board"]', { timeout: 5000 });
+    // The road's button for the hands goes to the card room.
+    await tp.click('.road-stop .road-goal.next .btn');
+    await tp.waitForSelector('.town-door.active[data-place="room"]', { timeout: 5000 });
+    // A job done says so, and is not paid twice.
+    await seed({ jobs: { nl25: { have: 8, paid: true } } });
+    await tp.goto(`${BASE}/?town=2#stop?at=nl25&place=board`, { waitUntil: 'domcontentloaded' });
+    await tp.waitForSelector('.job-card.done', { timeout: 5000 });
+    if (!/Done, and paid/.test(await text('.job-card'))) throw new Error('a finished job does not say so');
+    // In Dutch, on a phone, the doors fit two to a row.
+    await seed({ settings: { lang: 'nl' } });
+    await tp.setViewportSize({ width: 390, height: 844 });
+    await tp.goto(`${BASE}/?town=3#stop?at=nl25&place=board`, { waitUntil: 'domcontentloaded' });
+    await tp.waitForSelector('.job-card', { timeout: 5000 });
+    if (!/Gevraagd/.test(await text('.job-card')) || !/Het mededelingenbord/.test(await text('.town-doors'))) throw new Error('the town is not in Dutch');
+    const fit = await tp.evaluate(() => {
+      const boxes = [...document.querySelectorAll('.town-door')].map((n) => n.getBoundingClientRect());
+      return { wide: document.documentElement.scrollWidth <= innerWidth + 1, inside: boxes.every((b) => b.left >= 0 && b.right <= innerWidth + 1) };
+    });
+    if (!fit.wide || !fit.inside) throw new Error(`the doors do not fit a phone: ${JSON.stringify(fit)}`);
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log('      Cotton Row opens on its card room; the notice board has Mr. Delaune\'s job at 3 of 8; the address and a reload keep the door; the road goes to the card room; in Dutch on a phone');
   } finally {
     await ctx.close();
   }

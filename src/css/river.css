@@ -4278,3 +4278,51 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
   to { transform: translateX(26px); }
 }
 @media (prefers-reduced-motion: reduce) { .map-art .fog-drift { animation: none; } }
+
+/* ================================================================
+   A stop is a town: its places down one street (screenStop.js)
+   ================================================================ */
+.town-doors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px;
+}
+.town-door {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--brass-lo);
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1), var(--wood-2));
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--on-wood);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: transform 120ms, box-shadow 120ms;
+}
+.town-door:hover { transform: translateY(-1px); }
+.town-door:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.town-door.active { border-color: var(--brass-hi); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 0 0 2px var(--brass); }
+.town-door-icon { flex: none; color: var(--brass-hi); }
+.town-door-text { display: flex; flex-direction: column; min-width: 0; }
+.town-door-name { font-family: var(--font-print); font-weight: 700; line-height: 1.15; }
+.town-door-status { font-size: var(--t-xs); opacity: 0.8; overflow-wrap: anywhere; }
+.town-inside { display: flex; flex-direction: column; gap: var(--s-4); }
+@media (max-width: 520px) {
+  .town-doors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .town-door { min-height: 52px; padding: 6px 9px; gap: 8px; }
+}
+
+/* The odd job on the notice board. */
+.job-card { display: grid; gap: var(--s-2); }
+.job-who { font-family: var(--font-print); font-weight: 700; color: var(--ink); }
+.job-card .said { margin: 0; }
+.job-task { display: flex; align-items: center; gap: var(--s-3); }
+.job-task .road-goal-body { flex: 1; min-width: 0; }
