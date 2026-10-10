@@ -6630,7 +6630,7 @@ export const NL = {
   "The open sea": "De open zee",
   "The Gulf, {place}": "De Golf, {place}",
   "Raise to 2.5 big blinds": "Raise naar 2,5 big blinds",
-  "You have {n} big blinds in the {seat}, and it is folded to you. What do you do?": "Je hebt {n} big blinds in de {seat}, en iedereen foldt naar jou. Wat doe je?",
+  "Your seat: {seat}. You have {n} big blinds, and it is folded to you. What do you do?": "Jouw positie: {seat}. Je hebt {n} big blinds, en iedereen foldt naar jou. Wat doe je?",
   "At {n} big blinds from the {seat} you shove about {pct}% of hands, and {hand} is {where} that range. A raise to 2.5 commits you anyway: shove or fold.": "Op {n} big blinds vanaf de {seat} shove je ongeveer {pct}% van de handen, en {hand} zit {where} die range. Een raise naar 2,5 legt je toch al vast: shove of fold.",
   "well inside": "ruim binnen",
   "well outside": "ruim buiten",
