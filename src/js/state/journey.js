@@ -82,7 +82,7 @@ function evaluate(profile, chapter, spec) {
       return {
         ...base, text: 'Play {n} hands at {stop}', params: { n: spec.need, stop: venue.name },
         done, have: Math.min(have, spec.need), need: spec.need,
-        to: { route: 'stop', params: { at: venue.key }, place: null, stop: venue.key },
+        to: { route: 'stop', params: { at: venue.key, place: 'room' }, place: null, stop: venue.key },
       };
     }
 
@@ -96,7 +96,7 @@ function evaluate(profile, chapter, spec) {
         hint: 'Sit at {boss}\'s table for {buyin}, then cash out with {target} or more: double what you sat down with. Or beat {boss} in a duel.',
         hintParams: { boss: bossName(venue), buyin: money(venue.entry), target: money(venue.entry * 2) },
         done: beaten,
-        to: { route: 'stop', params: { at: venue.key }, place: null, stop: venue.key },
+        to: { route: 'stop', params: { at: venue.key, place: 'room' }, place: null, stop: venue.key },
       };
     }
 
@@ -105,7 +105,7 @@ function evaluate(profile, chapter, spec) {
       return {
         ...base, text: 'Win the duel with {n} stars', params: { n: spec.need },
         done: stars >= spec.need, have: Math.min(stars, spec.need), need: spec.need,
-        to: { route: 'stop', params: { at: venue.key }, place: null, stop: venue.key },
+        to: { route: 'stop', params: { at: venue.key, place: 'owner' }, place: null, stop: venue.key },
       };
     }
 
@@ -114,7 +114,7 @@ function evaluate(profile, chapter, spec) {
       return {
         ...base, text: 'Finish in the money at the Regatta', params: {},
         done: best >= 1 && best <= 3,
-        to: { route: 'stop', params: { at: venue.key }, place: null, stop: venue.key },
+        to: { route: 'stop', params: { at: venue.key, place: 'regatta' }, place: null, stop: venue.key },
         hint: 'A six-player tournament: the top three are paid.',
       };
     }

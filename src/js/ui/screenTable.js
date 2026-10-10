@@ -34,6 +34,7 @@ import { READ_BANDS, nearestBand, marginFor } from '../core/handRead.js';
 import { emptyMemory, watch, adaptationNote, ADAPT_FULL } from '../engine/adapt.js';
 import { lobbyFor, chosenRank } from '../state/lobby.js';
 import { tableAt, handsKey, noteTownSitting } from '../state/backwaters.js';
+import { noteJobDecision } from '../state/townJobs.js';
 import { backwaterFor } from '../data/backwaters.js';
 import { seatOf, keepSeat, clearSeat, chipsValue, doublingTarget } from '../state/seat.js';
 import { remember as rivalRemembers, readOn as rivalRead } from '../state/rival.js';
@@ -1272,6 +1273,16 @@ export function renderTable(ctx, params = {}) {
     });
     // Silas's contracts count sound decisions at a real table, for the skill they name.
     if (pays) payContracts(noteContract(profile, { type: 'decision', skill: verdict.concept.id, level: said.level, helped }));
+    // The odd job on this town's notice board counts the same decisions, at its own tables.
+    if (pays && grind && !town) {
+      const job = noteJobDecision(profile, { stop: room.key, skill: verdict.concept.id, level: said.level, helped });
+      if (job) {
+        session.pearls.bonus += job.pearls;
+        pearlPop(job.pearls, trayHost);
+        log(t('Job done for {who}', { who: t(job.job.who) }), true);
+        toast({ icon: '📌', title: t('Job done for {who}', { who: t(job.job.who) }), desc: t('{n} pearls', { n: job.pearls }) });
+      }
+    }
     // The Catch Book: a spot played right hooks the fish that lives in it.
     // Some only come in if the hand ends the right way; endHand says.
     if (pays) {

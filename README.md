@@ -284,6 +284,33 @@ the delta is yours, with a guided lesson and drills each — four from a bank of
 worked spots, and push or fold generated from the same shoving shares the bots
 use. The top rank now asks for every one of the seventeen chapters mastered.
 
+### 🏘️ Every stop is a town
+
+A stop used to be one long page. Now it is a town: the owner greets you at the
+top, and below them a street of doors, each with what is going on inside
+written on it. Open one and that place fills the page. The address keeps the
+door, so a reload or the back button returns to it, and the road's buttons
+open the right one ("Win the duel" goes to the owner's table).
+
+| Door | Inside |
+| --- | --- |
+| The card room | the lobby's three tables, or the way there, and the owner's keepsake once it is yours |
+| *Owner*'s table | the duel: what is still missing, or the challenge and the rematch stars |
+| The Regatta | the tournament, from the second stop on |
+| The deed office | the card room, for sale once the table is yours |
+| The notice board | what to do here on the road, the town's odd job, and the way to a backwater |
+| On the street | the Rival and any stranger passing through, when they are in town |
+
+Every town has a local with an **odd job** on its notice board: Amos the
+bait-seller at Mud Landing, Gus the ferry's pilot, Hattie the Belle's purser,
+Booker the night porter, all the way to the Admiral's flag lieutenant. The job
+is always to play one kind of decision well at that town's tables a number of
+times: pot odds at Mud Landing, continuation bets at Cotton Row, defending
+against the Captain at the Belle, bluffing at the Grand Hotel, committing your
+stack at the Admiralty. It is the town's chapter, taken to the felt. Each job
+counts sound decisions you made without help, and pays pearls once, more the
+further down the river it is.
+
 ### 🌫️ Fog over the chart
 
 The chart starts under fog. You can see where you have been and the next stop
@@ -461,7 +488,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.2.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.3.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

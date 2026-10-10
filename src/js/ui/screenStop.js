@@ -8,7 +8,7 @@
  * that covers it. Then you sit down and find out whether you listened.
  */
 
-import { el, fmt, toast } from './dom.js';
+import { el, fmt, toast, mount } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { VENUES, venueFor, GRUBSTAKE } from '../data/venues.js';
@@ -17,7 +17,7 @@ import { getProfile } from '../engine/bots.js';
 import { moduleMeta } from '../data/curriculum.js';
 import { sceneSvg } from './riverArt.js';
 import { portraitSvg } from './portraits.js';
-import { riverState } from './screenRiver.js';
+import { riverState, stopStatus } from './screenRiver.js';
 import { svgNode, typedText } from './place.js';
 import * as audio from '../audio/engine.js';
 import { reportsOf } from '../state/sessionReport.js';
@@ -36,6 +36,7 @@ import { wandererFor } from '../data/wanderers.js';
 import { roadList, opensLine, goalText } from './roadView.js';
 import { BACKWATERS } from '../data/backwaters.js';
 import { rumourAt, hear, heard as heardOf, townGoals } from '../state/backwaters.js';
+import { jobRecord } from '../state/townJobs.js';
 
 /** The place itself: sky, the far bank, the water, and the stop drawn big. */
 function scene(venue, state, arrived) {
@@ -455,7 +456,7 @@ function roomBlock(venue, profile, go) {
         { cut: fmt.money(per100), total: VENUES.length })),
     count === VENUES.length ? el('p.room-crown', t('Every card room on the river and the sea is yours.')) : null,
     el('div.stop-actions', buyControl(profile, roomKey(venue.key), {
-      go, label: t('Buy the room'), onBought: () => go('stop', { at: venue.key, bought: Date.now() }),
+      go, label: t('Buy the room'), onBought: () => go('stop', { at: venue.key, place: 'deeds', bought: Date.now() }),
     })),
   );
 }
@@ -594,6 +595,129 @@ export function notesCard(report, index, go) {
   );
 }
 
+/**
+ * The odd job on the notice board: who wants it done, in their words, and how
+ * far through it you are. Counted at this town's tables as you play.
+ */
+function jobBlock(venue, profile) {
+  const r = jobRecord(profile, venue.key);
+  if (!r) return null;
+  const meta = moduleMeta(r.job.skill);
+  const pct = Math.max(3, Math.round((r.have / r.need) * 100));
+  return el(`div.panel.page.paper.job-card${r.done ? '.done' : ''}`,
+    el('div.panel-title', el('h3', icon('target', { size: 16 }), t('Wanted'))),
+    el('div.job-who', t(r.job.who)),
+    el('p.said', `“${t(r.job.says)}”`),
+    el('div.job-task',
+      el('div.road-goal-body',
+        el('div.road-goal-text', t('Make {n} sound {skill} decisions at the tables here', { n: r.need, skill: t(meta ? meta.name : r.job.skill) })),
+        r.done
+          ? el('div.road-note', icon('check', { size: 12 }), t('Done, and paid.'))
+          : el('div.road-progress',
+            el('div.road-bar', el('span', { style: { width: `${pct}%` } })),
+            el('span.road-count', t('{have} of {need}', { have: r.have, need: r.need }))),
+      ),
+      el('span.town-pays', r.done ? el('span.faint', t('Paid')) : pearls(r.pearls)),
+    ),
+  );
+}
+
+/**
+ * The places in a town, in the order you walk past them. Each has a door on
+ * the street with what is going on inside written on it, and the panels it
+ * opens on. A place with nothing in it today has no door.
+ */
+function townPlaces(venue, state, profile, go, after) {
+  const boss = bossFor(venue.boss);
+  const duel = duelStatus(profile, venue.index);
+  const here = venue.index === state.here.index && !state.town;
+  const chapter = state.road.chapters[venue.index];
+  const lobby = lobbyFor(venue, profile.sittings);
+  const rival = rivalBlock(venue, profile);
+  const wanderer = wandererBlock(venue, profile);
+  const record = profile.regattaRecord(venue.key);
+  const job = jobRecord(profile, venue.key);
+  const stars = (n) => `${'★'.repeat(n)}${'☆'.repeat(3 - n)}`;
+  return [
+    {
+      key: 'room',
+      name: t('The card room'),
+      icon: 'chip',
+      status: here ? t('Three games running') : stopStatus(venue, state).text,
+      body: () => [el('div.stop-grid', tableBlock(venue, state, profile, go), keepsakeBlock(venue, state))],
+    },
+    {
+      key: 'owner',
+      name: t('{name}\'s table', { name: boss.short }),
+      icon: 'cards',
+      status: !duel.open ? t('Not yet') : duel.taken ? stars(duel.record.stars) : duel.ready ? t('Ready to duel') : t('Not to a stranger'),
+      body: () => [duelBlock(venue, state, profile, go)
+        || el('div.panel.duel-block.shut',
+          el('div.panel-title', el('h3', icon('cards', { size: 16 }), t('Duel {name}', { name: boss.short }))),
+          el('p.muted', t('The road to {place} opens when {gate} is finished.', { place: t(venue.name), gate: t((gatedBy(venue.index) || venue).name) })))],
+    },
+    venue.index >= 1 ? {
+      key: 'regatta',
+      name: t('The Regatta'),
+      icon: 'anchor',
+      status: record.wins ? t('Won {n}', { n: record.wins }) : t('Top three paid'),
+      body: () => [regattaBlock(venue, state, profile, go)
+        || el('div.panel.regatta-block.shut',
+          el('div.panel-title', el('h3', icon('anchor', { size: 16 }), t('The Regatta'))),
+          el('p.muted', t('A Regatta is entered where your boat is moored. Tie up at {place} first.', { place: t(venue.name) })))],
+    } : null,
+    {
+      key: 'deeds',
+      name: t('The deed office'),
+      icon: 'k-ledger',
+      status: ownsRoom(profile, venue.key) ? t('Yours') : t('For sale'),
+      body: () => [roomBlock(venue, profile, go)],
+    },
+    {
+      key: 'board',
+      name: t('The notice board'),
+      icon: 'clipboard',
+      status: [chapter.complete ? t('Finished.') : `${chapter.done} / ${chapter.total}`, job && !job.done ? t('a job going') : null].filter(Boolean).join(' · '),
+      // The rumour, while there is one, is told on the street instead.
+      body: () => [jobBlock(venue, profile), rumourAt(profile, venue.key) ? null : backwaterBlock(venue, profile, go), roadBlock(venue, state, go)],
+    },
+    rival || wanderer ? {
+      key: 'street',
+      name: t('On the street'),
+      icon: 'person',
+      status: [lobby.rival ? RIVAL.short : null, lobby.wanderer ? wandererFor(lobby.wanderer.key).short : null].filter(Boolean).join(', ')
+        || t('Somebody you know'),
+      body: () => [rival, wanderer],
+    } : null,
+  ].filter(Boolean);
+}
+
+/** Which place to open on: the one asked for, or where the road says to go next, or the card room. */
+function openingPlace(places, venue, state, params) {
+  if (places.some((p) => p.key === params.place)) return params.place;
+  const next = state.road.next && state.road.next.goal.to.stop === venue.key ? state.road.next.goal : null;
+  const want = next && next.to.params && next.to.params.place;
+  if (want && places.some((p) => p.key === want)) return want;
+  return 'room';
+}
+
+/** The street: a door for each place, with what is going on inside written on it. */
+function streetOf(places, current, onPick) {
+  return el('nav.town-doors', { 'aria-label': t('Places in town') },
+    places.map((p) => el(`button.town-door${p.key === current ? '.active' : ''}`, {
+      type: 'button',
+      dataset: { place: p.key },
+      'aria-pressed': p.key === current ? 'true' : 'false',
+      onclick: () => onPick(p.key),
+    },
+      icon(p.icon, { size: 20, className: 'town-door-icon' }),
+      el('span.town-door-text',
+        el('span.town-door-name', p.name),
+        el('span.town-door-status', p.status)),
+    )),
+  );
+}
+
 export function renderStop(ctx, params = {}) {
   const { profile, go } = ctx;
   const venue = venueFor(params.at || profile.career.venue);
@@ -615,22 +739,36 @@ export function renderStop(ctx, params = {}) {
   const showArrival = venue.index === state.here.index && !state.town && !after && !profile.seenScene(arrivalKey);
   if (showArrival) profile.markScene(arrivalKey);
 
+  // A stop is a town: its places down one street, and one of them open at a
+  // time. Walking from one to another stays on the page and in the address,
+  // so the back button and a reload come back to the same door.
+  const places = townPlaces(venue, state, profile, go, after);
+  let current = openingPlace(places, venue, state, params);
+  const inside = el('div.town-inside');
+  const street = el('div.town-street');
+  const open = (key) => {
+    current = key;
+    const place = places.find((p) => p.key === key);
+    mount(street, streetOf(places, current, (k) => {
+      audio.sfx('click');
+      open(k);
+      history.replaceState(null, '', `#stop?at=${venue.key}&place=${k}`);
+    }));
+    mount(inside, ...place.body().filter(Boolean));
+  };
+  open(current);
+
+  // A rumour is news: it is told on the street, not behind a door.
+  const rumour = rumourAt(profile, venue.key) ? backwaterBlock(venue, profile, go) : null;
+
   const screen = el('div.screen.stop-screen',
     scene(venue, state, arrived),
     showArrival ? arrivalCard(venue) : null,
     bossBlock(venue, state, after),
     notesIndex !== null ? notesCard(reports[notesIndex], notesIndex, go) : null,
-    el('div.stop-grid',
-      tableBlock(venue, state, profile, go),
-      keepsakeBlock(venue, state),
-    ),
-    rivalBlock(venue, profile),
-    wandererBlock(venue, profile),
-    duelBlock(venue, state, profile, go),
-    roomBlock(venue, profile, go),
-    regattaBlock(venue, state, profile, go),
-    backwaterBlock(venue, profile, go),
-    roadBlock(venue, state, go),
+    rumour,
+    street,
+    inside,
     neighbours(venue, go),
   );
 
