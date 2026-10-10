@@ -4405,3 +4405,5 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .map-town.road.ahead { opacity: 0.72; }
 .map-town.road.is-here { border-color: var(--brass); }
 .town-links { display: grid; gap: var(--s-2); }
+/* One finger scrolls the map; two are the map's own pinch, not the page's zoom. */
+.map-scroller.big { touch-action: pan-x pan-y; }

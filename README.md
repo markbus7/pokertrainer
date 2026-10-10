@@ -327,8 +327,11 @@ its own ground:
 - **the Coast** in the east: the sea, with islands off it.
 
 The chart is a window you move around: scroll it, drag it with the mouse or
-swipe it on a phone. Three buttons switch between the whole country, the
-river (where it opens, on your boat) and close in. The signs keep their size
+swipe it on a phone, and **pinch** it with two fingers to zoom, round the
+point between them. On a computer a trackpad pinch, or Ctrl and the scroll
+wheel, does the same. It zooms out until the country fills the window and no
+further. Three buttons jump straight to the whole country, the river (where
+it opens, on your boat) and close in. The signs keep their size
 against the country at every zoom, so nothing that fitted stops fitting.
 
 ### 🌫️ Fog over the chart
@@ -520,7 +523,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.5.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.5.1`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is
