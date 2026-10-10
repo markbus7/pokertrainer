@@ -4541,8 +4541,20 @@ await step('the rail says which build this is, on a desktop and on a phone', asy
   const vp = await ctx.newPage();
   vp.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
   try {
+    // A purse with thousands in it and a rank with some XP behind it: the
+    // widest the rail gets, which is where it first overlapped on a phone.
+    await vp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await vp.evaluate(() => {
+      const key = 'poker-trainer.profile.v1';
+      const raw = JSON.parse(localStorage.getItem(key) || '{}');
+      raw.seenPrologue = true;
+      raw.bankroll = 45000;
+      raw.xp = 8195;
+      localStorage.setItem(key, JSON.stringify(raw));
+    });
     for (const [label, size, hash] of [['desktop', { width: 1280, height: 800 }, '#home'], ['desktop room', { width: 1280, height: 800 }, '#train'],
       ['iPad', { width: 820, height: 1180 }, '#home'], ['phone', { width: 390, height: 844 }, '#home'], ['phone, in a room', { width: 390, height: 844 }, '#train'],
+      ['big phone', { width: 430, height: 932 }, '#home'], ['small phone', { width: 360, height: 740 }, '#home'],
       ['phone on its side', { width: 844, height: 390 }, '#home']]) {
       await vp.setViewportSize(size);
       await vp.goto(`${BASE}/${hash}`, { waitUntil: 'domcontentloaded' });
@@ -4555,11 +4567,27 @@ await step('the rail says which build this is, on a desktop and on a phone', asy
           text: el.textContent.trim(), visible: style.display !== 'none' && style.visibility !== 'hidden' && r.width > 0 && r.height > 0,
           inside: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, overflow: document.documentElement.scrollWidth > innerWidth + 1,
           size: parseFloat(style.fontSize),
+          // The rail is one row of things side by side; none may sit on another.
+          touching: (() => {
+            // The crest's own box may shrink while its mark spills out of it, so the mark is what is measured.
+            const kids = ['.crest-mark', '.purse', '.pearl-chip', '.rank-chip', '.ledger-button']
+              .map((q) => document.querySelector(`#topbar ${q}`)).filter(Boolean)
+              .map((n) => [n, n.getBoundingClientRect()]).filter(([, b]) => b.width > 0 && b.height > 0 && b.top < 100);
+            for (let i = 0; i < kids.length; i++) {
+              for (let j = i + 1; j < kids.length; j++) {
+                const a = kids[i][1];
+                const b = kids[j][1];
+                if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) return `${kids[i][0].className.split(' ')[0]} and ${kids[j][0].className.split(' ')[0]}`;
+              }
+            }
+            return '';
+          })(),
         };
       });
       if (seen.text !== `v${want}`) throw new Error(`${label}: the rail says "${seen.text}" and package.json says v${want}`);
       if (!seen.visible || !seen.inside) throw new Error(`${label}: the version is not on screen (${JSON.stringify(seen)})`);
       if (seen.overflow) throw new Error(`${label}: the rail made the page scroll sideways`);
+      if (seen.touching) throw new Error(`${label}: on the rail, ${seen.touching} overlap`);
       if (seen.size < 8) throw new Error(`${label}: the version is ${seen.size}px, too small to read`);
     }
     console.log(`      v${want} under the crest on a desktop, an iPad, a phone and a phone on its side; nothing scrolls sideways`);
