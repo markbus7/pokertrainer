@@ -264,7 +264,7 @@ export function shoveDrill(rng) {
       module: 'pushfold',
       difficulty: 4,
       scenario: { hole: combos[randInt(rng, combos.length)], position: seat, heroSeat: seat, positionName: seatName },
-      question: t('You have {n} big blinds in the {seat}, and it is folded to you. What do you do?', { n: stack, seat: seatName }),
+      question: t('Your seat: {seat}. You have {n} big blinds, and it is folded to you. What do you do?', { n: stack, seat: seatName }),
       options,
       answer,
       explanation: t('At {n} big blinds from the {seat} you shove about {pct}% of hands, and {hand} is {where} that range. A raise to 2.5 commits you anyway: shove or fold.', {
