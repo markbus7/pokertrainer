@@ -14,6 +14,7 @@
  */
 
 import { LANDMARKS, yourBoat } from './riverArt.js';
+import { fogLayer } from './fog.js';
 import { t } from '../i18n/index.js';
 
 /** The same coordinate space as the river chart, so the page lays both out alike. */
@@ -38,7 +39,26 @@ export const portAt = (i) => PORT_POINTS[Math.max(0, Math.min(PORT_POINTS.length
 /** Where you come in from the river: the delta's mouth, top left. */
 export const RIVER_MOUTH = { x: 92, y: 150 };
 
-/** Catmull-Rom through the knots. */
+/**
+ * Where the Gulf's chart is clear: the river's mouth you came out of, every
+ * port you have been to and the next one. Null once the last port is reached.
+ * As on the river, ports past `charted` are fresh and the fog draws back.
+ *
+ * @param {{best:number, charted?:number|null}} o  best is the furthest port reached, -1 for none
+ */
+export function gulfFog({ best, charted = null }) {
+  const last = PORT_POINTS.length - 1;
+  if (best >= last) return null;
+  const reach = Math.min(last, Math.max(-1, best) + 1);
+  const holes = [{ x: RIVER_MOUTH.x + 30, y: RIVER_MOUTH.y + 40, r: 190, fresh: false }];
+  for (let i = 0; i <= reach; i++) {
+    const p = PORT_POINTS[i];
+    holes.push({ x: p.x, y: p.y + 20, r: 250, fresh: charted != null && i > charted });
+  }
+  return { holes, reach };
+}
+
+/** Catmull-Rom through the knots. *//** Catmull-Rom through the knots. */
 function smooth(knots, per = 18) {
   const out = [];
   for (let s = 0; s < knots.length - 1; s++) {
@@ -86,7 +106,7 @@ export function lane(fromPort, toPort) {
  * The chart. Indices are the ports' (0 Salt Harbour … 4 the Admiralty);
  * `here` is -1 when the boat is still on the river.
  */
-export function gulfSvg({ here, best, open, beaten, boat }) {
+export function gulfSvg({ here, best, open, beaten, boat, fog = null }) {
   const { W, H } = GULF;
   const shore = smooth(SHORE, 10);
   const mainland = `${line(shore)}L${W} 0L0 0Z`;
@@ -188,6 +208,7 @@ export function gulfSvg({ here, best, open, beaten, boat }) {
     ${route.length > 1 ? `<path class="route" d="${line(route)}"/>` : ''}
     ${ahead.length > 1 ? `<path class="route-ahead" d="${line(ahead)}"/>` : ''}
     ${ports}
+    ${fog ? fogLayer({ id: 'gm-fog', W, H, holes: fog.holes }) : ''}
     <g class="your-boat" transform="translate(${f1(tie[0])} ${f1(tie[1])})"><g class="bob">${yourBoat(boat)}</g></g>
     ${compass}
     <path class="border-ticks" d="${ticks.join('')}"/>

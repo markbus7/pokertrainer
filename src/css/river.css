@@ -4265,3 +4265,16 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .uncharted-panel { text-align: center; max-width: 520px; margin: var(--s-6) auto; }
 .uncharted-panel h1 { font-size: 64px; margin: var(--s-2) 0; }
 .uncharted-panel .row { justify-content: center; }
+
+/* ================================================================
+   Fog over the chart: where you have not been yet (fog.js)
+   ================================================================ */
+.map-art .fog { pointer-events: none; }
+.map-art .fog-base { fill: var(--map-fog); opacity: 0.9; }
+.map-art .fog-puff { fill: var(--map-fog-hi); opacity: 0.45; }
+.map-art .fog-drift { animation: fog-drift 46s ease-in-out infinite alternate; }
+@keyframes fog-drift {
+  from { transform: translateX(-26px); }
+  to { transform: translateX(26px); }
+}
+@media (prefers-reduced-motion: reduce) { .map-art .fog-drift { animation: none; } }

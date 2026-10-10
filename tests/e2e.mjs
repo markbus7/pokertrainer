@@ -4620,6 +4620,57 @@ await step('the backwaters: uncharted until somebody tells you, then a town of i
   }
 });
 
+await step('fog over the chart: the river past the next stop is unexplored, and it lifts as you go', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const fp = await ctx.newPage();
+  const mine = [];
+  fp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const KEY = 'poker-trainer.profile.v1';
+  const seed = (extra) => fp.evaluate(({ key, extra }) => localStorage.setItem(key, JSON.stringify({
+    seenPrologue: true, bankroll: 200, settings: { lang: 'en' }, ...extra,
+  })), { key: KEY, extra });
+  // Which stops the fog has a hole over, read off the chart itself.
+  const clear = () => fp.evaluate(() => {
+    const holes = [...document.querySelectorAll('.river-map .fog-hole')].map((c) => ({ x: Number(c.getAttribute('cx')), y: Number(c.getAttribute('cy')), fresh: c.classList.contains('fresh') }));
+    return { fog: Boolean(document.querySelector('.river-map .fog')), holes };
+  });
+  try {
+    await fp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await seed({});
+    await fp.goto(`${BASE}/?fog=1#home`, { waitUntil: 'domcontentloaded' });
+    await fp.waitForSelector('.river-map .fog', { timeout: 8000 });
+    let seen = await clear();
+    // Mud Landing (132,140) and Fisher's Rest (360,478) clear; Cotton Row (760,470) not.
+    const has = (x, y) => seen.holes.some((h) => Math.abs(h.x - x) < 1 && Math.abs(h.y - y) < 1);
+    if (!has(132, 140) || !has(360, 478)) throw new Error('the stop you are at, or the next one, is under fog');
+    if (has(760, 470)) throw new Error('Cotton Row is clear before you have been near it');
+    if (seen.holes.some((h) => h.fresh)) throw new Error('the first look at the chart opened holes as if they were new');
+    // Down at Cotton Row: the fog draws back to the Belle, once, and says so.
+    await seed({ bankroll: 900, career: { venue: 'nl25', best: 'nl25', beaten: ['nl2', 'nl5', 'nl10'], played: {} }, charted: { river: 1 } });
+    await fp.goto(`${BASE}/?fog=2#home`, { waitUntil: 'domcontentloaded' });
+    await fp.waitForSelector('.river-map .fog', { timeout: 8000 });
+    seen = await clear();
+    if (seen.holes.filter((h) => h.fresh).length !== 3) throw new Error(`${seen.holes.filter((h) => h.fresh).length} holes opened, expected the Ferry, Cotton Row and the Belle`);
+    await fp.waitForFunction(() => /The fog lifts/.test(document.querySelector('#toasts')?.textContent || ''), null, { timeout: 5000 });
+    if (!/The Belle is on the chart now/.test(await fp.textContent('#toasts'))) throw new Error('the toast does not say where the fog lifted to');
+    const charted = await fp.evaluate((key) => JSON.parse(localStorage.getItem(key)).charted, KEY);
+    if (!charted || charted.river !== 4) throw new Error(`the chart was written down as ${JSON.stringify(charted)}`);
+    await fp.goto(`${BASE}/?fog=3#home`, { waitUntil: 'domcontentloaded' });
+    await fp.waitForSelector('.river-map .fog', { timeout: 8000 });
+    seen = await clear();
+    if (seen.holes.some((h) => h.fresh)) throw new Error('the fog drew back a second time');
+    // At the delta there is nothing left to find: no fog at all.
+    await seed({ bankroll: 30000, career: { venue: 'nl500', best: 'nl500', beaten: ['nl2', 'nl5', 'nl10', 'nl25', 'nl50', 'nl100', 'nl200'], played: {} } });
+    await fp.goto(`${BASE}/?fog=4#home`, { waitUntil: 'domcontentloaded' });
+    await fp.waitForSelector('.river-map svg', { timeout: 8000 });
+    if ((await clear()).fog) throw new Error('the river is still under fog at the delta');
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log('      a new chart clear to Fisher\'s Rest; at Cotton Row the fog draws back to the Belle once, and says so; none at the delta');
+  } finally {
+    await ctx.close();
+  }
+});
+
 await step('the rail says which build this is, on a desktop and on a phone', async () => {
   // "Do I have the right one?" has to be a glance. The version was inside the
   // ledger; it is now on the rail of every screen, under the crest, and the

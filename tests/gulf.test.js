@@ -12,6 +12,7 @@ import { BANKS, shoveDrill, callShoveDrill, shoveShare, handPercentile, SEAT_WID
 import { generateQuestion } from '../src/js/trainers/index.js';
 import { parseCards, handKey } from '../src/js/core/cards.js';
 import { makeRng } from '../src/js/core/rng.js';
+import { gulfFog, PORT_POINTS } from '../src/js/ui/gulfMap.js';
 import { ROAD } from '../src/js/data/journey.js';
 import { GULF, RIVER } from '../src/js/data/venues.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
@@ -92,5 +93,15 @@ describe('the Gulf on the road', () => {
     // The river's chapters never ask for the river.
     const river = CATALOGUE.find((i) => i.key === 'lesson:icm');
     assert(!river.needs.river, 'a river chapter waits for the river');
+  });
+});
+
+describe('the Gulf: fog over the ports you have not reached', () => {
+  it('clears the river\'s mouth and the first port before you have sailed, and lifts at the Admiralty', () => {
+    const start = gulfFog({ best: -1 });
+    equal(start.reach, 0);
+    equal(start.holes.length, 2, 'more than the mouth and Salt Harbour are clear at the start');
+    equal(gulfFog({ best: 2 }).reach, 3);
+    equal(gulfFog({ best: PORT_POINTS.length - 1 }), null);
   });
 });

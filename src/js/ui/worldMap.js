@@ -33,6 +33,7 @@
  */
 
 import { LANDMARKS, yourBoat } from './riverArt.js';
+import { fogLayer } from './fog.js';
 import { t } from '../i18n/index.js';
 
 /** The chart's own coordinate space. The page scales it. */
@@ -199,7 +200,44 @@ export const PLACES = [
   { key: 'tackle', route: 'catchbook', landmark: 'tackle', x: 250, y: 600, name: 'The Catch Book', label: 'Every fish is a spot played right' },
 ];
 
+/** How far round each thing the fog is cleared, in chart units. */
+export const FOG_CLEAR = { stop: 230, place: 125, town: 160 };
+
 /**
+ * Where the river's chart is clear: every stop you have been to and the next
+ * one down, the places that are not tables, and the towns you have heard of.
+ * Null once you have reached the delta: there is nothing left on the river to
+ * find. `charted` is how far the chart had been cleared before; the stops past
+ * it are fresh, and the fog draws back from them as the chart is shown.
+ *
+ * @param {{best:number, heard?:string[], charted?:number|null}} o
+ * @returns {null | {holes:Array<{x:number,y:number,r:number,fresh:boolean}>, reach:number}}
+ */
+export function riverFog({ best, heard = [], charted = null }) {
+  const last = STOP_POINTS.length - 1;
+  if (best >= last) return null;
+  const reach = Math.min(last, Math.max(0, best) + 1);
+  const holes = [];
+  for (let i = 0; i <= reach; i++) {
+    const p = STOP_POINTS[i];
+    holes.push({ x: p.x, y: p.y, r: FOG_CLEAR.stop, fresh: charted != null && i > charted });
+  }
+  // Where the river comes down out of the hills, above Mud Landing.
+  holes.push({ x: 40, y: 210, r: 180, fresh: false });
+  for (const p of PLACES) holes.push({ x: p.x, y: p.y + 30, r: FOG_CLEAR.place, fresh: false });
+  for (const key of heard) {
+    const p = TOWN_POINTS[key];
+    if (!p) continue;
+    holes.push({ x: p.x, y: p.y + 20, r: FOG_CLEAR.town, fresh: false });
+    // The water that takes you there, too.
+    if (p.moor) holes.push({ x: (p.x + p.moor[0]) / 2, y: (p.y + p.moor[1]) / 2, r: 110, fresh: false });
+    if (key === 'bayou') holes.push({ x: 1072, y: 760, r: 100, fresh: false });
+  }
+  return { holes, reach };
+}
+
+/**
+ * Names on the water, lettered along it the way a chart does/**
  * Names on the water, lettered along it the way a chart does: each follows
  * a line of its own just off its water, clear of the boat's route.
  */
@@ -504,8 +542,10 @@ export function voyage(fromIndex, toIndex) {
  * @param {Array<string>} s.landmarks  one per stop
  * @param {Array<{key:string, landmark:string, heard:boolean, here:boolean, done:boolean}>} [s.towns]
  *   the backwaters: drawn once you have heard of them, a question mark until then
+ * @param {{holes:Array<{x:number,y:number,r:number,fresh?:boolean}>}|null} [s.fog]
+ *   the country you have not been to, with the holes where you have (ui/fog.js); none once the river is won
  */
-export function worldSvg({ here, best, open, beaten, boat, landmarks, towns = [] }) {
+export function worldSvg({ here, best, open, beaten, boat, landmarks, towns = [], fog = null }) {
   const { W, H } = WORLD;
   const g = worldGeometry();
   const sc = scenery();
@@ -636,6 +676,7 @@ export function worldSvg({ here, best, open, beaten, boat, landmarks, towns = []
     ${places}
     ${townArt}
     ${stops}
+    ${fog ? fogLayer({ id: 'wm-fog', W, H, holes: fog.holes }) : ''}
     <g class="your-boat" transform="translate(${f1(tie[0])} ${f1(tie[1])})"><g class="bob">${yourBoat(boat)}</g></g>
     ${compass}
     ${scale}

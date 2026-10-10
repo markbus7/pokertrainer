@@ -284,6 +284,17 @@ the delta is yours, with a guided lesson and drills each — four from a bank of
 worked spots, and push or fold generated from the same shoving shares the bots
 use. The top rank now asks for every one of the seventeen chapters mastered.
 
+### 🌫️ Fog over the chart
+
+The chart starts under fog. You can see where you have been and the next stop
+down, and the places that are not tables (the school, the Trading Post, the
+boatyard and the rest), because those are where you go between tables. As the
+boat gets further the fog draws back on the chart while you watch, and a note
+says what has come into view. At the delta there is nothing left on the river
+to find, and the fog is gone. The Gulf has its own fog, cleared a port at a
+time from the river's mouth. A town off the river (below) clears once you have
+heard of it.
+
 ### 🗺️ The backwaters: towns off the river
 
 The river is a line, and a line is quickly played out. Off it are three towns
@@ -450,7 +461,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.1.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.2.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is
