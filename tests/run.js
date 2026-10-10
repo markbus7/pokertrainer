@@ -22,6 +22,7 @@ const modules = [
   './character.test.js',
   './guide.test.js',
   './snags.test.js',
+  './gulf.test.js',
   './rangeTrainer.test.js',
   './reference.test.js',
   './dontKnow.test.js',

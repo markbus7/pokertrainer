@@ -21,11 +21,12 @@
 import { el, fmt } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
-import { VENUES, venueFor, roomYouCanAfford } from '../data/venues.js';
+import { VENUES, venueFor, roomYouCanAfford, RIVER_END, RIVER, GULF } from '../data/venues.js';
 import { bossFor } from '../data/characters.js';
 import { nextUp, moduleMeta, MODULE_META } from '../data/curriculum.js';
 import { boatSvg } from './riverArt.js';
 import { WORLD, stopAt, PLACES, worldSvg, voyage } from './worldMap.js';
+import { gulfSvg, portAt, RIVER_MOUTH } from './gulfMap.js';
 import { portraitSvg } from './portraits.js';
 import { svgNode } from './place.js';
 import {
@@ -52,7 +53,7 @@ export function riverState(profile) {
   const here = venueFor(career.venue);
   const best = venueFor(career.best);
   const beatenKeys = new Set(career.beaten);
-  const wonRiver = beatenKeys.has('nl500');
+  const wonRiver = beatenKeys.has(RIVER_END);
   return {
     bankroll,
     here,
@@ -87,8 +88,7 @@ export function stopStatus(venue, state) {
   return { key: 'shut', text: t('Needs {money}', { money: fmt.money(venue.stake.minBankroll) }) };
 }
 
-function stopPlate(venue, state, go) {
-  const p = stopAt(venue.index);
+function stopPlate(venue, state, go, p = stopAt(venue.index)) {
   const status = stopStatus(venue, state);
   const boss = bossFor(venue.boss);
   const never = venue.index > state.best && (status.key === 'shut' || status.key === 'locked');
@@ -158,18 +158,21 @@ function placePlate(place, profile, go, nextPlace) {
   );
 }
 
+/** The river's last index: on its chart, anywhere in the Gulf is past the delta. */
+const RIVER_LAST = RIVER.length - 1;
+
 function riverMap(state, profile, go) {
   const chart = el('div.river-map.world', {
     style: { aspectRatio: `${WORLD.W} / ${WORLD.H}` },
   });
   chart.innerHTML = worldSvg({
-    here: state.here.index,
-    best: state.best,
+    here: Math.min(state.here.index, RIVER_LAST),
+    best: Math.min(state.best, RIVER_LAST),
     // The purse opens a stop and the road lets you in; both have to say yes.
-    open: Math.min(state.open, state.road.current),
+    open: Math.min(state.open, state.road.current, RIVER_LAST),
     beaten: state.beaten,
     boat: state.boat.key,
-    landmarks: VENUES.map((v) => v.landmark),
+    landmarks: RIVER.map((v) => v.landmark),
   });
   // The drawings answer taps as well as their name plates do.
   chart.querySelectorAll('.landmark').forEach((g) => {
@@ -186,11 +189,44 @@ function riverMap(state, profile, go) {
       if (place) go(place.route);
     });
   });
-  for (const v of VENUES) chart.appendChild(stopPlate(v, state, go));
+  for (const v of RIVER) chart.appendChild(stopPlate(v, state, go));
   const nextPlace = state.road.next ? state.road.next.goal.to.place : null;
   for (const place of PLACES) chart.appendChild(placePlate(place, profile, go, nextPlace));
   // On a narrow screen the chart is wider than the page and scrolls sideways,
   // the way a map is dragged; on a wide one the scroller simply fits.
+  return el('div.map-scroller', chart);
+}
+
+/**
+ * The Gulf's chart: the five ports past the delta, and the river's mouth to
+ * go back up it. Shut until the delta is taken, but always there to look at
+ * once you have seen it.
+ */
+function gulfMap(state, profile, go, showRiver) {
+  const first = GULF[0].index;
+  const chart = el('div.river-map.world.gulf', { style: { aspectRatio: `${WORLD.W} / ${WORLD.H}` } });
+  chart.innerHTML = gulfSvg({
+    here: state.here.act === 2 ? state.here.index - first : -1,
+    best: state.best - first,
+    open: Math.min(state.open, state.road.current) - first,
+    beaten: new Set([...state.beaten].filter((i) => i >= first).map((i) => i - first)),
+    boat: state.boat.key,
+  });
+  chart.querySelectorAll('.landmark').forEach((g) => {
+    g.addEventListener('click', () => {
+      audio.sfx('click');
+      go('stop', { at: GULF[Number(g.dataset.port)].key });
+    });
+  });
+  for (const v of GULF) chart.appendChild(stopPlate(v, state, go, portAt(v.index - first)));
+  chart.appendChild(el('button.map-place.place-mouth', {
+    style: { left: `${(RIVER_MOUTH.x / WORLD.W) * 100}%`, top: `${((RIVER_MOUTH.y + 20) / WORLD.H) * 100}%` },
+    onclick: () => { audio.sfx('click'); showRiver(); },
+    'aria-label': t('Back up the river'),
+  },
+    el('span.map-place-name', t('The Long River')),
+    el('span.map-place-meta', t('Back up the river')),
+  ));
   return el('div.map-scroller', chart);
 }
 
@@ -348,7 +384,8 @@ function sail(scroller, fromIndex, toIndex, onArrive) {
 /** Scroll the chart sideways so a stop sits in the middle of the view. */
 function centreOn(scroller, index) {
   if (scroller.scrollWidth <= scroller.clientWidth) return;
-  const p = stopAt(index);
+  const venue = VENUES[index];
+  const p = venue && venue.act === 2 ? portAt(index - GULF[0].index) : stopAt(index);
   scroller.scrollLeft = (p.x / WORLD.W) * scroller.scrollWidth - scroller.clientWidth / 2;
 }
 
@@ -358,15 +395,30 @@ export function renderRiver(ctx) {
   const screen = el('div.screen.river-screen');
   const rerender = () => go('home');
 
-  const map = riverMap(state, profile, go);
+  // Two charts once the Gulf is in sight: the river, and the sea past the
+  // delta. Each opens on the one your boat is in, and a switch shows the other.
+  const gulfSeen = state.wonRiver || state.best >= GULF[0].index || state.road.current >= GULF[0].index;
+  const view = !gulfSeen ? 'river'
+    : ctx.params.chart === 'river' || ctx.params.chart === 'gulf' ? ctx.params.chart
+      : state.here.act === 2 ? 'gulf' : 'river';
+  const map = view === 'gulf'
+    ? gulfMap(state, profile, go, () => go('home', { chart: 'river' }))
+    : riverMap(state, profile, go);
   if (!profile.data.seenPrologue) screen.append(prologue(state, profile, rerender));
   screen.append(
     el('div.river-layout.world-layout',
       el('div.river-chart',
         el('div.cartouche',
-          el('h2.sign', t('The Long River')),
-          el('div.cartouche-sub', t('Eight tables from Mud Landing to the delta, and everything on the water between')),
+          el('h2.sign', view === 'gulf' ? t('The Gulf') : t('The Long River')),
+          el('div.cartouche-sub', view === 'gulf'
+            ? t('Five tables past the delta, from Salt Harbour to the Admiralty')
+            : t('Eight tables from Mud Landing to the delta, and everything on the water between')),
         ),
+        gulfSeen
+          ? el('div.chart-switch', { role: 'group', 'aria-label': t('Charts') },
+            el(`button${view === 'river' ? '.active' : ''}`, { type: 'button', onclick: () => go('home', { chart: 'river' }) }, t('The Long River')),
+            el(`button${view === 'gulf' ? '.active' : ''}`, { type: 'button', onclick: () => go('home', { chart: 'gulf' }) }, t('The Gulf')))
+          : null,
         roadBanner(state.road, go),
         map,
       ),
@@ -389,6 +441,11 @@ export function renderRiver(ctx) {
     const to = Number(trip[2]);
     // The trip is taken once; the back button should not replay it.
     history.replaceState(null, '', '#home');
+    // The river chart draws the river's voyages; at sea the boat simply arrives.
+    if (from > RIVER_LAST || to > RIVER_LAST) {
+      requestAnimationFrame(() => go('stop', { at: VENUES[to].key, arrived: 1 }));
+      return screen;
+    }
     requestAnimationFrame(() => {
       centreOn(map, from);
       sail(map, from, to, () => go('stop', { at: VENUES[to].key, arrived: 1 }));

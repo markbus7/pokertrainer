@@ -4150,3 +4150,16 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
   .snag-times { grid-column: 3; grid-row: 1; }
   .snag-streak { grid-column: 3; grid-row: 2; }
 }
+
+/* ---- The Gulf chart (gulfMap.js) ---- */
+.gulf-art .gulf-island { stroke: var(--map-sand); stroke-width: 6; stroke-linejoin: round; paint-order: stroke; }
+.gulf-art .land { stroke: var(--map-sand); stroke-width: 8; stroke-linejoin: round; paint-order: stroke; }
+.gulf-art .reef { fill: var(--map-water-2); opacity: 0.55; }
+.gulf-art .buoy { fill: var(--map-glow); stroke: var(--map-ink); stroke-width: 1; }
+.gulf-art .gulf-river { fill: none; stroke: var(--map-water); stroke-width: 34; stroke-linecap: round; }
+.gulf-art .sea-waves { fill: none; stroke: var(--map-water-2); stroke-width: 1.2; opacity: 0.5; }
+
+/* The switch between the river and the Gulf, over the chart. */
+.chart-switch { display: inline-flex; gap: 4px; padding: 3px; margin: 0 0 var(--s-3); border-radius: 99px; background: var(--bg-card); border: 1px solid var(--border); }
+.chart-switch button { border: 0; background: none; color: var(--text-dim); font: inherit; font-weight: 650; padding: 6px 14px; border-radius: 99px; cursor: pointer; }
+.chart-switch button.active { background: var(--accent); color: var(--on-accent); }

@@ -334,15 +334,18 @@ describe('economy: pearls keep their worth — Delphine buys them, and seats can
 
   it('prices a seat at 2,500 pearls a tier, so a pearl is worth more the further down the river', () => {
     equal(PEARLS_PER_SEAT, 2500);
-    equal(VENUES.map((v) => seatInPearls(v.index)).join(','), '2500,2500,5000,5000,7500,7500,10000,10000');
-    equal(VENUES.map((v) => perThousand(v.index)).join(','), '0.8,2,2,5,6.66,13.33,20,50');
+    equal(VENUES.map((v) => seatInPearls(v.index)).join(','), '2500,2500,5000,5000,7500,7500,10000,10000,12500,12500,15000,15000,17500');
+    equal(VENUES.map((v) => perThousand(v.index)).join(','), '0.8,2,2,5,6.66,13.33,20,50,80,160,333.33,666.66,1428.57');
     for (let i = 1; i < VENUES.length; i++) assert(pearlPrice(i) >= pearlPrice(i - 1), `a pearl fetches less at ${VENUES[i].key} than upriver`);
     // What a seat costs in pearls fetches exactly that seat in money.
     for (const v of VENUES) equal(saleValue(seatInPearls(v.index), v.index), v.entry);
     // In big blinds, a thousand pearls is never nothing and never a buy-in.
+    // It is 40 bb divided by a stop's tier — fewer big blinds a pearl the
+    // further you go, as the tables pay more pearls a hand — so in the Gulf,
+    // where the tiers are highest, it is a handful of big blinds.
     for (const v of VENUES) {
       const bb = perThousand(v.index) / v.stake.bb;
-      assert(bb >= 10 && bb <= 40, `${v.key}: a thousand pearls fetch ${bb.toFixed(1)} bb`);
+      assert(bb >= 5 && bb <= 40, `${v.key}: a thousand pearls fetch ${bb.toFixed(1)} bb`);
     }
   });
 
@@ -382,7 +385,8 @@ describe('economy: pearls keep their worth — Delphine buys them, and seats can
     const worth = purseWorth(p);
     equal(worth.at, 2);
     equal(worth.here, 20);
-    equal(worth.delta, 500);
+    // The far end is the Admiralty now: 25,000 for a 17,500-pearl seat.
+    equal(worth.delta, 14285.71);
   });
 
   it('pays and refunds in pearls without ever going below nothing', () => {
@@ -414,10 +418,11 @@ describe('economy: the card rooms, the far end of the purse', () => {
     return p;
   };
 
-  it('costs more down the river, about 150,000 pearls for all eight', () => {
+  it('costs more down the river: 150,000 pearls for the river\'s eight, 550,000 for the Gulf\'s five', () => {
     equal(ROOM_PRICES.length, VENUES.length);
     for (let i = 1; i < ROOM_PRICES.length; i++) assert(ROOM_PRICES[i] > ROOM_PRICES[i - 1]);
-    equal(ROOM_PRICES.reduce((a, b) => a + b, 0), 150000);
+    equal(ROOM_PRICES.slice(0, 8).reduce((a, b) => a + b, 0), 150000);
+    equal(ROOM_PRICES.slice(8).reduce((a, b) => a + b, 0), 550000);
     for (const v of VENUES) equal(itemByKey(roomKey(v.key)).price, ROOM_PRICES[v.index]);
   });
 

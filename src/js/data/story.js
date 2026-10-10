@@ -54,6 +54,33 @@ export const STORY = {
     challenge: 'Nobody has asked me for a duel in twenty years. Sit down. Let us see what the river has made of you.',
     loss: 'Nobody here is going to give you anything. Come back when you have earned it.',
   },
+
+  /* ---- The Gulf: past the delta, the sea ---- */
+  nl1000: {
+    arrival: 'The flagship clears the last mouth of the delta, and the water turns from brown to green. "I never sailed past here," says Silas, quietly. "Forty years, and I never once sailed past here." Salt Harbour\'s customs house is lit, and Josiah Quint is already counting what you owe.',
+    challenge: 'A private game? Everything in this harbour pays duty, friend. Sit, and we will see what yours comes to.',
+    loss: 'You bet too little and checked too much, and I paid you nothing for it. A rich man calls — make it worth his while.',
+  },
+  nl2000: {
+    arrival: 'A hundred and twelve steps up, the lamp room of the lighthouse holds one table and a great deal of patience. Molly Fenn trims the wick, deals, and checks. And checks again.',
+    challenge: 'Just us, up here with the light? I have all night, and the lamp has all year. Deal.',
+    loss: 'You bet the turn with nothing and called my river with less. The late streets are where I live.',
+  },
+  nl5000: {
+    arrival: 'The Pearl Banks are a fleet of boats over the oyster beds, and the buying schooner sits in the middle of them. Isabel Valdés weighs pearls with one hand and re-raises with the other.',
+    challenge: 'Heads up, querido? Then every pot starts big. Let us see how you play once it has.',
+    loss: 'You called my re-raise with a hand that could not stand the flop. In a pot this big, you plan the whole hand before you call.',
+  },
+  nl10k: {
+    arrival: 'Behind the reef at Hurricane Key the privateers have a tavern, and at its table nobody ever folds before the flop. Black Jack Teague waves you in: there is always room for one more in the pot.',
+    challenge: 'Just the two of us? Ha — the crowd will have to watch, for once. Deal them, and do not bore me.',
+    loss: 'Four of us saw that flop and you bluffed into all of us. Somebody always has it on the Key.',
+  },
+  nl25k: {
+    arrival: 'At the end of the sea lanes stands the Admiralty, and in it the last table there is. Admiral Hargreave has heard about the Commodore\'s flagship. "Sit," he says. "Briefly." Silas does not sit. He stands at your shoulder, the way he did at Mud Landing.',
+    challenge: 'A duel, at my table? Very well. The blinds will climb until one of us has nothing. Know your shoves.',
+    loss: 'Short-stacked, you called when you should have shoved and shoved when you should have folded. That is the whole of the sea, and you have not learned it yet.',
+  },
 };
 
 /** The scene for a stop, or null. */

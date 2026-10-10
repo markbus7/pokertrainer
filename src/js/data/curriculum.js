@@ -211,6 +211,98 @@ export const MODULE_META = [
       ],
     },
   },
+
+  /* ---- The second act: the Gulf. Each opens once the river is won. ---- */
+  {
+    id: 'value',
+    name: 'Value Betting',
+    icon: 'm-value',
+    unlockLevel: 7,
+    act: 2,
+    tagline: 'Bet when worse calls.',
+    lesson: {
+      summary: 'Most of the money in poker is not won with bluffs. It is won by betting good hands into players who call with worse — and by betting enough.',
+      points: [
+        'A value bet is a bet that worse hands call. If only better hands call and worse ones fold, it is not value — check instead.',
+        'Thin value is betting a hand that is only a little ahead, like second pair, against somebody who calls with worse. It is where good players earn what others leave behind.',
+        'Size for the hands that call you, not for the hand you hold. A calling station pays a big bet; a careful player only pays a small one.',
+        'Plan three streets with a strong hand. A small flop bet, a bigger turn and a big river build a pot that one bet never could.',
+        'On the river, ask one question: which worse hands call this? If you can name them, bet. If you cannot, check.',
+      ],
+    },
+  },
+  {
+    id: 'streets',
+    name: 'Turn & River',
+    icon: 'm-streets',
+    unlockLevel: 7,
+    act: 2,
+    tagline: 'Where the big pots are decided.',
+    lesson: {
+      summary: 'The flop is cheap and the river is expensive. Every street the bets get bigger, so the turn and river decisions are worth more than all the others put together.',
+      points: [
+        'Barrel the turn when the card is good for your range: an overcard, a card that completes the draws you could have, or a scare card for their pairs.',
+        'Give up when the turn is good for theirs. A bluff that has no story behind it is just a donation.',
+        'Pot control: with a medium hand, check one street — usually the turn — to keep the pot the size of a medium hand.',
+        'On the river, draws have either arrived or missed. A missed draw has no showdown value, so it bluffs or gives up; a medium pair checks and catches bluffs.',
+        'Facing a big river bet, the price tells you how often you need to be good. Ask whether they bluff that often; if not, fold even a hand that looks pretty.',
+      ],
+    },
+  },
+  {
+    id: 'threebet',
+    name: '3-Bet Pots',
+    icon: 'm-threebet',
+    unlockLevel: 7,
+    act: 2,
+    tagline: 'Big pots before the flop.',
+    lesson: {
+      summary: 'A re-raised pot is already big before the flop, so the stacks behind it are short. That changes what every hand is worth after the flop.',
+      points: [
+        'In a 3-bet pot the stack-to-pot ratio is about 4, not 13: top pair is often a hand you go all in with.',
+        'The 3-bettor has the stronger range and can c-bet often and small, about a third of the pot.',
+        'Calling a 3-bet out of position is expensive. Prefer to 4-bet or fold from the blinds, and call mostly in position.',
+        'Against a 3-bet, call with hands that play well — pairs, suited broadways, suited connectors in position — and 4-bet your best plus a few blockers like A5s.',
+        'Do not call a 3-bet with hands that are dominated, like KJo or AT offsuit: they make second-best pairs in a pot too big to fold.',
+      ],
+    },
+  },
+  {
+    id: 'multiway',
+    name: 'Multiway Pots',
+    icon: 'm-multiway',
+    unlockLevel: 7,
+    act: 2,
+    tagline: 'Three players change everything.',
+    lesson: {
+      summary: 'Heads up, a bluff has to get past one player. With three or four in the pot it has to get past all of them, and somebody almost always has something.',
+      points: [
+        'Bluff far less in multiway pots. Each extra player is one more chance that somebody calls.',
+        'Value bet a little tighter: top pair is good heads up, but with four players somebody has two pair more often.',
+        'C-bet less often. Your preflop raise means less when three hands have connected with the flop.',
+        'Draws to the best hand gain value — the nut flush draw gets paid by everyone — while draws to second best lose it.',
+        'With a strong hand, bet: the pot is big, and several players can each pay you a little.',
+      ],
+    },
+  },
+  {
+    id: 'pushfold',
+    name: 'Push or Fold',
+    icon: 'm-pushfold',
+    unlockLevel: 7,
+    act: 2,
+    tagline: 'Short stacks, one decision.',
+    lesson: {
+      summary: 'Below about fifteen big blinds there is no room to raise and fold. The decision collapses into one: all in, or out. Getting it right wins tournaments and duels.',
+      points: [
+        'With 10 big blinds or fewer, a raise commits you anyway. Shove or fold — never raise and fold, and almost never limp.',
+        'The shorter the stack, the wider you shove: about a third of hands at 10 big blinds, over half at 5, almost any two at 2.',
+        'Later seats shove wider: fewer players behind you means fewer chances to run into a big hand.',
+        'Shoving beats calling. A shove wins the blinds when everybody folds; a call has to win at showdown.',
+        'Call a shove tighter than you would shove yourself — about half as wide — because the shover had the choice and you do not.',
+      ],
+    },
+  },
 ];
 
 export { WALKTHROUGHS } from './walkthroughs.js';

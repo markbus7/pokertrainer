@@ -23,7 +23,7 @@ import { DEFAULT_THEME } from '../data/themes.js';
 import { STAKES } from './stats.js';
 import { STARTER, LESSON_PRICES, fillBerths } from './economy.js';
 import { boatEarnedBy } from '../data/characters.js';
-import { VENUES, venueFor } from '../data/venues.js';
+import { VENUES, venueFor, RIVER_END } from '../data/venues.js';
 import { logCatch } from '../data/fish.js';
 import { sanitizeLifetime, recordHand } from './lifetime.js';
 import { sanitizeLook } from '../data/looks.js';
@@ -120,7 +120,8 @@ export const RANKS = [
   {
     level: 10, xp: 40000, name: 'GTO Master', emoji: '🧠',
     blurb: 'Balanced, unexploitable, and ruthless when they are not.',
-    requires: { lessons: 12, solid: 12, mastered: 12, hands: 6000 },
+    // Every chapter there is, the Gulf's included: the top rank is everything mastered.
+    requires: { lessons: 17, solid: 17, mastered: 17, hands: 6000 },
   },
 ];
 
@@ -323,7 +324,7 @@ export class Profile {
     const e = this.data.economy;
     const career = this.data.career || {};
     const best = Math.max(venueFor(career.best || 'nl2').index, venueFor(career.venue || 'nl2').index);
-    const won = (career.beaten || []).includes(VENUES[VENUES.length - 1].key);
+    const won = (career.beaten || []).includes(RIVER_END);
     const earned = boatEarnedBy(best);
     if (!Array.isArray(e.owned)) e.owned = [...STARTER];
     if (earned !== 'rowboat' && !e.owned.includes(`boat:${earned}`)) e.owned.push(`boat:${earned}`);
@@ -807,7 +808,7 @@ export class Profile {
     const c = this.career;
     if (c.beaten.includes(key)) return false;
     c.beaten.push(key);
-    if (key === VENUES[VENUES.length - 1].key) {
+    if (key === RIVER_END) {
       this.economy.boat = 'flagship';
       fillBerths(this);
     }

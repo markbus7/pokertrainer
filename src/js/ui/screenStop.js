@@ -44,6 +44,7 @@ function scene(venue, state, arrived) {
     orbLeft: venue.index % 2 === 1,
     boat: here ? state.boat.key : null,
     arriving: arrived,
+    sea: venue.act === 2,
   });
   return el('div.scene',
     svgNode(art, 'scene-art-wrap'),
@@ -193,7 +194,7 @@ function arrivalCard(venue) {
   const story = storyFor(venue.key);
   if (!story) return null;
   return el('div.panel.paper.story-card',
-    el('div.story-kicker', icon('anchor', { size: 14 }), t('The river, {place}', { place: t(venue.name) })),
+    el('div.story-kicker', icon('anchor', { size: 14 }), venue.act === 2 ? t('The Gulf, {place}', { place: t(venue.name) }) : t('The river, {place}', { place: t(venue.name) })),
     el('p.story-text', typedText(t(story.arrival))),
   );
 }
@@ -441,13 +442,13 @@ function roomBlock(venue, profile, go) {
   const count = roomsOwned(profile);
   return el(`div.panel.room-block${owned ? '.owned' : ''}`,
     el('div.panel-title', el('h3', icon('anchor', { size: 16 }), ' ', t('The card room')),
-      el('span.faint', t('{n} of {total} rooms on the river are yours', { n: count, total: VENUES.length }))),
+      el('span.faint', t('{n} of {total} card rooms are yours', { n: count, total: VENUES.length }))),
     owned
       ? el('p', t('{place} is your room. The house\'s cut is yours: {cut} for every hundred hands you are dealt at its tables. It has paid you {money} so far.',
         { place: t(venue.name), cut: fmt.money(per100), money: fmt.money(roomIncome(profile, venue.key)) }))
-      : el('p.muted', t('Buy the house the table stands in, and the house\'s cut is yours: {cut} for every hundred hands you are dealt at its tables, paid when you cash out. Own all {total}, and the river is yours.',
+      : el('p.muted', t('Buy the house the table stands in, and the house\'s cut is yours: {cut} for every hundred hands you are dealt at its tables, paid when you cash out. Own all {total}, and every table there is pays you.',
         { cut: fmt.money(per100), total: VENUES.length })),
-    count === VENUES.length ? el('p.room-crown', t('Every room on the river is yours.')) : null,
+    count === VENUES.length ? el('p.room-crown', t('Every card room on the river and the sea is yours.')) : null,
     el('div.stop-actions', buyControl(profile, roomKey(venue.key), {
       go, label: t('Buy the room'), onBought: () => go('stop', { at: venue.key, bought: Date.now() }),
     })),

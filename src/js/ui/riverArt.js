@@ -262,6 +262,67 @@ export const LANDMARKS = {
     <path class="ink" d="M-40 8V-24"/>
     <path class="mark ink" d="M-40 -24l12 3.5-12 3.5z"/>`,
 
+  /* ---- the Gulf ---- */
+  // Salt Harbour: the customs house on the quay, its flag, a crate of duty.
+  customs: () => `
+    <path class="ground" d="M-44 18h88"/>
+    <path class="wall ink" d="M-30 18V-6h60v24z"/>
+    <path class="roof ink" d="M-34 -6L0 -22L34 -6z"/>
+    <path class="ink" d="M-23 18V-2M-14 18V-2M14 18V-2M23 18V-2"/>
+    <rect class="glow" x="-5" y="3" width="10" height="15"/>
+    <path class="ink" d="M0 -22v-14"/>
+    <path class="mark ink" d="M0 -36l12 3-12 3z"/>
+    <rect class="wall ink" x="33" y="8" width="10" height="10"/>
+    <path class="ink" d="M33 13h10M38 8v10"/>`,
+
+  // Lighthouse Point: the tower and its beam, and the keeper's cottage.
+  lighthouse: () => `
+    <path class="ground" d="M-40 18h80"/>
+    <path class="glow" d="M6 -31L40 -42V-18z" opacity=".55"/>
+    <path class="wall ink" d="M-9 18l3-40h12l3 40z"/>
+    <path class="mark ink" d="M-7.9 2h15.8l-.6-7H-7.3zM-6.5 -14h13l-.5-6h-12z"/>
+    <path class="roof ink" d="M-9 -22h18v-3h-18z"/>
+    <rect class="glow ink" x="-5" y="-32" width="10" height="7"/>
+    <path class="roof ink" d="M-7 -32l7-7 7 7z"/>
+    <path class="wall ink" d="M14 18V6h18v12z"/>
+    <path class="roof ink" d="M12 6l11-8 11 8z"/>
+    <rect class="glow" x="19" y="10" width="5" height="5"/>`,
+
+  // The Pearl Banks: a buying schooner at anchor over the beds.
+  pearler: () => `
+    <path class="hull ink" d="M-40 8h80l-10 12h-60z"/>
+    ${windowsRow(-28, 11, 6, 9, 3, 3)}
+    <path class="ink" d="M-10 8v-46M15 8v-40"/>
+    <path class="wall ink" d="M-9 -36l21 32h-21z"/>
+    <path class="wall ink" d="M16 -30l18 26h-18z"/>
+    <path class="wall ink" d="M-11 -34l-24 30h24z"/>
+    <path class="mark ink" d="M-10 -38l9 2-9 2z"/>
+    <path class="ink" d="M-40 8l-6 -6M40 8v6"/>`,
+
+  // Hurricane Key: a stone fort behind the reef, a black flag, a palm.
+  fort: () => `
+    <path class="ground" d="M-44 18h88"/>
+    <path class="wall ink" d="M-34 18V-4h42v22z"/>
+    <path class="wall ink" d="M-34 -4v-6h7v6M-21 -4v-6h7v6M-8 -4v-6h7v6M4 -4v-6h4v6"/>
+    <rect class="glow" x="-24" y="4" width="5" height="7"/>
+    <rect class="glow" x="-9" y="4" width="5" height="7"/>
+    <path class="ink" d="M-14 -10v-16"/>
+    <path class="mark ink" d="M-14 -26l12 3-12 3z"/>
+    <path class="ink" d="M24 18q1-16 5-30"/>
+    <path class="roof ink" d="M29 -12q-12-3-17 6q8-6 17-6zM29 -12q12-3 17 6q-8-6-17-6zM29 -12q-6-10-15-10q9 2 15 10zM29 -12q6-10 15-10q-9 2-15 10z"/>`,
+
+  // The Admiralty: the great house at the end of the sea lanes, its dome and ensign.
+  admiralty: () => `
+    <path class="ground" d="M-46 18h92"/>
+    <path class="wall ink" d="M-40 18V0h80v18z"/>
+    ${windowsRow(-35, 6, 8, 9.5, 4, 6)}
+    <rect class="glow" x="-4" y="9" width="8" height="9"/>
+    <path class="roof ink" d="M-44 0h88l-4-4h-80z"/>
+    <path class="wall ink" d="M-14 -4v-8h28v8z"/>
+    <path class="roof ink" d="M-12 -12a12 12 0 0 1 24 0z"/>
+    <path class="ink" d="M0 -24v-16"/>
+    <path class="mark ink" d="M0 -40l14 3.5-14 3.5z"/>`,
+
   flagship: () => `
     <path class="roof ink" d="M-44 8h88l-11 12h-66z"/>
     <path class="wall ink" d="M-35 8V-2h68v10z"/>
@@ -346,7 +407,7 @@ function skyStop(token) {
  * Drawn 600 wide and cropped to the screen, so a phone sees the middle and a
  * wide screen the whole reach.
  */
-export function sceneSvg({ id, landmark, orbLeft = false, boat = null, arriving = false, scale = 1.7 }) {
+export function sceneSvg({ id, landmark, orbLeft = false, boat = null, arriving = false, scale = 1.7, sea = false }) {
   const stars = Array.from({ length: 40 }, (_, i) => {
     const x = (i * 149 + 37) % 600;
     const y = (i * 53 + 11) % 74 + 4;
@@ -366,8 +427,10 @@ export function sceneSvg({ id, landmark, orbLeft = false, boat = null, arriving 
     <rect width="600" height="132" fill="url(#sky-${id})"/>
     <g class="stars">${stars}</g>
     <circle class="orb" cx="${orbLeft ? 190 : 430}" cy="42" r="14"/>
-    <path class="far-bank" d="M0 116C50 104 90 112 140 106S230 96 280 104S380 112 430 102S530 108 600 104V134H0Z"/>
-    ${trees}
+    ${sea
+    // At sea: no far bank, only the horizon and a few islands on it.
+    ? '<path class="far-bank" d="M0 124H600V134H0Z"/><path class="far-bank" d="M40 124q22-14 48 0zM470 124q30-18 64 0zM520 124q10-8 22 0z"/>'
+    : `<path class="far-bank" d="M0 116C50 104 90 112 140 106S230 96 280 104S380 112 430 102S530 108 600 104V134H0Z"/>${trees}`}
     <rect class="scene-water" x="0" y="128" width="600" height="42"/>
     <path class="scene-ripple" d="M40 146q6-4 12 0t12 0M150 158q6-4 12 0t12 0M250 150q6-4 12 0t12 0M470 162q6-4 12 0t12 0M90 164q6-4 12 0t12 0M530 148q6-4 12 0t12 0"/>
     <g class="scene-landmark" transform="translate(292 114) scale(${scale})">${(LANDMARKS[landmark] || LANDMARKS.landing)()}</g>

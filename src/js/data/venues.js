@@ -97,6 +97,58 @@ const ROOMS = [
     landmark: 'flagship',
     colour: 'The last table on the river. Nobody here is going to give you anything.',
   },
+
+  /* ---- The Gulf: the second act, past the delta, at sea ---- */
+  {
+    key: 'nl1000',
+    name: 'Salt Harbour',
+    where: 'The long room of the customs house',
+    resident: 'station',
+    boss: 'quint',
+    landmark: 'customs',
+    act: 2,
+    colour: 'Merchants with more money than sense, and every one of them calls. Bet for value, and bet enough.',
+  },
+  {
+    key: 'nl2000',
+    name: 'Lighthouse Point',
+    where: 'The lamp room, a hundred steps up',
+    resident: 'rock',
+    boss: 'moll',
+    landmark: 'lighthouse',
+    act: 2,
+    colour: 'Patient players who wait for the turn and the river. That is where the pots here are won and lost.',
+  },
+  {
+    key: 'nl5000',
+    name: 'The Pearl Banks',
+    where: 'A buying schooner anchored over the beds',
+    resident: 'lag',
+    boss: 'valdes',
+    landmark: 'pearler',
+    act: 2,
+    colour: 'Every open is re-raised. The pots are big before the flop, and the stacks behind them are short.',
+  },
+  {
+    key: 'nl10k',
+    name: 'Hurricane Key',
+    where: 'A privateers\' tavern behind the reef',
+    resident: 'maniac',
+    boss: 'teague',
+    landmark: 'fort',
+    act: 2,
+    colour: 'Four players see every flop. Bluffs die three ways at once, and second-best hands go broke.',
+  },
+  {
+    key: 'nl25k',
+    name: 'The Admiralty',
+    where: 'The Admiral\'s table, at the end of the sea lanes',
+    resident: 'pro',
+    boss: 'admiral',
+    landmark: 'admiralty',
+    act: 2,
+    colour: 'The last table there is. The blinds climb, the stacks run short, and every hand is all in or out.',
+  },
 ];
 
 /**
@@ -111,6 +163,7 @@ export const VENUES = ROOMS.map((room, i) => {
   const next = STAKES[i + 1];
   return {
     ...room,
+    act: room.act || 1,
     index: i,
     stake,
     label: stake.name,
@@ -121,6 +174,16 @@ export const VENUES = ROOMS.map((room, i) => {
 });
 
 export const venueFor = (key) => VENUES.find((v) => v.key === key) || VENUES[0];
+
+/** The river (the first act) and the Gulf (the second), each in order. */
+export const RIVER = VENUES.filter((v) => v.act === 1);
+export const GULF = VENUES.filter((v) => v.act === 2);
+/** The delta: take it and the river is won, and the Gulf opens. */
+export const RIVER_END = RIVER[RIVER.length - 1].key;
+/** The Admiralty: the last table there is. */
+export const LAST_TABLE = VENUES[VENUES.length - 1].key;
+/** Whether a venue's table is taken: the river won, the Gulf open. */
+export const riverWon = (beaten = []) => beaten.includes(RIVER_END);
 
 /** The best room this bankroll can afford a seat in. */
 export function roomYouCanAfford(bankroll) {

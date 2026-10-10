@@ -59,6 +59,7 @@ const step = async (name, fn) => {
 // it back afterwards.
 const VETERAN_OWNS = [
   'hand-rankings', 'pot-odds', 'outs', 'preflop', 'position', 'cbet', 'mdf', 'bluffing', 'spr', 'exploit', 'icm', 'bankroll',
+  'value', 'streets', 'threebet', 'multiway', 'pushfold',
 ].map((id) => `lesson:${id}`).concat(
   ['open:UTG', 'open:HJ', 'open:CO', 'open:BTN', 'open:SB', 'defend:BB', 'threebet'].map((key) => `chart:${key}`),
 );
@@ -112,7 +113,7 @@ await step('dashboard renders', async () => {
   await page.waitForSelector('.module-tile', { timeout: 5000 });
   const rank = await page.textContent('.rank-chip .name');
   const tiles = await page.$$eval('.module-tile', (n) => n.length);
-  if (tiles !== 12) throw new Error(`expected 12 module tiles, got ${tiles}`);
+  if (tiles !== 17) throw new Error(`expected 17 module tiles, got ${tiles}`);
   console.log(`      rank="${rank}", ${tiles} modules`);
 });
 if (SHOT) await page.screenshot({ path: `${SHOT}/01-home.png` });
@@ -506,7 +507,8 @@ await step('no lesson renders raw markup in any of its steps', async () => {
   // them once rendered [[term]] literally, so this walks every step of every
   // lesson and checks what actually reaches the screen.
   const mods = ['pot-odds', 'hand-rankings', 'outs', 'preflop', 'position', 'bankroll',
-    'cbet', 'mdf', 'bluffing', 'spr', 'exploit', 'icm'];
+    'cbet', 'mdf', 'bluffing', 'spr', 'exploit', 'icm',
+    'value', 'streets', 'threebet', 'multiway', 'pushfold'];
   const faults = [];
   for (const m of mods) {
     await page.goto(`${BASE}/#walkthrough?module=${m}`, { waitUntil: 'domcontentloaded' });
@@ -2506,7 +2508,7 @@ await step('the lessons and the charts are places on the map, and there are no t
     back: document.querySelector('#topbar .crest.back')?.textContent || '',
   }));
   if (!/#train/.test(creek.route)) throw new Error(`the school sign went to ${creek.route}`);
-  if (creek.stops !== 12 || creek.water !== 12) throw new Error(`${creek.stops} chapters and ${creek.water} bends of water on the creek, expected 12 of each`);
+  if (creek.stops !== 17 || creek.water !== 17) throw new Error(`${creek.stops} chapters and ${creek.water} bends of water on the creek, expected 17 of each`);
   if (!creek.head || !creek.mouth) throw new Error('the creek has no spring or no mouth');
   if (!/river/i.test(creek.back)) throw new Error(`the rail offers no way back to the river: "${creek.back}"`);
   await page.click('.creek-home');
@@ -3071,7 +3073,7 @@ await step('the road says what to do next, a city at a time', async () => {
     const after = await fresh.$$eval('.map-stop.is-locked', (n) => n.map((x) => x.querySelector('.map-name').textContent.trim()));
     if (after.length !== 6 || after.includes("Fisher's Rest") || !after.includes('The Ferry')) throw new Error(`after the first city, shut: ${after}`);
     const strip = await fresh.$$eval('.road-node', (n) => n.map((x) => x.className.match(/is-(\w+)/)[1]));
-    if (strip.join() !== 'done,current,locked,locked,locked,locked,locked,locked') throw new Error(`the strip reads ${strip}`);
+    if (strip.join() !== ['done', 'current', ...Array(11).fill('locked')].join()) throw new Error(`the strip reads ${strip}`);
 
     // Tapping a later city shows what it will ask, without a way in.
     await fresh.click('.road-node:nth-child(3)');
@@ -3685,11 +3687,13 @@ await step('a duel with the owner of a table: the blinds climb, it ends, the sta
     if (!first.rose) throw new Error('nine hands in and the blinds had not gone up');
     if (!/Level 2 of 8/.test(await text('.match-banner')) && !(await duel.$('.duel-result'))) throw new Error(`after eight hands the clock reads "${await text('.match-banner')}"`);
 
-    // Shove it out. A coin flip a hand, so a few goes if the first is lost.
+    // Shove it out. Close to a coin flip each time against a man who calls
+    // everything, so a few goes if the first is lost: eight losses in a row
+    // came up about one run in a hundred, sixteen about one in fifteen thousand.
     let result = await playOut();
     let tries = 1;
     while (!/won the duel|You took the table|You won the duel/.test(result) || /Wade won/.test(result)) {
-      if (tries >= 8) throw new Error(`eight duels and no win: ${result}`);
+      if (tries >= 16) throw new Error(`sixteen duels and no win: ${result}`);
       if (!/Wade won the duel/.test(result)) throw new Error(`the result reads "${result}"`);
       if (!/Lost the stack/.test(result)) throw new Error(`a loss does not say what the stars were for: ${result}`);
       if ((await duel.$$('.duel-star.on')).length !== 0) throw new Error('a lost duel earned stars');
@@ -4202,7 +4206,7 @@ await step('pearls keep their worth: Delphine buys them, and a seat or an entry 
     const ex = await text('.exchange');
     if (!/\$2\.00 a thousand at Fisher's Rest/.test(ex) || !/Your 30,000 pearls fetch \$60\.00 here/.test(ex)) throw new Error(`the exchange reads "${ex.slice(0, 220)}"`);
     const board = await pp.$$eval('.exchange-board tbody tr', (rows) => rows.map((r) => r.textContent.replace(/\s+/g, ' ').trim()));
-    if (board.length !== 8 || !/Delta Crown.*10,000.*\$50\.00/.test(board[7])) throw new Error(`the river's prices read ${board.join(' | ')}`);
+    if (board.length !== 13 || !/Delta Crown.*10,000.*\$50\.00/.test(board[7]) || !/The Admiralty.*17,500.*\$1,428\.57/.test(board[12])) throw new Error(`the river's prices read ${board.join(' | ')}`);
     await pp.click('.exchange-offer:has-text("5,000")');
     if (!/Sell 5,000 pearls for \$10\.00\? It cannot be undone/.test(await text('.exchange-confirm'))) throw new Error('a sale was not confirmed first');
     await pp.click('.exchange-confirm .btn.primary');
@@ -4237,7 +4241,7 @@ await step('pearls keep their worth: Delphine buys them, and a seat or an entry 
     await pp.goto(`${BASE}/?pearls=4#character`, { waitUntil: 'domcontentloaded' });
     await pp.waitForSelector('.pearl-worth', { timeout: 5000 });
     const worth = await text('.pearl-worth');
-    if (!/22,500 pearls fetch \$45\.00 at Fisher's Rest/.test(worth) || !/Delta Crown/.test(worth)) throw new Error(`the profile says "${worth}"`);
+    if (!/22,500 pearls fetch \$45\.00 at Fisher's Rest/.test(worth) || !/The Admiralty/.test(worth)) throw new Error(`the profile says "${worth}"`);
     if (mine.length) throw new Error(mine.join(' | '));
     console.log('      $2.00 a thousand at Fisher\'s Rest, $50 at the delta; 5,000 sold for $10; a seat for 2,500 pearls cashed out to money; a pearl entry refunded; the purse\'s worth on the profile');
   } finally {
@@ -4273,12 +4277,12 @@ await step('the card rooms: for sale once the table is yours, and counted on the
     await rp.waitForSelector('.room-block .buy-btn', { timeout: 8000 });
     await rp.click('.room-block .buy-btn');
     await rp.waitForSelector('.room-block.owned', { timeout: 5000 });
-    if (!/Mud Landing is your room/.test(await text('.room-block')) || !/1 of 8 rooms/.test(await text('.room-block'))) throw new Error(`the bought room reads "${await text('.room-block')}"`);
+    if (!/Mud Landing is your room/.test(await text('.room-block')) || !/1 of 13 card rooms/.test(await text('.room-block'))) throw new Error(`the bought room reads "${await text('.room-block')}"`);
     const after = await saved();
     if (after.economy.pearls !== 6000 || !after.economy.owned.includes('room:nl2')) throw new Error(`buying the room left ${after.economy.pearls} pearls`);
     await rp.goto(`${BASE}/?rooms=3#character`, { waitUntil: 'domcontentloaded' });
     await rp.waitForSelector('.char-river', { timeout: 5000 });
-    if (!/Card rooms\s*1 \/ 8/.test(await text('.char-river'))) throw new Error('the profile does not count the room');
+    if (!/Card rooms\s*1 \/ 13/.test(await text('.char-river'))) throw new Error('the profile does not count the room');
     if (mine.length) throw new Error(mine.join(' | '));
     console.log('      shut until the table is taken; Mud Landing bought for 3,000 pearls; 1 of 8 on the profile');
   } finally {
@@ -4467,6 +4471,61 @@ await step('your snags: a spot gone wrong at a table, sailed three times right, 
     if (!/No snags/.test(await text('.char-snags'))) throw new Error('the cleared snag is still on the list');
     if (mine.length) throw new Error(mine.join(' | '));
     console.log('      AA under the gun, first in: raised three times, cleared, 15 pearls, off the list');
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('the Gulf: past the delta, five ports on a chart of their own, their lessons and their drills', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const gp = await ctx.newPage();
+  const mine = [];
+  gp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const text = (sel) => gp.evaluate((q) => { const n = document.querySelector(q); return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
+  const seed = (won) => gp.evaluate((won) => localStorage.setItem('poker-trainer.profile.v1', JSON.stringify({
+    seenPrologue: true, bankroll: won ? 45000 : 200, stakeKey: won ? 'nl1000' : 'nl2',
+    economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: won ? ['lesson:value', 'lesson:pushfold'] : [], boat: won ? 'flagship' : 'rowboat', crew: [] },
+    career: won
+      ? { venue: 'nl1000', best: 'nl1000', busted: 0, staked: 0, beaten: ['nl2', 'nl5', 'nl10', 'nl25', 'nl50', 'nl100', 'nl200', 'nl500'], played: {} }
+      : { venue: 'nl2', best: 'nl2', busted: 0, staked: 0, beaten: [], played: {} },
+    settings: { lang: 'en' },
+  })), won);
+  try {
+    // Before the river is won there is only the river.
+    await gp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await seed(false);
+    await gp.goto(`${BASE}/?gulf=0#home`, { waitUntil: 'domcontentloaded' });
+    await gp.waitForSelector('.river-map', { timeout: 8000 });
+    if (await gp.$('.chart-switch') || await gp.$('.gulf-art')) throw new Error('the Gulf shows before the river is won');
+    // Won, and moored at Salt Harbour: the Gulf's chart, and a switch to the river.
+    await seed(true);
+    await gp.goto(`${BASE}/?gulf=1#home`, { waitUntil: 'domcontentloaded' });
+    await gp.waitForSelector('.gulf-art', { timeout: 8000 });
+    if ((await gp.$$('.gulf-art .landmark')).length !== 5) throw new Error('the Gulf has not got five ports');
+    if (!/Salt Harbour\s*NL1000\s*You are here/.test(await text('.river-map'))) throw new Error(`Salt Harbour's plate reads "${(await text('.river-map')).slice(0, 160)}"`);
+    if (!/Lighthouse Point\s*NL2000.*After Salt Harbour/.test(await text('.river-map'))) throw new Error('the next port is open before Salt Harbour is done');
+    await gp.click('.chart-switch button:has-text("The Long River")');
+    await gp.waitForSelector('.world-art:not(.gulf-art)', { timeout: 5000 });
+    await gp.click('.chart-switch button:has-text("The Gulf")');
+    await gp.waitForSelector('.gulf-art', { timeout: 5000 });
+    // The port: at sea, with its owner, and the story says where you are.
+    await gp.goto(`${BASE}/?gulf=2#stop?at=nl1000`, { waitUntil: 'domcontentloaded' });
+    await gp.waitForSelector('.scene', { timeout: 8000 });
+    const port = await text('#screen');
+    if (!/The Gulf, Salt Harbour/.test(port) || !/Josiah Quint/.test(port)) throw new Error(`Salt Harbour reads "${port.slice(0, 200)}"`);
+    // A Gulf chapter, and a push-or-fold question with one answer.
+    await gp.goto(`${BASE}/?gulf=3#walkthrough?module=value`, { waitUntil: 'domcontentloaded' });
+    await gp.waitForSelector('.lesson-body', { timeout: 5000 });
+    if (!/Value Betting/.test(await text('#screen'))) throw new Error('the Value Betting chapter does not open');
+    await gp.goto(`${BASE}/?gulf=4#drill?module=pushfold`, { waitUntil: 'domcontentloaded' });
+    await gp.waitForSelector('.options .option', { timeout: 5000 });
+    const q = await text('.question');
+    if (!/big blinds/.test(q)) throw new Error(`the push-or-fold question reads "${q}"`);
+    await gp.click('.options .option >> nth=0');
+    await gp.waitForSelector('.feedback', { timeout: 3000 });
+    if (!/✓ Correct|✗ Not quite/.test(await text('.feedback'))) throw new Error('the push-or-fold drill gave no verdict');
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log(`      hidden before the delta; five ports, Salt Harbour moored, the next one shut; both charts; "${q.slice(0, 60)}…"`);
   } finally {
     await ctx.close();
   }

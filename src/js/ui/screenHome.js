@@ -26,7 +26,7 @@ import { ACHIEVEMENTS } from '../state/achievements.js';
 import { handSummary } from '../state/handHistory.js';
 import { MENTOR } from '../data/characters.js';
 import { silasSays } from './place.js';
-import { ownsLesson, ownedModules, nextPurchase, LESSON_PRICES } from '../state/economy.js';
+import { ownsLesson, ownedModules, nextPurchase, LESSON_PRICES, wonTheRiver } from '../state/economy.js';
 import { buyControl, pearls } from './shop.js';
 import { creekBend, bankScene, creekHead, creekMouth, regionBar } from './creekMap.js';
 import { currentBoat } from '../state/economy.js';
@@ -299,7 +299,9 @@ function shelfLine(profile, go) {
 const STARS = { untouched: 0, learning: 1, solid: 2, mastered: 3 };
 
 function chapter(meta, index, profile, go, recommendedId) {
-  const rankLocked = meta.unlockLevel > profile.level && !ownsLesson(profile, meta.id);
+  // The Gulf's chapters wait for the river to be won, whatever the rank.
+  const seaLocked = meta.act === 2 && !wonTheRiver(profile) && !ownsLesson(profile, meta.id);
+  const rankLocked = (meta.unlockLevel > profile.level || seaLocked) && !ownsLesson(profile, meta.id);
   // On the shelf: the rank allows it and it has not been bought. It opens,
   // onto its price, rather than sitting shut like a chapter the rank does
   // not reach yet.
@@ -340,14 +342,18 @@ function chapter(meta, index, profile, go, recommendedId) {
           isNext ? el('span.badge.next-badge', t('DO THIS NEXT')) : null,
           shelved ? el('span.badge.price-badge', pearls(LESSON_PRICES[meta.id])) : null,
           rankLocked
-            ? el('span.badge', t('Level {level}', { level: meta.unlockLevel }))
+            ? el('span.badge', seaLocked ? t('The Gulf') : t('Level {level}', { level: meta.unlockLevel }))
             : shelved ? null
             : tier !== 'untouched'
               ? el(`span.badge${tierInfo.tone ? `.${tierInfo.tone}` : ''}`, tierInfo.icon, ' ', t(tierInfo.name))
               : null,
         ),
         el('span.mastery', rankLocked
-          ? t('Unlocks at {rank}', { rank: t(RANKS[meta.unlockLevel - 1].name) })
+          ? seaLocked && meta.unlockLevel <= profile.level
+            ? t('Opens once the river is won')
+            : seaLocked
+              ? t('Unlocks at {rank}, once the river is won', { rank: t(RANKS[meta.unlockLevel - 1].name) })
+              : t('Unlocks at {rank}', { rank: t(RANKS[meta.unlockLevel - 1].name) })
           : shelved
             ? t('On the shelf at the Trading Post')
             : scoreLine(profile, meta.id)),
