@@ -4407,8 +4407,11 @@ await step('the cat remembers: a hand gone wrong before warns you in the same sp
   for (const position of ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB']) {
     for (const key of keys) mistakes.push({ key, street: 'preflop', action: 'call', id: 'limped', head: 'Limping gives the pot away', better: 'Raise', position, facing: 'first', at: 1 });
   }
+  // Searched for by the clock, not by a count of turns: on a busy machine the
+  // bots act slower, and a fixed count of turns saw too few hands to be sure.
   const toWarning = async () => {
-    for (let i = 0; i < 600; i++) {
+    const deadline = Date.now() + 180000;
+    while (Date.now() < deadline) {
       if (await cp.$('.cat-warn')) return true;
       const deal = await cp.$('button:has-text("Deal next hand")');
       if (deal) { await deal.click(); await cp.waitForTimeout(120); continue; }
@@ -4796,6 +4799,73 @@ await step('the regions: a city on the road in each, shut until the road gets th
     console.log('      five regions lettered; Sweetwater shut until Fisher\'s Rest, then on its list, reached by the wagon road, Hank and Curly at the table');
   } finally {
     await ctx.close();
+  }
+});
+
+await step('the map pinches: two fingers zoom it round their middle, and the page itself does not zoom', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  const zp = await ctx.newPage();
+  const mine = [];
+  zp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  try {
+    await zp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await zp.evaluate(() => localStorage.setItem('poker-trainer.profile.v1', JSON.stringify({ seenPrologue: true, settings: { lang: 'en' } })));
+    await zp.goto(`${BASE}/?zoom=1#home`, { waitUntil: 'domcontentloaded' });
+    await zp.waitForSelector('.map-scroller.big .river-map svg', { timeout: 8000 });
+    await zp.evaluate(() => document.querySelector('.map-frame').scrollIntoView());
+    await zp.waitForTimeout(400);
+    const seen = () => zp.evaluate(() => {
+      const s = document.querySelector('.map-scroller.big');
+      const c = s.querySelector('.river-map');
+      return { w: c.offsetWidth, h: c.offsetHeight, sw: s.clientWidth, sh: s.clientHeight, page: window.visualViewport.scale };
+    });
+    const box = await (await zp.$('.map-scroller.big')).boundingBox();
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    const cdp = await ctx.newCDPSession(zp);
+    const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y], i) => ({ x, y, id: i })) });
+    const pinch = async (from, to) => {
+      await touch('touchStart', [[cx - from, cy], [cx + from, cy]]);
+      for (let k = 1; k <= 10; k++) {
+        const d = from + ((to - from) * k) / 10;
+        await touch('touchMove', [[cx - d, cy], [cx + d, cy]]);
+        await zp.waitForTimeout(30);
+      }
+      await touch('touchEnd', []);
+      await zp.waitForTimeout(250);
+    };
+    const start = await seen();
+    await pinch(120, 30);
+    const out = await seen();
+    if (!(out.w < start.w * 0.7)) throw new Error(`pinching in did not zoom out: ${start.w} → ${out.w}`);
+    if (out.w < out.sw - 1 || out.h < out.sh - 1) throw new Error(`zoomed out past the window: ${JSON.stringify(out)}`);
+    await pinch(30, 150);
+    const inn = await seen();
+    if (!(inn.w > out.w * 1.5)) throw new Error(`spreading did not zoom in: ${out.w} → ${inn.w}`);
+    if (inn.page !== 1) throw new Error(`the page itself zoomed to ${inn.page}`);
+    // On a desktop, Ctrl and the wheel (a trackpad pinch) zoom it too.
+    await ctx.close();
+    const dctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const dp = await dctx.newPage();
+    await dp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await dp.evaluate(() => localStorage.setItem('poker-trainer.profile.v1', JSON.stringify({ seenPrologue: true, settings: { lang: 'en' } })));
+    await dp.goto(`${BASE}/?zoom=2#home`, { waitUntil: 'domcontentloaded' });
+    await dp.waitForSelector('.map-scroller.big .river-map svg', { timeout: 8000 });
+    await dp.waitForTimeout(400);
+    const w0 = await dp.evaluate(() => document.querySelector('.map-scroller.big .river-map').offsetWidth);
+    const dbox = await (await dp.$('.map-scroller.big')).boundingBox();
+    await dp.mouse.move(dbox.x + dbox.width / 2, dbox.y + dbox.height / 2);
+    await dp.keyboard.down('Control');
+    for (let k = 0; k < 5; k++) { await dp.mouse.wheel(0, 40); await dp.waitForTimeout(60); }
+    await dp.keyboard.up('Control');
+    await dp.waitForTimeout(250);
+    const w1 = await dp.evaluate(() => document.querySelector('.map-scroller.big .river-map').offsetWidth);
+    if (!(w1 < w0 * 0.9)) throw new Error(`Ctrl and the wheel did not zoom out: ${w0} → ${w1}`);
+    await dctx.close();
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log(`      pinch in ${start.w}px → ${out.w}px (still filling the window), spread → ${inn.w}px, the page stayed at 1×; Ctrl+wheel ${w0}px → ${w1}px`);
+  } finally {
+    await ctx.close().catch(() => {});
   }
 });
 

@@ -245,49 +245,113 @@ const stillFog = (chart) => {
  * and close in. The middle one is where it opens; the reader's choice is kept
  * for as long as the page is open.
  */
-const ZOOMS = { far: null, near: 0.72, close: 1 };
-let zoom = 'near';
-const scaleFor = (level, frameWidth) => {
-  if (level === 'far') return Math.max(0.1, frameWidth / WORLD.W);
-  // A phone opens a little further out than a desktop: more of the country in a smaller window.
-  if (level === 'near') return frameWidth < 700 ? 0.62 : ZOOMS.near;
-  return ZOOMS.close;
-};
+/**
+ * How close the big chart is drawn: chart pixels per unit of the world. The
+ * three buttons are the whole country, the river at the size its signs read
+ * well (where it opens), and close in; a pinch, a trackpad pinch or Ctrl and
+ * the wheel go anywhere between the whole country and closer still. The
+ * reader's zoom is kept for as long as the page is open.
+ */
+const NEAR = 0.72;
+const NEAR_PHONE = 0.62;
+const CLOSE = 1;
+const MAX_SCALE = 1.5;
+let scaleNow = null;
 
 /**
  * The big chart in a window you move around: scroll it, drag it with the
- * mouse, swipe it on a phone, and zoom between the whole country and close in.
- * Returns the frame; the scrolled element is `frame.scroller`.
+ * mouse, swipe it on a phone, pinch it, and zoom between the whole country and
+ * close in. Returns the frame; the scrolled element is `frame.scroller`.
  */
 function pannable(chart) {
   const scroller = el('div.map-scroller.big', chart);
-  const sizeTo = (level, keepCentre = true) => {
-    const before = keepCentre && scroller.scrollWidth
-      ? { x: (scroller.scrollLeft + scroller.clientWidth / 2) / scroller.scrollWidth, y: (scroller.scrollTop + scroller.clientHeight / 2) / scroller.scrollHeight }
-      : null;
-    zoom = level;
-    const width = Math.round(WORLD.W * scaleFor(level, scroller.clientWidth || 1000));
-    chart.style.width = `${width}px`;
-    frame.classList.toggle('zoomed-out', level === 'far');
-    buttons.forEach((b) => b.classList.toggle('active', b.dataset.zoom === level));
-    if (before) {
-      scroller.scrollLeft = before.x * scroller.scrollWidth - scroller.clientWidth / 2;
-      scroller.scrollTop = before.y * scroller.scrollHeight - scroller.clientHeight / 2;
-    }
+  // As far out as the map still fills its window, both ways: no empty band beside or under it.
+  const fit = () => Math.max(0.1, (scroller.clientWidth || 1000) / WORLD.W, (scroller.clientHeight || 600) / WORLD.H);
+  const near = () => ((scroller.clientWidth || 1000) < 700 ? NEAR_PHONE : NEAR);
+  const clamp = (x) => Math.max(fit(), Math.min(MAX_SCALE, x));
+  const current = () => (chart.offsetWidth || WORLD.W * NEAR) / WORLD.W;
+  const levels = () => ({ far: fit(), near: near(), close: CLOSE });
+
+  /**
+   * Draw the chart at a scale. `anchor` is a point of the world, as fractions
+   * of it, and where on the window it should sit: what is under your fingers
+   * stays under them.
+   */
+  const draw = (x, anchor = null) => {
+    const box = scroller.getBoundingClientRect();
+    const at = anchor || {
+      ux: (scroller.scrollLeft + box.width / 2) / (chart.offsetWidth || 1),
+      uy: (scroller.scrollTop + box.height / 2) / (chart.offsetHeight || 1),
+      px: box.width / 2,
+      py: box.height / 2,
+    };
+    const next = clamp(x);
+    scaleNow = next;
+    chart.style.width = `${Math.round(WORLD.W * next)}px`;
+    scroller.scrollLeft = at.ux * chart.offsetWidth - at.px;
+    scroller.scrollTop = at.uy * chart.offsetHeight - at.py;
+    frame.classList.toggle('zoomed-out', next < 0.42);
+    const lv = levels();
+    buttons.forEach((b) => b.classList.toggle('active', Math.abs(lv[b.dataset.zoom] - next) < 0.03));
   };
+  /** The world point under a spot on the screen, and that spot on the window. */
+  const anchorAt = (clientX, clientY) => {
+    const box = scroller.getBoundingClientRect();
+    const px = clientX - box.left;
+    const py = clientY - box.top;
+    return { ux: (scroller.scrollLeft + px) / (chart.offsetWidth || 1), uy: (scroller.scrollTop + py) / (chart.offsetHeight || 1), px, py };
+  };
+
   const buttons = [['far', t('The whole country')], ['near', t('The river')], ['close', t('Close in')]].map(([level, label]) => el('button.map-zoom-btn', {
     type: 'button',
     dataset: { zoom: level },
     title: label,
     'aria-label': label,
-    onclick: () => { audio.sfx('click'); sizeTo(level); },
+    onclick: () => { audio.sfx('click'); draw(levels()[level]); },
   }, level === 'far' ? '⤢' : level === 'near' ? '◎' : '+'));
   const frame = el('div.map-frame', scroller, el('div.map-zoom', { role: 'group', 'aria-label': t('Zoom') }, buttons));
   frame.scroller = scroller;
-  frame.sizeTo = sizeTo;
   // Sized as soon as the page knows how wide the window is.
-  chart.style.width = `${Math.round(WORLD.W * ZOOMS.near)}px`;
-  requestAnimationFrame(() => sizeTo(zoom, false));
+  chart.style.width = `${Math.round(WORLD.W * (scaleNow || NEAR))}px`;
+  requestAnimationFrame(() => draw(scaleNow || near(), { ux: 0, uy: 0, px: 0, py: 0 }));
+
+  // Pinch with two fingers: the zoom follows the spread of them, and the map
+  // follows their middle, so it can be moved and zoomed in one gesture. One
+  // finger is the browser's own scroll.
+  let pinch = null;
+  let frameReq = 0;
+  const spread = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1;
+  scroller.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 2) return;
+    const [a, b] = e.touches;
+    pinch = { d: spread(a, b), s: current(), at: anchorAt((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2) };
+    e.preventDefault();
+  }, { passive: false });
+  scroller.addEventListener('touchmove', (e) => {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+    const [a, b] = e.touches;
+    const box = scroller.getBoundingClientRect();
+    const target = pinch.s * (spread(a, b) / pinch.d);
+    const at = { ...pinch.at, px: (a.clientX + b.clientX) / 2 - box.left, py: (a.clientY + b.clientY) / 2 - box.top };
+    cancelAnimationFrame(frameReq);
+    frameReq = requestAnimationFrame(() => draw(target, at));
+  }, { passive: false });
+  const endPinch = (e) => { if (e.touches.length < 2) pinch = null; };
+  scroller.addEventListener('touchend', endPinch);
+  scroller.addEventListener('touchcancel', endPinch);
+  // Safari's own pinch gesture would zoom the whole page instead.
+  scroller.addEventListener('gesturestart', (e) => e.preventDefault());
+
+  // A trackpad pinch, or Ctrl and the wheel: zoom round the pointer.
+  scroller.addEventListener('wheel', (e) => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    const at = anchorAt(e.clientX, e.clientY);
+    const target = current() * Math.exp(-e.deltaY * 0.01);
+    cancelAnimationFrame(frameReq);
+    frameReq = requestAnimationFrame(() => draw(target, at));
+  }, { passive: false });
 
   // Drag to move it, with a mouse. A drag is not a click on whatever it started on.
   let drag = null;
