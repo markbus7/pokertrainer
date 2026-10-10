@@ -379,9 +379,31 @@ h2 { font-size: var(--t-lg); }
   #topbar.topbar { gap: var(--s-2); }
   .ledger-button { padding: 0 10px; min-width: 44px; justify-content: center; }
 }
-@media (max-width: 400px) {
+/* The rail is one row of five things. Up to a big phone's width they do not
+   all fit with the character's name beside the face, and the crest, which may
+   shrink, spilled its coin under the purse. The face is enough; the name is a
+   tap away on the Cabin page. The crest never shrinks. */
+@media (max-width: 520px) {
+  .crest { flex: none; }
   #topbar .rank-chip .meta { display: none; }
   #topbar .rank-chip { padding: 4px 8px; }
+}
+/* A narrow phone: the same five things, a little smaller. The purse grows with
+   the money in it ($45,000.00 in the Gulf), so it gets the room. */
+@media (max-width: 380px) {
+  #topbar.topbar { gap: 6px; padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); }
+  .purse { padding: 4px 8px 4px 5px; gap: 5px; }
+  .purse .coin { width: 18px; height: 18px; }
+  .purse-amount { font-size: var(--t-sm); }
+  #topbar .pearl-chip { padding: 4px 7px; gap: 4px; }
+  #topbar .rank-chip { padding: 3px 5px; }
+  .ledger-button { min-width: 40px; padding: 0 8px; }
+}
+@media (max-width: 340px) {
+  #topbar.topbar { gap: 4px; }
+  .crest-disc { width: 32px; height: 32px; }
+  .purse-amount { letter-spacing: 0; }
+  #topbar .pearl-chip { padding: 4px 6px; }
 }
 @media (pointer: coarse) {
   .purse, #topbar .rank-chip, .ledger-button { min-height: 44px; }
@@ -4106,6 +4128,11 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .seatbar-line { flex: 1 1 220px; font-family: var(--font-print); font-size: var(--t-md); }
 .seatbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .seatbar-actions .btn.ghost { color: var(--on-wood); border-color: rgba(255, 255, 255, 0.3); }
+/* A phone: the line is a note, not a headline, and the buttons share a row. */
+@media (max-width: 520px) {
+  .seatbar-inner { padding-top: 6px; padding-bottom: 8px; gap: 6px var(--s-2); }
+  .seatbar-line { flex-basis: calc(100% - 30px); font-size: var(--t-sm); line-height: 1.3; }
+}
 
 /* Somewhere else to sit, while you are still sitting here. */
 .seated-elsewhere { max-width: 560px; margin: var(--s-6) auto; }
