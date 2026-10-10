@@ -14,14 +14,24 @@
 import { BACKWATERS, backwaterFor, RUMOUR_HANDS } from '../data/backwaters.js';
 import { venueFor } from '../data/venues.js';
 import { lobbyFor, lobbyStats, softness } from './lobby.js';
-import { handPearls } from './economy.js';
+import { handPearls, furthestStop } from './economy.js';
 
 const sceneKey = (key) => `rumour-${key}`;
 /** Where a town's hands are counted, beside the stops' own counts. */
 export const handsKey = (key) => `town:${key}`;
 
-/** Whether you have heard of a town: it is on your chart. */
-export const heard = (profile, key) => profile.seenScene(sceneKey(key));
+/**
+ * Whether you know of a town: it is on your chart. A city on the road always
+ * is — the road says where it is going — and a backwater once somebody has
+ * told you about it.
+ */
+export const heard = (profile, key) => {
+  const town = backwaterFor(key);
+  return Boolean(town && (town.road || profile.seenScene(sceneKey(key))));
+};
+
+/** Whether the road has brought you as far as a city on it: you have been to the stop it is reached from. */
+export const reached = (profile, town) => !town.road || furthestStop(profile) >= venueFor(town.junction).index;
 
 /** Mark a town found. Returns whether it was news. */
 export function hear(profile, key) {
@@ -37,8 +47,8 @@ export function hear(profile, key) {
  */
 export function rumourAt(profile, venueKey) {
   const venue = venueFor(venueKey);
-  const town = BACKWATERS.find((b) => b.junction === venue.key);
-  if (!town || heard(profile, town.key)) return null;
+  const town = BACKWATERS.find((b) => b.junction === venue.key && !b.road && !heard(profile, b.key));
+  if (!town) return null;
   const played = profile.handsAt(venue.key) >= RUMOUR_HANDS || profile.career.beaten.includes(venue.key);
   return played ? town : null;
 }
@@ -51,7 +61,7 @@ export const junctionOf = (town) => venueFor(town.junction);
  * into the stop it leaves the river from.
  */
 export function canGo(profile, town) {
-  return heard(profile, town.key) && profile.data.bankroll >= junctionOf(town).stake.minBankroll;
+  return heard(profile, town.key) && reached(profile, town) && profile.data.bankroll >= junctionOf(town).stake.minBankroll;
 }
 
 /** The town your boat is moored at, or null on the river. */
@@ -184,6 +194,7 @@ export function backwatersState(profile) {
   return BACKWATERS.map((town) => ({
     town,
     heard: heard(profile, town.key),
+    reached: reached(profile, town),
     here: townHere(profile) === town,
     done: townDone(profile, town),
     goals: townGoals(profile, town),

@@ -466,42 +466,51 @@ function roomBlock(venue, profile, go) {
  * have played a little at this table, the owner tells you what is up there;
  * after, the way to it.
  */
-function backwaterBlock(venue, profile, go) {
-  const town = BACKWATERS.find((b) => b.junction === venue.key);
+function rumourCard(venue, profile, go) {
+  const town = rumourAt(profile, venue.key);
   if (!town) return null;
-  const rumour = rumourAt(profile, venue.key);
   const boss = bossFor(venue.boss);
-  if (rumour) {
-    return el('div.panel.paper.rumour-card',
-      el('div.rumour-head',
-        svgNode(portraitSvg(boss.key, { size: 56 }), 'rumour-portrait'),
-        el('div',
-          el('div.story-kicker', icon('river', { size: 14 }), t('{name} leans over', { name: boss.short })),
-          el('p.story-text', `“${t(town.rumour)}”`),
-        ),
+  return el('div.panel.paper.rumour-card',
+    el('div.rumour-head',
+      svgNode(portraitSvg(boss.key, { size: 56 }), 'rumour-portrait'),
+      el('div',
+        el('div.story-kicker', icon('river', { size: 14 }), t('{name} leans over', { name: boss.short })),
+        el('p.story-text', `“${t(town.rumour)}”`),
       ),
-      el('div.stop-actions',
-        el('button.btn.primary.plank', {
-          onclick: () => {
-            audio.sfx('click');
-            hear(profile, town.key);
-            toast({ icon: '🗺', title: t('{place} is on your chart', { place: t(town.name) }), desc: t(town.where) });
-            go('town', { at: town.key });
-          },
-        }, icon('river', { size: 16 }), t('Mark {place} on your chart', { place: t(town.name) })),
-      ),
-    );
-  }
-  if (!heardOf(profile, town.key)) return null;
-  const done = townGoals(profile, town).filter((g) => g.done).length;
-  return el('button.panel.stop-notes.backwater-link', { onclick: () => go('town', { at: town.key }) },
-    svgNode(portraitSvg(town.local.key, { size: 48 }), 'stop-notes-face'),
-    el('span.stop-notes-text',
-      el('span.stop-notes-title', town.way === 'water' ? t('Up the creek: {place}', { place: t(town.name) }) : t('Up the wagon road: {place}', { place: t(town.name) })),
-      el('span.faint', t('{name}\'s game, at these stakes. {n} of 3 done.', { name: town.local.short, n: done })),
     ),
-    icon('arrowRight', { size: 16, className: 'door-arrow' }),
+    el('div.stop-actions',
+      el('button.btn.primary.plank', {
+        onclick: () => {
+          audio.sfx('click');
+          hear(profile, town.key);
+          toast({ icon: '🗺', title: t('{place} is on your chart', { place: t(town.name) }), desc: t(town.where) });
+          go('town', { at: town.key });
+        },
+      }, icon('river', { size: 16 }), t('Mark {place} on your chart', { place: t(town.name) })),
+    ),
   );
+}
+
+/**
+ * The towns reached from here that you know of: the region's city on the
+ * road, and any backwater somebody has told you about. A way to each.
+ */
+function townLinks(venue, profile, go) {
+  const known = BACKWATERS.filter((b) => b.junction === venue.key && heardOf(profile, b.key));
+  if (!known.length) return null;
+  return el('div.town-links', known.map((town) => {
+    const done = townGoals(profile, town).filter((g) => g.done).length;
+    return el('button.panel.stop-notes.backwater-link', { onclick: () => go('town', { at: town.key }) },
+      svgNode(portraitSvg(town.local.key, { size: 48 }), 'stop-notes-face'),
+      el('span.stop-notes-text',
+        el('span.stop-notes-title', town.road
+          ? t('On the road: {place}', { place: t(town.name) })
+          : town.way === 'water' ? t('Up the creek: {place}', { place: t(town.name) }) : t('Up the wagon road: {place}', { place: t(town.name) })),
+        el('span.faint', t('{name}\'s game, at these stakes. {n} of 3 done.', { name: town.local.short, n: done })),
+      ),
+      icon('arrowRight', { size: 16, className: 'door-arrow' }),
+    );
+  }));
 }
 
 /** What you took from this table, if you took it. */
@@ -678,8 +687,7 @@ function townPlaces(venue, state, profile, go, after) {
       name: t('The notice board'),
       icon: 'clipboard',
       status: [chapter.complete ? t('Finished.') : `${chapter.done} / ${chapter.total}`, job && !job.done ? t('a job going') : null].filter(Boolean).join(' · '),
-      // The rumour, while there is one, is told on the street instead.
-      body: () => [jobBlock(venue, profile), rumourAt(profile, venue.key) ? null : backwaterBlock(venue, profile, go), roadBlock(venue, state, go)],
+      body: () => [jobBlock(venue, profile), townLinks(venue, profile, go), roadBlock(venue, state, go)],
     },
     rival || wanderer ? {
       key: 'street',
@@ -759,7 +767,7 @@ export function renderStop(ctx, params = {}) {
   open(current);
 
   // A rumour is news: it is told on the street, not behind a door.
-  const rumour = rumourAt(profile, venue.key) ? backwaterBlock(venue, profile, go) : null;
+  const rumour = rumourCard(venue, profile, go);
 
   const screen = el('div.screen.stop-screen',
     scene(venue, state, arrived),

@@ -314,6 +314,79 @@ export const LANDMARKS = {
     <path class="roof ink" d="M3 2L21 -8L39 2z"/>
     <rect class="glow" x="12" y="6" width="5" height="6"/><rect class="glow" x="25" y="6" width="5" height="6"/>`,
 
+  // Sweetwater: a false-fronted saloon, a stockyard fence and a windmill.
+  corral: () => `
+    <path class="ground" d="M-44 18h88"/>
+    <path class="wall ink" d="M-34 18V-4h22v22z"/>
+    <path class="wall ink" d="M-36 -4V-14h26v10z"/>
+    <rect class="glow" x="-28" y="4" width="6" height="8"/>
+    <path class="ink" d="M-6 18V8h30v10M-6 12h30M4 8v10M14 8v10"/>
+    <path class="ink" d="M32 18V-20M28 18l4 -38 4 38"/>
+    <path class="mark ink" d="M32 -20l-10 -4M32 -20l10 4M32 -20l4 -10M32 -20l-4 10"/>`,
+
+  // Timber Falls: the sawmill with its wheel, a log flume, a stack of timber.
+  sawmill: () => `
+    <path class="ground" d="M-44 18h88"/>
+    <path class="wall ink" d="M-30 18V-6h34v24z"/>
+    <path class="roof ink" d="M-34 -6L-13 -20L8 -6z"/>
+    <rect class="glow" x="-22" y="2" width="7" height="7"/>
+    <circle class="wall ink" cx="16" cy="6" r="11"/>
+    <path class="ink" d="M16 -5v22M5 6h22M8 -2l16 16M8 14l16 -16"/>
+    <path class="ink" d="M-40 -18L-30 -6M-44 -14L-34 -2"/>
+    <path class="mark ink" d="M30 18h12v-4h-12zM32 14h10v-4h-10z"/>`,
+
+  // Copperhead: the smelter with its smoking stack, and a row of company houses.
+  smelter: () => `
+    <path class="ground" d="M-44 18h88"/>
+    <path class="wall ink" d="M-26 18V-4h30v22z"/>
+    <path class="roof ink" d="M-28 -4h34l-4 -6h-26z"/>
+    <path class="wall ink" d="M-2 -10V-34h7v24"/>
+    <rect class="glow" x="-20" y="4" width="18" height="6"/>
+    <path class="smoke" d="M2 -36q-6 -6 0 -12q6 -6 0 -12"/>
+    <path class="wall ink" d="M10 18V6l7 -6l7 6v12zM24 18V6l7 -6l7 6v12z"/>
+    <rect class="glow" x="15" y="9" width="4" height="4"/><rect class="glow" x="29" y="9" width="4" height="4"/>`,
+
+  // Lafitte's Landing: a long warehouse on pilings, with a boat with no name tied up.
+  warehouse: () => `
+    <path class="ground" d="M-44 18h88" opacity=".5"/>
+    <path class="ink" d="M-34 18V4M-18 18V4M-2 18V4M14 18V4M30 18V4"/>
+    <path class="wall ink" d="M-38 4V-14h72V4z"/>
+    <path class="roof ink" d="M-40 -14L-2 -26L36 -14z"/>
+    <path class="ink" d="M-26 4v-12h10v12M8 4v-12h10v12"/>
+    <rect class="glow" x="-6" y="-10" width="6" height="5"/>
+    <path class="wall ink" d="M18 16q12 5 24 0z"/>
+    <path class="ink" d="M30 16v-12"/>`,
+
+  // Eagle Rock: the grand lodge on its rock, every window lit, a flag on the gable.
+  lodge: () => `
+    <path class="ground" d="M-46 18h92"/>
+    <path class="wall ink" d="M-44 18L-36 6h72L44 18z"/>
+    <path class="wall ink" d="M-32 6V-14h64V6z"/>
+    <path class="roof ink" d="M-36 -14L0 -32L36 -14z"/>
+    <rect class="glow" x="-26" y="-8" width="7" height="7"/><rect class="glow" x="-12" y="-8" width="7" height="7"/>
+    <rect class="glow" x="5" y="-8" width="7" height="7"/><rect class="glow" x="19" y="-8" width="7" height="7"/>
+    <path class="ink" d="M0 -32v-10"/><path class="mark ink" d="M0 -42l9 3 -9 3z"/>`,
+
+  // Pelican Point: the wharf on its piles, the net loft over it, and a pelican on the post.
+  wharf: () => `
+    <path class="ground" d="M-44 18h88" opacity=".5"/>
+    <path class="ink" d="M-40 8h80M-34 8v10M-18 8v10M-2 8v10M14 8v10M30 8v10"/>
+    <path class="wall ink" d="M-26 8V-12h30V8z"/>
+    <path class="roof ink" d="M-30 -12L-11 -24L8 -12z"/>
+    <rect class="glow" x="-18" y="-6" width="8" height="7"/>
+    <path class="ink" d="M24 8V-6"/>
+    <path class="mark ink" d="M20 -6q4 -8 10 -4l6 0 -4 2q-2 4 -8 3z"/>`,
+
+  // Smugglers' Cove: a cave mouth in the cliff, a fire, and lanterns hung over the table.
+  cove: () => `
+    <path class="ground" d="M-44 18h88"/>
+    <path class="wall ink" d="M-44 18L-36 -16L-14 -30L14 -28L36 -12L44 18z"/>
+    <path class="roof ink" d="M-18 18V2q0 -16 18 -16q18 0 18 16v16z"/>
+    <path class="ink" d="M-12 -4h24"/>
+    <circle class="glow" cx="-8" cy="-2" r="2.4"/><circle class="glow" cx="8" cy="-2" r="2.4"/>
+    <path class="mark ink" d="M28 18l4 -8 4 8z"/>
+    <path class="smoke" d="M32 6q-4 -6 0 -10"/>`,
+
   // Lighthouse Point: the tower and its beam, and the keeper's cottage.
   lighthouse: () => `
     <path class="ground" d="M-40 18h80"/>

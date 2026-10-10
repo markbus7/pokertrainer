@@ -342,32 +342,44 @@ to find, and the fog is gone. The Gulf has its own fog, cleared a port at a
 time from the river's mouth. A town off the river (below) clears once you have
 heard of it.
 
-### 🗺️ The backwaters: towns off the river
+### 🗺️ The regions' towns: on the road, and off it
 
-The river is a line, and a line is quickly played out. Off it are three towns
-that are not on the road and are not needed to finish. Each is worth the trip
-for what it teaches, because the whole town plays one way:
+Eleven towns fill the country round the river, each with a local who keeps
+its game (their own portrait, a chair at the table, named townsfolk round
+them), a drawing on the chart, a scene the first time you arrive, and three
+things to do. Each of the three pays pearls once, more the further down the
+river the town is. Do all three and the local hands over a trophy. A town
+plays at the stakes and seat price of the stop it is reached from.
 
-| Town | Off | Stakes | Who keeps the game | The town plays | What it teaches |
+**On the road.** Every region has a city that is part of a stop's chapter:
+the stop is not finished until all three are done in its city. These cities
+are on the chart from the start, shut ("After Fisher's Rest") until the road
+gets there, and the notice board and the road's own button take you to them.
+The owner will still duel you before the city is done.
+
+| City | Region | With | Stakes | Who keeps the game | The table |
 | --- | --- | --- | --- | --- | --- |
-| Placer Gulch | Fisher's Rest, up the wagon road | NL5 | Big Ike Mulvaney, prospector | calling stations | bet your good hands big, never bluff |
-| Cypress Bayou | the Belle, down the creek below the Racing Chute | NL50 | Mama Odile, card reader | maniacs | tighten up and call them down |
-| Bethel | the Grand Hotel, up the Black River | NL100 | Deacon Amos Pruitt | rocks | steal their blinds, fold to their bets |
+| Sweetwater | the Prairie | Fisher's Rest | NL5 | Hank Dawson, trail boss | paid-off drovers, raising everything |
+| Timber Falls | the High Country | the Ferry | NL10 | Mae Lindqvist, sawmill boss | careful lumbermen: play your position |
+| Copperhead | the Diggings | Cotton Row | NL25 | Colonel Jessup, mine owner | miners who never fold to a flop bet |
+| Lafitte's Landing | the Bayou | the Belle | NL50 | Céline Lafitte, smuggler | they push until you fold, so defend |
+| Eagle Rock | the High Country | the Grand Hotel | NL100 | Mr. Sterling, lodge owner | strong regulars and one rich tourist |
+| Pelican Point | the Coast | the Gilded Barge | NL200 | Captain Barnacle | a mixed table where the stacks run short |
 
-They are found, not listed. On the chart each one starts as a question mark
-over uncharted water, with a note saying who to ask. Play ten hands at that
-stop's table (or take it) and its owner leans over and tells you what is up
-there: **Mark it on your chart**, and the town is drawn in. Sail up (or take
-the wagon road), and the boat moors at the town until you go back to a stop.
+**Off the road, found by rumour.** The backwaters are not needed to finish.
+Each one starts as a question mark on the chart, with a note saying who to
+ask. Play ten hands at that stop's table (or take it) and its owner leans
+over and tells you what is up there: **Mark it on your chart**, and the town
+is drawn in. Sail up, or take the wagon road, and the boat moors there until
+you go back to a stop.
 
-A town plays at its stop's stakes and seat price, at one table whose numbers
-in the lobby read just like the town: loose, wild or tight. The local sits in
-the first chair with their own face, and the townsfolk have names of their
-own. Each town has three things to do — play its hands, get up from its table
-a set number of big blinds ahead, and play a sitting with most of your
-decisions sound — and each pays pearls once, more for the towns further down
-the river. Do all three and the local hands over a trophy: Big Ike's gold
-nugget, Mama Odile's gator tooth, the Deacon's hymnal.
+| Town | Region | Ask at | Stakes | Who keeps the game | The town plays |
+| --- | --- | --- | --- | --- | --- |
+| Fort Ransom | the Prairie | Mud Landing | NL2 | Sergeant McGraw | soldiers on payday: bet it all, call it all |
+| Placer Gulch | the Diggings | Fisher's Rest | NL5 | Big Ike Mulvaney | calling stations: bet big, never bluff |
+| Cypress Bayou | the Bayou | the Belle | NL50 | Mama Odile | maniacs: tighten up and call them down |
+| Bethel | the High Country | the Grand Hotel | NL100 | Deacon Amos Pruitt | rocks: steal their blinds, fold to their bets |
+| Smugglers' Cove | the Coast, on an island | Delta Crown | NL500 | Mother Kidd | the hardest game on the Coast |
 
 ### 🎩 Your character
 
@@ -508,7 +520,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.4.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.5.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

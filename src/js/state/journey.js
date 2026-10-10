@@ -22,6 +22,8 @@ import { bookProgress } from '../data/fish.js';
 import {
   ownsLesson, ownsChart, ownsBoat, ownedCompanions, itemByKey, itemState, furthestStop,
 } from './economy.js';
+import { roadTownAt, backwaterFor } from '../data/backwaters.js';
+import { townGoals } from './backwaters.js';
 
 /** The boss's first name for a stop, or the stop's own name. */
 const bossName = (venue) => bossFor(venue.boss).short;
@@ -97,6 +99,19 @@ function evaluate(profile, chapter, spec) {
         hintParams: { boss: bossName(venue), buyin: money(venue.entry), target: money(venue.entry * 2) },
         done: beaten,
         to: { route: 'stop', params: { at: venue.key, place: 'room' }, place: null, stop: venue.key },
+      };
+    }
+
+    case 'town': {
+      // A city in the region round this stop: its three goals are part of the chapter.
+      const town = backwaterFor(spec.town);
+      const goals = townGoals(profile, town);
+      const have = goals.filter((g) => g.done).length;
+      return {
+        ...base, text: 'Do all three in {town}', params: { town: town.name },
+        hint: 'A city in the country round this stop, at these stakes, with a table of its own.',
+        done: have === goals.length, have, need: goals.length,
+        to: { route: 'town', params: { at: town.key }, place: null, stop: null },
       };
     }
 
@@ -190,6 +205,8 @@ export function goalsFor(profile, chapter) {
   const specs = [
     ...chapter.lessons.map((module) => ({ id: `learn:${module}`, kind: 'learn', module })),
     { id: `play:${chapter.stop}`, kind: 'play', need: chapter.hands },
+    // The region's city on the road, if this stop has one.
+    ...(roadTownAt(chapter.stop) ? [{ id: `town:${roadTownAt(chapter.stop).key}`, kind: 'town', town: roadTownAt(chapter.stop).key }] : []),
     { id: `take:${chapter.stop}`, kind: 'take' },
     ...chapter.bonus.map((b, i) => ({ ...b, id: `${b.kind}:${chapter.stop}:${i}`, required: false })),
   ];
@@ -264,7 +281,8 @@ export function duelStatus(profile, stopIndex) {
   const venue = VENUES[stopIndex];
   const open = stopIndex <= journey.current;
   const taken = profile.career.beaten.includes(venue.key);
-  const missing = chapter.goals.filter((g) => g.required && g.kind !== 'take' && !g.done);
+  // The region's city is the chapter's, not the owner's: they will duel you without it.
+  const missing = chapter.goals.filter((g) => g.required && g.kind !== 'take' && g.kind !== 'town' && !g.done);
   return { open, taken, missing, ready: open && (taken || missing.length === 0), record: profile.duelRecord(venue.key) };
 }
 

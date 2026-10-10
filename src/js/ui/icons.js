@@ -81,6 +81,15 @@ export const ICON_PATHS = {
   'k-nugget': 'M5 14l3-6 5-2 5 3 1 6-4 4H9zM9 10l2 2M14 9l1 3M11 15l3 1',
   'k-tooth': 'M4 5c4 4 12 4 16 0M10 8c0 6 1 10 2 12 1-2 2-6 2-12M11 11h2',
   'k-hymnal': 'M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM5 18a2 2 0 0 1 2-2h11M11 7v6M9 9h4',
+  // The regions' trophies.
+  'k-spurs': 'M3 14h8l3-3M14 11a4 4 0 1 0 0.01 0M14 7v-2M18 11h2M14 15v2M10.5 8l-1.5-1.5',
+  'k-axe': 'M6 20L16 6M13 4c3 0 6 2 6 6l-5-1-2-2z',
+  'k-ore': 'M4 15l4-7 6-2 5 4 1 5-5 5H8zM8 8l3 5 3-7M11 13l6 2',
+  'k-compass': 'M12 3a9 9 0 1 0 0.01 0M12 7l2.5 5L12 17l-2.5-5zM12 3v2M12 19v2M3 12h2M19 12h2',
+  'k-eagle': 'M3 9c3 0 5 1 6 3l3-4 3 4c1-2 3-3 6-3-2 4-5 6-9 6s-7-2-9-6zM12 15v5M9 20h6',
+  'k-sextant': 'M5 19L12 5l7 14M7 15c3 2 7 2 10 0M12 5v6M10 11h4',
+  'k-badge': 'M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2 8 12.7 4 8.8 9.5 8z',
+  'k-skull': 'M12 4c4 0 7 3 7 7 0 2-1 3-2 4v3H7v-3c-1-1-2-2-2-4 0-4 3-7 7-7zM9 11h.01M15 11h.01M10 18v-2M14 18v-2',
 
   /* --- one per training module, drawn for the thing it teaches ---- */
   'm-hand-rankings': 'M7 4h10v16H7zM10 8h4M10 12h4M10 16h4',

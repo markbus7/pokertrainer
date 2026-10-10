@@ -43,7 +43,7 @@ const promoteTo = (p, level) => {
   return p;
 };
 
-const ROUTES = new Set(['walkthrough', 'store', 'stop', 'levels', 'catchbook', 'ranges', 'boatyard', 'gauntlet']);
+const ROUTES = new Set(['town', 'walkthrough', 'store', 'stop', 'levels', 'catchbook', 'ranges', 'boatyard', 'gauntlet']);
 
 describe('the road: the list is sound', () => {
   it('has one chapter for every stop, in order', () => {

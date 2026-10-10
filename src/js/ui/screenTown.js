@@ -24,9 +24,15 @@ import { lobbyFace, payInPearls, notesCard } from './screenStop.js';
 import { pearls } from './shop.js';
 import { reportsOf } from '../state/sessionReport.js';
 import {
-  heard, canGo, townTable, townGoals, townDone, junctionOf,
+  heard, canGo, reached, townTable, townGoals, townDone, junctionOf,
 } from '../state/backwaters.js';
 import * as audio from '../audio/engine.js';
+
+/** Where a town is, for its story's heading: its region, or simply off the river. */
+const REGION_KICKER = {
+  prairie: 'The Prairie, {place}', high: 'The High Country, {place}', diggings: 'The Diggings, {place}', bayou: 'The Bayou, {place}', coast: 'The Coast, {place}',
+};
+const regionName = (town) => REGION_KICKER[town.region] || 'Off the river, {place}';
 
 /** The town drawn big: the sky, the far bank and the landmark, with the boat if it is tied up here. */
 function scene(town, { here, arrived, junction, boat }) {
@@ -110,6 +116,11 @@ function tableBlock(town, { here, state, profile, go }) {
         ? t('Sail up to {place}', { place: t(town.name) })
         : t('Take the wagon road to {place}', { place: t(town.name) })),
     );
+  } else if (!reached(profile, town)) {
+    action = el('div.stop-actions.shut',
+      el('div.stop-need', icon('lock', { size: 16 }),
+        t('The road comes to {place} after {stop}. Get as far as {stop} first.', { place: t(town.name), stop: t(junction.name) })),
+    );
   } else {
     action = el('div.stop-actions.shut',
       el('div.stop-need', icon('lock', { size: 16 }),
@@ -145,7 +156,9 @@ function listBlock(town, profile) {
     el('div.panel-title', el('h3', icon('river', { size: 16 }), t('What to do in {place}', { place: t(town.name) }))),
     el('div.faint.road-sub', done
       ? t('All three done.')
-      : t('{done} of 3 done. None of it is on the road: it is here for what it teaches.', { done: goals.filter((g) => g.done).length })),
+      : town.road
+        ? t('{done} of 3 done. All three are on the road: {stop} is not finished until they are.', { done: goals.filter((g) => g.done).length, stop: t(junctionOf(town).name) })
+        : t('{done} of 3 done. None of it is on the road: it is here for what it teaches.', { done: goals.filter((g) => g.done).length })),
     el('div.road-list', el('ul.road-goals',
       goals.map((g) => el(`li.road-goal${g.done ? '.done' : ''}`,
         el('span.road-mark', { 'aria-hidden': 'true' }, g.done ? icon('check', { size: 15 }) : null),
@@ -241,7 +254,7 @@ export function renderTown(ctx, params = {}) {
     finished ? finishedCard(town) : null,
     showArrival
       ? el('div.panel.paper.story-card',
-        el('div.story-kicker', icon('anchor', { size: 14 }), t('Off the river, {place}', { place: t(town.name) })),
+        el('div.story-kicker', icon('anchor', { size: 14 }), t(regionName(town), { place: t(town.name) })),
         el('p.story-text', typedText(t(town.arrival))))
       : null,
     localBlock(town, townDone(profile, town)),

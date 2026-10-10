@@ -241,6 +241,108 @@ const PEOPLE = {
       + '<circle cx="56.5" cy="46" r="4.2" fill="none" stroke="#b8a06a" stroke-width="1.1"/>'
       + '<path d="M47.7 46h4.6M39.3 45.5l-5-1.5M60.7 45.5l5-1.5" stroke="#b8a06a" stroke-width="1.1"/>',
   },
+  /* ---- the regions' cities ---- */
+  // The trail boss: a wide cattleman's hat, a red bandana, a sun-browned face and a long moustache.
+  dawson: {
+    skin: SKIN.tan,
+    ground: '#7a5a34',
+    body: shoulders('#5b4632')
+      + '<path d="M38 68L50 78L62 68L58 74L50 82L42 74Z" fill="#b8322a"/>'
+      + '<path d="M44 74l6 4 6 -4" stroke="#7d1f1a" stroke-width="1" fill="none"/>',
+    face: { mouth: 'grin', brow: '#4a3220' },
+    front: '<path d="M38 55q6 4 12 1q6 3 12 -1q-2 6 -12 6q-10 0 -12 -6z" fill="#4a3220"/>'
+      + '<path d="M18 36C26 31 74 31 82 36C80 40 74 41 70 39C60 36 40 36 30 39C26 41 20 40 18 36Z" fill="#8a6a3e"/>'
+      + '<path d="M32 36C32 21 68 21 68 36Q50 30 32 36Z" fill="#9c7a48"/>'
+      + '<path d="M34 32Q50 27 66 32" stroke="#5b4632" stroke-width="2" fill="none"/>',
+  },
+  // The sawmill boss: blonde braids, a plaid wool shirt, sawdust and a level look.
+  mae: {
+    skin: SKIN.fair,
+    ground: '#3f5a46',
+    back: '<path d="M33 46C30 60 30 72 34 82" stroke="#d8b25a" stroke-width="5" fill="none" stroke-linecap="round"/>'
+      + '<path d="M67 46C70 60 70 72 66 82" stroke="#d8b25a" stroke-width="5" fill="none" stroke-linecap="round"/>',
+    body: shoulders('#9a2f2a')
+      + '<path d="M22 78h56M20 88h60M30 70v30M44 72v28M56 72v28M70 70v30" stroke="#5e1c18" stroke-width="1.6"/>',
+    hair: '<path d="M33 44C32 30 40 26 50 26C60 26 68 30 67 44C63 36 57 33 50 33C43 33 37 36 33 44Z" fill="#d8b25a"/>',
+    face: { mouth: 'flat', brow: '#a8843c' },
+    front: '<circle cx="40" cy="38" r=".9" fill="#c9a86a"/><circle cx="60" cy="58" r=".8" fill="#c9a86a"/>',
+  },
+  // The mine owner: a black frock coat, a gold watch chain, white mutton-chops and a hard eye.
+  jessup: {
+    skin: SKIN.light,
+    ground: '#6a3b2c',
+    body: shoulders('#1f1b1c')
+      + '<path d="M42 69L50 79L58 69" fill="#ece6d8"/>'
+      + '<path d="M46 72h8l-4 6z" fill="#7a1f1f"/>'
+      + '<path d="M38 86q6 4 12 0" stroke="#d4ae4f" stroke-width="1.2" fill="none"/>',
+    hair: '<path d="M34 40C34 30 42 27 50 27C58 27 66 30 66 40C62 34 56 33 50 33C44 33 38 34 34 40Z" fill="#e6e1d6"/>',
+    face: { mouth: 'stern', brow: '#d9d4c8', eyes: 'narrow' },
+    front: '<path d="M33 42C32 56 36 62 40 64L42 52C38 50 36 47 35 42Z" fill="#e6e1d6"/>'
+      + '<path d="M67 42C68 56 64 62 60 64L58 52C62 50 64 47 65 42Z" fill="#e6e1d6"/>',
+  },
+  // The smugglers' queen: a man's tricorn over loose black curls, a gold earring, a long coat.
+  celine: {
+    skin: SKIN.olive,
+    ground: '#2e3f3a',
+    back: '<path d="M32 44C26 60 28 72 34 80M68 44C74 60 72 72 66 80" stroke="#1a1414" stroke-width="7" fill="none" stroke-linecap="round"/>',
+    body: shoulders('#2c3a52')
+      + '<path d="M42 69L50 76L58 69" fill="#e9dcc6"/>'
+      + '<path d="M36 72L40 100M64 72L60 100" stroke="#c9a24a" stroke-width="1.6"/>',
+    hair: '<path d="M33 46C31 30 40 26 50 26C60 26 69 30 67 46C64 36 58 33 50 33C42 33 36 36 33 46Z" fill="#1a1414"/>',
+    face: { mouth: 'smirk', brow: '#1a1414' },
+    front: '<circle cx="66.5" cy="54" r="2.4" fill="none" stroke="#e2b84a" stroke-width="1.3"/>'
+      + '<path d="M26 32C32 22 68 22 74 32C68 30 62 33 50 33C38 33 32 30 26 32Z" fill="#1e1a1a"/>'
+      + '<path d="M26 32C38 38 62 38 74 32L76 35C62 42 38 42 24 35Z" fill="#2a2424"/>',
+  },
+  // The lodge owner: a velvet smoking jacket, a silk cravat, a neat beard and oiled hair.
+  sterling: {
+    skin: SKIN.fair,
+    ground: '#4a3554',
+    body: shoulders('#5a2236')
+      + '<path d="M40 69L50 80L60 69" fill="#f3efe6"/>'
+      + '<path d="M45 72q5 6 10 0l-2 8h-6z" fill="#d4ae4f"/>',
+    hair: '<path d="M34 42C34 30 42 26 50 26C58 26 66 30 66 42C62 34 54 31 46 33C40 34 36 38 34 42Z" fill="#3a2a22"/>',
+    face: { mouth: 'smile', brow: '#3a2a22' },
+    front: '<path d="M38 56C40 66 46 69 50 69C54 69 60 66 62 56C58 60 54 61 50 61C46 61 42 60 38 56Z" fill="#3a2a22"/>',
+  },
+  // The old skipper: a white beard, a blue fisherman's cap, an oilskin collar.
+  barnacle: {
+    skin: SKIN.light,
+    ground: '#34586a',
+    body: shoulders('#d9a53a')
+      + '<path d="M40 68L50 76L60 68" fill="#1d2a3f"/>',
+    face: { mouth: 'smile', brow: '#e9e5dc', eyes: 'narrow' },
+    front: '<path d="M33 48C33 66 42 74 50 74C58 74 67 66 67 48C63 56 58 59 50 59C42 59 37 56 33 48Z" fill="#ece8de"/>'
+      + '<path d="M45 57q5 3 10 0" stroke="#b3a99a" stroke-width="1.4" fill="none"/>'
+      + '<path d="M32 34C32 22 68 22 68 34Z" fill="#26466a"/>'
+      + '<path d="M30 34h40l2 4H28z" fill="#1b3350"/>',
+  },
+  // The paymaster sergeant: a blue forage cap, a red face, a big moustache and chevrons.
+  mcgraw: {
+    skin: SKIN.light,
+    ground: '#5a5040',
+    body: shoulders('#2b3f6e')
+      + '<path d="M42 69L50 77L58 69" fill="#2b3f6e"/>'
+      + '<path d="M24 84l6 -4 6 4M24 88l6 -4 6 4M64 84l6 -4 6 4M64 88l6 -4 6 4" stroke="#e2b84a" stroke-width="1.6" fill="none"/>'
+      + '<circle cx="50" cy="84" r="1.4" fill="#e2b84a"/><circle cx="50" cy="92" r="1.4" fill="#e2b84a"/>',
+    face: { mouth: 'open', brow: '#7a4a2a' },
+    front: '<path d="M38 53q12 6 24 0q-4 5 -12 5q-8 0 -12 -5z" fill="#8a5a34"/>'
+      + '<circle cx="40" cy="51" r="4" fill="#e07a6a" opacity=".35"/><circle cx="60" cy="51" r="4" fill="#e07a6a" opacity=".35"/>'
+      + '<path d="M33 36C33 25 67 25 67 33L69 36H31Z" fill="#2b3f6e"/>'
+      + '<path d="M31 36h38l-2 4H33z" fill="#1a1a1a"/>',
+  },
+  // The keeper of the cove: grey hair under a scarf, a clay pipe, a weathered smile.
+  kidd: {
+    skin: SKIN.brown,
+    ground: '#2a2f3a',
+    body: shoulders('#3b3a3e')
+      + '<path d="M30 74Q50 88 70 74L72 82Q50 96 28 82Z" fill="#6a2e2a"/>',
+    hair: '<path d="M33 46C31 32 40 27 50 27C60 27 69 32 67 46C64 38 58 35 50 35C42 35 36 38 33 46Z" fill="#a8a29a"/>',
+    face: { mouth: 'smirk', brow: '#a8a29a', eyes: 'narrow' },
+    front: '<path d="M31 38C31 24 69 24 69 38C64 33 58 31 50 31C42 31 36 33 31 38Z" fill="#7a2e2a"/>'
+      + '<path d="M55 57l12 6" stroke="#e9e1cf" stroke-width="2.2" stroke-linecap="round"/>'
+      + '<path d="M66 60h5v5h-5z" fill="#e9e1cf"/>',
+  },
   /* ---- the Gulf ---- */
   // The harbourmaster: a peaked harbour cap with a brass badge, grey side-whiskers, a navy coat.
   quint: {
