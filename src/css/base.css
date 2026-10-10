@@ -131,6 +131,10 @@ main {
   max-width: 1180px;
   margin: 0 auto;
   padding: 22px 20px 64px;
+  /* A card tilts a little as it is dealt in; on a phone its corner must not
+     make the whole page scroll sideways. Clipped at the gutter's edge, so
+     shadows still show. */
+  overflow-x: clip;
 }
 
 .screen { animation: rise 0.25s ease; }

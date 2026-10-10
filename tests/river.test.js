@@ -1,5 +1,6 @@
 import { describe, it, assert, equal } from './harness.js';
-import { VENUES } from '../src/js/data/venues.js';
+import { VENUES, RIVER, GULF, RIVER_END, LAST_TABLE } from '../src/js/data/venues.js';
+import { gulfSvg, PORT_POINTS, GULF as GULF_CHART } from '../src/js/ui/gulfMap.js';
 import {
   BOSSES, BOSS_KEYS, bossFor, boatEarnedBy, BOATS, FLAGSHIP, MENTOR, ASSAYER, RACE, SHIPWRIGHT,
 } from '../src/js/data/characters.js';
@@ -112,16 +113,16 @@ describe('the river: the race is the pass mark, told as a race', () => {
 
 describe('the river: the chart is drawn where things are', () => {
   it('has a place on the chart for every stop', () => {
-    equal(STOP_POINTS.length, VENUES.length, 'a stop has nowhere to stand');
+    equal(STOP_POINTS.length, RIVER.length, 'a stop has nowhere to stand');
   });
 
   it('keeps every stop on dry land, clear of the water', () => {
-    VENUES.forEach((v, i) => {
+    RIVER.forEach((v, i) => {
       const p = STOP_POINTS[i];
       assert(p.x > 60 && p.x < WORLD.W - 60 && p.y > 60 && p.y < WORLD.H - 60, `${v.name} is drawn off the edge of the chart`);
       // A landmark is drawn about 80 across; the last is the Commodore's
       // boat at anchor between the mouths, so it only has to be out of the sea.
-      const pad = i === VENUES.length - 1 ? 0 : 44;
+      const pad = i === RIVER.length - 1 ? 0 : 44;
       assert(isDry(p.x, p.y, pad), `${v.name} is drawn in the water`);
     });
   });
@@ -172,9 +173,9 @@ describe('the river: the chart is drawn where things are', () => {
   it('draws the boat you have at the stop you are at, and every place', () => {
     for (const boat of [...BOATS, FLAGSHIP]) assert(BOAT_ART[boat.key], `the ${boat.key} is never drawn`);
     const svg = worldSvg({
-      here: 2, best: 3, open: 3, beaten: new Set([0, 1]), boat: 'skiff', landmarks: VENUES.map((v) => v.landmark),
+      here: 2, best: 3, open: 3, beaten: new Set([0, 1]), boat: 'skiff', landmarks: RIVER.map((v) => v.landmark),
     });
-    equal((svg.match(/class="landmark/g) || []).length, VENUES.length, 'a stop is missing from the chart');
+    equal((svg.match(/class="landmark/g) || []).length, RIVER.length, 'a stop is missing from the chart');
     equal((svg.match(/class="landmark here/g) || []).length, 1, 'more than one stop claims to be where you are');
     equal((svg.match(/class="place"/g) || []).length, PLACES.length, 'a place is missing from the chart');
     assert(/class="your-boat"/.test(svg), 'your boat is not on the water');
@@ -187,7 +188,7 @@ describe('the river: the chart is drawn where things are', () => {
     // apply, and a black stop covers everything drawn before it. Stops say
     // their colour themselves now, and every reference is written both ways.
     const svg = worldSvg({
-      here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: VENUES.map((v) => v.landmark),
+      here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: RIVER.map((v) => v.landmark),
     });
     const stops = svg.match(/<stop[^>]*>/g) || [];
     assert(stops.length > 0, 'the chart has no gradient to check');
@@ -201,7 +202,7 @@ describe('the river: the chart is drawn where things are', () => {
 
   it('letters the waters, in Dutch as well', () => {
     const svg = worldSvg({
-      here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: VENUES.map((v) => v.landmark),
+      here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: RIVER.map((v) => v.landmark),
     });
     for (const n of WATER_NAMES) {
       assert(svg.includes(n.text.toUpperCase()), `${n.text} is not lettered on the chart`);
@@ -210,7 +211,7 @@ describe('the river: the chart is drawn where things are', () => {
     setLang('nl');
     try {
       const nl = worldSvg({
-        here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: VENUES.map((v) => v.landmark),
+        here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: RIVER.map((v) => v.landmark),
       });
       assert(nl.includes(NL['The Long River'].toUpperCase()), 'the Dutch chart still says The Long River');
     } finally {
@@ -316,3 +317,41 @@ describe('the river: it speaks Dutch too', () => {
     assert(!missing.length, `no Dutch for:\n      ${missing.join('\n      ')}`);
   });
 });
+
+describe('the Gulf: the second act, past the delta', () => {
+  it('has five ports after the river, in order of stakes, the delta the river\'s end', () => {
+    equal(RIVER.length, 8);
+    equal(GULF.length, 5);
+    equal(RIVER_END, 'nl500');
+    equal(LAST_TABLE, 'nl25k');
+    GULF.forEach((v, i) => {
+      equal(v.index, RIVER.length + i, `${v.name} is out of order`);
+      assert(v.entry > VENUES[v.index - 1].entry, `${v.name} is not dearer than the stop before it`);
+      equal(v.act, 2);
+    });
+    assert(RIVER.every((v) => v.act === 1), 'a river stop thinks it is at sea');
+  });
+
+  it('draws every port on its own chart, inside it, apart from each other', () => {
+    equal(PORT_POINTS.length, GULF.length, 'a port has nowhere to stand');
+    for (const p of PORT_POINTS) {
+      assert(p.x > 60 && p.x < GULF_CHART.W - 60 && p.y > 60 && p.y < GULF_CHART.H - 60, 'a port is drawn off the edge of the chart');
+    }
+    for (let i = 0; i < PORT_POINTS.length; i++) {
+      for (let j = i + 1; j < PORT_POINTS.length; j++) {
+        const d = Math.hypot(PORT_POINTS[i].x - PORT_POINTS[j].x, PORT_POINTS[i].y - PORT_POINTS[j].y);
+        assert(d > 200, 'two ports are drawn on top of each other');
+      }
+    }
+    const svg = gulfSvg({ here: 1, best: 2, open: 2, beaten: new Set([0]), boat: 'flagship' });
+    equal((svg.match(/class="landmark/g) || []).length, GULF.length, 'a port is missing from the chart');
+    equal((svg.match(/class="landmark here/g) || []).length, 1, 'more than one port claims to be where you are');
+    assert(/class="your-boat"/.test(svg), 'your boat is not on the water');
+    assert(!/#[0-9a-f]{6}\b/i.test(svg), 'the chart paints a colour of its own instead of the room\'s');
+    // Still on the river: the boat waits at the mouth, and no port is "here".
+    const river = gulfSvg({ here: -1, best: -1, open: -1, beaten: new Set(), boat: 'flagship' });
+    equal((river.match(/class="landmark here/g) || []).length, 0);
+    equal((river.match(/class="landmark shut/g) || []).length, GULF.length, 'a port is open before the river is won');
+  });
+});
+

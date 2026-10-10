@@ -249,6 +249,12 @@ export const STAKES = [
   { key: 'nl100', name: 'NL100', bb: 1.00, buyIn: 100, minBankroll: 3000, difficulty: 6, blurb: 'Most players never beat this. Balance is mandatory.' },
   { key: 'nl200', name: 'NL200', bb: 2.00, buyIn: 200, minBankroll: 6000, difficulty: 7, blurb: 'Serious money and serious opponents.' },
   { key: 'nl500', name: 'NL500', bb: 5.00, buyIn: 500, minBankroll: 15000, difficulty: 8, blurb: 'High stakes. Everyone here studies as hard as you do.' },
+  // The Gulf: past the delta, the second act.
+  { key: 'nl1000', name: 'NL1000', bb: 10, buyIn: 1000, minBankroll: 30000, difficulty: 9, blurb: 'The first table at sea. They pay off — if you bet the right amount.' },
+  { key: 'nl2000', name: 'NL2000', bb: 20, buyIn: 2000, minBankroll: 60000, difficulty: 10, blurb: 'The turn and the river are where these pots are decided.' },
+  { key: 'nl5000', name: 'NL5000', bb: 50, buyIn: 5000, minBankroll: 150000, difficulty: 11, blurb: 'Every pot is re-raised. Learn to play the small stack-to-pot that leaves.' },
+  { key: 'nl10k', name: 'NL10K', bb: 100, buyIn: 10000, minBankroll: 300000, difficulty: 12, blurb: 'Crowded pots. Bluffs die three ways at once.' },
+  { key: 'nl25k', name: 'NL25K', bb: 250, buyIn: 25000, minBankroll: 750000, difficulty: 13, blurb: 'The last table there is. Short stacks, and nowhere to hide.' },
 ];
 
 export function stakeFor(key) {

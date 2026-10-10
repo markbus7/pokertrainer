@@ -89,6 +89,38 @@ export const ROAD = [
     hands: 200,
     bonus: [{ kind: 'stars', need: 2 }, { kind: 'fish', need: 10 }],
   },
+
+  /* ---- The Gulf: the second act, opened by taking the delta ---- */
+  {
+    stop: 'nl1000',
+    lessons: ['value'],
+    hands: 220,
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'regatta' }],
+  },
+  {
+    stop: 'nl2000',
+    lessons: ['streets'],
+    hands: 240,
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'race', need: 3 }],
+  },
+  {
+    stop: 'nl5000',
+    lessons: ['threebet'],
+    hands: 260,
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'regatta' }],
+  },
+  {
+    stop: 'nl10k',
+    lessons: ['multiway'],
+    hands: 280,
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'pet', need: 6 }],
+  },
+  {
+    stop: 'nl25k',
+    lessons: ['pushfold'],
+    hands: 300,
+    bonus: [{ kind: 'stars', need: 2 }, { kind: 'regatta' }],
+  },
 ];
 
 /**

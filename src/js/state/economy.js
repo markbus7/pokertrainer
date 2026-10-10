@@ -33,7 +33,7 @@
 import { MODULE_META } from '../data/curriculum.js';
 import { CHECKPOINTS } from '../data/rangeLadder.js';
 import { BOATS, FLAGSHIP, boatByKey } from '../data/characters.js';
-import { VENUES, venueFor } from '../data/venues.js';
+import { VENUES, venueFor, RIVER_END } from '../data/venues.js';
 
 /* ------------------------------------------------------------------ *
  * What the tables pay
@@ -253,6 +253,12 @@ export const LESSON_PRICES = {
   exploit: 220,
   spr: 240,
   icm: 280,
+  // The Gulf's chapters.
+  value: 320,
+  streets: 340,
+  threebet: 360,
+  multiway: 380,
+  pushfold: 420,
 };
 
 /** One reach of the pilot house's charts. */
@@ -328,7 +334,9 @@ export const upgradeByKey = (key) => UPGRADES.find((u) => u.key === key) || null
  * tables, paid when you cash out. A room is mostly a flag on the river; the
  * cut makes it one that pays back, slowly.
  */
-export const ROOM_PRICES = [3000, 5000, 8000, 12000, 18000, 25000, 34000, 45000];
+export const ROOM_PRICES = [3000, 5000, 8000, 12000, 18000, 25000, 34000, 45000,
+  // The Gulf's rooms.
+  60000, 80000, 105000, 135000, 170000];
 export const ROOM_CUT = 0.02;
 export const roomKey = (venueKey) => `room:${venueKey}`;
 export const ownsRoom = (profile, venueKey) => profile.owns(roomKey(venueKey));
@@ -349,7 +357,7 @@ export function roomCut(hands, bigBlind) {
  */
 export const CATALOGUE = [
   ...MODULE_META.filter((m) => LESSON_PRICES[m.id] > 0).map((m) => ({
-    key: `lesson:${m.id}`, kind: 'lesson', module: m.id, price: LESSON_PRICES[m.id], needs: { level: m.unlockLevel },
+    key: `lesson:${m.id}`, kind: 'lesson', module: m.id, price: LESSON_PRICES[m.id], needs: { level: m.unlockLevel, ...(m.act === 2 ? { river: true } : {}) },
   })),
   ...CHECKPOINTS.filter((c) => c.kind !== 'exam').map((c) => ({
     key: `chart:${c.key}`, kind: 'chart', checkpoint: c.key, price: CHART_PRICE, needs: { owns: 'lesson:preflop' },
@@ -445,6 +453,9 @@ export function missingFor(profile, item) {
   if (needs.tableAt && !(profile.career.beaten || []).includes(needs.tableAt)) {
     missing.push({ key: 'tableAt', text: 'Take the table at {place} first', params: { place: venueFor(needs.tableAt).name } });
   }
+  if (needs.river && !wonTheRiver(profile)) {
+    missing.push({ key: 'river', text: 'Take the delta: the Gulf\'s chapters are for after the river', params: {} });
+  }
   if (needs.taken && tablesTaken(profile) < needs.taken) {
     missing.push({ key: 'taken', text: 'Take a table from the one who owns it', params: {} });
   }
@@ -527,7 +538,7 @@ export function tablesTaken(profile) {
 
 /** Whether the Commodore is beaten, which is the only way to his flagship. */
 export function wonTheRiver(profile) {
-  return (profile.career.beaten || []).includes(VENUES[VENUES.length - 1].key);
+  return (profile.career.beaten || []).includes(RIVER_END);
 }
 
 /** Whether a boat is yours to sail: the rowboat always, the flagship if won. */

@@ -97,8 +97,13 @@ export function roadList(chapter, { next = null, go, interactive = true }) {
 /** What finishing a city opens, in a sentence. */
 export function opensLine(chapter) {
   const next = VENUES[chapter.index + 1];
-  if (!next) return t('This is the last table on the river. Take it and the river is yours.');
+  if (!next) return t('This is the last table there is. Take it, and the river and the sea are yours.');
   const boss = bossFor(chapter.venue.boss);
+  // The delta: the end of the river, and the door to the sea.
+  if (next.act !== chapter.venue.act) {
+    return t('This is the last table on the river. Take it and the river is yours — and past the delta the Gulf opens, {next} first. {boss} also hands over a purse of {money}, enough for a seat there.',
+      { next: t(next.name), boss: boss.short, money: fmt.money(purseFor(chapter.index)) });
+  }
   return t('When these are done, {next} opens. Taking this table also has {boss} hand over a purse of {money}, enough for a seat there.',
     { next: t(next.name), boss: boss.short, money: fmt.money(purseFor(chapter.index)) });
 }
@@ -133,7 +138,7 @@ export function roadBanner(journey, go) {
       icon('check', { size: 18 }),
       el('div.road-banner-text',
         el('div.road-kicker', t('The Road')),
-        el('div.road-banner-line', t('You have taken every table on the river.'))));
+        el('div.road-banner-line', t('You have taken every table on the river and the sea.'))));
   }
   const chapter = journey.chapters[journey.current];
   const { goal } = journey.next || {};

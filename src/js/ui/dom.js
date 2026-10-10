@@ -250,7 +250,8 @@ function termChip(spec) {
 export const fmt = {
   pct: (x, digits = 0) => `${(x * 100).toFixed(digits)}%`,
   chips: (n) => Math.round(n).toLocaleString('en-US'),
-  money: (n) => `$${n.toFixed(2)}`,
+  // A thousands separator once the Gulf's stakes put five figures in a purse.
+  money: (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
   bb: (n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}bb`,
   signed: (n) => `${n >= 0 ? '+' : ''}${Math.round(n).toLocaleString('en-US')}`,
 };

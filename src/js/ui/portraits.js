@@ -196,6 +196,87 @@ const PEOPLE = {
       + '<path d="M44 29l6-3 6 3-6 3z" fill="#d4ae4f"/>',
   },
 
+  /* ---- the Gulf ---- */
+  // The harbourmaster: a peaked harbour cap with a brass badge, grey side-whiskers, a navy coat.
+  quint: {
+    skin: SKIN.olive,
+    ground: '#3e5560',
+    body: shoulders('#22324a')
+      + '<path d="M42 69L50 79L58 69" fill="#f1ece0"/>'
+      + '<path d="M47 75l3 7 3-7z" fill="#22324a"/>'
+      + '<circle cx="40" cy="84" r="1.6" fill="#d4ae4f"/><circle cx="40" cy="92" r="1.6" fill="#d4ae4f"/>'
+      + '<circle cx="60" cy="84" r="1.6" fill="#d4ae4f"/><circle cx="60" cy="92" r="1.6" fill="#d4ae4f"/>',
+    face: { mouth: 'flat', brow: '#b9b5ad' },
+    front: '<path d="M33 40C32 52 35 58 38 60L41 50C38 48 36 45 35 40Z" fill="#b9b5ad"/>'
+      + '<path d="M67 40C68 52 65 58 62 60L59 50C62 48 64 45 65 40Z" fill="#b9b5ad"/>'
+      + '<path d="M32 33C32 23 68 23 68 33L67 36H33Z" fill="#1d2a3f"/>'
+      + '<path d="M33 34h34v3.4H33z" fill="#f1ece0"/>'
+      + '<path d="M33 37.4Q50 41 67 37.4L68 40Q50 45 32 40Z" fill="#111827"/>'
+      + '<path d="M46 27.5h8v4h-8z" fill="#d4ae4f"/><path d="M48 29.5h4" stroke="#8a6a1e" stroke-width=".9"/>',
+  },
+  // The lighthouse keeper: a yellow oilskin sou'wester and coat, a red braid over the shoulder.
+  moll: {
+    skin: SKIN.fair,
+    ground: '#4a5a66',
+    back: '<path d="M64 48C72 56 72 70 66 80" stroke="#a5452a" stroke-width="5.5" fill="none" stroke-linecap="round"/>'
+      + '<path d="M66 60l3 2M67 66l3 2M67 72l3 2" stroke="#7d3220" stroke-width="1.2"/>',
+    body: shoulders('#d9a53a')
+      + '<path d="M42 69L50 76L58 69" fill="#e7ddc6"/>'
+      + '<path d="M50 76v24" stroke="#a87b22" stroke-width="1.6"/>'
+      + '<circle cx="47" cy="84" r="1.3" fill="#3b2a1c"/><circle cx="47" cy="92" r="1.3" fill="#3b2a1c"/>',
+    hair: '<path d="M34 42C34 32 42 28 50 28C58 28 66 32 66 42C62 36 56 35 50 35C44 35 38 36 34 42Z" fill="#a5452a"/>',
+    face: { mouth: 'smile', brow: '#8a3a22' },
+    front: '<path d="M30 33C30 21 70 21 70 33Z" fill="#e2b24a"/>'
+      + '<path d="M24 35C30 31 70 31 76 35C78 39 74 44 70 44C62 40 38 40 30 44C26 44 22 39 24 35Z" fill="#d9a53a"/>'
+      + '<path d="M32 33Q50 29 68 33" stroke="#a87b22" stroke-width="1.3" fill="none"/>',
+  },
+  // The pearl buyer: black hair up under a tall comb, pearls at her throat and ears.
+  valdes: {
+    skin: SKIN.tan,
+    ground: '#5b4a6a',
+    back: '<path d="M38 22C40 10 60 10 62 22Z" fill="#c9a24a"/><path d="M42 20v-6M46 19v-7M50 19v-8M54 19v-7M58 20v-6" stroke="#8a6a1e" stroke-width="1.2"/>'
+      + '<ellipse cx="50" cy="25" rx="11" ry="6" fill="#1a1414"/>',
+    body: shoulders('#3b2a4a')
+      + '<path d="M38 70Q50 82 62 70" stroke="#f3eee6" stroke-width="2.6" fill="none" stroke-dasharray="0.1 3.2" stroke-linecap="round"/>'
+      + '<circle cx="50" cy="78.6" r="2.4" fill="#f6f1e8"/>',
+    hair: '<path d="M33 46C31 30 40 25 50 25C60 25 69 30 67 46C64 36 58 32 50 32C42 32 36 36 33 46Z" fill="#1a1414"/>',
+    face: { mouth: 'smirk', brow: '#1a1414' },
+    front: '<circle cx="33.5" cy="53" r="1.8" fill="#f6f1e8"/><circle cx="66.5" cy="53" r="1.8" fill="#f6f1e8"/>',
+  },
+  // The privateer: a battered tricorn, an eyepatch, a black beard, a red coat.
+  teague: {
+    skin: SKIN.brown,
+    ground: '#5e3a2e',
+    body: shoulders('#7a2a22')
+      + '<path d="M42 69L50 78L58 69" fill="#e9e2d0"/>'
+      + '<path d="M36 72L40 100M64 72L60 100" stroke="#d4ae4f" stroke-width="1.6"/>',
+    face: { mouth: 'grin', brow: '#1a1210' },
+    front: '<path d="M34 50C34 64 42 70 50 70C58 70 66 64 66 50C62 56 58 58 50 58C42 58 38 56 34 50Z" fill="#1a1210"/>'
+      + '<path d="M45 57q5 3 10 0" stroke="#6e2a24" stroke-width="1.6" fill="none"/>'
+      + '<path d="M38 42L64 37" stroke="#111" stroke-width="1.3"/>'
+      + '<ellipse cx="43.5" cy="46" rx="4" ry="3.6" fill="#111"/>'
+      + '<path d="M28 32C34 20 66 20 72 32C66 30 60 34 50 34C40 34 34 30 28 32Z" fill="#22180f"/>'
+      + '<path d="M28 32C40 39 60 39 72 32L74 36C60 44 40 44 26 36Z" fill="#2f2216"/>'
+      + '<path d="M30 33.5C42 39.5 58 39.5 70 33.5" stroke="#d4ae4f" stroke-width="1" fill="none"/>',
+  },
+  // The Admiral: a bicorne worn athwart, white mutton-chops, gold epaulettes.
+  admiral: {
+    skin: SKIN.light,
+    ground: '#24324a',
+    body: shoulders('#16203a')
+      + '<path d="M42 69L50 80L58 69" fill="#f1ece0"/>'
+      + '<path d="M12 86C16 76 26 71 34 70L36 79C27 80 19 83 12 86Z" fill="#d4ae4f"/>'
+      + '<path d="M88 86C84 76 74 71 66 70L64 79C73 80 81 83 88 86Z" fill="#d4ae4f"/>'
+      + '<path d="M13 86v5M17 84v5M21 82v5M25 81v5M75 81v5M79 82v5M83 84v5M87 86v5" stroke="#b8923a" stroke-width="1.3"/>'
+      + '<path d="M44 86l6 4 6-4v6l-6 4-6-4z" fill="#c0392b"/><circle cx="50" cy="89" r="1.8" fill="#d4ae4f"/>',
+    face: { mouth: 'stern', eyes: 'narrow', brow: '#f2f0ea' },
+    front: '<path d="M33 40C31 54 34 60 39 62L42 50C38 48 35 45 34 40Z" fill="#f2f0ea"/>'
+      + '<path d="M67 40C69 54 66 60 61 62L58 50C62 48 65 45 66 40Z" fill="#f2f0ea"/>'
+      + '<path d="M14 33C26 33 34 20 50 18C66 20 74 33 86 33C76 38 62 37 50 37C38 37 24 38 14 33Z" fill="#111"/>'
+      + '<path d="M16 33.5C28 36 40 35.5 50 35.5C60 35.5 72 36 84 33.5" stroke="#d4ae4f" stroke-width="1.4" fill="none"/>'
+      + '<path d="M50 20v14" stroke="#d4ae4f" stroke-width="1.2"/><circle cx="50" cy="27" r="2.6" fill="#c0392b"/>',
+  },
+
   /* ---- the teacher ---- */
   silas: {
     skin: SKIN.light,

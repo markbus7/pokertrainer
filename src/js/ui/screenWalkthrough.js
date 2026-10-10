@@ -9,6 +9,7 @@
  */
 
 import { el, mount, richText, toast } from './dom.js';
+import { makeRng, shuffle } from '../core/rng.js';
 import { icon } from './icons.js';
 import { lessonTable } from '../data/lessonTables.js';
 import { makePractice } from '../trainers/practice.js';
@@ -61,6 +62,17 @@ function buildPractice(kind) {
     console.error('practice unavailable:', err);
     return null;
   }
+}
+
+/**
+ * A check's options in the order they are shown: shuffled, but the same way
+ * every time for the same question. Most checks were written with the right
+ * answer first, and a reader learns that pattern faster than the lesson.
+ */
+function shown(check) {
+  let h = 2166136261;
+  for (const ch of check.question) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  return shuffle(makeRng(h), check.options.slice());
 }
 
 export function renderWalkthrough(ctx, params) {
@@ -252,7 +264,7 @@ export function renderWalkthrough(ctx, params) {
         ),
         el('div.question', richText(check.question)),
         el('div.options',
-          check.options.map((option, i) => el(`button.option${
+          shown(check).map((option, i) => el(`button.option${
             !answered ? '' : option.key === check.answer ? '.correct' : option.key === state.chosen ? '.wrong' : ''
           }`, {
             disabled: answered,
@@ -303,7 +315,7 @@ export function renderWalkthrough(ctx, params) {
     if (!step.check) return;
     const n = Number(e.key);
     if (state.chosen === null && n >= 1 && n <= step.check.options.length) {
-      answer(step.check.options[n - 1].key);
+      answer(shown(step.check)[n - 1].key);
     } else if (state.chosen !== null && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       next();

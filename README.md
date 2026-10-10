@@ -19,7 +19,7 @@ the page will tell you this if you try.)
 
 ## What's in it
 
-### 🎓 Twelve training modules, gated by rank
+### 🎓 Seventeen training modules, gated by rank
 
 Each module has a short lesson and an endless supply of generated drills.
 Difficulty scales with your rank, and later modules unlock as you level up —
@@ -40,6 +40,13 @@ equity cannot use ICM anyway.
 | Reading Players | Level 5 | Naming an opponent's leak and attacking it |
 | Stack Depth | Level 6 | SPR, and planning a hand before you enter it |
 | Tournament ICM | Level 7 | Why chips stop being money on the bubble |
+| Value Betting | The Gulf | Betting when worse calls, thin value, sizing for the caller |
+| Turn & River | The Gulf | Which turns to barrel, pot control, river bluffs and bluff-catching |
+| 3-Bet Pots | The Gulf | Low stack-to-pot ratios, call / 4-bet / fold, out of position |
+| Multiway Pots | The Gulf | Why bluffs fail three ways, tighter value, draws to the nuts |
+| Push or Fold | The Gulf | Short-stack shoving and calling ranges by stack and seat |
+
+The last five are the Gulf's: they open once the river is won (see below).
 
 **Every drill answer is computed from the engine, not hand-authored.** When a
 drill says you have 34.7% equity, that number came from the same evaluator that
@@ -238,20 +245,44 @@ end pays. Measured, an hour's pearls is worth about a third of what an hour of
 faultless play wins at the same stop — enough to matter, never enough to
 replace playing well. Nothing sells pearls back: they are only earned at the
 tables. Your character page says what your purse would fetch where you are,
-and at the delta.
+and at the far end — the Admiralty, once there is a Gulf.
 
 And then there are the card rooms: the far end of the purse. Once a stop's
 table is yours, the house it stands in is for sale — 3,000 pearls at Mud
-Landing up to 45,000 at the Delta Crown, about 150,000 for all eight. A room
+Landing up to 45,000 at the Delta Crown, about 150,000 for all eight, and 60,000 to 170,000 in the Gulf. A room
 you own pays you the house's cut, 2% of a big blind for every hand you are
 dealt at its cash tables, paid when you cash out, and your character page
-counts the rooms you own and what they have paid. Own all eight, and the river
-is yours.
+counts the rooms you own and what they have paid. Own all thirteen, and every
+table there is pays you.
 
 The river is drawn in the hour of the day you pick (night, bayou, dusk or
 daylight), the people have faces, and everything you hear — chips, cards, the
 ship's bell, a steam whistle and a ragtime piano — is synthesised in the
 browser, with separate switches for effects and music in the ledger.
+
+### 🌊 The Gulf: the second act
+
+Take the delta and the river is won — and past it the Gulf opens: five more
+ports at sea, on a chart of their own, from NL1000 to NL25K. The home screen
+gets a switch between **The Long River** and **The Gulf**, and opens on the
+one your boat is in. Each port teaches one of the chapters a river winner is
+still missing, and its table is full of exactly that spot:
+
+| Port | Stakes | Owner | Chapter |
+| --- | --- | --- | --- |
+| Salt Harbour | NL1000 | Josiah Quint, harbourmaster — calls everything | Value Betting |
+| Lighthouse Point | NL2000 | Molly Fenn, lighthouse keeper — waits for the late streets | Turn & River |
+| The Pearl Banks | NL5000 | Isabel Valdés, pearl buyer — re-raises every other open | 3-Bet Pots |
+| Hurricane Key | NL10K | Black Jack Teague, privateer — drags everybody into the pot | Multiway Pots |
+| The Admiralty | NL25K | Admiral Hargreave — and a duel where the blinds climb until the stacks are short | Push or Fold |
+
+The road runs on through them like the river: each port has its chapter, its
+hands (220 at Salt Harbour up to 300 at the Admiralty) and its table to take,
+with a scene the first time you tie up, a keepsake from each owner, Regattas,
+duels and a card room to buy. The Gulf's chapters are on Delphine's shelf once
+the delta is yours, with a guided lesson and drills each — four from a bank of
+worked spots, and push or fold generated from the same shoving shares the bots
+use. The top rank now asks for every one of the seventeen chapters mastered.
 
 ### 🎩 Your character
 
@@ -392,7 +423,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v3.24.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.0.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

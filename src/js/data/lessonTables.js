@@ -114,6 +114,15 @@ export const LESSON_TABLES = {
   // Saying so is better than inventing a table that teaches neither.
   icm: null,
   bankroll: null,
+  // The Gulf's chapters are each taught by a port whose tables are full of
+  // exactly that spot — Salt Harbour's callers, the Pearl Banks' re-raises,
+  // Hurricane Key's crowded pots — and push or fold by the Admiralty's duel,
+  // where the blinds climb until the stacks are short. Those are their tables.
+  value: null,
+  streets: null,
+  threebet: null,
+  multiway: null,
+  pushfold: null,
 };
 
 /** The table this lesson should be played on, or null if it has none. */

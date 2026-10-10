@@ -2114,4 +2114,677 @@ export const WALKTHROUGHS = {
       'Big stack: attack constantly. Short stack: shove rather than call.',
     ],
   },
+  /* ================================================================== *
+   * VALUE BETTING (the Gulf)
+   * ================================================================== */
+  value: {
+    intro: 'By the end of this you will know which of your hands to bet on the river, how much to bet, and why checking a good hand is so often a mistake that costs more than any bad call.',
+    steps: [
+      {
+        title: 'What makes a bet a value bet',
+        body: [
+          'A bet is a **value bet** when worse hands call it. That is the whole definition, and it is about *their* hands, not yours.',
+          'Holding top pair and betting is not automatically value. If the only hands that call are two pair and sets, and every worse hand folds, your bet wins nothing when it is good and loses a lot when it is not.',
+          'So the question before every value bet is: **which worse hands call this?** Name them. If you can, bet. If you cannot, check.',
+          'This is why value betting is about the opponent. Against somebody who calls with any pair, a long list of worse hands calls you. Against somebody careful, almost none do.',
+        ],
+        check: {
+          question: 'On the river you hold top pair with a weak kicker. Your opponent only calls with two pair or better. Should you bet?',
+          options: [
+            {
+              key: 'a',
+              label: 'No — no worse hand calls, so the bet only loses to better ones',
+              why: 'Right. A value bet needs worse hands to call. Here every call beats you and every worse hand folds, so betting can only lose. Check and see a showdown.',
+            },
+            {
+              key: 'b',
+              label: 'Yes — top pair is a strong hand',
+              why: 'Strong in a vacuum, but what matters is who calls. If only two pair and better call, your top pair is betting into a range that beats it.',
+            },
+            {
+              key: 'c',
+              label: 'Yes, big — to protect your hand',
+              why: 'On the river there are no more cards to protect against. A bet there either gets called by worse or it does not, and here it does not.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Thin value',
+        body: [
+          '**Thin value** is betting a hand that is only a little ahead of what calls — second pair, top pair with a weak kicker — because enough worse hands still call.',
+          'It feels risky, and sometimes you are called by better. That is fine: a thin value bet does not need to win every time, only more often than it loses.',
+          'Against a calling station, thin value is where most of the money is. They call a river bet with third pair, with ace high, with a missed draw they cannot let go of.',
+          'The players who win at small stakes are not the ones who bluff well. They are the ones who bet second pair into somebody who calls with third pair.',
+        ],
+        check: {
+          question: 'You hold second pair on the river. Your opponent is a calling station who calls with any pair and ace high. They check to you. What do you do?',
+          options: [
+            {
+              key: 'a',
+              label: 'Bet — a station calls with plenty of worse hands',
+              why: 'Right. Third pair, bottom pair and ace high all call, and they are all worse. That is a thin value bet, and against a station it is the most profitable play you have.',
+            },
+            {
+              key: 'b',
+              label: 'Check — second pair is too weak to bet',
+              why: 'Too weak to bet into a careful player, yes. Against a station the list of worse hands that call is long, and checking gives up the money they would have paid.',
+            },
+            {
+              key: 'c',
+              label: 'Bet as a bluff to make better hands fold',
+              why: 'A station does not fold better hands — that is what makes them a station. Your bet is good because worse hands call, not because better ones fold.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Size for the hands that call',
+        body: [
+          'How much to bet depends on **who pays**, not on how strong you are.',
+          'A calling station calls a big bet almost as often as a small one, so bet big: three-quarters of the pot or more. Every chip you add is a chip they pay.',
+          'A careful player only calls a small bet with their medium hands. Bet a third or half the pot and they pay; bet the pot and they fold everything you beat.',
+          'And plan the hand: a strong hand bets the flop, bets the turn bigger, and bets the river bigger again. Three bets growing with the pot build a stack-sized pot that one bet never could.',
+        ],
+        check: {
+          question: 'You have a very strong hand on the river against a player who calls almost everything. How much should you bet?',
+          options: [
+            {
+              key: 'a',
+              label: 'Big — three-quarters of the pot or more, because they call anyway',
+              why: 'Right. If they call almost everything, the size barely changes how often they pay, so the bigger bet simply wins more.',
+            },
+            {
+              key: 'b',
+              label: 'Small — so that they are sure to call',
+              why: 'They were going to call anyway. A small bet against a station leaves most of what they would have paid in their stack.',
+            },
+            {
+              key: 'c',
+              label: 'Check, and hope they bet',
+              why: 'A station calls; it rarely bets. Checking a very strong hand to a passive player usually means a showdown for nothing.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'The river question',
+        body: [
+          'On the river everything is decided except the money. So ask the river question every time: **which worse hands call this bet?**',
+          'If you can name them — they called the turn with a pair, they could have a weaker ace — bet, and size for them.',
+          'If you cannot — the draws all missed, and they would only call with the hands that beat you — check and take the showdown.',
+          'Checking a hand that would have been paid is a mistake that never shows up: nobody tells you what you did not win. It is the most expensive invisible mistake in poker.',
+        ],
+        check: {
+          question: 'The flush draw missed on the river. Your opponent called two streets and you hold top pair. Which hands call a river bet?',
+          options: [
+            {
+              key: 'a',
+              label: 'Their pairs that called along — so bet for them',
+              why: 'Right. A pair that called the flop and turn often calls the river too. The missed draws will fold, but the pairs are worse than your top pair and they pay.',
+            },
+            {
+              key: 'b',
+              label: 'Nothing calls, because the draw missed',
+              why: 'The draws fold, yes — but they were not your customers. The second pairs that called two streets are, and many of them call a third.',
+            },
+            {
+              key: 'c',
+              label: 'Only better hands, so check',
+              why: 'Better hands would often have raised earlier. A player who just called twice holds a lot of one-pair hands, and top pair beats most of them.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+    ],
+    recap: [
+      'A value bet is a bet that worse hands call. Name them before you bet.',
+      'Thin value — second pair, weak top pair — is where the money is against callers.',
+      'Size for the hands that call: big against stations, smaller against careful players.',
+      'Checking a hand that would have been paid is the most expensive mistake you never see.',
+    ],
+  },
+
+  /* ================================================================== *
+   * TURN & RIVER (the Gulf)
+   * ================================================================== */
+  streets: {
+    intro: 'The bets grow every street, so the turn and the river are worth more than the flop and preflop put together. This is how to play them on purpose.',
+    steps: [
+      {
+        title: 'Which turns to bet again',
+        body: [
+          'You bet the flop and got called. The turn comes. Betting again — a **barrel** — works on some cards and not on others.',
+          '**Good turns for you**: an overcard to the board (an ace or king your range has more of), or a card that completes a draw you could hold. They make your story believable and their calls harder.',
+          '**Good turns for them**: a low card that pairs nothing for you and connects with the hands that call flop bets — middle cards, small connected cards.',
+          'Barrel the good ones. Check and often give up on the bad ones. A second bullet with no story behind it is a donation.',
+        ],
+        check: {
+          question: 'You raised before the flop and bet a 9-6-2 flop. They called. The turn is an ace. Is that a good card to bet again?',
+          options: [
+            {
+              key: 'a',
+              label: 'Yes — your preflop raising range has many more aces than their flop calls',
+              why: 'Right. You raised before the flop, so aces are in your range; their call of a 9-6-2 flop is mostly sixes, nines and draws. The ace hurts their range and helps yours.',
+            },
+            {
+              key: 'b',
+              label: 'No — the ace might have helped them',
+              why: 'Some of their hands have an ace, but far fewer than yours. A flop caller on 9-6-2 holds middle pairs and draws, and an ace scares those.',
+            },
+            {
+              key: 'c',
+              label: 'It makes no difference which card comes',
+              why: 'The turn card changes whose range is stronger, and that is the whole reason to barrel some turns and not others.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Pot control',
+        body: [
+          'Not every hand wants a big pot. A medium hand — middle pair, top pair with a weak kicker at a deep stack — wins small pots and loses big ones.',
+          '**Pot control** means checking one street on purpose to keep the pot the size of your hand. The turn is the usual one: check it, then call or bet a small river.',
+          'Betting all three streets with a medium hand gets called only by better hands by the river. Checking once lets worse hands bluff, and keeps the price down when you are behind.',
+          'Strong hands do the opposite: they bet every street, because they want the big pot that medium hands should avoid.',
+        ],
+        check: {
+          question: 'You hold middle pair. You bet the flop and were called. The turn is a blank. What is usually best?',
+          options: [
+            {
+              key: 'a',
+              label: 'Check the turn to keep the pot the size of a medium hand',
+              why: 'Right. Middle pair wants a small pot. Checking the turn keeps it cheap and lets their worse hands try a bluff, rather than getting raised off it.',
+            },
+            {
+              key: 'b',
+              label: 'Bet big to find out where you stand',
+              why: 'Betting big "to find out" builds the pot with a hand that cannot stand a raise. That is the most expensive way to get information.',
+            },
+            {
+              key: 'c',
+              label: 'Go all in to protect your hand',
+              why: 'All in with middle pair only gets called by better. Protection matters less than not building a big pot you cannot win.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'The river: arrived or missed',
+        body: [
+          'On the river there are no more cards. Every draw has either **arrived** or **missed**, and that sorts every hand into three kinds.',
+          '**Strong made hands** bet for value. **Medium hands** — a pair that might be best — check and catch bluffs. **Missed draws** have no showdown value at all: they either bluff or give up.',
+          'That is why a missed draw is the natural river bluff. It cannot win by checking, so a bet is the only way it ever wins the pot.',
+          'And a medium pair should rarely bet the river: the worse hands fold and the better ones call. It wins more by checking and calling.',
+        ],
+        check: {
+          question: 'Your flush draw missed on the river. Your opponent checks. What are your options?',
+          options: [
+            {
+              key: 'a',
+              label: 'Bluff or give up — a missed draw cannot win by checking',
+              why: 'Right. Ace-high with a missed draw almost never wins a showdown. Bet if the story is good and they can fold; otherwise give up.',
+            },
+            {
+              key: 'b',
+              label: 'Check and hope your high card is good',
+              why: 'A missed draw rarely wins at showdown. Checking it is giving up — which is sometimes right, but do it on purpose, not hoping.',
+            },
+            {
+              key: 'c',
+              label: 'Bet small for value',
+              why: 'There is no value: no worse hand calls a missed draw. A river bet with it can only be a bluff, and should be sized like one.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Facing a big river bet',
+        body: [
+          'A big river bet is the most expensive decision in a hand, and it has a price like any other: a pot-sized bet asks you to be good 33% of the time.',
+          'So the question is not "could they be bluffing?" — anybody could. It is **"do they bluff this often?"**',
+          'Against a player who never bluffs the river, fold even a hand that looks strong. Against one who bluffs a lot, call with any hand that beats a bluff.',
+          'Count the missed draws: if the board had flush or straight draws that missed, there are bluffs in their range. If it was dry all the way, there are far fewer.',
+        ],
+        check: {
+          question: 'A careful player who has never bluffed tonight bets the pot on the river. You hold one pair. What does the price say?',
+          options: [
+            {
+              key: 'a',
+              label: 'You need to be good one time in three — and against this player you are not',
+              why: 'Right. A pot-sized bet needs you to win 33%. A player who does not bluff is almost always value here, so one pair is a fold.',
+            },
+            {
+              key: 'b',
+              label: 'Call — they could be bluffing',
+              why: 'They could, but the question is how often. Against somebody who does not bluff, "could" happens far less than the one in three you need.',
+            },
+            {
+              key: 'c',
+              label: 'Raise to make them fold',
+              why: 'A careful player betting the pot on the river is strong. Raising one pair turns a small loss into a big one.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+    ],
+    recap: [
+      'Barrel turns that help your range and hurt theirs; give up on the ones that do not.',
+      'Medium hands check one street — usually the turn — to keep the pot small.',
+      'On the river, missed draws bluff or give up; medium pairs check and catch bluffs.',
+      'Facing a big river bet, ask whether they bluff as often as the price needs.',
+    ],
+  },
+  /* ================================================================== *
+   * 3-BET POTS (the Gulf)
+   * ================================================================== */
+  threebet: {
+    intro: 'A re-raised pot is already big before the flop. This is how that changes what you call with, and what every hand is worth once the flop comes.',
+    steps: [
+      {
+        title: 'The stacks are short now',
+        body: [
+          'In a normal raised pot, about 6 big blinds go in before the flop and 100 sit behind: a stack-to-pot ratio around **13**. One pair is just one pair.',
+          'In a 3-bet pot, about 20 big blinds go in before the flop and 80 sit behind: an SPR around **4**.',
+          'At an SPR of 4, top pair is a hand you are usually happy to get all in with. One bet on the flop, one on the turn, and the stacks are in.',
+          'So you plan the whole hand before you call a 3-bet: if you will not be happy getting it in with top pair, the hand may not be worth calling.',
+        ],
+        check: {
+          question: 'In a 3-bet pot you flop top pair, good kicker, with an SPR of about 4. How do you plan the hand?',
+          options: [
+            {
+              key: 'a',
+              label: 'Expect to get all the chips in — at this depth top pair is strong enough',
+              why: 'Right. With only four pots behind, one pair is near the top of what gets played for stacks. Bet and be ready to go all the way.',
+            },
+            {
+              key: 'b',
+              label: 'Play it small — one pair is just one pair',
+              why: 'That is true deep, at an SPR of 13. In a 3-bet pot there is not enough behind for one pair to be a small-pot hand.',
+            },
+            {
+              key: 'c',
+              label: 'Fold if they bet — the pot is too big already',
+              why: 'The pot is big, which is exactly why top pair is worth going with. Folding it at an SPR of 4 gives the pot away.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'The 3-bettor bets often and small',
+        body: [
+          'The player who re-raised before the flop holds the stronger range: more big pairs, more ace-king.',
+          'So on most flops the 3-bettor can **c-bet often, and small** — about a third of the pot. In a pot this big, a third is already a real bet.',
+          'The caller has more middle hands and should defend accordingly: call with pairs and good draws, fold the hands that missed.',
+          'A small bet works because it does not need to fold much out: the pot is big, the price is cheap, and their medium hands still have to make a decision.',
+        ],
+        check: {
+          question: 'You 3-bet before the flop and got called. The flop is K-7-2 of different suits. What is a good plan?',
+          options: [
+            {
+              key: 'a',
+              label: 'A small c-bet, about a third of the pot, with much of your range',
+              why: 'Right. A dry king-high flop suits the 3-bettor, who has more kings and big pairs. A small bet takes the pot often and keeps it cheap when you miss.',
+            },
+            {
+              key: 'b',
+              label: 'Always check — let them bet',
+              why: 'Checking the flop that suits your range most gives up the advantage the 3-bet bought you.',
+            },
+            {
+              key: 'c',
+              label: 'Bet the whole pot with everything',
+              why: 'In a pot this big, a pot-sized bet is enormous and risks far more than a small one that does the same job.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Facing a 3-bet: call, 4-bet or fold',
+        body: [
+          'When somebody re-raises your open, you have three choices, and the hands sort themselves.',
+          '**4-bet** your best: aces, kings, queens, ace-king — and a few hands with blockers like A5 suited that make their aces and kings less likely.',
+          '**Call**, mostly in position, with hands that play well after the flop: pocket pairs, suited broadways like KQs, suited connectors.',
+          '**Fold** the rest — especially hands that are dominated, like KJ offsuit or AT offsuit. They make second-best pairs in a pot too big to fold.',
+        ],
+        check: {
+          question: 'You open on the button with KJ offsuit and the big blind 3-bets. What is usually best?',
+          options: [
+            {
+              key: 'a',
+              label: 'Fold — KJ offsuit is dominated by the hands that 3-bet',
+              why: 'Right. A 3-betting range holds KQ, AK and AJ, all of which crush KJ. Flopping a king or a jack too often means second best in a big pot.',
+            },
+            {
+              key: 'b',
+              label: 'Call — two broadway cards are strong',
+              why: 'Strong against a random hand, not against a 3-betting range. KJ offsuit makes dominated pairs, and in a 3-bet pot that is expensive.',
+            },
+            {
+              key: 'c',
+              label: '4-bet — show them you will not be pushed around',
+              why: 'A 4-bet with KJ offsuit gets called or shoved on only by better hands. Fold it, and 4-bet the hands that are ahead or that block theirs.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Out of position is expensive',
+        body: [
+          'Calling a 3-bet **out of position** — from the blinds, against a player who acts after you — is the costliest call in this game.',
+          'You act first on every street, in a big pot, with a range that is weaker than theirs. Every check gives them a free choice.',
+          'So from the blinds, prefer to **4-bet or fold**. Keep calling for the hands that flop well enough to play a big pot first to act: medium and big pairs, mostly.',
+          'In position, the same hands can call far more often, because seeing what they do first is worth a lot of chips in a pot this big.',
+        ],
+        check: {
+          question: 'You opened from the small blind and the big blind 3-bets. You hold a small suited connector. What is usually best?',
+          options: [
+            {
+              key: 'a',
+              label: 'Fold — out of position in a big pot, it rarely makes a hand good enough',
+              why: 'Right. Small suited connectors want cheap flops in position. Out of position against a 3-bet they miss most flops and play a big pot first to act.',
+            },
+            {
+              key: 'b',
+              label: 'Call — suited connectors are good in big pots',
+              why: 'They are good deep and in position, where implied odds pay. Out of position in a 3-bet pot the stack is short and you act first: the worst of both.',
+            },
+            {
+              key: 'c',
+              label: 'Call and check-fold every flop you miss',
+              why: 'That is a plan to lose the 3-bet and a little more every time. If it is a fold on most flops, fold it now.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+    ],
+    recap: [
+      'In a 3-bet pot the SPR is about 4: top pair is a hand you get all in with.',
+      'The 3-bettor c-bets often and small; the caller defends with pairs and good draws.',
+      '4-bet your best and a few blockers, call with hands that play well, fold dominated hands.',
+      'Out of position, prefer 4-bet or fold — calling there is the costliest call in the game.',
+    ],
+  },
+
+  /* ================================================================== *
+   * MULTIWAY POTS (the Gulf)
+   * ================================================================== */
+  multiway: {
+    intro: 'Everything in the earlier chapters assumed one opponent. With three or four in the pot, the numbers change — and so does almost every decision.',
+    steps: [
+      {
+        title: 'Somebody has something',
+        body: [
+          'Against one opponent, a flop misses them about two times in three. Against three opponents, the chance that **all three** missed is much smaller.',
+          'If each player misses two times in three, all three miss only about 30% of the time. So about 70% of the time, **somebody has something**.',
+          'That one fact drives this whole chapter. A bluff has to get past every player. A medium hand has to beat every player.',
+          'The more players in the pot, the stronger your hand needs to be, for betting and for calling.',
+        ],
+        check: {
+          question: 'You bet as a bluff into three opponents. Each of them would fold two times in three. Roughly how often does everybody fold?',
+          options: [
+            {
+              key: 'a',
+              label: 'About 30% of the time — two-thirds, three times over',
+              why: 'Right. ⅔ × ⅔ × ⅔ ≈ 0.30. A bluff that works two times in three against one player works under a third of the time against three.',
+            },
+            {
+              key: 'b',
+              label: 'About 67% — the same as against one player',
+              why: 'Each player has to fold, so the chances multiply: ⅔ × ⅔ × ⅔ is about 30%, not 67%.',
+            },
+            {
+              key: 'c',
+              label: 'More often — they each assume someone else will call',
+              why: 'Some players do think that, but you cannot count on it. The arithmetic says every extra player makes the bluff work less often.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Bluff less, value bet tighter',
+        body: [
+          'So in multiway pots, **bluff far less**. Keep bluffs for boards that really hit your range and for very few opponents.',
+          'And **value bet a little tighter**. Top pair with a weak kicker is a good hand heads up; against four players, two pair and sets turn up much more often.',
+          'Your c-bet changes too. Raising before the flop meant something against one player; against three, the flop has connected with somebody.',
+          'C-bet less often in multiway pots, and mostly with real hands and good draws.',
+        ],
+        check: {
+          question: 'You raised before the flop and three players called. The flop is J-9-8 with two hearts. You hold A-K with no heart. What is usually best?',
+          options: [
+            {
+              key: 'a',
+              label: 'Check — this board hit three ranges, and you have nothing',
+              why: 'Right. A connected, two-tone board against three callers is where somebody almost always has a pair or a draw. A c-bet here is a bluff into a crowd.',
+            },
+            {
+              key: 'b',
+              label: 'C-bet — you were the preflop raiser',
+              why: 'Being the raiser matters against one player. Against three, on a board this connected, your raise does not stop them from having hit it.',
+            },
+            {
+              key: 'c',
+              label: 'Bet big to thin the field',
+              why: 'Betting big to thin the field risks the most chips with the least hand. The players who stay will be the ones who beat you.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Draws to the best hand',
+        body: [
+          'Multiway pots are good for one kind of hand: a **draw to the best hand**, like the nut flush draw.',
+          'When it arrives, several players can pay you, so the price you get on the draw improves with every caller.',
+          'But draws to **second best** — a small flush draw, a straight that a bigger straight beats — get worse. With more players, the hand that beats yours is more often there.',
+          'So in a crowded pot, draw to the nuts happily and be careful with the draws that can arrive and still lose.',
+        ],
+        check: {
+          question: 'Four players see a flop with two spades. You hold the 6♠ 5♠. Why should you be careful?',
+          options: [
+            {
+              key: 'a',
+              label: 'A higher flush is more likely with several players in, so your flush can arrive and lose',
+              why: 'Right. With four players, somebody holding a bigger spade is much more likely. A small flush draw in a crowd can make a hand and still pay off.',
+            },
+            {
+              key: 'b',
+              label: 'Flush draws are bad in multiway pots',
+              why: 'The nut flush draw is excellent multiway — several players pay you. It is the small flush draw that gets worse, because bigger flushes are out there.',
+            },
+            {
+              key: 'c',
+              label: 'There is no reason to be careful — a flush is a flush',
+              why: 'A flush loses to a bigger flush, and in a pot with four players the bigger one turns up far more often than heads up.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Strong hands: bet',
+        body: [
+          'The good news about crowded pots: when you **do** have it, there is more money to win.',
+          'With a strong hand, bet. Several players with medium hands and draws can each pay a little, and together that is a lot.',
+          'Do not slow-play in a multiway pot. Every free card is a chance for one of several players to outdraw you.',
+          'The simplest multiway strategy is also a good one: **bet strong hands, check most of the rest, and bluff rarely.**',
+        ],
+        check: {
+          question: 'You flop a set in a pot with three opponents. What is usually best?',
+          options: [
+            {
+              key: 'a',
+              label: 'Bet — several players can pay, and free cards help their draws',
+              why: 'Right. A set wants a big pot, and with three opponents there are more pairs and draws to pay you — and more chances to be outdrawn if you give free cards.',
+            },
+            {
+              key: 'b',
+              label: 'Check to trap them',
+              why: 'Trapping works against one aggressive player. Against three, a free card is three chances to draw out, and the medium hands you want to pay you may just check behind.',
+            },
+            {
+              key: 'c',
+              label: 'Check and fold if somebody bets big',
+              why: 'A set is near the top of what anyone can have here. Folding it to a bet in a crowded pot throws away the hand you were waiting for.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+    ],
+    recap: [
+      'With three opponents, somebody has something about 70% of the time.',
+      'Bluff far less, value bet tighter, and c-bet less often in multiway pots.',
+      'Draws to the nuts get better with more players; draws to second best get worse.',
+      'With a strong hand, bet — several players can pay, and free cards are dangerous.',
+    ],
+  },
+
+  /* ================================================================== *
+   * PUSH OR FOLD (the Gulf)
+   * ================================================================== */
+  pushfold: {
+    intro: 'Short-stacked, poker becomes one decision: all in, or out. By the end of this you will know which hands to shove, from where, and when to call somebody else\'s shove.',
+    steps: [
+      {
+        title: 'Why it comes down to one move',
+        body: [
+          'An ordinary raise is about 2.5 big blinds. With 10 big blinds in your stack, that raise is a quarter of everything you have.',
+          'If somebody re-raises, you are getting such a good price that you have to call — so the raise committed you anyway. **Raise-folding a short stack throws chips away.**',
+          'So below about 10 to 15 big blinds there are only two good moves: **shove all in, or fold.**',
+          'Limping is worse still: it invites a raise you cannot answer, and wins nothing on its own.',
+        ],
+        check: {
+          question: 'You have 8 big blinds in the cutoff and a hand you want to play. What is best?',
+          options: [
+            {
+              key: 'a',
+              label: 'Shove all in',
+              why: 'Right. At 8 big blinds a raise commits you anyway, so shoving gets the same chips in while making them fold more often — and the folds are where the shove makes its money.',
+            },
+            {
+              key: 'b',
+              label: 'Raise to 2.5 big blinds and see',
+              why: 'A raise to 2.5 with 8 behind leaves you calling any re-raise at a great price. You are committed either way, so shove and keep the fold equity.',
+            },
+            {
+              key: 'c',
+              label: 'Limp and see a cheap flop',
+              why: 'Limping invites a raise you cannot answer and wins nothing when everyone folds. At 8 big blinds it is the worst of the three.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Shorter means wider',
+        body: [
+          'The shorter your stack, the more hands you shove.',
+          'About **a third of hands at 10 big blinds**, over **half at 5**, and nearly **any two cards at 2**.',
+          'The reason: the blinds and antes are a bigger share of your stack every orbit. Waiting for a big hand while the blinds eat you is the slowest way to lose.',
+          'And a short shove risks less for the same reward: the blinds you win are worth the same, but the stack you risk is smaller.',
+        ],
+        check: {
+          question: 'You have 4 big blinds on the button, and it is folded to you with Q-7 offsuit. What should you do?',
+          options: [
+            {
+              key: 'a',
+              label: 'Shove — at 4 big blinds on the button, Q7 offsuit is well inside the range',
+              why: 'Right. At 4 big blinds you shove around three hands in four from the button. Waiting means the blinds take your stack for you.',
+            },
+            {
+              key: 'b',
+              label: 'Fold — wait for a better hand',
+              why: 'With 4 big blinds there is no time to wait. Every orbit costs 1.5 big blinds — over a third of your stack.',
+            },
+            {
+              key: 'c',
+              label: 'Raise small and fold to a shove',
+              why: 'A small raise from 4 big blinds commits half your stack. Shove instead, and let the blinds decide with all of it in front of them.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Seats and shoving',
+        body: [
+          'The same stack shoves wider from later seats.',
+          'From the first seat, five players can wake up with a hand behind you. From the button, only the two blinds can.',
+          'Fewer players behind means more folds and fewer big hands to run into, so **later seats shove wider**.',
+          'From the small blind, with only the big blind to get past, the range is widest of all.',
+        ],
+        check: {
+          question: 'Same stack, same hand: under the gun or on the button — where do you shove more hands?',
+          options: [
+            {
+              key: 'a',
+              label: 'On the button — only the blinds can call',
+              why: 'Right. Two players behind instead of five means more folds and fewer strong hands waiting. The button shoves much wider.',
+            },
+            {
+              key: 'b',
+              label: 'Under the gun — shoving first shows strength',
+              why: 'It does show strength, but five players still get to look at their cards. More players behind means a tighter range, not a wider one.',
+            },
+            {
+              key: 'c',
+              label: 'The same — a shove is a shove',
+              why: 'The number of players still to act decides how often you get through. Later seats have fewer, so they shove wider.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+      {
+        title: 'Calling a shove',
+        body: [
+          'When somebody else shoves, you call tighter than you would shove yourself — roughly **half as wide**.',
+          'The reason is the gap between shoving and calling. A shove wins the blinds when everybody folds; a call has no fold equity at all. It has to win at showdown.',
+          'So calling needs a hand that is **ahead of their shoving range**, not just one that would be a good shove.',
+          'The shorter their stack and the bigger the pot already is, the wider you call: the price gets better.',
+        ],
+        check: {
+          question: 'With 10 big blinds you would shove K9 offsuit from the button. Facing a 10 big blind shove from the button, do you call with it?',
+          options: [
+            {
+              key: 'a',
+              label: 'Usually not — calling needs a hand ahead of their range, roughly half as wide as shoving',
+              why: 'Right. Your shove would win the blinds by itself often. Your call never does, so it needs a stronger hand: K9 offsuit is a fine shove and a poor call.',
+            },
+            {
+              key: 'b',
+              label: 'Yes — if it is good enough to shove, it is good enough to call',
+              why: 'A shove makes money from folds; a call makes none. The same hand that is a good shove is often a losing call.',
+            },
+            {
+              key: 'c',
+              label: 'Yes — they are probably bluffing',
+              why: 'A short-stack shove is not a bluff in the usual sense: it is a wide range of real hands. Call with the hands that beat that range.',
+            },
+          ],
+          answer: 'a',
+        },
+      },
+    ],
+    recap: [
+      'Below 10–15 big blinds there are two moves: shove or fold. Raise-folding wastes chips.',
+      'Shorter stacks shove wider: a third of hands at 10 big blinds, half at 5, almost all at 2.',
+      'Later seats shove wider, because fewer players can call.',
+      'Call a shove about half as wide as you would shove: a call has no fold equity.',
+    ],
+  },
 };

@@ -20,6 +20,7 @@ import {
   exploitDrill, icmDrill, bankrollDrill, varianceDrill, rakeDrill,
   gameSelectionDrill, winRateDrill,
 } from './advanced.js';
+import { valueDrill, streetsDrill, threebetDrill, multiwayDrill, shoveDrill, callShoveDrill } from './gulf.js';
 
 const GENERATORS = {
   'hand-rankings': [handRankingDrill, nameThatHandDrill],
@@ -37,6 +38,12 @@ const GENERATORS = {
   exploit: [bluffCatchDrill, exploitDrill, rangeReadDrill],
   icm: [icmDrill],
   bankroll: [bankrollDrill, varianceDrill, rakeDrill, gameSelectionDrill, winRateDrill],
+  // The Gulf.
+  value: [valueDrill],
+  streets: [streetsDrill],
+  threebet: [threebetDrill],
+  multiway: [multiwayDrill],
+  pushfold: [shoveDrill, callShoveDrill],
 };
 
 export const DRILL_MODULE_IDS = Object.keys(GENERATORS);
