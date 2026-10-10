@@ -14,10 +14,12 @@
 
 import { describe, it, assert, equal } from './harness.js';
 import { Profile } from '../src/js/state/profile.js';
-import { BACKWATERS, backwaterFor, RUMOUR_HANDS } from '../src/js/data/backwaters.js';
+import { BACKWATERS, backwaterFor, RUMOUR_HANDS, ROAD_TOWNS, roadTownAt } from '../src/js/data/backwaters.js';
 import {
-  heard, hear, rumourAt, townHere, tableAt, townTable, townGoals, townDone, noteTownSitting, goalPearls, handsKey, canGo, junctionOf,
+  heard, hear, rumourAt, townHere, tableAt, townTable, townGoals, townDone, noteTownSitting, goalPearls, handsKey, canGo, junctionOf, reached,
 } from '../src/js/state/backwaters.js';
+import { journeyState, duelStatus } from '../src/js/state/journey.js';
+import { REGIONS } from '../src/js/ui/worldMap.js';
 import { VENUES, venueFor, RIVER } from '../src/js/data/venues.js';
 import { getProfile } from '../src/js/engine/bots.js';
 import { lobbyFor } from '../src/js/state/lobby.js';
@@ -30,22 +32,31 @@ const memory = () => { const m = new Map(); return { getItem: (k) => m.get(k) ??
 const fresh = (data = {}) => new Profile(data, memory());
 
 describe('the backwaters: what they are', () => {
-  it('has three towns, each off a stop on the river and playing one style', () => {
-    equal(BACKWATERS.length, 3);
+  it('has towns off every region, each off a stop on the river, with a face, a drawing and a table', () => {
+    equal(BACKWATERS.length, 11);
     const riverKeys = new Set(RIVER.map((v) => v.key));
+    const regions = new Set(REGIONS.map((r) => r.key));
     for (const town of BACKWATERS) {
       assert(riverKeys.has(town.junction), `${town.name} leaves the river from nowhere`);
+      assert(regions.has(town.region), `${town.name} is in no region`);
       equal(town.lineup.length, 5, `${town.name} does not seat five others`);
       equal(town.lineup[0], town.local.plays, `${town.name}'s local is not in the first chair`);
       for (const style of town.lineup) assert(getProfile(style), `${town.name} seats a style the engine does not have: ${style}`);
-      // The lesson is one style turned all the way up: most of the table plays like the local.
-      const same = town.lineup.filter((s) => s === town.local.plays).length;
-      assert(same >= 3, `${town.name} is not one kind of player: ${town.lineup.join(', ')}`);
       assert(LANDMARKS[town.landmark], `${town.name} has no drawing`);
       assert(/<svg/.test(portraitSvg(town.local.key)) && !/fill="#3a3a40"/.test(portraitSvg(town.local.key)), `${town.local.name} has no face`);
       equal(town.folk.length, 5, `${town.name}'s townsfolk are not named seat for seat`);
+      assert(town.road || town.rumour, `${town.name} is off the road and nobody can tell you about it`);
     }
-    equal(new Set(BACKWATERS.map((b) => b.junction)).size, 3, 'two towns leave the river at the same stop');
+    for (const r of REGIONS) assert(BACKWATERS.some((b) => b.region === r.key && b.road), `${r.name} has no city on the road`);
+    // The first backwaters are one style turned all the way up.
+    for (const key of ['gulch', 'bayou', 'bethel']) {
+      const town = backwaterFor(key);
+      assert(town.lineup.filter((x) => x === town.local.plays).length >= 3, `${town.name} is not one kind of player`);
+    }
+    // One city on the road per stop at most, and one backwater to be told about.
+    equal(new Set(ROAD_TOWNS.map((b) => b.junction)).size, ROAD_TOWNS.length, 'two road cities hang off the same stop');
+    const told = BACKWATERS.filter((b) => !b.road);
+    equal(new Set(told.map((b) => b.junction)).size, told.length, 'two backwaters are told about at the same stop');
   });
 
   it('teaches a different thing in each: calling stations, maniacs and rocks', () => {
@@ -202,10 +213,10 @@ describe('the backwaters: on the chart', () => {
 
   it('draws a question mark until you know, and the town after', () => {
     const before = draw(all());
-    equal((before.match(/class="town uncharted"/g) || []).length, 3);
+    equal((before.match(/class="town uncharted"/g) || []).length, BACKWATERS.length);
     const after = draw(all({ heard: true }));
     equal((after.match(/class="town uncharted"/g) || []).length, 0);
-    equal((after.match(/class="town[" ]/g) || []).length, 3);
+    equal((after.match(/class="town[" ]/g) || []).length, BACKWATERS.length);
     // Still the river's stops: the towns are not counted among them.
     equal((after.match(/class="landmark/g) || []).length, RIVER.length);
   });
@@ -232,6 +243,7 @@ describe('the backwaters: in Dutch', () => {
   it('has every word of every town', () => {
     for (const town of BACKWATERS) {
       for (const text of [town.name, town.where, town.colour, town.rumour, town.arrival, town.hello, town.read, town.beat, town.beaten, town.local.title, town.trophy.name]) {
+        if (text === undefined) continue;
         assert(NL[text], `no Dutch for "${text.slice(0, 60)}"`);
       }
     }
@@ -252,5 +264,34 @@ describe('the backwaters: where they leave the river', () => {
   it('is reached from a stop the road opens before the Gulf', () => {
     for (const town of BACKWATERS) assert(junctionOf(town).act === 1, `${town.name} leaves from the Gulf`);
     assert(VENUES.length > 8);
+  });
+});
+
+describe('the backwaters: the regions\' cities on the road', () => {
+  it('are on the chart from the start, and reached when the road gets to their stop', () => {
+    const p = fresh({ bankroll: 2000 });
+    const sweetwater = roadTownAt('nl5');
+    assert(sweetwater && sweetwater.road, 'Fisher\'s Rest has no city on the road');
+    assert(heard(p, 'sweetwater'), 'a city on the road has to be told about');
+    assert(!reached(p, sweetwater) && !canGo(p, sweetwater), 'Sweetwater can be reached from Mud Landing');
+    equal(rumourAt(p, 'nl5'), null, 'the rumour came before ten hands at Fisher\'s Rest');
+    p.enterVenue('nl5');
+    assert(reached(p, sweetwater) && canGo(p, sweetwater), 'Sweetwater is shut at Fisher\'s Rest');
+    for (let i = 0; i < RUMOUR_HANDS; i++) p.noteHandAt('nl5');
+    equal(rumourAt(p, 'nl5').key, 'gulch', 'the rumour at Fisher\'s Rest is not the backwater');
+  });
+
+  it('are part of their stop\'s chapter, but the owner duels you without them', () => {
+    const p = fresh({ career: { venue: 'nl5', best: 'nl5', beaten: ['nl2'], played: { nl5: 999 } }, walkthroughs: ['outs', 'preflop'] });
+    const chapter = journeyState(p).chapters[1];
+    const goal = chapter.goals.find((g) => g.kind === 'town');
+    assert(goal && goal.required, 'Sweetwater is not on Fisher\'s Rest\'s list');
+    equal(goal.to.route, 'town');
+    assert(!chapter.complete, 'the chapter is done without Sweetwater');
+    assert(duelStatus(p, 1).ready, 'Tilly will not duel until Sweetwater is done');
+    for (let i = 0; i < 60; i++) p.noteHandAt(handsKey('sweetwater'));
+    noteTownSitting(p, 'sweetwater', { hands: 40, netBb: 60, right: 40, total: 40 });
+    assert(journeyState(p).chapters[1].goals.find((g) => g.kind === 'town').done, 'finishing Sweetwater did not tick it off');
+    equal(journeyState(p).chapters[0].goals.some((g) => g.kind === 'town'), false, 'Mud Landing has a city on the road');
   });
 });

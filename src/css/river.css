@@ -4399,3 +4399,9 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 }
 .map-zoom-btn.active { border-color: var(--brass-hi); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 2px var(--brass); }
 .map-zoom-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+/* A city on the road: a stop's painted sign, smaller; shut ones further off. */
+.map-town.road { background: var(--paper); color: var(--ink); border-color: var(--brass-lo); }
+.map-town.road .map-stake { color: var(--ink); }
+.map-town.road.ahead { opacity: 0.72; }
+.map-town.road.is-here { border-color: var(--brass); }
+.town-links { display: grid; gap: var(--s-2); }

@@ -186,7 +186,22 @@ function townPlate(entry, state, go) {
     );
   }
   const done = entry.goals.filter((g) => g.done).length;
-  return el(`button.map-town${entry.here ? '.is-here' : ''}${entry.done ? '.done' : ''}`, {
+  // A city on the road the boat has not come to yet: where the road goes after.
+  if (town.road && !entry.reached) {
+    return el('button.map-town.road.ahead', {
+      dataset: { town: town.key },
+      style,
+      onclick: () => { audio.sfx('click'); go('town', { at: town.key }); },
+      'aria-label': `${t(town.name)}, ${junction.label}: ${t('After {place}', { place: t(junction.name) })}`,
+    },
+      el('span.map-place-name', t(town.name)),
+      el('span.map-place-meta',
+        el('span.map-stake', junction.label),
+        icon('lock', { size: 11, className: 'map-lock' }),
+        el('span.map-status', t('After {place}', { place: t(junction.name) }))),
+    );
+  }
+  return el(`button.map-town${town.road ? '.road' : ''}${entry.here ? '.is-here' : ''}${entry.done ? '.done' : ''}`, {
     dataset: { town: town.key },
     style,
     onclick: () => { audio.sfx('click'); go('town', { at: town.key }); },
@@ -311,7 +326,8 @@ const RIVER_LAST = RIVER.length - 1;
 function riverMap(state, profile, go) {
   const towns = backwatersState(profile);
   const before = chartedBefore(profile, 'river');
-  const fog = riverFog({ best: state.best, heard: towns.filter((x) => x.heard).map((x) => x.town.key), charted: before });
+  // The fog clears round the towns you know of and can get to.
+  const fog = riverFog({ best: state.best, heard: towns.filter((x) => x.heard && x.reached).map((x) => x.town.key), charted: before });
   const chart = el('div.river-map.world', {
     style: { aspectRatio: `${WORLD.W} / ${WORLD.H}` },
   });
@@ -323,7 +339,7 @@ function riverMap(state, profile, go) {
     beaten: state.beaten,
     boat: state.boat.key,
     landmarks: RIVER.map((v) => v.landmark),
-    towns: towns.map((x) => ({ key: x.town.key, landmark: x.town.landmark, heard: x.heard, here: x.here, done: x.done })),
+    towns: towns.map((x) => ({ key: x.town.key, landmark: x.town.landmark, heard: x.heard, here: x.here, done: x.done, road: Boolean(x.town.road) })),
     fog,
   });
   stillFog(chart);

@@ -39,6 +39,7 @@ const GO_LABEL = {
   ranges: 'To the Pilot House',
   boatyard: 'To the Boatyard',
   gauntlet: 'To the Racing Chute',
+  town: 'To the town',
 };
 
 export const goLabel = (goal) => t(GO_LABEL[goal.to.route] || 'Go there');

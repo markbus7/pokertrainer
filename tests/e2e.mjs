@@ -1717,8 +1717,8 @@ await step('every place is on the chart, and no sign covers another', async () =
     await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(600);
     const seen = await signs();
-    // Eight stops, eight places, and the three towns off the river, uncharted or not.
-    if (seen.count !== 19 || seen.places !== 8) throw new Error(`${seen.count} signs and ${seen.places} places at ${w}px, expected 19 and 8`);
+    // Eight stops, eight places, and the eleven towns in the country round the river, uncharted or not.
+    if (seen.count !== 27 || seen.places !== 8) throw new Error(`${seen.count} signs and ${seen.places} places at ${w}px, expected 27 and 8`);
     if (seen.hits.length) throw new Error(`signs on top of each other at ${w}px: ${seen.hits.join(', ')}`);
     // On a phone the chart is wider than the screen; it opens on your boat.
     if (!seen.hereInView) throw new Error(`the stop you are at is scrolled out of sight at ${w}px`);
@@ -4572,9 +4572,9 @@ await step('the backwaters: uncharted until somebody tells you, then a town of i
     await seed({});
     await bp.goto(`${BASE}/?bw=1#home`, { waitUntil: 'domcontentloaded' });
     await bp.waitForSelector('.river-map .map-town', { timeout: 8000 });
-    // Three question marks on the chart, each saying who to ask.
+    // Five question marks on the chart, each saying who to ask.
     const uncharted = await bp.$$eval('.map-town.uncharted', (n) => n.map((x) => x.textContent.replace(/\s+/g, ' ').trim()));
-    if (uncharted.length !== 3 || !uncharted.some((x) => /Ask at Fisher's Rest/.test(x))) throw new Error(`the uncharted plates read ${JSON.stringify(uncharted)}`);
+    if (uncharted.length !== 5 || !uncharted.some((x) => /Ask at Fisher's Rest/.test(x))) throw new Error(`the uncharted plates read ${JSON.stringify(uncharted)}`);
     // Three hands at Fisher's Rest: Tilly has nothing to say yet.
     await bp.goto(`${BASE}/?bw=2#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
     await bp.waitForSelector('.boss', { timeout: 5000 });
@@ -4590,13 +4590,13 @@ await step('the backwaters: uncharted until somebody tells you, then a town of i
     await bp.goto(`${BASE}/?bw=4#home`, { waitUntil: 'domcontentloaded' });
     await bp.waitForSelector('.map-town[data-town="gulch"]:not(.uncharted)', { timeout: 5000 });
     if (!/Placer Gulch\s*NL5/.test(await text('.map-town[data-town="gulch"]'))) throw new Error(`the Gulch's plate reads "${await text('.map-town[data-town="gulch"]')}"`);
-    if ((await bp.$$('.map-town.uncharted')).length !== 2) throw new Error('hearing of the Gulch charted the other towns too');
+    if ((await bp.$$('.map-town.uncharted')).length !== 4) throw new Error('hearing of the Gulch charted the other towns too');
     // Up the wagon road.
     await bp.click('.map-town[data-town="gulch"]');
     await bp.waitForSelector('.town-table', { timeout: 5000 });
     await bp.click('.town-table .btn.primary');
     await bp.waitForFunction(() => /Take a seat/.test(document.querySelector('.town-table')?.textContent || ''), null, { timeout: 5000 });
-    if (!/Off the river, Placer Gulch/.test(await text('#screen'))) throw new Error('arriving at the Gulch told no story');
+    if (!/The Diggings, Placer Gulch/.test(await text('#screen'))) throw new Error('arriving at the Gulch told no story');
     // The chart says the boat is here, not at Fisher's Rest.
     await bp.goto(`${BASE}/?bw=5#home`, { waitUntil: 'domcontentloaded' });
     await bp.waitForSelector('.map-town.is-here', { timeout: 5000 });
@@ -4635,7 +4635,7 @@ await step('the backwaters: uncharted until somebody tells you, then a town of i
     const nl = await text('#screen');
     if (!/Goudzoekerskloof/.test(nl) || !/Wat te doen in Goudzoekerskloof/.test(nl)) throw new Error(`the Dutch town reads "${nl.slice(0, 200)}"`);
     if (mine.length) throw new Error(mine.join(' | '));
-    console.log('      three question marks; the rumour at ten hands; the Gulch charted, reached, seated (Ike, Dusty, NL5) and left; the list done; in Dutch');
+    console.log('      five question marks; the rumour at ten hands; the Gulch charted, reached, seated (Ike, Dusty, NL5) and left; the list done; in Dutch');
   } finally {
     await ctx.close();
   }
@@ -4747,6 +4747,53 @@ await step('a stop is a town: places down one street, and a job on the notice bo
     if (!fit.wide || !fit.inside) throw new Error(`the doors do not fit a phone: ${JSON.stringify(fit)}`);
     if (mine.length) throw new Error(mine.join(' | '));
     console.log('      Cotton Row opens on its card room; the notice board has Mr. Delaune\'s job at 3 of 8; the address and a reload keep the door; the road goes to the card room; in Dutch on a phone');
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('the regions: a city on the road in each, shut until the road gets there', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const rp = await ctx.newPage();
+  const mine = [];
+  rp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const text = (sel) => rp.evaluate((q) => { const n = document.querySelector(q); return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
+  const seed = (career) => rp.evaluate((career) => localStorage.setItem('poker-trainer.profile.v1', JSON.stringify({
+    seenPrologue: true, bankroll: 300, stakeKey: 'nl5', settings: { lang: 'en' }, career,
+  })), career);
+  try {
+    await rp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await seed({ venue: 'nl2', best: 'nl2', beaten: [], played: {} });
+    await rp.goto(`${BASE}/?reg=1#home`, { waitUntil: 'domcontentloaded' });
+    await rp.waitForSelector('.map-town[data-town="sweetwater"]', { timeout: 8000 });
+    // Every region is lettered on the chart, and its road city is on it, shut.
+    const regions = await rp.$$eval('.region-name', (n) => n.map((x) => x.textContent.trim()));
+    for (const r of ['THE PRAIRIE', 'THE HIGH COUNTRY', 'THE DIGGINGS', 'THE BAYOU', 'THE COAST']) if (!regions.includes(r)) throw new Error(`no ${r} on the chart: ${regions}`);
+    if (!/Sweetwater\s*NL5.*After Fisher's Rest/.test(await text('.map-town[data-town="sweetwater"]'))) throw new Error(`Sweetwater's plate reads "${await text('.map-town[data-town="sweetwater"]')}"`);
+    await rp.goto(`${BASE}/?reg=2#town?at=sweetwater`, { waitUntil: 'domcontentloaded' });
+    await rp.waitForSelector('.town-table', { timeout: 5000 });
+    if (!/The road comes to Sweetwater after Fisher's Rest/.test(await text('.town-table'))) throw new Error('Sweetwater can be reached from Mud Landing');
+    // At Fisher's Rest it is on the list, and the road's button goes there.
+    await seed({ venue: 'nl5', best: 'nl5', beaten: ['nl2'], played: { nl5: 3 } });
+    await rp.goto(`${BASE}/?reg=3#stop?at=nl5&place=board`, { waitUntil: 'domcontentloaded' });
+    await rp.waitForSelector('.road-stop', { timeout: 5000 });
+    if (!/Do all three in Sweetwater/.test(await text('.road-stop'))) throw new Error('Sweetwater is not on Fisher\'s Rest\'s list');
+    if (!/On the road: Sweetwater/.test(await text('.town-links'))) throw new Error('the notice board has no way to Sweetwater');
+    await rp.click('.road-stop .road-goal:has-text("Sweetwater") .btn');
+    await rp.waitForSelector('.town-screen .town-table', { timeout: 5000 });
+    // The wagon road takes you there, and Hank's drovers are at the table.
+    await rp.click('.town-table .btn.primary');
+    await rp.waitForFunction(() => /Take a seat/.test(document.querySelector('.town-table')?.textContent || ''), null, { timeout: 5000 });
+    if (!/The Prairie, Sweetwater/.test(await text('#screen'))) throw new Error('arriving at Sweetwater told no story');
+    if (!/All three are on the road/.test(await text('.town-list'))) throw new Error('Sweetwater does not say it is on the road');
+    await rp.click('.town-table .btn.primary');
+    await rp.waitForSelector('.felt', { timeout: 8000 });
+    const names = await rp.$$eval('.seat .seat-name', (n) => n.map((x) => x.textContent.trim()));
+    if (!names.includes('Hank') || !names.includes('Curly')) throw new Error(`Sweetwater's table seats ${names.join(', ')}`);
+    await rp.click('.table-head button:has-text("Cash out")');
+    await rp.waitForSelector('.town-screen', { timeout: 8000 });
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log('      five regions lettered; Sweetwater shut until Fisher\'s Rest, then on its list, reached by the wagon road, Hank and Curly at the table');
   } finally {
     await ctx.close();
   }

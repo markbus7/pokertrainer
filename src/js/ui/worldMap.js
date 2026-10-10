@@ -222,6 +222,16 @@ export const TOWN_POINTS = {
   gulch: { x: 1330, y: 1690, moor: null },
   bayou: { x: 2186, y: 1334, moor: [2098, 1350] },
   bethel: { x: 2300, y: 190, moor: [2203, 190] },
+  // The regions' cities, on the road.
+  sweetwater: { x: 620, y: 1060, moor: null },
+  timber: { x: 930, y: 250, moor: [838, 256] },
+  copperhead: { x: 1720, y: 1600, moor: [1604, 1600] },
+  lafitte: { x: 2240, y: 1760, moor: [2113, 1740] },
+  eagle: { x: 2060, y: 300, moor: [2226, 300] },
+  pelican: { x: 2400, y: 420, moor: [2545, 430] },
+  // More backwaters.
+  fort: { x: 380, y: 600, moor: null },
+  cove: { x: 2830, y: 1400, moor: [2680, 1430] },
 };
 
 /** The places that are not tables: each with the landmark it is drawn as. */
@@ -411,10 +421,15 @@ const ROADS = [
   ].map(sh),
   [[1262, 1202], [1288, 1390], [1308, 1540], [1322, 1656]],        // the wagon road from the Catch Book south into the Diggings
   [[2262, 198], [2232, 194], [2212, 192]],                         // Bethel down to its landing on the Black River
+  [[1050, 856], [900, 930], [760, 1006], [668, 1044]],             // the drovers' trail from the Saloon out to Sweetwater
+  [[1088, 628], [900, 622], [760, 622], [600, 612], [462, 604]],   // the old road west from Mud Landing to Fort Ransom
+  [[2098, 300], [2150, 300], [2206, 300]],                         // Eagle Rock down to the Black River
+  [[2440, 426], [2480, 428], [2510, 430]],                         // Pelican Point's wharf
 ];
 const BRIDGES = [
   { x: 583 + OX, y: 706 + OY, angle: 4 },
   { x: 1162 + OX, y: 303 + OY, angle: 26 },
+  { x: 757, y: 622, angle: 0 },
 ];
 
 /**
