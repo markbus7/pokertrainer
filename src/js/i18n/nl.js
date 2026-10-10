@@ -6719,4 +6719,6 @@ export const NL = {
   "Up the creek: {place}": "De kreek op: {place}",
   "Up the wagon road: {place}": "De karrenweg op: {place}",
   "{name}'s game, at these stakes. {n} of 3 done.": "Het spel van {name}, op deze inzetten. {n} van 3 gedaan.",
+  "The fog lifts": "De mist trekt op",
+  "{place} is on the chart now.": "{place} staat nu op de kaart.",
 };

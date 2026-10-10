@@ -25,8 +25,9 @@ import { VENUES, venueFor, roomYouCanAfford, RIVER_END, RIVER, GULF } from '../d
 import { bossFor } from '../data/characters.js';
 import { nextUp, moduleMeta, MODULE_META } from '../data/curriculum.js';
 import { boatSvg } from './riverArt.js';
-import { WORLD, stopAt, PLACES, TOWN_POINTS, worldSvg, voyage } from './worldMap.js';
-import { gulfSvg, portAt, RIVER_MOUTH } from './gulfMap.js';
+import { WORLD, stopAt, PLACES, TOWN_POINTS, worldSvg, voyage, riverFog } from './worldMap.js';
+import { gulfSvg, portAt, RIVER_MOUTH, gulfFog } from './gulfMap.js';
+import { settleFog } from './fog.js';
 import { portraitSvg } from './portraits.js';
 import { svgNode } from './place.js';
 import {
@@ -198,11 +199,38 @@ function townPlate(entry, state, go) {
   );
 }
 
+/** How far a chart's fog had been cleared before this look at it, or null the first time. */
+function chartedBefore(profile, which) {
+  const all = profile.data.charted && typeof profile.data.charted === 'object' ? profile.data.charted : {};
+  return Number.isFinite(all[which]) ? all[which] : null;
+}
+
+/**
+ * The fog drew back: write down how far, so it opens once, and say where to.
+ * The first look at a chart (an old save, a new one) just writes it down.
+ */
+function noteCharted(profile, which, fog, before, nameAt) {
+  if (!fog || (before !== null && fog.reach <= before)) return;
+  const all = profile.data.charted && typeof profile.data.charted === 'object' ? profile.data.charted : {};
+  profile.data.charted = { ...all, [which]: fog.reach };
+  profile.save();
+  if (before !== null) {
+    toast({ icon: '🗺', title: t('The fog lifts'), desc: t('{place} is on the chart now.', { place: t(nameAt(fog.reach)) }) });
+  }
+}
+
+/** Less motion: the chart as it now is, without the fog drawing back. */
+const stillFog = (chart) => {
+  if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) settleFog(chart);
+};
+
 /** The river's last index: on its chart, anywhere in the Gulf is past the delta. */
 const RIVER_LAST = RIVER.length - 1;
 
 function riverMap(state, profile, go) {
   const towns = backwatersState(profile);
+  const before = chartedBefore(profile, 'river');
+  const fog = riverFog({ best: state.best, heard: towns.filter((x) => x.heard).map((x) => x.town.key), charted: before });
   const chart = el('div.river-map.world', {
     style: { aspectRatio: `${WORLD.W} / ${WORLD.H}` },
   });
@@ -215,7 +243,10 @@ function riverMap(state, profile, go) {
     boat: state.boat.key,
     landmarks: RIVER.map((v) => v.landmark),
     towns: towns.map((x) => ({ key: x.town.key, landmark: x.town.landmark, heard: x.heard, here: x.here, done: x.done })),
+    fog,
   });
+  stillFog(chart);
+  noteCharted(profile, 'river', fog, before, (i) => RIVER[i].name);
   // The drawings answer taps as well as their name plates do.
   chart.querySelectorAll('.landmark').forEach((g) => {
     g.addEventListener('click', () => {
@@ -255,6 +286,8 @@ function riverMap(state, profile, go) {
  */
 function gulfMap(state, profile, go, showRiver) {
   const first = GULF[0].index;
+  const before = chartedBefore(profile, 'gulf');
+  const fog = gulfFog({ best: Math.max(-1, state.best - first), charted: before });
   const chart = el('div.river-map.world.gulf', { style: { aspectRatio: `${WORLD.W} / ${WORLD.H}` } });
   chart.innerHTML = gulfSvg({
     here: state.here.act === 2 ? state.here.index - first : -1,
@@ -262,7 +295,10 @@ function gulfMap(state, profile, go, showRiver) {
     open: Math.min(state.open, state.road.current) - first,
     beaten: new Set([...state.beaten].filter((i) => i >= first).map((i) => i - first)),
     boat: state.boat.key,
+    fog,
   });
+  stillFog(chart);
+  noteCharted(profile, 'gulf', fog, before, (i) => GULF[i].name);
   chart.querySelectorAll('.landmark').forEach((g) => {
     g.addEventListener('click', () => {
       audio.sfx('click');

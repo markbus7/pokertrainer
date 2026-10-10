@@ -9,7 +9,7 @@ import { NL } from '../src/js/i18n/nl.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
 import { LANDMARKS, BOAT_ART } from '../src/js/ui/riverArt.js';
 import {
-  WORLD, STOP_POINTS, PLACES, WATER_NAMES, worldGeometry, worldSvg, voyage, isDry,
+  WORLD, STOP_POINTS, PLACES, WATER_NAMES, worldGeometry, worldSvg, voyage, isDry, riverFog, FOG_CLEAR, TOWN_POINTS,
 } from '../src/js/ui/worldMap.js';
 import { PORTRAIT_KEYS } from '../src/js/ui/portraits.js';
 import { riverState, stopStatus } from '../src/js/ui/screenRiver.js';
@@ -355,3 +355,44 @@ describe('the Gulf: the second act, past the delta', () => {
   });
 });
 
+
+describe('the river: fog over where you have not been', () => {
+  it('clears the stops you have reached and the next one down, and nothing past it', () => {
+    const fog = riverFog({ best: 2 });
+    equal(fog.reach, 3, 'the next stop down is not clear');
+    const near = (i) => fog.holes.some((h) => Math.hypot(h.x - STOP_POINTS[i].x, h.y - STOP_POINTS[i].y) < 1);
+    for (let i = 0; i <= 3; i++) assert(near(i), `stop ${i} is under fog`);
+    for (let i = 4; i < STOP_POINTS.length; i++) assert(!near(i), `stop ${i} is clear before you have been near it`);
+  });
+
+  it('always clears the places that are not tables', () => {
+    const fog = riverFog({ best: 0 });
+    for (const place of PLACES) {
+      assert(fog.holes.some((h) => Math.hypot(h.x - place.x, h.y - place.y) < h.r * 0.5), `${place.name} is under fog`);
+    }
+  });
+
+  it('clears a town off the river once you have heard of it', () => {
+    const covered = (fog, key) => !fog.holes.some((h) => Math.hypot(h.x - TOWN_POINTS[key].x, h.y - TOWN_POINTS[key].y) < h.r * 0.5);
+    assert(covered(riverFog({ best: 1 }), 'gulch'), 'the Gulch is clear before anybody told you');
+    assert(!covered(riverFog({ best: 1, heard: ['gulch'] }), 'gulch'), 'the Gulch stays under fog after the rumour');
+  });
+
+  it('lifts entirely at the delta, where there is nothing left on the river to find', () => {
+    equal(riverFog({ best: STOP_POINTS.length - 1 }), null);
+    equal(riverFog({ best: 9 }), null);
+  });
+
+  it('opens only what is new since the chart was last cleared, as it is shown', () => {
+    const first = riverFog({ best: 3, charted: null });
+    assert(first.holes.every((h) => !h.fresh), 'the first look at a chart animates everything');
+    const later = riverFog({ best: 4, charted: 4 });
+    const fresh = later.holes.filter((h) => h.fresh);
+    equal(fresh.length, 1, 'more than the one new stop opens');
+    equal(fresh[0].x, STOP_POINTS[5].x);
+    const svg = worldSvg({ here: 4, best: 4, open: 4, beaten: new Set(), boat: 'skiff', landmarks: RIVER.map((v) => v.landmark), fog: later });
+    assert(/class="fog"/.test(svg) && /<animate attributeName="r"/.test(svg), 'the fresh hole does not open on the chart');
+    assert(!/#[0-9a-f]{6}\b/i.test(svg), 'the fog paints a colour of its own instead of the room\'s');
+    equal(FOG_CLEAR.stop > FOG_CLEAR.place, true);
+  });
+});

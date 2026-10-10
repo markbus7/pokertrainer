@@ -130,6 +130,9 @@
   --map-tree: #16302f;
   --map-tree-hi: #244a47;
   --map-sand: #2a3646;
+  /* Unexplored water and country: the fog the chart is under until you have been there. */
+  --map-fog: #27313f;
+  --map-fog-hi: #3a4658;
 
   /* The sky over a stop: a moon, and every star out. */
   --sky-1: #070b14;
@@ -239,6 +242,9 @@
   --map-tree: #1f4a2b;
   --map-tree-hi: #33703f;
   --map-sand: #2a3b2c;
+  /* Unexplored water and country: the fog the chart is under until you have been there. */
+  --map-fog: #22302b;
+  --map-fog-hi: #34453e;
 
   /* The sky over a stop: a pale moon through the damp. */
   --sky-1: #0a1612;
@@ -349,6 +355,9 @@
   --map-tree: #3a3620;
   --map-tree-hi: #57512c;
   --map-sand: #473034;
+  /* Unexplored water and country: the fog the chart is under until you have been there. */
+  --map-fog: #2c2230;
+  --map-fog-hi: #41323f;
 
   /* The sky over a stop: the sun going down red. */
   --sky-1: #231327;
@@ -467,6 +476,9 @@
   --map-tree: #93a86c;
   --map-tree-hi: #b3c48a;
   --map-sand: #f3ead0;
+  /* Unexplored water and country: the fog the chart is under until you have been there. */
+  --map-fog: #e2d6b4;
+  --map-fog-hi: #efe6cc;
 
   /* The sky over a stop: high sun, no stars. */
   --sky-1: #bcd8e3;
