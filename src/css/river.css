@@ -4326,3 +4326,76 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .job-card .said { margin: 0; }
 .job-task { display: flex; align-items: center; gap: var(--s-3); }
 .job-task .road-goal-body { flex: 1; min-width: 0; }
+
+/* ---- The regions round the river (worldMap.js) ---- */
+.world-art .grass { fill: none; stroke: var(--map-land-3); stroke-width: 1.2; stroke-linecap: round; opacity: 0.75; }
+.world-art .mine .ink { stroke-width: 1.4; }
+.world-art .spoil { fill: var(--map-land-3); }
+.world-art .island { stroke: var(--map-sand); stroke-width: 6; paint-order: stroke; }
+.world-art .region-name {
+  fill: var(--map-ink-dim);
+  font-family: var(--font-sign);
+  letter-spacing: 0.4em;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ---- The big chart: a window onto the country, moved about and zoomed ---- */
+.map-frame { position: relative; }
+.map-scroller.big {
+  overflow: auto;
+  overscroll-behavior: contain;
+  height: clamp(380px, 68vh, 780px);
+  border-radius: 14px;
+  border: 1px solid var(--border-bright);
+  box-shadow: var(--shadow);
+  cursor: grab;
+  background: var(--map-water);
+}
+.map-scroller.big.dragging { cursor: grabbing; user-select: none; }
+.map-scroller.big .river-map.world {
+  min-width: 0;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  box-shadow: none;
+}
+/* The signs keep their size against the country, so they sit the same way on
+   it at every zoom: what was 1.06% of the river's chart is 0.53% of a chart
+   twice as wide. */
+.map-scroller.big .river-map.world .map-stop,
+.map-scroller.big .river-map.world .map-place,
+.map-scroller.big .river-map.world .map-town { font-size: 0.53cqi; }
+.map-frame.zoomed-out .map-stop .map-meta,
+.map-frame.zoomed-out .map-place .map-place-meta,
+.map-frame.zoomed-out .map-town .map-place-meta,
+.map-frame.zoomed-out .map-pips,
+.map-frame.zoomed-out .map-next { display: none; }
+.map-zoom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.map-zoom-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--brass-lo);
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1), var(--wood-2));
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  color: var(--on-wood);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+.map-zoom-btn.active { border-color: var(--brass-hi); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 2px var(--brass); }
+.map-zoom-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }

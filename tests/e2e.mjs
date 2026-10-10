@@ -4661,10 +4661,10 @@ await step('fog over the chart: the river past the next stop is unexplored, and 
     await fp.goto(`${BASE}/?fog=1#home`, { waitUntil: 'domcontentloaded' });
     await fp.waitForSelector('.river-map .fog', { timeout: 8000 });
     let seen = await clear();
-    // Mud Landing (132,140) and Fisher's Rest (360,478) clear; Cotton Row (760,470) not.
+    // Mud Landing (1132,640) and Fisher's Rest (1360,978) clear; Cotton Row (1760,970) not.
     const has = (x, y) => seen.holes.some((h) => Math.abs(h.x - x) < 1 && Math.abs(h.y - y) < 1);
-    if (!has(132, 140) || !has(360, 478)) throw new Error('the stop you are at, or the next one, is under fog');
-    if (has(760, 470)) throw new Error('Cotton Row is clear before you have been near it');
+    if (!has(1132, 640) || !has(1360, 978)) throw new Error('the stop you are at, or the next one, is under fog');
+    if (has(1760, 970)) throw new Error('Cotton Row is clear before you have been near it');
     if (seen.holes.some((h) => h.fresh)) throw new Error('the first look at the chart opened holes as if they were new');
     // Down at Cotton Row: the fog draws back to the Belle, once, and says so.
     await seed({ bankroll: 900, career: { venue: 'nl25', best: 'nl25', beaten: ['nl2', 'nl5', 'nl10'], played: {} }, charted: { river: 1 } });

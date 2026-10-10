@@ -9,7 +9,7 @@ import { NL } from '../src/js/i18n/nl.js';
 import { MODULE_META } from '../src/js/data/curriculum.js';
 import { LANDMARKS, BOAT_ART } from '../src/js/ui/riverArt.js';
 import {
-  WORLD, STOP_POINTS, PLACES, WATER_NAMES, worldGeometry, worldSvg, voyage, isDry, riverFog, FOG_CLEAR, TOWN_POINTS,
+  WORLD, STOP_POINTS, PLACES, WATER_NAMES, worldGeometry, worldSvg, voyage, isDry, riverFog, FOG_CLEAR, TOWN_POINTS, REGIONS, ISLANDS,
 } from '../src/js/ui/worldMap.js';
 import { PORTRAIT_KEYS } from '../src/js/ui/portraits.js';
 import { riverState, stopStatus } from '../src/js/ui/screenRiver.js';
@@ -394,5 +394,36 @@ describe('the river: fog over where you have not been', () => {
     assert(/class="fog"/.test(svg) && /<animate attributeName="r"/.test(svg), 'the fresh hole does not open on the chart');
     assert(!/#[0-9a-f]{6}\b/i.test(svg), 'the fog paints a colour of its own instead of the room\'s');
     equal(FOG_CLEAR.stop > FOG_CLEAR.place, true);
+  });
+});
+
+describe('the river: a country four times the size of the river', () => {
+  it('is four times the river chart it grew from, with the river in the middle of it', () => {
+    equal(WORLD.W * WORLD.H, 4 * 1600 * 1000, 'the country is not four times the river');
+    const xs = STOP_POINTS.map((p) => p.x);
+    const ys = STOP_POINTS.map((p) => p.y);
+    assert(Math.min(...xs) > 800 && Math.max(...xs) < WORLD.W - 600, 'the river is not in the middle, east to west');
+    assert(Math.min(...ys) > 400 && Math.max(...ys) < WORLD.H - 400, 'the river is not in the middle, north to south');
+  });
+
+  it('names five regions round the river, each on its own ground', () => {
+    equal(REGIONS.map((r) => r.key).join(), 'prairie,high,diggings,bayou,coast');
+    for (const r of REGIONS) {
+      assert(r.x > 0 && r.x < WORLD.W && r.y > 0 && r.y < WORLD.H, `${r.name} is lettered off the chart`);
+      if (!r.sea) assert(isDry(r.x, r.y - r.size / 3), `${r.name} is lettered across water`);
+    }
+    const svg = worldSvg({ here: 0, best: 0, open: 0, beaten: new Set(), boat: 'rowboat', landmarks: RIVER.map((v) => v.landmark) });
+    equal((svg.match(/class="region-name/g) || []).length, REGIONS.length);
+  });
+
+  it('runs the river on west into the prairie, where it rises', () => {
+    const { center } = worldGeometry();
+    assert(center[0][0] < 0, 'the river starts inside the chart');
+    assert(!isDry(400, worldGeometry().yAt(400)), 'there is no river on the prairie');
+  });
+
+  it('has islands off the coast that are land, in a sea that is not', () => {
+    for (const o of ISLANDS) assert(isDry(o.cx, o.cy), `the island at ${o.cx},${o.cy} is under water`);
+    assert(!isDry(3100, 1100), 'the open sea is dry land');
   });
 });

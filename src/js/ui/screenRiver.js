@@ -224,6 +224,87 @@ const stillFog = (chart) => {
   if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) settleFog(chart);
 };
 
+/**
+ * How close the big chart is drawn: chart pixels per unit of the world. The
+ * whole country at once, the river country at the size its signs read well,
+ * and close in. The middle one is where it opens; the reader's choice is kept
+ * for as long as the page is open.
+ */
+const ZOOMS = { far: null, near: 0.72, close: 1 };
+let zoom = 'near';
+const scaleFor = (level, frameWidth) => {
+  if (level === 'far') return Math.max(0.1, frameWidth / WORLD.W);
+  // A phone opens a little further out than a desktop: more of the country in a smaller window.
+  if (level === 'near') return frameWidth < 700 ? 0.62 : ZOOMS.near;
+  return ZOOMS.close;
+};
+
+/**
+ * The big chart in a window you move around: scroll it, drag it with the
+ * mouse, swipe it on a phone, and zoom between the whole country and close in.
+ * Returns the frame; the scrolled element is `frame.scroller`.
+ */
+function pannable(chart) {
+  const scroller = el('div.map-scroller.big', chart);
+  const sizeTo = (level, keepCentre = true) => {
+    const before = keepCentre && scroller.scrollWidth
+      ? { x: (scroller.scrollLeft + scroller.clientWidth / 2) / scroller.scrollWidth, y: (scroller.scrollTop + scroller.clientHeight / 2) / scroller.scrollHeight }
+      : null;
+    zoom = level;
+    const width = Math.round(WORLD.W * scaleFor(level, scroller.clientWidth || 1000));
+    chart.style.width = `${width}px`;
+    frame.classList.toggle('zoomed-out', level === 'far');
+    buttons.forEach((b) => b.classList.toggle('active', b.dataset.zoom === level));
+    if (before) {
+      scroller.scrollLeft = before.x * scroller.scrollWidth - scroller.clientWidth / 2;
+      scroller.scrollTop = before.y * scroller.scrollHeight - scroller.clientHeight / 2;
+    }
+  };
+  const buttons = [['far', t('The whole country')], ['near', t('The river')], ['close', t('Close in')]].map(([level, label]) => el('button.map-zoom-btn', {
+    type: 'button',
+    dataset: { zoom: level },
+    title: label,
+    'aria-label': label,
+    onclick: () => { audio.sfx('click'); sizeTo(level); },
+  }, level === 'far' ? '⤢' : level === 'near' ? '◎' : '+'));
+  const frame = el('div.map-frame', scroller, el('div.map-zoom', { role: 'group', 'aria-label': t('Zoom') }, buttons));
+  frame.scroller = scroller;
+  frame.sizeTo = sizeTo;
+  // Sized as soon as the page knows how wide the window is.
+  chart.style.width = `${Math.round(WORLD.W * ZOOMS.near)}px`;
+  requestAnimationFrame(() => sizeTo(zoom, false));
+
+  // Drag to move it, with a mouse. A drag is not a click on whatever it started on.
+  let drag = null;
+  let dragged = false;
+  scroller.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    drag = { x: e.clientX, y: e.clientY, left: scroller.scrollLeft, top: scroller.scrollTop };
+    dragged = false;
+  });
+  const onMove = (e) => {
+    if (!scroller.isConnected) { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); return; }
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    if (!dragged && Math.hypot(dx, dy) < 5) return;
+    dragged = true;
+    scroller.classList.add('dragging');
+    scroller.scrollLeft = drag.left - dx;
+    scroller.scrollTop = drag.top - dy;
+  };
+  const onUp = () => {
+    drag = null;
+    scroller.classList.remove('dragging');
+  };
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  scroller.addEventListener('click', (e) => {
+    if (dragged) { e.stopPropagation(); e.preventDefault(); dragged = false; }
+  }, true);
+  return frame;
+}
+
 /** The river's last index: on its chart, anywhere in the Gulf is past the delta. */
 const RIVER_LAST = RIVER.length - 1;
 
@@ -276,7 +357,7 @@ function riverMap(state, profile, go) {
   for (const place of PLACES) chart.appendChild(placePlate(place, profile, go, nextPlace));
   // On a narrow screen the chart is wider than the page and scrolls sideways,
   // the way a map is dragged; on a wide one the scroller simply fits.
-  return el('div.map-scroller', chart);
+  return pannable(chart);
 }
 
 /**
@@ -491,8 +572,14 @@ function sail(scroller, fromIndex, toIndex, onArrive) {
     const box = scroller.getBoundingClientRect();
     const offX = r.left + r.width / 2 - (box.left + box.width / 2);
     if (Math.abs(offX) > 40) scroller.scrollLeft += offX * 0.12;
-    const off = r.top + r.height / 2 - window.innerHeight / 2;
-    if (Math.abs(off) > 60) window.scrollTo(0, window.scrollY + off * 0.08);
+    // The big chart moves under the window both ways; the Gulf's moves the page.
+    const offY = r.top + r.height / 2 - (box.top + box.height / 2);
+    if (scroller.scrollHeight > scroller.clientHeight + 2) {
+      if (Math.abs(offY) > 40) scroller.scrollTop += offY * 0.12;
+    } else {
+      const off = r.top + r.height / 2 - window.innerHeight / 2;
+      if (Math.abs(off) > 60) window.scrollTo(0, window.scrollY + off * 0.08);
+    }
     if (k < 1) requestAnimationFrame(frame);
     else setTimeout(onArrive, 250);
   };
@@ -500,17 +587,24 @@ function sail(scroller, fromIndex, toIndex, onArrive) {
   return null;
 }
 
-/** Scroll the chart sideways so a point on it sits in the middle of the view. */
-function centreAt(scroller, x) {
-  if (scroller.scrollWidth <= scroller.clientWidth) return;
-  scroller.scrollLeft = (x / WORLD.W) * scroller.scrollWidth - scroller.clientWidth / 2;
+/** The element that scrolls: the big chart's window, or the Gulf's scroller itself. */
+const scrollerOf = (map) => map.scroller || map;
+
+/** Move the chart so a point on it sits in the middle of the window. */
+function centreAt(scroller, x, y = null) {
+  if (scroller.scrollWidth > scroller.clientWidth) {
+    scroller.scrollLeft = (x / WORLD.W) * scroller.scrollWidth - scroller.clientWidth / 2;
+  }
+  if (y !== null && scroller.scrollHeight > scroller.clientHeight) {
+    scroller.scrollTop = (y / WORLD.H) * scroller.scrollHeight - scroller.clientHeight / 2;
+  }
 }
 
 /** The same, for a stop. */
 function centreOn(scroller, index) {
   const venue = VENUES[index];
   const p = venue && venue.act === 2 ? portAt(index - GULF[0].index) : stopAt(index);
-  centreAt(scroller, p.x);
+  centreAt(scroller, p.x, p.y);
 }
 
 export function renderRiver(ctx) {
@@ -536,7 +630,7 @@ export function renderRiver(ctx) {
           el('h2.sign', view === 'gulf' ? t('The Gulf') : t('The Long River')),
           el('div.cartouche-sub', view === 'gulf'
             ? t('Five tables past the delta, from Salt Harbour to the Admiralty')
-            : t('Eight tables from Mud Landing to the delta, and everything on the water between')),
+            : t('Eight tables down the Long River, and the country all round it')),
         ),
         gulfSeen
           ? el('div.chart-switch', { role: 'group', 'aria-label': t('Charts') },
@@ -571,8 +665,8 @@ export function renderRiver(ctx) {
       return screen;
     }
     requestAnimationFrame(() => {
-      centreOn(map, from);
-      sail(map, from, to, () => go('stop', { at: VENUES[to].key, arrived: 1 }));
+      centreOn(scrollerOf(map), from);
+      sail(scrollerOf(map), from, to, () => go('stop', { at: VENUES[to].key, arrived: 1 }));
     });
     return screen;
   }
@@ -581,7 +675,7 @@ export function renderRiver(ctx) {
   // a phone, where the chart scrolls sideways, is the difference between
   // seeing your boat and not.
   requestAnimationFrame(() => (state.town && view === 'river'
-    ? centreAt(map, TOWN_POINTS[state.town.key].x)
-    : centreOn(map, state.here.index)));
+    ? centreAt(scrollerOf(map), TOWN_POINTS[state.town.key].x, TOWN_POINTS[state.town.key].y)
+    : centreOn(scrollerOf(map), state.here.index)));
   return screen;
 }

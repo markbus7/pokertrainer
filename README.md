@@ -311,6 +311,26 @@ stack at the Admiralty. It is the town's chapter, taken to the felt. Each job
 counts sound decisions you made without help, and pays pearls once, more the
 further down the river it is.
 
+### 🧭 A country, not a strip of river
+
+The river's chart is a whole country now, four times the size it was. The
+Long River runs through the middle of it, from where it rises on the prairie
+in the west down to the delta. Round it are five regions, each lettered across
+its own ground:
+
+- **the Prairie** in the west: grass, homesteads and Buffalo Creek;
+- **the High Country** along the north: range after range, pine woods, and
+  Silver Lake, where Silver Creek rises;
+- **the Diggings** in the south, around the head of Gold Creek: hills and
+  mine workings;
+- **the Bayou** south of the delta: cypress, still pools and Bayou Noir;
+- **the Coast** in the east: the sea, with islands off it.
+
+The chart is a window you move around: scroll it, drag it with the mouse or
+swipe it on a phone. Three buttons switch between the whole country, the
+river (where it opens, on your boat) and close in. The signs keep their size
+against the country at every zoom, so nothing that fitted stops fitting.
+
 ### 🌫️ Fog over the chart
 
 The chart starts under fog. You can see where you have been and the next stop
@@ -488,7 +508,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.3.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.4.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is
