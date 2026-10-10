@@ -229,6 +229,8 @@ const emptyProfile = () => ({
   catchBook: {},
   // Your snags in practice (state/snags.js): spot id -> { streak, cleared }.
   snags: {},
+  // The towns off the river (state/backwaters.js): key -> { sittings, bestUp, bestSound, paid }.
+  towns: {},
   // lang and theme both live in settings so they travel with the cloud
   // sync: pick Dutch and Daylight on the iPad and the iPhone matches,
   // without setting either twice.
@@ -616,6 +618,19 @@ export class Profile {
     this.save();
   }
 
+  /**
+   * Up a backwater to one of its towns (data/backwaters.js). The boat is moored
+   * there, and the stop it leaves the river from is the stake you play: its
+   * seat price, its blinds. Going back to any stop on the river leaves it.
+   */
+  enterTown(key, junction) {
+    const c = this.career;
+    c.venue = junction;
+    c.town = key;
+    this.save();
+    return c;
+  }
+
   /** Hands played at one stop's table. */
   handsAt(key) {
     return this.career.played[key] || 0;
@@ -778,6 +793,8 @@ export class Profile {
     const c = this.career;
     const order = (k) => STAKES.findIndex((s) => s.key === k);
     c.venue = key;
+    // Back on the river: out of whatever town the boat was up.
+    delete c.town;
     if (order(key) > order(c.best)) c.best = key;
     this.save();
     return c;
@@ -796,6 +813,7 @@ export class Profile {
     c.staked += amount;
     this.data.bankroll = amount;
     c.venue = 'nl2';
+    delete c.town;
     this.save();
     return c;
   }

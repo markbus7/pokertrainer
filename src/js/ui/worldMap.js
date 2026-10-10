@@ -22,6 +22,10 @@
  *  - The boatyard has its slip on Gold Creek, a little up from the river.
  *  - At the end the river splits again into the delta, and runs out through
  *    three mouths into the sea.
+ *  - Off the river, the backwaters (data/backwaters.js): a wagon road up into
+ *    the diggings from the Catch Book, a creek from the racing chute down
+ *    into the cypress to a lagoon, and a landing up the Black River. Each is
+ *    uncharted until somebody tells you what is there.
  *
  * As before, nothing here carries a colour of its own: every shape names what
  * it is made of and river.css paints it from the room's map tokens, so one
@@ -115,6 +119,10 @@ const TRIBUTARIES = {
 /** The racing chute: the straight channel south of Belle Island. */
 const CHUTE = [[905, 450], [922, 556], [966, 650], [1060, 692], [1154, 668], [1214, 596], [1240, 502]];
 
+/** Down from the racing chute into the cypress, and the lagoon at the end of it. */
+const BAYOU_CREEK = [[1052, 694], [1060, 748], [1080, 796], [1104, 830]];
+const LAGOON = { cx: 1118, cy: 846, rx: 46, ry: 22 };
+
 /** The cut-off bend where the old steamer is laid up, and the ditch to it. */
 const OXBOW = { cx: 690, cy: 168, rx: 96, ry: 52 };
 const OXBOW_CUT = [[700, 218], [712, 270], [716, 336]];
@@ -167,6 +175,17 @@ export const STOP_POINTS = [
 ];
 
 export const stopAt = (i) => STOP_POINTS[Math.max(0, Math.min(STOP_POINTS.length - 1, i))];
+
+/**
+ * The towns off the river, keyed as in data/backwaters.js: where each is
+ * drawn, and where a boat ties up there — on the lagoon, at the landing — or
+ * null for a town at the end of a road, where the boat waits at the stop.
+ */
+export const TOWN_POINTS = {
+  gulch: { x: 300, y: 850, moor: null },
+  bayou: { x: 1186, y: 834, moor: [1098, 850] },
+  bethel: { x: 1310, y: 112, moor: [1183, 126] },
+};
 
 /** The places that are not tables: each with the landmark it is drawn as. */
 export const PLACES = [
@@ -249,6 +268,7 @@ function occupied() {
   const round = [
     ...STOP_POINTS.map((p) => ({ x: p.x, y: p.y, r: 62 })),
     ...PLACES.map((p) => ({ x: p.x, y: p.y, r: 56 })),
+    ...Object.values(TOWN_POINTS).map((p) => ({ x: p.x, y: p.y, r: 56 })),
     ...WATER_NAMES.flatMap((n) => smooth(n.pts, 6).map(([x, y]) => ({ x, y: y - n.size / 3, r: n.size }))),
     ...ROADS.flatMap((r) => smooth(r, 6).map(([x, y]) => ({ x, y, r: 7 }))),
   ];
@@ -257,6 +277,7 @@ function occupied() {
       ? { x0: p.x - 112, x1: p.x + 112, y0: p.y - 124, y1: p.y - 36 }
       : { x0: p.x - 112, x1: p.x + 112, y0: p.y + 20, y1: p.y + 108 })),
     ...PLACES.map((p) => ({ x0: p.x - 96, x1: p.x + 96, y0: p.y + 22, y1: p.y + 96 })),
+    ...Object.values(TOWN_POINTS).map((p) => ({ x0: p.x - 96, x1: p.x + 96, y0: p.y + 22, y1: p.y + 96 })),
   ];
   return (x, y, pad) => round.some((s) => Math.hypot(x - s.x, y - s.y) < s.r + pad)
     || boxes.some((b) => x > b.x0 - pad && x < b.x1 + pad && y > b.y0 - pad && y < b.y1 + pad);
@@ -271,6 +292,7 @@ function waterLines() {
     ...Object.values(TRIBUTARIES).map((k) => ({ pts: smooth(k, 16), w: 22 })),
     { pts: smooth(CHUTE, 16), w: 34 },
     { pts: smooth(OXBOW_CUT, 8), w: 14 },
+    { pts: smooth(BAYOU_CREEK, 10), w: 16 },
   ];
   return lines;
 }
@@ -281,8 +303,9 @@ function nearWater(x, y, pad, lines) {
       if (Math.hypot(x - pts[i][0], y - pts[i][1]) < w / 2 + pad) return true;
     }
   }
-  const o = OXBOW;
-  if (((x - o.cx) / (o.rx + pad)) ** 2 + ((y - o.cy) / (o.ry + pad)) ** 2 < 1) return true;
+  for (const o of [OXBOW, LAGOON]) {
+    if (((x - o.cx) / (o.rx + pad)) ** 2 + ((y - o.cy) / (o.ry + pad)) ** 2 < 1) return true;
+  }
   return false;
 }
 
@@ -295,6 +318,8 @@ const ROADS = [
   [[152, 346], [215, 388], [280, 428], [330, 460]],                // the saloon along to Fisher's Rest
   [[508, 696], [584, 706], [700, 690], [822, 650]],                // the assay office over Gold Creek to the races
   [[1112, 286], [1160, 302], [1222, 340], [1262, 372]],            // the Trading Post over the Black River to the Barge
+  [[262, 702], [270, 760], [284, 812]],                            // the wagon road up from the Catch Book into the diggings
+  [[1270, 122], [1236, 126], [1206, 126]],                         // Bethel down to its landing on the Black River
 ];
 const BRIDGES = [
   { x: 583, y: 706, angle: 4 },
@@ -477,8 +502,10 @@ export function voyage(fromIndex, toIndex) {
  * @param {Set<number>} s.beaten
  * @param {string} s.boat      key of your boat
  * @param {Array<string>} s.landmarks  one per stop
+ * @param {Array<{key:string, landmark:string, heard:boolean, here:boolean, done:boolean}>} [s.towns]
+ *   the backwaters: drawn once you have heard of them, a question mark until then
  */
-export function worldSvg({ here, best, open, beaten, boat, landmarks }) {
+export function worldSvg({ here, best, open, beaten, boat, landmarks, towns = [] }) {
   const { W, H } = WORLD;
   const g = worldGeometry();
   const sc = scenery();
@@ -494,11 +521,13 @@ export function worldSvg({ here, best, open, beaten, boat, landmarks }) {
     ...Object.values(TRIBUTARIES).map((k) => ribbon(banks(smooth(k, 16), creekWidth))),
     ribbon(banks(smooth(CHUTE, 16), () => 26)),
     ribbon(banks(smooth(OXBOW_CUT, 8), () => 10)),
+    ribbon(banks(smooth(BAYOU_CREEK, 10), () => 12)),
   ];
   // Every stretch of water, as one set of shapes. It is laid down three
   // times — a band of sand, a wet edge, then the water — and each pass covers
   // the inside of the last, so where two waters meet there is no seam.
   const water = `<ellipse cx="${OXBOW.cx}" cy="${OXBOW.cy}" rx="${OXBOW.rx}" ry="${OXBOW.ry}"/>`
+    + `<ellipse cx="${LAGOON.cx}" cy="${LAGOON.cy}" rx="${LAGOON.rx}" ry="${LAGOON.ry}"/>`
     + waters.map((d) => `<path d="${d}"/>`).join('');
   // Engraved lines a little in from each bank of the main river, and off
   // the coast, the way the old charts showed water.
@@ -510,13 +539,16 @@ export function worldSvg({ here, best, open, beaten, boat, landmarks }) {
   const route = voyage(0, Math.max(best, here));
   const ahead = voyage(Math.max(best, here), STOP_POINTS.length - 1);
 
+  // Up a backwater, the boat is at the town, not at the stop it left from.
+  const inTown = towns.some((town) => town.here);
   const stops = landmarks.map((key, i) => {
     const p = STOP_POINTS[i];
     const shut = i > open && i > best;
-    const cls = ['landmark', shut ? 'shut' : '', i === here ? 'here' : '', beaten.has(i) ? 'beaten' : ''].filter(Boolean).join(' ');
+    const isHere = i === here && !inTown;
+    const cls = ['landmark', shut ? 'shut' : '', isHere ? 'here' : '', beaten.has(i) ? 'beaten' : ''].filter(Boolean).join(' ');
     return (i === STOP_POINTS.length - 1 ? '' : `<path class="jetty" d="${jetty(p)}"/>`)
       + `<g class="${cls}" data-index="${i}" transform="translate(${p.x} ${p.y}) scale(0.9)">`
-      + (i === here ? '<ellipse class="here-glow" cx="0" cy="2" rx="52" ry="36"/><ellipse class="here-ring" cx="0" cy="2" rx="52" ry="36"/>' : '')
+      + (isHere ? '<ellipse class="here-glow" cx="0" cy="2" rx="52" ry="36"/><ellipse class="here-ring" cx="0" cy="2" rx="52" ry="36"/>' : '')
       + (LANDMARKS[key] || LANDMARKS.landing)()
       + '</g>';
   }).join('');
@@ -525,7 +557,25 @@ export function worldSvg({ here, best, open, beaten, boat, landmarks }) {
     + (LANDMARKS[p.landmark] || LANDMARKS.landing)()
     + '</g>').join('');
 
-  const tie = voyage(here, here)[0];
+  // The towns off the river: the drawing once you know what is there, and
+  // until then a mark on the chart where somebody has written a question.
+  const townArt = towns.map((town) => {
+    const p = TOWN_POINTS[town.key];
+    if (!p) return '';
+    if (!town.heard) {
+      return `<g class="town uncharted" data-town="${town.key}" transform="translate(${p.x} ${p.y})">`
+        + '<circle class="uncharted-ring" r="22"/><text class="uncharted-mark" y="8">?</text></g>';
+    }
+    const cls = ['town', town.here ? 'here' : '', town.done ? 'done' : ''].filter(Boolean).join(' ');
+    return `<g class="${cls}" data-town="${town.key}" transform="translate(${p.x} ${p.y}) scale(0.8)">`
+      + (town.here ? '<ellipse class="here-glow" cx="0" cy="2" rx="52" ry="36"/><ellipse class="here-ring" cx="0" cy="2" rx="52" ry="36"/>' : '')
+      + (LANDMARKS[town.landmark] || LANDMARKS.landing)()
+      + '</g>';
+  }).join('');
+
+  // Your boat: at the stop you are at, or tied up at the town you went up to.
+  const moored = towns.find((town) => town.here && TOWN_POINTS[town.key] && TOWN_POINTS[town.key].moor);
+  const tie = moored ? TOWN_POINTS[moored.key].moor : voyage(here, here)[0];
 
   // Old-chart dressing: a compass rose, a scale of leagues, a border ruled in
   // degrees, a lighthouse on the point and something in the sea.
@@ -584,6 +634,7 @@ export function worldSvg({ here, best, open, beaten, boat, landmarks }) {
     ${route.length > 1 ? `<path class="route" d="${line(route)}"/>` : ''}
     ${ahead.length > 1 ? `<path class="route-ahead" d="${line(ahead)}"/>` : ''}
     ${places}
+    ${townArt}
     ${stops}
     <g class="your-boat" transform="translate(${f1(tie[0])} ${f1(tie[1])})"><g class="bob">${yourBoat(boat)}</g></g>
     ${compass}

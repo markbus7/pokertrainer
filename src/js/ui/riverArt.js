@@ -275,6 +275,45 @@ export const LANDMARKS = {
     <rect class="wall ink" x="33" y="8" width="10" height="10"/>
     <path class="ink" d="M33 13h10M38 8v10"/>`,
 
+  // Placer Gulch: a canvas tent, a sluice on its trestle, and the headframe over the shaft.
+  diggings: () => `
+    <path class="ground" d="M-44 18h88"/>
+    <path class="wall ink" d="M-38 18L-24 -6L-10 18z"/>
+    <path class="ink" d="M-24 -6V18M-28 18l4-9 4 9"/>
+    <rect class="glow" x="-26" y="10" width="4" height="7"/>
+    <path class="ink" d="M-2 18L6 -26L14 18M1 2h10M3 -10h6"/>
+    <path class="roof ink" d="M2 -28h8l-4 -5z"/>
+    <path class="ink" d="M6 -26v-3"/>
+    <path class="wall ink" d="M16 2L44 10v4L16 6z"/>
+    <path class="ink" d="M22 4v14M32 7v11M40 9v9"/>
+    <path class="mark ink" d="M-8 18c0-4 6-4 6 0"/>`,
+
+  // Cypress Bayou: a house on stilts over the water, a lantern on its porch, a pirogue tied below.
+  stilts: () => `
+    <path class="ground" d="M-44 18h88" opacity=".5"/>
+    <path class="ink" d="M-24 18V0M-10 18V0M10 18V0M24 18V0"/>
+    <path class="wall ink" d="M-28 0V-18h56V0z"/>
+    <path class="roof ink" d="M-32 -18L0 -34L32 -18z"/>
+    <rect class="glow" x="-18" y="-13" width="8" height="8"/>
+    <rect class="glow" x="10" y="-13" width="8" height="8"/>
+    <path class="ink" d="M-28 -4h56"/>
+    <path class="ink" d="M30 -12v6"/><circle class="glow ink" cx="30" cy="-4" r="2.4"/>
+    <path class="wall ink" d="M-34 16q14 5 28 0z"/>`,
+
+  // Bethel: a white chapel with its steeple and bell, and the hall beside it.
+  chapel: () => `
+    <path class="ground" d="M-44 18h88"/>
+    <path class="wall ink" d="M-20 18V-6h24v24z"/>
+    <path class="roof ink" d="M-23 -6L-8 -18L7 -6z"/>
+    <path class="wall ink" d="M-14 -14V-30h12v16"/>
+    <path class="roof ink" d="M-16 -30L-8 -44L0 -30z"/>
+    <path class="ink" d="M-8 -44v-6M-11 -48h6"/>
+    <circle class="glow" cx="-8" cy="-23" r="2.6"/>
+    <path class="glow" d="M-12 18v-10a4 4 0 0 1 8 0v10z"/>
+    <path class="wall ink" d="M6 18V2h30v16z"/>
+    <path class="roof ink" d="M3 2L21 -8L39 2z"/>
+    <rect class="glow" x="12" y="6" width="5" height="6"/><rect class="glow" x="25" y="6" width="5" height="6"/>`,
+
   // Lighthouse Point: the tower and its beam, and the keeper's cottage.
   lighthouse: () => `
     <path class="ground" d="M-40 18h80"/>

@@ -18,14 +18,14 @@
  * sign that says what is waiting there and takes you in.
  */
 
-import { el, fmt } from './dom.js';
+import { el, fmt, toast } from './dom.js';
 import { icon } from './icons.js';
 import { t } from '../i18n/index.js';
 import { VENUES, venueFor, roomYouCanAfford, RIVER_END, RIVER, GULF } from '../data/venues.js';
 import { bossFor } from '../data/characters.js';
 import { nextUp, moduleMeta, MODULE_META } from '../data/curriculum.js';
 import { boatSvg } from './riverArt.js';
-import { WORLD, stopAt, PLACES, worldSvg, voyage } from './worldMap.js';
+import { WORLD, stopAt, PLACES, TOWN_POINTS, worldSvg, voyage } from './worldMap.js';
 import { gulfSvg, portAt, RIVER_MOUTH } from './gulfMap.js';
 import { portraitSvg } from './portraits.js';
 import { svgNode } from './place.js';
@@ -43,6 +43,7 @@ import { postPanel } from './postView.js';
 import { figureFor, nameFor } from './screenCharacter.js';
 import { whoYouAre } from '../state/character.js';
 import { TIERS } from '../data/looks.js';
+import { backwatersState, townHere, junctionOf, townTable } from '../state/backwaters.js';
 
 export { svgNode };
 
@@ -66,6 +67,8 @@ export function riverState(profile) {
     berths: boatBerths(profile),
     bonus: boatBonus(profile),
     wonRiver,
+    // Up a backwater: the town the boat is moored at, or null on the river.
+    town: townHere(profile),
     // What the road says: which city you are working on, what is done in it,
     // and what to do next. A city opens when the one before it is finished.
     road: journeyState(profile),
@@ -74,7 +77,7 @@ export function riverState(profile) {
 
 /** What a stop's name plate says under it. */
 export function stopStatus(venue, state) {
-  if (venue.index === state.here.index) return { key: 'here', text: t('You are here') };
+  if (venue.index === state.here.index && !state.town) return { key: 'here', text: t('You are here') };
   // The road comes first: a city further down than the one you are working on
   // is closed whatever the purse says, and says which one opens it.
   if (venue.index > state.road.current) {
@@ -158,10 +161,48 @@ function placePlate(place, profile, go, nextPlace) {
   );
 }
 
+/**
+ * A town's plate on the chart: its name and how far through it you are once
+ * you know of it, and until then, uncharted water and who to ask.
+ */
+function townPlate(entry, state, go) {
+  const { town } = entry;
+  const p = TOWN_POINTS[town.key];
+  const style = { left: `${(p.x / WORLD.W) * 100}%`, top: `${((p.y + 26) / WORLD.H) * 100}%` };
+  const junction = junctionOf(town);
+  if (!entry.heard) {
+    return el('button.map-town.uncharted', {
+      dataset: { town: town.key },
+      style,
+      onclick: () => {
+        audio.sfx('click');
+        toast({ icon: '🗺', title: t('Uncharted'), desc: t('Nobody has put a name to what is up there. Somebody at {place} knows.', { place: t(junction.name) }) });
+      },
+      'aria-label': t('Uncharted. Somebody at {place} knows.', { place: t(junction.name) }),
+    },
+      el('span.map-place-name', t('Uncharted')),
+      el('span.map-place-meta', t('Ask at {place}', { place: t(junction.name) })),
+    );
+  }
+  const done = entry.goals.filter((g) => g.done).length;
+  return el(`button.map-town${entry.here ? '.is-here' : ''}${entry.done ? '.done' : ''}`, {
+    dataset: { town: town.key },
+    style,
+    onclick: () => { audio.sfx('click'); go('town', { at: town.key }); },
+    'aria-label': `${t(town.name)}, ${junction.label}`,
+  },
+    el('span.map-place-name', t(town.name)),
+    el('span.map-place-meta',
+      el('span.map-stake', junction.label),
+      el('span.map-status', entry.here ? t('You are here') : entry.done ? t('All three done') : t('{n} of 3 done', { n: done }))),
+  );
+}
+
 /** The river's last index: on its chart, anywhere in the Gulf is past the delta. */
 const RIVER_LAST = RIVER.length - 1;
 
 function riverMap(state, profile, go) {
+  const towns = backwatersState(profile);
   const chart = el('div.river-map.world', {
     style: { aspectRatio: `${WORLD.W} / ${WORLD.H}` },
   });
@@ -173,6 +214,7 @@ function riverMap(state, profile, go) {
     beaten: state.beaten,
     boat: state.boat.key,
     landmarks: RIVER.map((v) => v.landmark),
+    towns: towns.map((x) => ({ key: x.town.key, landmark: x.town.landmark, heard: x.heard, here: x.here, done: x.done })),
   });
   // The drawings answer taps as well as their name plates do.
   chart.querySelectorAll('.landmark').forEach((g) => {
@@ -189,7 +231,16 @@ function riverMap(state, profile, go) {
       if (place) go(place.route);
     });
   });
+  chart.querySelectorAll('.town').forEach((g) => {
+    const entry = towns.find((x) => x.town.key === g.dataset.town);
+    if (!entry) return;
+    g.addEventListener('click', () => {
+      audio.sfx('click');
+      if (entry.heard) go('town', { at: entry.town.key });
+    });
+  });
   for (const v of RIVER) chart.appendChild(stopPlate(v, state, go));
+  for (const entry of towns) chart.appendChild(townPlate(entry, state, go));
   const nextPlace = state.road.next ? state.road.next.goal.to.place : null;
   for (const place of PLACES) chart.appendChild(placePlate(place, profile, go, nextPlace));
   // On a narrow screen the chart is wider than the page and scrolls sideways,
@@ -230,8 +281,40 @@ function gulfMap(state, profile, go, showRiver) {
   return el('div.map-scroller', chart);
 }
 
+/** Up a backwater: the town, the one who keeps its game, and a seat at it. */
+function townCard(state, profile, go) {
+  const town = state.town;
+  const junction = junctionOf(town);
+  const canSit = state.bankroll >= junction.entry;
+  return el('div.panel.here-card',
+    el('div.here-kicker', t('You are moored at')),
+    el('h1.sign.here-name', t(town.name)),
+    el('div.here-where', t(town.where)),
+    el('div.here-facts',
+      el('span.fact', el('span.k', t('Stakes')), el('span.v', junction.label)),
+      el('span.fact', el('span.k', t('Blinds')), el('span.v', `${fmt.money(junction.stake.bb / 2)} / ${fmt.money(junction.stake.bb)}`)),
+      el('span.fact', el('span.k', t('Seat')), el('span.v', fmt.money(junction.entry))),
+    ),
+    el('div.here-boss',
+      svgNode(portraitSvg(town.local.key, { size: 64 }), 'here-portrait'),
+      el('div.here-boss-text',
+        el('div.here-boss-name', town.local.name, el('span.here-boss-title', ` · ${t(town.local.title)}`)),
+        el('p.said', `“${t(town.hello)}”`),
+      ),
+    ),
+    el('div.here-actions',
+      el('button.btn.primary.plank', {
+        disabled: !canSit,
+        onclick: () => { profile.setBankroll(state.bankroll, junction.key); go('play', { mode: 'grind', table: townTable(town).id }); },
+      }, t('Take a seat — {money}', { money: fmt.money(junction.entry) })),
+      el('button.btn.ghost', { onclick: () => go('town', { at: town.key }) }, t('Go ashore')),
+    ),
+  );
+}
+
 /** Where you are, who owns the table, and the way to it. */
 function hereCard(state, profile, go) {
+  if (state.town) return townCard(state, profile, go);
   const { here } = state;
   const boss = bossFor(here.boss);
   const canSit = state.bankroll >= here.entry;
@@ -381,12 +464,17 @@ function sail(scroller, fromIndex, toIndex, onArrive) {
   return null;
 }
 
-/** Scroll the chart sideways so a stop sits in the middle of the view. */
-function centreOn(scroller, index) {
+/** Scroll the chart sideways so a point on it sits in the middle of the view. */
+function centreAt(scroller, x) {
   if (scroller.scrollWidth <= scroller.clientWidth) return;
+  scroller.scrollLeft = (x / WORLD.W) * scroller.scrollWidth - scroller.clientWidth / 2;
+}
+
+/** The same, for a stop. */
+function centreOn(scroller, index) {
   const venue = VENUES[index];
   const p = venue && venue.act === 2 ? portAt(index - GULF[0].index) : stopAt(index);
-  scroller.scrollLeft = (p.x / WORLD.W) * scroller.scrollWidth - scroller.clientWidth / 2;
+  centreAt(scroller, p.x);
 }
 
 export function renderRiver(ctx) {
@@ -456,6 +544,8 @@ export function renderRiver(ctx) {
   // Open the chart on where you are rather than on its west edge — which on
   // a phone, where the chart scrolls sideways, is the difference between
   // seeing your boat and not.
-  requestAnimationFrame(() => centreOn(map, state.here.index));
+  requestAnimationFrame(() => (state.town && view === 'river'
+    ? centreAt(map, TOWN_POINTS[state.town.key].x)
+    : centreOn(map, state.here.index)));
   return screen;
 }

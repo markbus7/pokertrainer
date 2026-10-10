@@ -4190,3 +4190,78 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .chart-switch { display: inline-flex; gap: 4px; padding: 3px; margin: 0 0 var(--s-3); border-radius: 99px; background: var(--bg-card); border: 1px solid var(--border); }
 .chart-switch button { border: 0; background: none; color: var(--text-dim); font: inherit; font-weight: 650; padding: 6px 14px; border-radius: 99px; cursor: pointer; }
 .chart-switch button.active { background: var(--accent); color: var(--on-accent); }
+
+/* ================================================================
+   The backwaters: towns off the river (screenTown.js)
+   ================================================================ */
+
+/* On the chart: the town's drawing, or a question mark until you know of it. */
+.world-art .town { cursor: pointer; transition: filter 200ms; }
+.world-art .town:hover { filter: brightness(1.2); }
+.world-art .town.uncharted { cursor: default; }
+.world-art .uncharted-ring { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.6; stroke-dasharray: 3 4; }
+.world-art .uncharted-mark { fill: var(--map-ink-dim); font-family: var(--font-print); font-size: 24px; font-weight: 700; text-anchor: middle; }
+
+/* The plate under a town: a stop's wooden sign, a little smaller. */
+.map-town {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: max-content;
+  max-width: 15em;
+  padding: 0.25em 0.75em 0.35em;
+  border-radius: 5px;
+  background:
+    var(--wood-grain),
+    linear-gradient(180deg, var(--wood-1), var(--wood-2));
+  background-size: 400px 120px, auto;
+  background-blend-mode: multiply, normal;
+  border: 1px solid var(--brass-lo);
+  color: var(--on-wood);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 120ms;
+}
+.river-map.world .map-town { font-size: clamp(9px, 1.06cqi, 12.5px); }
+.map-town:hover { transform: translateX(-50%) translateY(-2px); }
+.map-town:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.map-town .map-stake { font-family: var(--mono); font-weight: 700; color: inherit; }
+.map-town.is-here { border-color: var(--brass); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), 0 0 0 2px var(--brass); }
+.map-town.done .map-status { color: var(--brass-hi); }
+/* Uncharted: a scrap of paper pinned to the chart, not a painted sign. */
+.map-town.uncharted {
+  background: none;
+  border: 1px dashed var(--map-ink-dim);
+  color: var(--map-ink-dim);
+  box-shadow: none;
+  font-style: italic;
+}
+
+/* The owner's word about what is up the creek. */
+.rumour-card { display: grid; gap: var(--s-3); }
+.rumour-head { display: flex; gap: var(--s-3); align-items: flex-start; }
+.rumour-portrait { flex: none; }
+.rumour-portrait .portrait { width: 56px; height: 56px; }
+
+/* The town's list: what each goal pays, and the trophy at the bottom. */
+.town-list .road-goal { align-items: center; }
+.town-pays { flex: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+.town-trophy {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--ink-rule);
+  opacity: 0.7;
+}
+.town-trophy.have { opacity: 1; }
+.town-finished .said { margin: 0 0 4px; }
+.uncharted-panel { text-align: center; max-width: 520px; margin: var(--s-6) auto; }
+.uncharted-panel h1 { font-size: 64px; margin: var(--s-2) 0; }
+.uncharted-panel .row { justify-content: center; }

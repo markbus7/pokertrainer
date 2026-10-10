@@ -34,10 +34,12 @@ import { readOn as rivalRead } from '../state/rival.js';
 import { RIVAL, RIVAL_NOTES } from '../data/rival.js';
 import { wandererFor } from '../data/wanderers.js';
 import { roadList, opensLine, goalText } from './roadView.js';
+import { BACKWATERS } from '../data/backwaters.js';
+import { rumourAt, hear, heard as heardOf, townGoals } from '../state/backwaters.js';
 
 /** The place itself: sky, the far bank, the water, and the stop drawn big. */
 function scene(venue, state, arrived) {
-  const here = venue.index === state.here.index;
+  const here = venue.index === state.here.index && !state.town;
   const art = sceneSvg({
     id: venue.key,
     landmark: venue.landmark,
@@ -103,7 +105,8 @@ function bossBlock(venue, state, after) {
 /** Seat price, stakes, and what your purse can do about them. */
 function tableBlock(venue, state, profile, go) {
   const boss = bossFor(venue.boss);
-  const here = venue.index === state.here.index;
+  // Up a backwater, the boat is at the town: the stop it left from is a trip away.
+  const here = venue.index === state.here.index && !state.town;
   const canReach = state.bankroll >= venue.stake.minBankroll;
   // A seat is paid in money, or in pearls at what they fetch here.
   const canSit = state.bankroll >= venue.entry || profile.pearls >= seatInPearls(venue.index);
@@ -155,6 +158,7 @@ function tableBlock(venue, state, profile, go) {
     );
   } else if (canReach) {
     const down = venue.index > state.here.index;
+    const back = venue.index === state.here.index;
     action = el('div.stop-actions',
       el('button.btn.primary.plank.lg', {
         onclick: () => {
@@ -165,7 +169,8 @@ function tableBlock(venue, state, profile, go) {
           // back up) the river from here to there, then ties up.
           go('home', { sail: `${from}-${venue.index}` });
         },
-      }, down ? t('Steam down to {place}', { place: t(venue.name) }) : t('Head back up to {place}', { place: t(venue.name) })),
+      }, back ? t('Back to {place}', { place: t(venue.name) })
+        : down ? t('Steam down to {place}', { place: t(venue.name) }) : t('Head back up to {place}', { place: t(venue.name) })),
       study,
     );
   } else {
@@ -252,7 +257,7 @@ function duelBlock(venue, state, profile, go) {
 }
 
 /** A face and a name, small: who is in a seat at a table in the lobby. */
-function lobbyFace(name, portrait, { rival = false, owner = false, wanderer = false } = {}) {
+export function lobbyFace(name, portrait, { rival = false, owner = false, wanderer = false } = {}) {
   return el(`span.lobby-face${rival ? '.rival' : ''}${owner ? '.owner' : ''}${wanderer ? '.wanderer' : ''}`, { title: name },
     svgNode(portraitSvg(portrait, { size: 34 }), 'lobby-portrait'),
     el('span.lobby-name', name));
@@ -316,7 +321,7 @@ function lobbyCard(table, venue, lobby, { state, profile, go }) {
  * the boat is moored, so it is the same money either way. Shut, and saying
  * how many you have, when the purse is short.
  */
-function payInPearls(profile, venue, onPay) {
+export function payInPearls(profile, venue, onPay) {
   const price = seatInPearls(venue.index);
   const short = profile.pearls < price;
   return el('button.btn.sm.ghost.pay-pearls', {
@@ -400,7 +405,7 @@ function wandererBlock(venue, profile) {
  * way a seat is.
  */
 function regattaBlock(venue, state, profile, go) {
-  if (venue.index < 1 || venue.index !== state.here.index) return null;
+  if (venue.index < 1 || venue.index !== state.here.index || state.town) return null;
   const record = profile.regattaRecord(venue.key);
   const prizes = regattaPayouts(venue.entry);
   const canEnter = state.bankroll >= venue.entry;
@@ -452,6 +457,49 @@ function roomBlock(venue, profile, go) {
     el('div.stop-actions', buyControl(profile, roomKey(venue.key), {
       go, label: t('Buy the room'), onBought: () => go('stop', { at: venue.key, bought: Date.now() }),
     })),
+  );
+}
+
+/**
+ * The backwater that leaves the river here. Before you know of it, once you
+ * have played a little at this table, the owner tells you what is up there;
+ * after, the way to it.
+ */
+function backwaterBlock(venue, profile, go) {
+  const town = BACKWATERS.find((b) => b.junction === venue.key);
+  if (!town) return null;
+  const rumour = rumourAt(profile, venue.key);
+  const boss = bossFor(venue.boss);
+  if (rumour) {
+    return el('div.panel.paper.rumour-card',
+      el('div.rumour-head',
+        svgNode(portraitSvg(boss.key, { size: 56 }), 'rumour-portrait'),
+        el('div',
+          el('div.story-kicker', icon('river', { size: 14 }), t('{name} leans over', { name: boss.short })),
+          el('p.story-text', `“${t(town.rumour)}”`),
+        ),
+      ),
+      el('div.stop-actions',
+        el('button.btn.primary.plank', {
+          onclick: () => {
+            audio.sfx('click');
+            hear(profile, town.key);
+            toast({ icon: '🗺', title: t('{place} is on your chart', { place: t(town.name) }), desc: t(town.where) });
+            go('town', { at: town.key });
+          },
+        }, icon('river', { size: 16 }), t('Mark {place} on your chart', { place: t(town.name) })),
+      ),
+    );
+  }
+  if (!heardOf(profile, town.key)) return null;
+  const done = townGoals(profile, town).filter((g) => g.done).length;
+  return el('button.panel.stop-notes.backwater-link', { onclick: () => go('town', { at: town.key }) },
+    svgNode(portraitSvg(town.local.key, { size: 48 }), 'stop-notes-face'),
+    el('span.stop-notes-text',
+      el('span.stop-notes-title', town.way === 'water' ? t('Up the creek: {place}', { place: t(town.name) }) : t('Up the wagon road: {place}', { place: t(town.name) })),
+      el('span.faint', t('{name}\'s game, at these stakes. {n} of 3 done.', { name: town.local.short, n: done })),
+    ),
+    icon('arrowRight', { size: 16, className: 'door-arrow' }),
   );
 }
 
@@ -534,7 +582,7 @@ function neighbours(venue, go) {
  * notes, folded, one tap away. The boss has had their say above; this is
  * the quieter voice.
  */
-function notesCard(report, index, go) {
+export function notesCard(report, index, go) {
   return el('button.panel.stop-notes', { onclick: () => go('report', { i: index }) },
     svgNode(portraitSvg(MENTOR.key, { size: 48 }), 'stop-notes-face'),
     el('span.stop-notes-text',
@@ -564,7 +612,7 @@ export function renderStop(ctx, params = {}) {
   // Where you are, the first time: what the place is like. Marked read as it
   // is shown, so it is told once and left on the page for this visit.
   const arrivalKey = `arrive-${venue.key}`;
-  const showArrival = venue.index === state.here.index && !after && !profile.seenScene(arrivalKey);
+  const showArrival = venue.index === state.here.index && !state.town && !after && !profile.seenScene(arrivalKey);
   if (showArrival) profile.markScene(arrivalKey);
 
   const screen = el('div.screen.stop-screen',
@@ -581,6 +629,7 @@ export function renderStop(ctx, params = {}) {
     duelBlock(venue, state, profile, go),
     roomBlock(venue, profile, go),
     regattaBlock(venue, state, profile, go),
+    backwaterBlock(venue, profile, go),
     roadBlock(venue, state, go),
     neighbours(venue, go),
   );

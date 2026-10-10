@@ -1685,7 +1685,7 @@ await step('every place is on the chart, and no sign covers another', async () =
   // chart, each takes you where it says, and on a desktop or a phone no sign
   // sits on top of another.
   const signs = () => page.evaluate(() => {
-    const plates = [...document.querySelectorAll('.river-map .map-stop, .river-map .map-place')];
+    const plates = [...document.querySelectorAll('.river-map .map-stop, .river-map .map-place, .river-map .map-town')];
     const boxes = plates.map((n) => ({ name: n.querySelector('.map-name, .map-place-name')?.textContent, r: n.getBoundingClientRect() }));
     const hits = [];
     for (let i = 0; i < boxes.length; i++) {
@@ -1710,7 +1710,8 @@ await step('every place is on the chart, and no sign covers another', async () =
     await page.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(600);
     const seen = await signs();
-    if (seen.count !== 16 || seen.places !== 8) throw new Error(`${seen.count} signs and ${seen.places} places at ${w}px, expected 16 and 8`);
+    // Eight stops, eight places, and the three towns off the river, uncharted or not.
+    if (seen.count !== 19 || seen.places !== 8) throw new Error(`${seen.count} signs and ${seen.places} places at ${w}px, expected 19 and 8`);
     if (seen.hits.length) throw new Error(`signs on top of each other at ${w}px: ${seen.hits.join(', ')}`);
     // On a phone the chart is wider than the screen; it opens on your boat.
     if (!seen.hereInView) throw new Error(`the stop you are at is scrolled out of sight at ${w}px`);
@@ -4526,6 +4527,94 @@ await step('the Gulf: past the delta, five ports on a chart of their own, their 
     if (!/✓ Correct|✗ Not quite/.test(await text('.feedback'))) throw new Error('the push-or-fold drill gave no verdict');
     if (mine.length) throw new Error(mine.join(' | '));
     console.log(`      hidden before the delta; five ports, Salt Harbour moored, the next one shut; both charts; "${q.slice(0, 60)}…"`);
+  } finally {
+    await ctx.close();
+  }
+});
+
+await step('the backwaters: uncharted until somebody tells you, then a town of its own with its own table', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const bp = await ctx.newPage();
+  const mine = [];
+  bp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  const text = (sel) => bp.evaluate((q) => { const n = document.querySelector(q); return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }, sel);
+  const KEY = 'poker-trainer.profile.v1';
+  const seed = (extra) => bp.evaluate(({ key, extra }) => localStorage.setItem(key, JSON.stringify({
+    seenPrologue: true, bankroll: 300, stakeKey: 'nl5',
+    economy: { version: 3, pearls: 0, earned: 0, spent: 0, owned: [], boat: 'rowboat', crew: [] },
+    career: { venue: 'nl5', best: 'nl5', busted: 0, staked: 0, beaten: ['nl2'], played: { nl5: 3 } },
+    settings: { lang: 'en', autoDeal: false, liveCoach: false },
+    ...extra,
+  })), { key: KEY, extra });
+  try {
+    await bp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await seed({});
+    await bp.goto(`${BASE}/?bw=1#home`, { waitUntil: 'domcontentloaded' });
+    await bp.waitForSelector('.river-map .map-town', { timeout: 8000 });
+    // Three question marks on the chart, each saying who to ask.
+    const uncharted = await bp.$$eval('.map-town.uncharted', (n) => n.map((x) => x.textContent.replace(/\s+/g, ' ').trim()));
+    if (uncharted.length !== 3 || !uncharted.some((x) => /Ask at Fisher's Rest/.test(x))) throw new Error(`the uncharted plates read ${JSON.stringify(uncharted)}`);
+    // Three hands at Fisher's Rest: Tilly has nothing to say yet.
+    await bp.goto(`${BASE}/?bw=2#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+    await bp.waitForSelector('.boss', { timeout: 5000 });
+    if (await bp.$('.rumour-card')) throw new Error('the rumour came before ten hands at Fisher\'s Rest');
+    // Ten: she leans over.
+    await seed({ career: { venue: 'nl5', best: 'nl5', busted: 0, staked: 0, beaten: ['nl2'], played: { nl5: 10 } } });
+    await bp.goto(`${BASE}/?bw=3#stop?at=nl5`, { waitUntil: 'domcontentloaded' });
+    await bp.waitForSelector('.rumour-card', { timeout: 5000 });
+    if (!/Tilly leans over/.test(await text('.rumour-card')) || !/Placer Gulch/.test(await text('.rumour-card'))) throw new Error(`the rumour reads "${await text('.rumour-card')}"`);
+    await bp.click('.rumour-card .btn.primary');
+    await bp.waitForSelector('.town-screen .town-list', { timeout: 5000 });
+    // On the chart now, with its name.
+    await bp.goto(`${BASE}/?bw=4#home`, { waitUntil: 'domcontentloaded' });
+    await bp.waitForSelector('.map-town[data-town="gulch"]:not(.uncharted)', { timeout: 5000 });
+    if (!/Placer Gulch\s*NL5/.test(await text('.map-town[data-town="gulch"]'))) throw new Error(`the Gulch's plate reads "${await text('.map-town[data-town="gulch"]')}"`);
+    if ((await bp.$$('.map-town.uncharted')).length !== 2) throw new Error('hearing of the Gulch charted the other towns too');
+    // Up the wagon road.
+    await bp.click('.map-town[data-town="gulch"]');
+    await bp.waitForSelector('.town-table', { timeout: 5000 });
+    await bp.click('.town-table .btn.primary');
+    await bp.waitForFunction(() => /Take a seat/.test(document.querySelector('.town-table')?.textContent || ''), null, { timeout: 5000 });
+    if (!/Off the river, Placer Gulch/.test(await text('#screen'))) throw new Error('arriving at the Gulch told no story');
+    // The chart says the boat is here, not at Fisher's Rest.
+    await bp.goto(`${BASE}/?bw=5#home`, { waitUntil: 'domcontentloaded' });
+    await bp.waitForSelector('.map-town.is-here', { timeout: 5000 });
+    if (await bp.$('.map-stop.is-here')) throw new Error('the chart still says you are at a stop');
+    if (!/You are moored at\s*Placer Gulch/.test(await text('.here-card'))) throw new Error(`the card reads "${await text('.here-card')}"`);
+    // Sit down: Ike in his chair, his townsfolk by name, at NL5.
+    const before = (await bp.evaluate((key) => JSON.parse(localStorage.getItem(key)), KEY)).bankroll;
+    await bp.goto(`${BASE}/?bw=6#town?at=gulch`, { waitUntil: 'domcontentloaded' });
+    await bp.waitForSelector('.town-table .btn.primary', { timeout: 5000 });
+    await bp.click('.town-table .btn.primary');
+    await bp.waitForSelector('.felt', { timeout: 8000 });
+    const head = await text('.table-head');
+    if (!/Placer Gulch/.test(head) || !/NL5/.test(head) || !/Ike's game/.test(head)) throw new Error(`the table's sign reads "${head}"`);
+    const names = await bp.$$eval('.seat .seat-name, .seat .name', (n) => n.map((x) => x.textContent.trim()));
+    if (!names.includes('Ike') || !names.includes('Dusty')) throw new Error(`the Gulch's table seats ${names.join(', ')}`);
+    const sat = await bp.evaluate((key) => JSON.parse(localStorage.getItem(key)), KEY);
+    if (Math.abs(sat.bankroll - (before - 5)) > 1e-9) throw new Error(`a seat at the Gulch cost ${before - sat.bankroll}, not the NL5 seat`);
+    if (!sat.seat || sat.seat.table !== 'gulch' || sat.seat.venue !== 'nl5') throw new Error(`the seat kept is ${JSON.stringify(sat.seat)}`);
+    // Up from it: back to the town, not to Fisher's Rest.
+    await bp.click('.table-head button:has-text("Cash out")');
+    await bp.waitForSelector('.town-screen', { timeout: 8000 });
+    // A town list that remembers the best sitting, and the trophy for all three.
+    await seed({
+      career: { venue: 'nl5', best: 'nl5', busted: 0, staked: 0, beaten: ['nl2'], played: { nl5: 10, 'town:gulch': 50 }, town: 'gulch' },
+      scenes: { 'rumour-gulch': true, 'arrive-town-gulch': true },
+      towns: { gulch: { sittings: 3, bestUp: 44, bestSound: 0.8, paid: ['hands', 'up', 'sound'] } },
+    });
+    await bp.goto(`${BASE}/?bw=7#town?at=gulch`, { waitUntil: 'domcontentloaded' });
+    await bp.waitForSelector('.town-list', { timeout: 5000 });
+    const list = await text('.town-list');
+    if (!/All three done/.test(list) || !/Given to you in Placer Gulch/.test(list) || !/Big Ike's gold nugget/.test(list)) throw new Error(`the finished list reads "${list}"`);
+    // In Dutch.
+    await bp.evaluate((key) => { const raw = JSON.parse(localStorage.getItem(key)); raw.settings.lang = 'nl'; localStorage.setItem(key, JSON.stringify(raw)); }, KEY);
+    await bp.goto(`${BASE}/?bw=8#town?at=gulch`, { waitUntil: 'domcontentloaded' });
+    await bp.waitForSelector('.town-list', { timeout: 5000 });
+    const nl = await text('#screen');
+    if (!/Goudzoekerskloof/.test(nl) || !/Wat te doen in Goudzoekerskloof/.test(nl)) throw new Error(`the Dutch town reads "${nl.slice(0, 200)}"`);
+    if (mine.length) throw new Error(mine.join(' | '));
+    console.log('      three question marks; the rumour at ten hands; the Gulch charted, reached, seated (Ike, Dusty, NL5) and left; the list done; in Dutch');
   } finally {
     await ctx.close();
   }

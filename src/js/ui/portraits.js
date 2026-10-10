@@ -196,6 +196,51 @@ const PEOPLE = {
       + '<path d="M44 29l6-3 6 3-6 3z" fill="#d4ae4f"/>',
   },
 
+  /* ---- the backwaters ---- */
+  // The prospector: a battered slouch hat, a big ginger beard, red flannel and braces, a gold tooth.
+  ike: {
+    skin: SKIN.light,
+    ground: '#6a5236',
+    body: shoulders('#a3372c')
+      + '<path d="M30 76h40M28 84h44M27 92h46" stroke="#7d261e" stroke-width="1.2"/>'
+      + '<path d="M38 71L41 100M62 71L59 100" stroke="#3b2a1c" stroke-width="3"/>',
+    face: { mouth: 'grin', brow: '#9a4a1e' },
+    front: '<path d="M34 50C33 66 41 74 50 74C59 74 67 66 66 50C62 57 57 59 50 59C43 59 38 57 34 50Z" fill="#b5602a"/>'
+      + '<path d="M44 55.5q6 5.5 12 0z" fill="#6e2a24"/><rect x="51.4" y="55.6" width="2.2" height="1.8" fill="#e2b84a"/>'
+      + '<path d="M22 35C30 31 70 31 78 35C78 39 72 41 68 39C60 36 40 36 32 39C28 41 22 39 22 35Z" fill="#5a4026"/>'
+      + '<path d="M33 35C33 22 67 22 67 35Q50 31 33 35Z" fill="#6b4c2e"/>'
+      + '<path d="M34 32Q50 28 66 32" stroke="#3b2a1c" stroke-width="2" fill="none"/>',
+  },
+  // The bayou card reader: a red tignon knotted on top, gold hoops, a purple shawl.
+  odile: {
+    skin: SKIN.deep,
+    ground: '#3d5a46',
+    body: shoulders('#5c2f6a')
+      + '<path d="M28 78Q50 90 72 78L74 86Q50 98 26 86Z" fill="#7a4488"/>'
+      + '<path d="M42 69L50 76L58 69" fill="#e9dcc6"/>',
+    hair: '<path d="M34 44C34 34 41 30 50 30C59 30 66 34 66 44C62 38 56 37 50 37C44 37 38 38 34 44Z" fill="#1a1210"/>',
+    face: { mouth: 'smirk', brow: '#1a1210', eyes: 'narrow' },
+    front: '<path d="M31 40C30 24 70 24 69 40C64 35 58 33 50 33C42 33 36 35 31 40Z" fill="#b8322a"/>'
+      + '<path d="M36 33q14-6 28 0" stroke="#e2b84a" stroke-width="1.4" fill="none" stroke-dasharray="2 2.4"/>'
+      + '<path d="M44 26C40 16 50 14 50 22C50 14 60 16 56 26C52 24 48 24 44 26Z" fill="#c8402f"/>'
+      + '<circle cx="33" cy="54" r="2.8" fill="none" stroke="#e2b84a" stroke-width="1.4"/>'
+      + '<circle cx="67" cy="54" r="2.8" fill="none" stroke="#e2b84a" stroke-width="1.4"/>',
+  },
+  // The deacon: thin and grey, wire spectacles, a black coat and white preaching bands.
+  pruitt: {
+    skin: SKIN.fair,
+    ground: '#55606a',
+    body: shoulders('#1e1f24')
+      + '<path d="M42 69L50 77L58 69" fill="#f3efe6"/>'
+      + '<path d="M47.5 76h5l1 9h-7z" fill="#f7f4ee" stroke="#c9c3b6" stroke-width=".5"/>'
+      + '<path d="M50 76v9" stroke="#c9c3b6" stroke-width=".6"/>',
+    hair: '<path d="M33 44C32 30 40 26 50 26C60 26 68 30 67 44C66 36 60 32 52 33C46 34 40 35 33 44Z" fill="#a9a59e"/>'
+      + '<path d="M52 33L46 27" stroke="#8e8a83" stroke-width="1.2"/>',
+    face: { mouth: 'stern', brow: '#8e8a83' },
+    front: '<circle cx="43.5" cy="46" r="4.2" fill="none" stroke="#b8a06a" stroke-width="1.1"/>'
+      + '<circle cx="56.5" cy="46" r="4.2" fill="none" stroke="#b8a06a" stroke-width="1.1"/>'
+      + '<path d="M47.7 46h4.6M39.3 45.5l-5-1.5M60.7 45.5l5-1.5" stroke="#b8a06a" stroke-width="1.1"/>',
+  },
   /* ---- the Gulf ---- */
   // The harbourmaster: a peaked harbour cap with a brass badge, grey side-whiskers, a navy coat.
   quint: {
