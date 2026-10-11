@@ -315,42 +315,107 @@ function pannable(chart) {
   chart.style.width = `${Math.round(WORLD.W * (scaleNow || NEAR))}px`;
   requestAnimationFrame(() => draw(scaleNow || near(), { ux: 0, uy: 0, px: 0, py: 0 }));
 
+  // Zooming as a gesture, the way a map app does it. While the fingers (or
+  // the trackpad) move, the map already drawn is only stretched and slid on
+  // the graphics card: a transform, which costs nothing. Redrawing the whole
+  // country — its trees, hills, fog and signs — at every step of a pinch is
+  // what made it lag. When the gesture ends it is drawn once, sharp, at the
+  // new size, with the same spot under the fingers.
+  let live = null;
+  /** Start a gesture: where the map is, how big, and the spot of it under the fingers. */
+  const beginGesture = (clientX, clientY) => {
+    const box = scroller.getBoundingClientRect();
+    const px = clientX - box.left;
+    const py = clientY - box.top;
+    live = {
+      s0: current(),
+      left: scroller.scrollLeft,
+      top: scroller.scrollTop,
+      // The spot under the fingers, in the map's own pixels as it is drawn now.
+      cx: scroller.scrollLeft + px,
+      cy: scroller.scrollTop + py,
+      k: 1,
+      px,
+      py,
+    };
+    chart.classList.add('gesturing');
+  };
+  /** Show the gesture: stretch by `scale`, and keep the spot under (px, py) on the window. */
+  const showGesture = (scale, px, py) => {
+    if (!live) return;
+    const k = clamp(scale) / live.s0;
+    live.k = k;
+    live.px = px;
+    live.py = py;
+    const tx = px + live.left - live.cx * k;
+    const ty = py + live.top - live.cy * k;
+    chart.style.transform = `translate(${tx}px, ${ty}px) scale(${k})`;
+  };
+  /** End it: draw the map once at its new size, the same spot under the same place. */
+  const endGesture = () => {
+    if (!live) return;
+    const { s0, k, cx, cy, px, py } = live;
+    live = null;
+    chart.style.transform = '';
+    chart.classList.remove('gesturing');
+    const width = chart.offsetWidth || 1;
+    const height = chart.offsetHeight || 1;
+    draw(s0 * k, { ux: (cx * k) / (width * k), uy: (cy * k) / (height * k), px, py });
+  };
+
+  // While the map moves — scrolled, swiped, pinched — its small animations
+  // (the boat's bob, the glow round your stop, the lighthouse) hold still, so
+  // nothing asks for the country to be painted again until it comes to rest.
+  let restTimer = 0;
+  scroller.addEventListener('scroll', () => {
+    chart.classList.add('moving');
+    clearTimeout(restTimer);
+    restTimer = setTimeout(() => chart.classList.remove('moving'), 220);
+  }, { passive: true });
+
   // Pinch with two fingers: the zoom follows the spread of them, and the map
   // follows their middle, so it can be moved and zoomed in one gesture. One
   // finger is the browser's own scroll.
   let pinch = null;
-  let frameReq = 0;
   const spread = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1;
+  const middle = (a, b) => [(a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2];
   scroller.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 2) return;
-    const [a, b] = e.touches;
-    pinch = { d: spread(a, b), s: current(), at: anchorAt((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2) };
     e.preventDefault();
+    const [a, b] = e.touches;
+    pinch = { d: spread(a, b) };
+    beginGesture(...middle(a, b));
   }, { passive: false });
   scroller.addEventListener('touchmove', (e) => {
     if (!pinch || e.touches.length !== 2) return;
     e.preventDefault();
     const [a, b] = e.touches;
     const box = scroller.getBoundingClientRect();
-    const target = pinch.s * (spread(a, b) / pinch.d);
-    const at = { ...pinch.at, px: (a.clientX + b.clientX) / 2 - box.left, py: (a.clientY + b.clientY) / 2 - box.top };
-    cancelAnimationFrame(frameReq);
-    frameReq = requestAnimationFrame(() => draw(target, at));
+    const [mx, my] = middle(a, b);
+    showGesture(live.s0 * (spread(a, b) / pinch.d), mx - box.left, my - box.top);
   }, { passive: false });
-  const endPinch = (e) => { if (e.touches.length < 2) pinch = null; };
+  const endPinch = (e) => {
+    if (!pinch || e.touches.length >= 2) return;
+    pinch = null;
+    endGesture();
+  };
   scroller.addEventListener('touchend', endPinch);
   scroller.addEventListener('touchcancel', endPinch);
   // Safari's own pinch gesture would zoom the whole page instead.
   scroller.addEventListener('gesturestart', (e) => e.preventDefault());
 
-  // A trackpad pinch, or Ctrl and the wheel: zoom round the pointer.
+  // A trackpad pinch, or Ctrl and the wheel: the same gesture, round the
+  // pointer, drawn sharp a moment after the last turn of the wheel.
+  let wheelDone = 0;
   scroller.addEventListener('wheel', (e) => {
     if (!e.ctrlKey) return;
     e.preventDefault();
-    const at = anchorAt(e.clientX, e.clientY);
-    const target = current() * Math.exp(-e.deltaY * 0.01);
-    cancelAnimationFrame(frameReq);
-    frameReq = requestAnimationFrame(() => draw(target, at));
+    const box = scroller.getBoundingClientRect();
+    if (!live) beginGesture(e.clientX, e.clientY);
+    const scale = live.s0 * live.k * Math.exp(-e.deltaY * 0.01);
+    showGesture(scale, e.clientX - box.left, e.clientY - box.top);
+    clearTimeout(wheelDone);
+    wheelDone = setTimeout(endGesture, 160);
   }, { passive: false });
 
   // Drag to move it, with a mouse. A drag is not a click on whatever it started on.

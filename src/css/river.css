@@ -4272,12 +4272,9 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .map-art .fog { pointer-events: none; }
 .map-art .fog-base { fill: var(--map-fog); opacity: 0.9; }
 .map-art .fog-puff { fill: var(--map-fog-hi); opacity: 0.45; }
-.map-art .fog-drift { animation: fog-drift 46s ease-in-out infinite alternate; }
-@keyframes fog-drift {
-  from { transform: translateX(-26px); }
-  to { transform: translateX(26px); }
-}
-@media (prefers-reduced-motion: reduce) { .map-art .fog-drift { animation: none; } }
+/* The fog lies still. A drift looked well enough, but it made the browser
+   paint the whole country again on every frame, for as long as the map was
+   on screen, and that is what a phone felt when it was pinched. */
 
 /* ================================================================
    A stop is a town: its places down one street (screenStop.js)
@@ -4407,3 +4404,11 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .town-links { display: grid; gap: var(--s-2); }
 /* One finger scrolls the map; two are the map's own pinch, not the page's zoom. */
 .map-scroller.big { touch-action: pan-x pan-y; }
+
+/* A pinch stretches the map as it is drawn, on the graphics card, and draws it
+   sharp when the fingers come up (screenRiver.js). The corner it stretches
+   from is the one the arithmetic there is done from. */
+.map-scroller.big .river-map.world { transform-origin: 0 0; }
+.map-scroller.big .river-map.world.gesturing { will-change: transform; }
+.map-scroller.big .river-map.world.gesturing *,
+.map-scroller.big .river-map.world.moving * { animation-play-state: paused !important; }
