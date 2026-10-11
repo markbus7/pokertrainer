@@ -4824,12 +4824,22 @@ await step('the map pinches: two fingers zoom it round their middle, and the pag
     const cy = box.y + box.height / 2;
     const cdp = await ctx.newCDPSession(zp);
     const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y], i) => ({ x, y, id: i })) });
+    // Mid-gesture the map is only stretched, on the graphics card, and drawn
+    // again just once when the fingers come up: redrawing it at every step was
+    // what made pinching lag.
+    const during = [];
     const pinch = async (from, to) => {
       await touch('touchStart', [[cx - from, cy], [cx + from, cy]]);
       for (let k = 1; k <= 10; k++) {
         const d = from + ((to - from) * k) / 10;
         await touch('touchMove', [[cx - d, cy], [cx + d, cy]]);
         await zp.waitForTimeout(30);
+        if (k === 5) {
+          during.push(await zp.evaluate(() => {
+            const c = document.querySelector('.map-scroller.big .river-map');
+            return { w: c.offsetWidth, stretched: /scale\(/.test(c.style.transform), gesturing: c.classList.contains('gesturing') };
+          }));
+        }
       }
       await touch('touchEnd', []);
       await zp.waitForTimeout(250);
@@ -4837,6 +4847,8 @@ await step('the map pinches: two fingers zoom it round their middle, and the pag
     const start = await seen();
     await pinch(120, 30);
     const out = await seen();
+    if (!during[0].stretched || !during[0].gesturing || during[0].w !== start.w) throw new Error(`mid-pinch the map was redrawn, not stretched: ${JSON.stringify(during[0])}`);
+    if (await zp.evaluate(() => Boolean(document.querySelector('.map-scroller.big .river-map').style.transform))) throw new Error('the stretch was left on the map after the pinch');
     if (!(out.w < start.w * 0.7)) throw new Error(`pinching in did not zoom out: ${start.w} → ${out.w}`);
     if (out.w < out.sw - 1 || out.h < out.sh - 1) throw new Error(`zoomed out past the window: ${JSON.stringify(out)}`);
     await pinch(30, 150);
