@@ -14,6 +14,7 @@ import { t, getLang } from '../i18n/index.js';
  */
 const shortfall = (have, need) => t('— {n} more hands', { n: need - have });
 import { renderFelt } from './feltView.js';
+import { positionInfo, SEAT_HINT_STOPS } from '../data/positions.js';
 import { createTable, STREETS } from '../engine/table.js';
 import { botAction, getProfile, pickOpponents, profileAt } from '../engine/bots.js';
 import { VENUES, venueFor } from '../data/venues.js';
@@ -602,6 +603,7 @@ export function renderTable(ctx, params = {}) {
   }
   const feltHost = el('div');
   const actionHost = el('div');
+  const seatHost = el('div.your-seat-host');
   // Silas's notebook, beside the table: paper, so everything he writes in it
   // takes the book's ink.
   const coachHost = el('div.coach.paper');
@@ -634,7 +636,7 @@ export function renderTable(ctx, params = {}) {
   const wrap = el(`div.table-wrap${liveCoach() ? '.with-coach' : '.free-play'}`,
     // Silas stands in the table's own column, so a short screen that puts
     // the buttons beside the felt puts him with them.
-    el('div.table-main', el('div.saloon-stage', lampNode(), feltHost), actionHost, trayHost, helpHost, liveCoach() ? null : standHost),
+    el('div.table-main', el('div.saloon-stage', lampNode(), feltHost), seatHost, actionHost, trayHost, helpHost, liveCoach() ? null : standHost),
     liveCoach() ? coachHost : null);
   // The sign over the table, built again if the language changed while the
   // table waited: everything else on it is drawn fresh each time anyway.
@@ -2382,7 +2384,20 @@ export function renderTable(ctx, params = {}) {
     return best;
   }
 
+  /** Where you are sitting this hand, by name, with what to know about it on the first stops. */
+  function drawSeat() {
+    const info = positionInfo(hero.position);
+    if (!info || hero.sittingOut) { mount(seatHost, null); return; }
+    const hint = furthestStop(profile) < SEAT_HINT_STOPS;
+    mount(seatHost, el('div.your-seat',
+      el('span.your-seat-pos', hero.position),
+      el('span.your-seat-name', t('Your seat: {seat}', { seat: t(info.name) })),
+      hint ? el('span.your-seat-hint', t(info.hint)) : null,
+    ));
+  }
+
   function drawFelt() {
+    drawSeat();
     mount(feltHost, renderFelt({
       players: table.players.map((p) => ({
         id: p.id,
@@ -2396,6 +2411,7 @@ export function renderTable(ctx, params = {}) {
         lastAction: p.lastAction,
         hole: p.hole,
         isHero: p.isHero,
+        positionName: p.isHero && positionInfo(p.position) ? t(positionInfo(p.position).name) : null,
         tag: !p.isHero && p.profile && showTags() ? getProfile(p.profile).tag : null,
         wonPot: table.handOver && p.wonThisHand > 0,
         portrait: faces[p.id] || null,

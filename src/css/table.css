@@ -816,3 +816,23 @@ input[type="range"] {
 .cat-hush { border: 0; background: none; color: var(--text-faint); font-size: 20px; line-height: 1; cursor: pointer; padding: 4px 8px; min-height: 36px; }
 .cat-hush:hover { color: var(--text); }
 .cat-memory { margin-bottom: 8px; }
+
+/* Your seat this hand, by name, under the felt. */
+.your-seat-host:empty { display: none; }
+.your-seat {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px 10px;
+  margin: 6px auto 0; max-width: 760px; text-align: center; font-size: var(--t-sm);
+}
+.your-seat-pos {
+  font-family: var(--mono); font-weight: 700; font-size: var(--t-xs); letter-spacing: 0.06em;
+  padding: 1px 8px; border-radius: 99px; background: var(--on-felt-accent); color: var(--felt-3);
+}
+.your-seat-name { font-weight: 700; color: var(--on-felt); }
+.your-seat-hint { color: var(--on-felt); opacity: 0.85; flex-basis: 100%; }
+/* On a phone there is no height to spare under the felt: the seat's name goes on your plate instead. */
+.seat-pos-long { display: none; }
+@media (max-width: 520px), (max-height: 500px) {
+  .your-seat-host { display: none; }
+  .seat.hero .seat-pos-long { display: inline; }
+  .seat.hero .seat-pos-short { display: none; }
+}
