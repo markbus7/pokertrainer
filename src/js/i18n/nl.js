@@ -6893,4 +6893,8 @@ export const NL = {
   "The best in the game, or the softest tables.": "De besten van het spel, of de zachtste tafels.",
   "Profit": "Winst",
   "You are": "Jij bent",
+  "At each stake": "Per inzet",
+  "Stake": "Inzet",
+  "Play a sitting at a cash table, and your win rate there shows here.": "Speel een sessie aan een cashtafel, en je winrate daar staat hier.",
+  "A few hundred hands at a stake says little yet: the range is wide.": "Een paar honderd handen op een inzet zegt nog weinig: de marge is groot.",
 };

@@ -4450,3 +4450,10 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
   .wr-table th:last-child, .wr-table td:last-child { display: none; }
 }
 .wr-wrap { overflow-x: auto; }
+.wr-stakes { margin-top: var(--s-4); }
+.wr-stakes h3 { margin: 0 0 var(--s-2); }
+.wr-band-tag { margin-left: 8px; font-size: var(--t-xs); color: var(--ink-dim); }
+@media (max-width: 520px) {
+  .wr-by-stake th:last-child, .wr-by-stake td:last-child { display: table-cell; }
+  .wr-band-tag { display: block; margin-left: 0; }
+}

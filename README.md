@@ -120,6 +120,8 @@ regular** (+3 to +6) and **Pro** (+6 to +10) to **Elite** (+10 and up). The
 page shows the range your true rate is likely in, which narrows as the hands
 come, and what each kind of player makes per 1,000 and 10,000 hands at your
 stake.
+Under it, your win rate at each stake you have played: hands, bb a hundred,
+profit, and the group each stake's rate falls in.
 
 A snag is a spot before the flop you went wrong in at a real table: the same
 hand, in the same seat, with the same thing in front of you (first in, a
@@ -533,7 +535,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.6.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.6.1`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, assert, equal, close } from './harness.js';
-import { WINRATE_BANDS, BAND_TYPICAL, bandFor, confidence, cashProfit, expectedProfit, scaleAt, SCALE } from '../src/js/state/winrate.js';
+import { WINRATE_BANDS, BAND_TYPICAL, bandFor, confidence, cashProfit, expectedProfit, scaleAt, SCALE, byStake } from '../src/js/state/winrate.js';
 import { NL } from '../src/js/i18n/nl.js';
 
 describe('winrate', () => {
@@ -50,5 +50,23 @@ describe('winrate', () => {
       assert(NL[b.name], `no Dutch for ${b.name}`);
       assert(NL[b.note], `no Dutch for ${b.note}`);
     }
+  });
+});
+
+describe('winrate by stake', () => {
+  it('adds up each stake, lowest first, without practice', () => {
+    const rows = byStake([
+      { hands: 500, profitBb: 40, stake: 'nl25' },
+      { hands: 500, profitBb: -10, stake: 'nl25' },
+      { hands: 200, profitBb: -20, stake: 'nl5' },
+      { hands: 100, profitBb: 99, stake: 'practice' },
+      { hands: 0, profitBb: 5, stake: 'nl10' },
+    ]);
+    equal(rows.map((r) => r.stake.key).join(), 'nl5,nl25');
+    equal(rows[1].hands, 1000);
+    close(rows[1].rate, 3, 1e-9);
+    equal(rows[1].band.key, 'regular');
+    close(rows[1].money, 7.5, 1e-9);
+    equal(rows[0].band.key, 'beginner');
   });
 });

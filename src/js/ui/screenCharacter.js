@@ -39,7 +39,7 @@ import { RANK_CHARS, RANK_PLURALS, RANK_NAMES } from '../core/cards.js';
 import { VENUES } from '../data/venues.js';
 import { purseWorth } from '../state/economy.js';
 import { stakeFor } from '../state/stats.js';
-import { WINRATE_BANDS, BAND_TYPICAL, SCALE, bandFor, confidence, cashProfit, expectedProfit, scaleAt } from '../state/winrate.js';
+import { WINRATE_BANDS, BAND_TYPICAL, SCALE, bandFor, confidence, cashProfit, expectedProfit, scaleAt, byStake } from '../state/winrate.js';
 import { openSnags, SNAG_CLEAR, SNAG_PEARLS, SEAT_WORDS, FACING_WORDS } from '../state/snags.js';
 import { PROFILES, WANDERER_PROFILES } from '../engine/bots.js';
 import { RIVAL } from '../data/rival.js';
@@ -680,6 +680,32 @@ function winratePanel(profile, me) {
       )) : null,
     )),
     el('p.faint', t('The money columns use a typical rate for each kind of player.')),
+    stakesTable(profile.data.sessions),
+  );
+}
+
+/** Your win rate at each stake you have played, and the band each is in. */
+function stakesTable(sessions) {
+  const rows = byStake(sessions);
+  return el('div.wr-stakes',
+    el('h3', t('At each stake')),
+    rows.length
+      ? el('div.wr-wrap', el('table.wr-table.wr-by-stake',
+        el('thead', el('tr',
+          el('th', t('Stake')),
+          el('th', t('Hands')),
+          el('th', t('Win rate')),
+          el('th', t('Profit')),
+        )),
+        el('tbody', rows.map((r) => el('tr',
+          el('td', r.stake.name, el('span.wr-band-tag', t(r.band.name))),
+          el('td', fmt.chips(r.hands)),
+          el('td', t('{rate} bb/100', { rate: signed(r.rate) })),
+          el('td', signedMoney(r.money)),
+        ))),
+      ))
+      : el('p.faint', t('Play a sitting at a cash table, and your win rate there shows here.')),
+    rows.some((r) => r.hands < 1000) ? el('p.faint', t('A few hundred hands at a stake says little yet: the range is wide.')) : null,
   );
 }
 

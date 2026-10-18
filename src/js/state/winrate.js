@@ -62,3 +62,26 @@ export const expectedProfit = (rate, hands, stakeKey) => Math.round((rate * hand
 
 /** Where on the scale a win rate sits, 0–100%, clamped to the ends. */
 export const scaleAt = (rate) => Math.max(0, Math.min(100, ((rate - SCALE.lo) / (SCALE.hi - SCALE.lo)) * 100));
+
+/**
+ * Your win rate at each stake you have played for money, lowest stake first:
+ * hands, big blinds, bb a hundred, the band it is in, and the money. From the
+ * sittings the save keeps (the last 200); the practice table is left out.
+ */
+export function byStake(sessions) {
+  const rows = new Map();
+  for (const s of Array.isArray(sessions) ? sessions : []) {
+    if (!s || s.stake === 'practice' || !Number.isFinite(s.profitBb) || !Number.isFinite(s.hands) || s.hands <= 0) continue;
+    const stake = stakeFor(s.stake);
+    const row = rows.get(stake.key) || { stake, hands: 0, bb: 0 };
+    row.hands += s.hands;
+    row.bb += s.profitBb;
+    rows.set(stake.key, row);
+  }
+  return [...rows.values()]
+    .sort((a, b) => a.stake.bb - b.stake.bb)
+    .map((r) => {
+      const rate = (r.bb / r.hands) * 100;
+      return { ...r, bb: Math.round(r.bb * 10) / 10, rate, band: bandFor(rate), money: Math.round(r.bb * r.stake.bb * 100) / 100 };
+    });
+}
