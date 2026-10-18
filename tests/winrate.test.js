@@ -5,7 +5,7 @@
  */
 
 import { describe, it, assert, equal, close } from './harness.js';
-import { WINRATE_BANDS, BAND_TYPICAL, bandFor, confidence, cashProfit, expectedProfit, scaleAt, SCALE, byStake } from '../src/js/state/winrate.js';
+import { WINRATE_BANDS, BAND_TYPICAL, bandFor, confidence, cashProfit, expectedProfit, scaleAt, SCALE, byStake, bySession } from '../src/js/state/winrate.js';
 import { NL } from '../src/js/i18n/nl.js';
 
 describe('winrate', () => {
@@ -68,5 +68,22 @@ describe('winrate by stake', () => {
     equal(rows[1].band.key, 'regular');
     close(rows[1].money, 7.5, 1e-9);
     equal(rows[0].band.key, 'beginner');
+  });
+});
+
+describe('winrate by session', () => {
+  it('counts sittings ahead, the average, the best and the worst in money', () => {
+    const s = bySession([
+      { hands: 100, profitBb: 50, stake: 'nl10' },
+      { hands: 100, profitBb: -30, stake: 'nl100' },
+      { hands: 200, profitBb: 20, stake: 'nl100' },
+      { hands: 50, profitBb: 999, stake: 'practice' },
+    ]);
+    equal(s.count, 3);
+    equal(s.up, 2);
+    close(s.avgMoney, (5 - 30 + 20) / 3, 1e-9);
+    equal(s.best.bb, 20);
+    equal(s.worst.bb, -30);
+    equal(bySession([]), null);
   });
 });

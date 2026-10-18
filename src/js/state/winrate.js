@@ -85,3 +85,29 @@ export function byStake(sessions) {
       return { ...r, bb: Math.round(r.bb * 10) / 10, rate, band: bandFor(rate), money: Math.round(r.bb * r.stake.bb * 100) / 100 };
     });
 }
+
+/**
+ * Your sittings at the cash tables, one by one: how many, how often you got
+ * up ahead, the average, and the best and the worst, in big blinds and in
+ * money at the stake each was played at. Practice is left out, and so is a
+ * sitting with no hands dealt.
+ */
+export function bySession(sessions) {
+  const rows = (Array.isArray(sessions) ? sessions : [])
+    .filter((s) => s && s.stake !== 'practice' && Number.isFinite(s.profitBb) && Number.isFinite(s.hands) && s.hands > 0)
+    .map((s) => ({ hands: s.hands, bb: s.profitBb, money: s.profitBb * stakeFor(s.stake).bb, stake: stakeFor(s.stake) }));
+  if (!rows.length) return null;
+  const by = (f) => rows.reduce((a, b) => (f(b) > f(a) ? b : a));
+  const up = rows.filter((r) => r.bb > 0).length;
+  const sum = (f) => rows.reduce((n, r) => n + f(r), 0);
+  return {
+    count: rows.length,
+    up,
+    upShare: up / rows.length,
+    avgBb: sum((r) => r.bb) / rows.length,
+    avgMoney: sum((r) => r.money) / rows.length,
+    avgHands: sum((r) => r.hands) / rows.length,
+    best: by((r) => r.money),
+    worst: by((r) => -r.money),
+  };
+}

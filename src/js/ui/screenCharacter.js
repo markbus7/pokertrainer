@@ -39,7 +39,7 @@ import { RANK_CHARS, RANK_PLURALS, RANK_NAMES } from '../core/cards.js';
 import { VENUES } from '../data/venues.js';
 import { purseWorth } from '../state/economy.js';
 import { stakeFor } from '../state/stats.js';
-import { WINRATE_BANDS, BAND_TYPICAL, SCALE, bandFor, confidence, cashProfit, expectedProfit, scaleAt, byStake } from '../state/winrate.js';
+import { WINRATE_BANDS, BAND_TYPICAL, SCALE, bandFor, confidence, cashProfit, expectedProfit, scaleAt, byStake, bySession } from '../state/winrate.js';
 import { openSnags, SNAG_CLEAR, SNAG_PEARLS, SEAT_WORDS, FACING_WORDS } from '../state/snags.js';
 import { PROFILES, WANDERER_PROFILES } from '../engine/bots.js';
 import { RIVAL } from '../data/rival.js';
@@ -680,7 +680,25 @@ function winratePanel(profile, me) {
       )) : null,
     )),
     el('p.faint', t('The money columns use a typical rate for each kind of player.')),
+    sessionsBlock(profile.data.sessions),
     stakesTable(profile.data.sessions),
+  );
+}
+
+/** Your sittings: how often you get up ahead, the average, the best and the worst. */
+function sessionsBlock(sessions) {
+  const s = bySession(sessions);
+  if (!s) return null;
+  const one = (r) => t('{money} ({bb} bb, {n} hands at {stake})', { money: signedMoney(r.money), bb: signed(r.bb), n: fmt.chips(r.hands), stake: r.stake.name });
+  return el('div.wr-sessions',
+    el('h3', t('Per session')),
+    el('div.grid.cols-3.char-plaques',
+      plaque('Sessions ahead', pct(s.upShare), t('{n} of {total} sessions', { n: fmt.chips(s.up), total: fmt.chips(s.count) })),
+      plaque('Average session', signedMoney(s.avgMoney), t('{bb} bb over {n} hands', { bb: signed(s.avgBb), n: Math.round(s.avgHands) })),
+      plaque('Best and worst', signedMoney(s.best.money), t('worst {money}', { money: signedMoney(s.worst.money) })),
+    ),
+    el('p.faint', t('Best: {best}. Worst: {worst}.', { best: one(s.best), worst: one(s.worst) })),
+    el('p.faint', t('Even a winning player gets up behind in a lot of sessions: four in ten is normal. Judge yourself on the win rate over many hands, not on one night.')),
   );
 }
 

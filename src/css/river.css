@@ -4457,3 +4457,5 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
   .wr-by-stake th:last-child, .wr-by-stake td:last-child { display: table-cell; }
   .wr-band-tag { display: block; margin-left: 0; }
 }
+.wr-sessions { margin-top: var(--s-4); }
+.wr-sessions h3 { margin: 0 0 var(--s-2); }
