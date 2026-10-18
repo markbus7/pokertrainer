@@ -22,6 +22,7 @@ const modules = [
   './character.test.js',
   './guide.test.js',
   './snags.test.js',
+  './winrate.test.js',
   './gulf.test.js',
   './backwaters.test.js',
   './townJobs.test.js',

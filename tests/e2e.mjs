@@ -3771,6 +3771,40 @@ await step('a duel with the owner of a table: the blinds climb, it ends, the sta
   }
 });
 
+await step('your win rate: the bands from beginner to elite, where you are, and what each makes at your stake', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 380, height: 800 } });
+  const cp = await ctx.newPage();
+  const errors = [];
+  cp.on('pageerror', (e) => errors.push(e.message));
+  try {
+    await cp.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    await cp.evaluate(() => {
+      const k = 'poker-trainer.profile.v1';
+      const raw = JSON.parse(localStorage.getItem(k) || '{}');
+      raw.lifetime = { ...(raw.lifetime || {}), cash: { hands: 4200, netBb: 189 } };
+      raw.sessions = [{ hands: 4000, profitBb: 189, stake: 'nl25', endedAt: 1 }, { hands: 200, profitBb: 500, stake: 'practice', endedAt: 2 }];
+      raw.stakeKey = 'nl25';
+      localStorage.setItem(k, JSON.stringify(raw));
+    });
+    await cp.goto(`${BASE}/#character`, { waitUntil: 'domcontentloaded' });
+    await cp.reload({ waitUntil: 'domcontentloaded' });
+    await cp.waitForSelector('.char-winrate .wr-mark', { timeout: 5000 });
+    const got = await cp.evaluate(() => ({
+      text: document.querySelector('.char-winrate').textContent,
+      you: document.querySelector('.wr-table tbody tr.is-you td').textContent,
+      wide: document.documentElement.scrollWidth - innerWidth,
+    }));
+    if (!got.text.includes('+4.5 bb/100')) throw new Error('no +4.5 bb/100 on the panel');
+    if (!got.text.includes('+$47.25')) throw new Error('the profit is not the nl25 sitting alone');
+    if (!/Strong regular/.test(got.you)) throw new Error(`your row is ${got.you}`);
+    if (!got.text.includes('NL25')) throw new Error('the table is not at your stake');
+    if (got.wide > 1) throw new Error(`the panel is ${got.wide}px wider than a phone`);
+    if (errors.length) throw new Error(errors.join(' | '));
+  } finally {
+    await ctx.close();
+  }
+});
+
 await step('your character: the hands you play make the player you are, and the look is yours', async () => {
   // A player of their own, from nothing: one hand at the free table goes into
   // the career; the Character screen draws the figure, says it is too soon to

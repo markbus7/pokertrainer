@@ -1,0 +1,54 @@
+/**
+ * Your win rate against the bands: which band a rate is in, the range around
+ * it narrowing with the hands, profit in money at the stake each sitting was
+ * played at (the practice table left out), and all of it in Dutch.
+ */
+
+import { describe, it, assert, equal, close } from './harness.js';
+import { WINRATE_BANDS, BAND_TYPICAL, bandFor, confidence, cashProfit, expectedProfit, scaleAt, SCALE } from '../src/js/state/winrate.js';
+import { NL } from '../src/js/i18n/nl.js';
+
+describe('winrate', () => {
+  it('puts each rate in one band, from beginner to elite', () => {
+    equal(bandFor(-4).key, 'beginner');
+    equal(bandFor(0).key, 'intermediate');
+    equal(bandFor(2.9).key, 'intermediate');
+    equal(bandFor(3).key, 'regular');
+    equal(bandFor(7).key, 'pro');
+    equal(bandFor(25).key, 'elite');
+    for (const b of WINRATE_BANDS) equal(bandFor(BAND_TYPICAL[b.key]).key, b.key, b.key);
+  });
+  it('narrows the range as the hands come', () => {
+    const few = confidence(5, 1000);
+    const many = confidence(5, 100000);
+    assert(few.half > many.half * 9, 'a hundred times the hands, a tenth the range');
+    close(many.half, 1.96 * 90 / Math.sqrt(1000), 1e-9);
+    equal(confidence(5, 0), null);
+  });
+  it('counts profit at each sitting\'s stake and leaves out practice', () => {
+    const p = cashProfit([
+      { hands: 100, profitBb: 50, stake: 'nl10' },
+      { hands: 200, profitBb: -20, stake: 'nl100' },
+      { hands: 300, profitBb: 999, stake: 'practice' },
+      null,
+    ]);
+    close(p.money, 50 * 0.1 - 20, 1e-9);
+    equal(p.bb, 30);
+    equal(p.hands, 300);
+  });
+  it('says what a rate makes at a stake', () => {
+    equal(expectedProfit(5, 1000, 'nl100'), 50);
+    equal(expectedProfit(-5, 10000, 'nl10'), -50);
+  });
+  it('keeps the mark on the scale', () => {
+    equal(scaleAt(-100), 0);
+    equal(scaleAt(100), 100);
+    close(scaleAt(0), (-SCALE.lo / (SCALE.hi - SCALE.lo)) * 100, 1e-9);
+  });
+  it('is all in Dutch', () => {
+    for (const b of WINRATE_BANDS) {
+      assert(NL[b.name], `no Dutch for ${b.name}`);
+      assert(NL[b.note], `no Dutch for ${b.note}`);
+    }
+  });
+});

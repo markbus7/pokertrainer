@@ -4412,3 +4412,41 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .map-scroller.big .river-map.world.gesturing { will-change: transform; }
 .map-scroller.big .river-map.world.gesturing *,
 .map-scroller.big .river-map.world.moving * { animation-play-state: paused !important; }
+
+/* Your win rate: the bands from beginner to elite, and where you are. */
+.wr-scale { margin: var(--s-4) 0 var(--s-2); padding: 0 6px; }
+.wr-track { position: relative; height: 18px; border-radius: 99px; background: var(--paper-2); border: 1px solid var(--ink-rule); }
+.wr-band { position: absolute; top: 0; bottom: 0; opacity: 0.6; }
+.wr-band + .wr-band { border-left: 2px solid var(--paper); }
+.wr-beginner { background: var(--ink-red); opacity: 0.35; border-radius: 99px 0 0 99px; }
+.wr-intermediate { background: var(--char-s1); }
+.wr-regular { background: var(--char-s2); }
+.wr-pro { background: var(--char-s3); }
+.wr-elite { background: var(--char-s4); border-radius: 0 99px 99px 0; }
+.wr-band.is-you { opacity: 0.95; }
+.wr-range { position: absolute; top: 5px; height: 6px; border-radius: 99px; background: var(--char-you); opacity: 0.35; }
+.wr-mark {
+  position: absolute; top: 50%; width: 18px; height: 18px; transform: translate(-50%, -50%);
+  border-radius: 50%; background: var(--char-you); border: 2px solid var(--paper); box-shadow: 0 0 0 1px var(--char-you);
+}
+.wr-ticks, .wr-names { position: relative; height: 1.4em; font-size: var(--t-xs); }
+.wr-tick, .wr-name { position: absolute; transform: translateX(-50%); white-space: nowrap; color: var(--ink-dim); }
+.wr-tick { font-family: var(--mono); margin-top: 2px; }
+.wr-name { font-weight: 700; }
+.wr-name.is-you { color: var(--ink); }
+.wr-table { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+.wr-table th, .wr-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--ink-rule); }
+.wr-table th + th, .wr-table td + td { text-align: right; font-family: var(--mono); }
+.wr-table th { font-weight: 700; color: var(--ink-dim); }
+.wr-table tr.is-you td { font-weight: 700; background: var(--paper-2); }
+.wr-you { margin-left: 6px; font-size: var(--t-xs); color: var(--char-you); }
+.wr-sure { margin: 0 0 var(--s-3); }
+@media (max-width: 520px) {
+  .wr-names .wr-name { font-size: 10px; }
+  .wr-name.wr-name:nth-child(even) { top: 1.2em; }
+  .wr-names { height: 2.6em; }
+  .wr-table th, .wr-table td { padding: 5px 4px; }
+  .wr-table td + td { white-space: nowrap; }
+  .wr-table th:last-child, .wr-table td:last-child { display: none; }
+}
+.wr-wrap { overflow-x: auto; }

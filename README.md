@@ -112,6 +112,15 @@ chart for your seat with your hand ringed — and that is help like any other.
 
 ### ⚓ Your snags
 
+Your character page also says where your win rate stands. It shows your bb a
+hundred hands at the cash tables and your profit in money (each sitting counted
+at the stake it was played at, with the practice table left out). Both sit on a
+scale from **Beginner** (below 0) through **Intermediate** (0 to +3), **Strong
+regular** (+3 to +6) and **Pro** (+6 to +10) to **Elite** (+10 and up). The
+page shows the range your true rate is likely in, which narrows as the hands
+come, and what each kind of player makes per 1,000 and 10,000 hands at your
+stake.
+
 A snag is a spot before the flop you went wrong in at a real table: the same
 hand, in the same seat, with the same thing in front of you (first in, a
 raise, a limp). Your character page lists them, the most often first, with
@@ -524,7 +533,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.5.2`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.6.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is
