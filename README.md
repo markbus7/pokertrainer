@@ -112,6 +112,11 @@ chart for your seat with your hand ringed — and that is help like any other.
 
 ### ⚓ Your snags
 
+At the table, the line under the felt names your seat each hand: "Your seat:
+Under the gun", "Your seat: Button". On the first three stops of the river it
+also says the one thing to know about playing from there. On a phone, where
+there is no room under the felt, the full name goes on your name plate instead.
+
 Your character page also says where your win rate stands. It shows your bb a
 hundred hands at the cash tables and your profit in money (each sitting counted
 at the stake it was played at, with the practice table left out). Both sit on a
@@ -537,7 +542,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.6.2`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.7.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

@@ -174,6 +174,10 @@ await step('table deals and plays', async () => {
   console.log(`      ${seats} seats, hero holds ${cards} cards`);
   if (seats !== 6) throw new Error(`expected 6 seats, got ${seats}`);
   if (cards !== 2) throw new Error(`expected 2 hole cards, got ${cards}`);
+  // Your seat by name under the felt, and what to know about it on the first stops.
+  const seatLine = await page.textContent('.your-seat');
+  const heroPos = await page.textContent('.seat.hero .seat-pos-short');
+  if (!seatLine.includes(heroPos) || !/Your seat: .+\. |Your seat: \w/.test(seatLine) || !(await page.$('.your-seat-hint'))) throw new Error(`the seat line reads ${seatLine}`);
   // The coach names the skill and repeats the felt. It must not do the sum
   // for you before you have decided — "your equity 41%" in green next to
   // "needed 30%" is the answer written out.
@@ -1339,7 +1343,7 @@ await step('the chart is reachable at the table, without leaving it', async () =
 
   // The chart has to be the one for the seat you are in, not a fixed one.
   const caption = await textOf('.reference-drawer .chart-caption');
-  const seat = (await textOf('.seat.hero .seat-pos')).trim();
+  const seat = (await textOf('.seat.hero .seat-pos-short')).trim();
   // The seat plate says BTN; the caption says Button. Same seat, different
   // register — the first version of this check compared them directly and
   // failed on a chart that was perfectly correct.

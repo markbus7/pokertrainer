@@ -105,7 +105,7 @@ export function renderFelt(state) {
           p.name,
         ),
         el('div.seat-stack', p.sittingOut ? 'sitting out' : fmt.chips(p.stack)),
-        el('div.seat-pos', p.position),
+        el('div.seat-pos', p.position && p.isHero && p.positionName ? [el('span.seat-pos-long', p.positionName), el('span.seat-pos-short', p.position)] : p.position),
         // What they carry: pearls for whoever knocks them out.
         p.bounty > 0 ? el('div.seat-bounty', { title: t('{n} pearls for knocking {name} out', { n: p.bounty, name: p.name }) }, pearl(12), String(p.bounty)) : null,
       ),
