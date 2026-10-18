@@ -38,6 +38,8 @@ import { describeScore, CAT_NAMES } from '../core/evaluator.js';
 import { RANK_CHARS, RANK_PLURALS, RANK_NAMES } from '../core/cards.js';
 import { VENUES } from '../data/venues.js';
 import { purseWorth } from '../state/economy.js';
+import { stakeFor } from '../state/stats.js';
+import { WINRATE_BANDS, BAND_TYPICAL, SCALE, bandFor, confidence, cashProfit, expectedProfit, scaleAt } from '../state/winrate.js';
 import { openSnags, SNAG_CLEAR, SNAG_PEARLS, SEAT_WORDS, FACING_WORDS } from '../state/snags.js';
 import { PROFILES, WANDERER_PROFILES } from '../engine/bots.js';
 import { RIVAL } from '../data/rival.js';
@@ -65,6 +67,7 @@ export function renderCharacter(ctx) {
     typePanel(me, go),
     numbersPanel(me),
     resultsPanel(me),
+    winratePanel(profile, me),
     moneyPanel(me),
     snagsPanel(profile, go),
     sizesPanel(me),
@@ -598,6 +601,88 @@ function resultsPanel(me) {
   );
 }
 
+/* ---- your win rate ------------------------------------------------------- */
+
+const signed = (x, digits = 1) => `${x >= 0 ? '+' : '-'}${Math.abs(x).toFixed(digits)}`;
+const signedMoney = (x) => `${x >= 0 ? '+' : '-'}${fmt.money(Math.abs(x))}`;
+
+/**
+ * Where you stand: your bb a hundred and your profit at the cash tables, on
+ * a scale from a beginner to the elite, with the range the number is still
+ * likely to move in, and what each kind of player makes at your stake.
+ */
+function winratePanel(profile, me) {
+  const cash = me.cash;
+  const profit = cashProfit(profile.data.sessions);
+  const stake = stakeFor(profile.data.stakeKey);
+  const rate = cash.hands ? (cash.netBb / cash.hands) * 100 : null;
+  const ready = cash.winRate !== null;
+  const band = ready ? bandFor(cash.winRate) : null;
+  const range = ready ? confidence(cash.winRate, cash.hands) : null;
+  const span = SCALE.hi - SCALE.lo;
+  const ticks = [-10, 0, 3, 6, 10, 20];
+
+  return el('section.panel.paper.char-winrate',
+    el('div.panel-title', el('h2', t('Your win rate'))),
+    el('p.muted', t('What players make at six-handed cash tables, in big blinds a hundred hands (bb/100), and where you are.')),
+    el('div.grid.cols-3.char-plaques',
+      plaque('Win rate', rate === null ? '—' : t('{rate} bb/100', { rate: signed(rate) }),
+        ready ? t('over {n} cash hands', { n: fmt.chips(cash.hands) }) : t('{n} more cash hands for a win rate', { n: LIFE_SAMPLE.winRate - cash.hands })),
+      plaque('Profit', profit.hands ? signedMoney(profit.money) : '—', t('{bb} bb at the cash tables', { bb: signed(cash.netBb) })),
+      plaque('You are', band ? t(band.name) : '—', band ? t(band.note) : t('Not enough hands to say yet')),
+    ),
+    el('div.wr-scale', { role: 'img', 'aria-label': ready
+      ? t('Your win rate, {rate} bb/100, is in the {band} band', { rate: signed(cash.winRate), band: t(band.name) })
+      : t('The win rate bands, from beginner to elite') },
+      el('div.wr-track',
+        WINRATE_BANDS.map((b) => {
+          const from = Math.max(SCALE.lo, b.from);
+          const to = Math.min(SCALE.hi, b.to);
+          return el(`div.wr-band.wr-${b.key}${band === b ? '.is-you' : ''}`, {
+            style: { left: `${((from - SCALE.lo) / span) * 100}%`, width: `${((to - from) / span) * 100}%` },
+          });
+        }),
+        range ? el('div.wr-range', {
+          style: { left: `${scaleAt(range.lo)}%`, width: `${scaleAt(range.hi) - scaleAt(range.lo)}%` },
+        }) : null,
+        ready ? el('div.wr-mark', { style: { left: `${scaleAt(cash.winRate)}%` } }) : null,
+      ),
+      el('div.wr-ticks', ticks.map((v) => el('span.wr-tick', { style: { left: `${scaleAt(v)}%` } }, v > 0 ? `+${v}` : String(v)))),
+      el('div.wr-names', WINRATE_BANDS.map((b) => {
+        const from = Math.max(SCALE.lo, b.from);
+        const to = Math.min(SCALE.hi, b.to);
+        return el(`span.wr-name${band === b ? '.is-you' : ''}`, { style: { left: `${((from + to) / 2 - SCALE.lo) / span * 100}%` } }, t(b.name));
+      })),
+    ),
+    range
+      ? el('p.faint.wr-sure', t('Over {n} hands your true win rate is likely between {lo} and {hi} bb/100. Poker swings: it takes tens of thousands of hands to know.', {
+        n: fmt.chips(cash.hands), lo: signed(range.lo), hi: signed(range.hi),
+      }))
+      : null,
+    el('div.wr-wrap', el('table.wr-table',
+      el('thead', el('tr',
+        el('th', t('Player')),
+        el('th', t('Win rate')),
+        el('th', t('Per 1,000 hands at {stake}', { stake: stake.name })),
+        el('th', t('Per 10,000 hands')),
+      )),
+      el('tbody', WINRATE_BANDS.map((b) => el(`tr${band === b ? '.is-you' : ''}`,
+        el('td', t(b.name), band === b ? el('span.wr-you', t('you')) : null),
+        el('td', b.to === Infinity ? t('{n} and up', { n: `+${b.from}` }) : b.from === -Infinity ? t('below {n}', { n: b.to }) : `${b.from ? '+' : ''}${b.from} – +${b.to}`),
+        el('td', signedMoney(expectedProfit(BAND_TYPICAL[b.key], 1000, stake.key))),
+        el('td', signedMoney(expectedProfit(BAND_TYPICAL[b.key], 10000, stake.key))),
+      ))),
+      ready ? el('tfoot', el('tr.is-you',
+        el('td', t('You, at your rate')),
+        el('td', t('{rate} bb/100', { rate: signed(cash.winRate) })),
+        el('td', signedMoney(expectedProfit(cash.winRate, 1000, stake.key))),
+        el('td', signedMoney(expectedProfit(cash.winRate, 10000, stake.key))),
+      )) : null,
+    )),
+    el('p.faint', t('The money columns use a typical rate for each kind of player.')),
+  );
+}
+
 /* ---- your hands -------------------------------------------------------- */
 
 const RANK_ORDER = [...RANK_CHARS].reverse();
@@ -964,6 +1049,7 @@ const SECTIONS_NAV = [
   ['char-sizes', 'Bet sizes'],
   ['char-hands', 'Your hands'],
   ['char-results', 'Results'],
+  ['char-winrate', 'Your win rate'],
   ['char-river', 'On the river'],
 ];
 function pageNav() {
