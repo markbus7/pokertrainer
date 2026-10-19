@@ -89,6 +89,13 @@ card (**Bet sizes**), the Log grades the size of a hand you replay, and your
 character page keeps the habit: how often each kind of bet and raise is the
 right size, and which way the rest miss.
 
+The reference drawer (with Silas at your shoulder) shuts at the end of every
+hand, so looking at the chart is a choice you make each time; a switch in the
+drawer, **Keep it open between hands**, leaves it up instead. Every decision
+before the flop notes whether the chart was in front of you, and the range
+ladder lists the hands you look up most, with how the ones you played without
+it went: the more often you reach for it, the less sure of that hand you are.
+
 At the end of a session it produces a **leak report** from your own stats —
 VPIP, PFR, aggression factor, WTSD — naming what you are doing wrong and what
 to do instead.
@@ -547,7 +554,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.8.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.9.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is
