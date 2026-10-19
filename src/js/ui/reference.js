@@ -28,6 +28,20 @@ import { SIZE_SHEET } from '../core/sizing.js';
 
 const seatName = (seat) => (POSITION_INFO[seat] ? POSITION_INFO[seat].name : seat);
 
+/** The heading a spot's chart goes under, so a list of spots reads the same as the charts do. */
+export function spotTitle({ seat, raiser = null }) {
+  if (!raiser) return t('Opening range — {seat}', { seat: t(seatName(seat)) });
+  if (seat === 'BB') return t('Big blind against a {seat} open', { seat: t(seatName(raiser)) });
+  return t('Facing a raise — {seat}', { seat: t(seatName(seat)) });
+}
+
+/** One spot as a key, and back: `CO` for an open, `BB:CO` for the big blind against a cutoff raise. */
+export const spotKey = ({ seat, raiser = null }) => (raiser ? `${seat}:${raiser}` : seat);
+export function spotFromKey(key) {
+  const [seat, raiser = null] = key.split(':');
+  return { seat, raiser };
+}
+
 /**
  * The 13x13 grid for one spot, shaded, with a hand ringed if you name one.
  *
@@ -37,22 +51,19 @@ const seatName = (seat) => (POSITION_INFO[seat] ? POSITION_INFO[seat].name : sea
  */
 export function rangeGridFor({ seat, raiser = null, hand = null, caption = true }) {
   let member = () => '';
-  let title = '';
+  const title = spotTitle({ seat, raiser });
 
   if (!raiser) {
     const range = CHARTS.rfi[seat] || CHARTS.rfi.BTN;
     member = (key) => (range.has(key) ? 'in' : '');
-    title = t('Opening range — {seat}', { seat: t(seatName(seat)) });
   } else if (seat === 'BB') {
     const defend = CHARTS.bbDefend[raiser] || CHARTS.bbDefend.CO;
     const three = CHARTS.threeBet.BB;
     member = (key) => (three.all.has(key) ? 'value' : defend.has(key) ? 'in' : '');
-    title = t('Big blind against a {seat} open', { seat: t(seatName(raiser)) });
   } else {
     const three = CHARTS.threeBet[seat] || CHARTS.threeBet.CO;
     const call = CHARTS.callVsRaise[seat] || CHARTS.callVsRaise.CO;
     member = (key) => (three.value.has(key) ? 'value' : three.bluff.has(key) ? 'bluff' : call.has(key) ? 'in' : '');
-    title = t('Facing a raise — {seat}', { seat: t(seatName(seat)) });
   }
 
   // What the shading means. Without this the grid is four colours and a

@@ -3837,6 +3837,14 @@ export const NL = {
   'Close': 'Sluiten',
   'Yours to look at. It costs you nothing — the range trainer is where it gets taken away on purpose.':
     'Kijk gerust. Het kost je niets — in de rangetrainer wordt hij er juist expres afgehaald.',
+  'Keep it open between hands': 'Open laten tussen handen',
+  'Hands you look up': 'Handen die je opzoekt',
+  'Preflop at the table, the hands you had the chart open for most often. The more you look one up, the less sure of it you are.':
+    'Preflop aan tafel: de handen waarbij je het vaakst de chart open had. Hoe vaker je er een opzoekt, hoe minder zeker je ervan bent.',
+  'looked up once': 'één keer opgezocht',
+  'looked up {n} times': '{n} keer opgezocht',
+  'without it: {right} of {tried} right': 'zonder chart: {right} van {tried} goed',
+  'not played without it yet': 'nog niet zonder chart gespeeld',
   'Raise': 'Raise',
   '3-bet for value': '3-bet voor value',
   '3-bet as a bluff': '3-bet als bluf',

@@ -156,3 +156,52 @@ describe('reference: the question says which seat you are in', () => {
     assert(unnamed > 0, 'every question claims to know your seat, which cannot be right');
   });
 });
+
+describe('reference: the table drawer shuts between hands', () => {
+  const memory = () => {
+    const m = new Map();
+    return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) };
+  };
+
+  it('closes on a new hand by default, and stays only when asked to', async () => {
+    const { Profile } = await import('../src/js/state/profile.js');
+    const p = new Profile({}, memory());
+    equal(p.settings.keepReference, false, 'a new profile shuts the drawer every hand');
+    const old = new Profile({ settings: { sound: false } }, memory());
+    equal(old.settings.keepReference, false, 'a save from before the setting gets the default');
+    const src = read('ui/screenTable.js');
+    assert(/function closeReference\(\)\s*\{\s*if \(!profile\.settings\.keepReference\) session\.sheet = null;/.test(src),
+      'a new hand does not shut the drawer');
+    assert((src.match(/closeReference\(\);/g) || []).length >= 2,
+      'both ways of dealing a hand should shut the drawer');
+  });
+
+  it('keeps an account of which hands the chart was open for', async () => {
+    const { Profile } = await import('../src/js/state/profile.js');
+    const p = new Profile({}, memory());
+    p.recordChartLookup('CO', 'A9o', { looked: true, correct: true });
+    p.recordChartLookup('CO', 'A9o', { looked: true, correct: true });
+    p.recordChartLookup('CO', 'A9o', { looked: false, correct: false });
+    p.recordChartLookup('CO', 'A9o', { looked: false, correct: true });
+    p.recordChartLookup('BB:CO', 'K7s', { looked: true, correct: true });
+    p.recordChartLookup('UTG', 'AA', { looked: false, correct: true });
+    const rows = p.chartLookupRows();
+    equal(rows.length, 2, 'a hand never looked up is not on the list');
+    equal(rows[0].hand, 'A9o', 'most looked-up first');
+    equal(rows[0].looked, 2);
+    equal(rows[0].aloneTried, 2, 'only the decisions without the chart are judged');
+    equal(rows[0].aloneRight, 1);
+    equal(rows[1].spot, 'BB:CO');
+    equal(rows[1].aloneTried, 0, 'looked up and never played alone is not yet known');
+  });
+
+  it('names a spot the same way the chart does', async () => {
+    const { spotKey, spotFromKey, spotTitle } = await import('../src/js/ui/reference.js');
+    for (const spot of [{ seat: 'CO', raiser: null }, { seat: 'BB', raiser: 'BTN' }, { seat: 'HJ', raiser: 'UTG' }]) {
+      const back = spotFromKey(spotKey(spot));
+      equal(back.seat, spot.seat);
+      equal(back.raiser, spot.raiser);
+      assert(spotTitle(back).length > 0);
+    }
+  });
+});

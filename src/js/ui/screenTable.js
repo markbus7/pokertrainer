@@ -5,7 +5,7 @@
 
 import { el, mount, toast, fmt } from './dom.js';
 import { icon } from './icons.js';
-import { rangeGridFor, priceSheet, sizeSheet } from './reference.js';
+import { rangeGridFor, priceSheet, sizeSheet, spotKey } from './reference.js';
 import { t, getLang } from '../i18n/index.js';
 
 /**
@@ -103,12 +103,24 @@ const HERO_ID = 'hero';
  * What it shows follows the spot rather than making you pick: preflop it opens
  * on the chart for the seat you are actually in, and once there is a board the
  * chart has nothing left to say, so it opens on the price.
+ *
+ * Free is not the same as left up, though. The reader's own call: "it might be
+ * annoying but then it does not make it too easy to just keep it open to peak
+ * for every hand". So it shuts at the end of each hand unless the setting in
+ * the drawer says to keep it open, and every preflop decision made while the
+ * chart was on screen is noted against that hand (see recordChartLookup).
  */
-function referenceDrawer(session, hero, table, draw) {
-  const preflop = table.street === 'preflop';
+function chartSpot(table, hero) {
   const facing = table.currentBet > table.bigBlind && table.lastAggressor && table.lastAggressor !== hero;
-  const seat = hero.position || 'BTN';
-  const raiser = facing && table.lastAggressor ? table.lastAggressor.position : null;
+  return {
+    seat: hero.position || 'BTN',
+    raiser: facing && table.lastAggressor ? table.lastAggressor.position : null,
+  };
+}
+
+function referenceDrawer(session, profile, hero, table, draw) {
+  const preflop = table.street === 'preflop';
+  const { seat, raiser } = chartSpot(table, hero);
   const mine = hero.hole.length === 2 ? handKey(hero.hole) : null;
 
   const tabs = [
@@ -125,6 +137,9 @@ function referenceDrawer(session, hero, table, draw) {
   }
 
   const open = tabs.some((tab) => tab.key === session.sheet) ? session.sheet : tabs[0].key;
+  // On screen during your turn is looked at: the drawer is only drawn then.
+  if (open === 'chart') session.chartSeen = true;
+  const keep = Boolean(profile.settings.keepReference);
   return el('div.reference-drawer',
     el('div.reference-head',
       el('div.reference-tabs', tabs.map((tab) => el(`button.reference-tab${tab.key === open ? '.active' : ''}`, {
@@ -143,6 +158,12 @@ function referenceDrawer(session, hero, table, draw) {
       : open === 'sizes' ? sizeSheet() : priceSheet(),
     el('div.faint', t('Yours to look at. It costs you nothing — the range trainer is where it '
       + 'gets taken away on purpose.')),
+    el(`button.reference-keep${keep ? '.on' : ''}`, {
+      role: 'switch',
+      'aria-checked': keep ? 'true' : 'false',
+      onclick: () => { profile.updateSettings({ keepReference: !keep }); draw(); },
+    }, el('span.reference-keep-box', { 'aria-hidden': 'true' }, keep ? '✓' : ''),
+    t('Keep it open between hands')),
   );
 }
 
@@ -498,9 +519,11 @@ export function renderTable(ctx, params = {}) {
     // Set when the reader asks the coach to do the sum for them. Reset every
     // decision, so asking once does not silence the coach for the whole hand.
     peeked: false,
-    // The reference drawer: which tab, and whether it is open. It survives
-    // the hand so it can be left up the way a chart on your desk would be.
+    // The reference drawer: which tab, and whether it is open. It shuts when
+    // a new hand is dealt, unless the keepReference setting leaves it up.
     sheet: null,
+    // Whether the chart was on screen for the decision being made now.
+    chartSeen: false,
     // A lesson is a fixed run of spots with a report at the end, not an
     // endless table: without a last hand there is no moment where anyone
     // says how it went.
@@ -876,6 +899,12 @@ export function renderTable(ctx, params = {}) {
     if (regatta && !bubble && session.dealt === 1 && bossId) say(bossId, t(boss.hello), 5200);
   }
 
+  /** A new hand: the drawer shuts unless you asked for it to stay. */
+  function closeReference() {
+    if (!profile.settings.keepReference) session.sheet = null;
+    session.chartSeen = false;
+  }
+
   function startHand() {
     if (session.cancelled) return;
     stopCountdown();
@@ -905,6 +934,7 @@ export function renderTable(ctx, params = {}) {
     session.snapshot = null;
     session.readAsked = {};
     session.peeked = false;
+    closeReference();
     session.savedHand = null;
     session.aggressor = {};
     session.opener = null;
@@ -1017,6 +1047,7 @@ export function renderTable(ctx, params = {}) {
     session.verdict = null;
     session.snapshot = null;
     session.readAsked = {};
+    closeReference();
     session.savedHand = null;
     session.aggressor = {};
     session.opener = null;
@@ -1310,6 +1341,12 @@ export function renderTable(ctx, params = {}) {
       recordSpot(session.run, verdict);
       if (runComplete(session.run)) finishRun();
     }
+    if (table.street === 'preflop' && hero.hole.length === 2) {
+      profile.recordChartLookup(spotKey(chartSpot(table, hero)), handKey(hero.hole),
+        { looked: session.chartSeen, correct: said.level !== 'bad' });
+    }
+    // The next decision is looked at, or not, on its own.
+    session.chartSeen = false;
     if (action.type === 'bet' || action.type === 'raise') session.aggressor[table.street] = HERO_ID;
     stats.recordDecision({ kind: action.type, verdict: said.level, street: table.street });
     stats.recordAction(table.street, action.type, { facingRaise: snap.toCall > table.bigBlind });
@@ -2321,6 +2358,8 @@ export function renderTable(ctx, params = {}) {
   function drawHelp() {
     if (!session.helpOpen || !isHeroTurn() || !session.snapshot) return mount(helpHost);
     const snap = session.snapshot;
+    // The cat sits on the chart before the flop: asking her is looking it up.
+    if (table.street === 'preflop' && crewAboard(profile).some((c) => c.key === 'cat')) session.chartSeen = true;
     const spot = lesson && lesson.coachNote ? { id: params.lesson, why: lesson.coachNote } : conceptOf(snap);
     return mount(helpHost, helpDrawer({
       owned: crewAboard(profile),
@@ -2940,7 +2979,7 @@ export function renderTable(ctx, params = {}) {
               : el('button.btn.sm.ghost.block', { style: { marginTop: '10px' },
                 onclick: () => { session.peeked = true; draw(); } },
               t('I am stuck — show me the numbers')),
-            referenceDrawer(session, hero, table, draw),
+            referenceDrawer(session, profile, hero, table, draw),
           )
         : el('div.faint', table.handOver ? 'Hand complete. Review below, then deal again.' : 'Waiting for your turn…'),
 

@@ -19,7 +19,7 @@ import {
 } from '../data/rangeLadder.js';
 import { rangeQuestion, rangeQuestionForHand, edgePoolFor } from '../trainers/rangeTrainer.js';
 import { makeRng, randInt } from '../core/rng.js';
-import { rangeGridFor } from './reference.js';
+import { rangeGridFor, spotTitle, spotFromKey } from './reference.js';
 import { seatFelt } from './spotFelt.js';
 import { seatRing } from '../core/seatMap.js';
 import { cardRow } from './cardView.js';
@@ -191,8 +191,37 @@ export function renderRangeLadder(ctx) {
             el('button.btn.primary', { onclick: () => go('ranges-weak') }, t('Practise them')),
           )
           : null,
+        lookupsNote(profile),
       ),
     ),
+  );
+}
+
+/**
+ * The hands you open the chart for at the table.
+ *
+ * The table never takes the chart away, so this is the only place the
+ * difference shows between a hand you know and a hand you look up: the more
+ * often you reach for it, the less sure you are, and the decisions made
+ * without it say whether that is still true.
+ */
+function lookupsNote(profile) {
+  const rows = profile.chartLookupRows(8);
+  if (!rows.length) return null;
+  return el('div.panel.note-card.paper.pinned.lookups-note',
+    el('div.panel-title', el('h3', icon('charts', { size: 18 }), t('Hands you look up'))),
+    el('p.muted', t('Preflop at the table, the hands you had the chart open for most often. '
+      + 'The more you look one up, the less sure of it you are.')),
+    el('ul.lookup-list', rows.map((row) => el('li.lookup-row',
+      el('span.lookup-hand', row.hand),
+      el('span.lookup-spot', spotTitle(spotFromKey(row.spot))),
+      el('span.faint.lookup-count', row.looked === 1
+        ? t('looked up once')
+        : t('looked up {n} times', { n: row.looked })),
+      el('span.faint.lookup-alone', row.aloneTried
+        ? t('without it: {right} of {tried} right', { right: row.aloneRight, tried: row.aloneTried })
+        : t('not played without it yet')),
+    ))),
   );
 }
 

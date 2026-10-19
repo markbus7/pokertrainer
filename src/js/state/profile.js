@@ -243,7 +243,14 @@ const emptyProfile = () => ({
     liveCoach: false,
     // The next hand dealt for you at a real table. On unless switched off.
     autoDeal: true,
+    // The reference drawer at the table shuts at the end of every hand, so
+    // looking is something you choose each time rather than a chart left up
+    // beside every decision. On, it stays open until you close it.
+    keepReference: false,
   },
+  // Preflop decisions at the table, by spot and hand: how often the chart
+  // was open for it, and how the ones made without it went.
+  chartLookups: {},
 });
 
 /** localStorage in the browser, a plain object under test. */
@@ -979,6 +986,48 @@ export class Profile {
       }
     }
     rows.sort((a, b) => b.wrongShare - a.wrongShare || a.attempts - b.attempts);
+    return rows.slice(0, limit);
+  }
+
+  /**
+   * Record one preflop decision at the table, and whether the chart was open
+   * for it.
+   *
+   * The table charges nothing for the chart, so it never marks a decision
+   * down for using it. But a hand you look up every time is a hand you do
+   * not know yet, and one you keep getting right without looking is one you
+   * do — which is worth knowing even when nothing is taken away. Only the
+   * decisions made without the chart go in the window, for the same reason
+   * recordRangeHand holds itself to unaided answers.
+   */
+  recordChartLookup(spot, hand, { looked, correct }) {
+    if (!this.data.chartLookups) this.data.chartLookups = {};
+    const key = `${spot}|${hand}`;
+    const entry = this.data.chartLookups[key] || { looked: 0, alone: '' };
+    this.data.chartLookups[key] = looked
+      ? { ...entry, looked: entry.looked + 1 }
+      : { ...entry, alone: (entry.alone + (correct ? '1' : '0')).slice(-RANGE_HAND_WINDOW) };
+    this.save();
+  }
+
+  /**
+   * The hands you reach for the chart on, most looked-up first, each with how
+   * the decisions you made on your own have gone lately. A hand only looked
+   * up and never played alone has `alone.length === 0`: not known to be
+   * known yet.
+   */
+  chartLookupRows(limit = 12) {
+    const rows = Object.entries(this.data.chartLookups || {})
+      .filter(([, e]) => e.looked > 0)
+      .map(([key, e]) => {
+        const [spot, hand] = key.split('|');
+        return {
+          spot, hand, looked: e.looked,
+          aloneRight: [...e.alone].filter((c) => c === '1').length,
+          aloneTried: e.alone.length,
+        };
+      });
+    rows.sort((a, b) => b.looked - a.looked || a.aloneRight - b.aloneRight);
     return rows.slice(0, limit);
   }
 
