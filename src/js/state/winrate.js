@@ -111,3 +111,27 @@ export function bySession(sessions) {
     worst: by((r) => -r.money),
   };
 }
+
+/**
+ * Your results as a running total, sitting by sitting in the order they were
+ * played: hands so far, and what you are up or down in big blinds and in
+ * money. Starts at nothing. Big blinds is the line for how well you play (a
+ * hand at NL5 counts as much as one at NL100); money is the line for your purse,
+ * where the higher stakes weigh more, as they do on it.
+ */
+export function graphPoints(sessions) {
+  const rows = (Array.isArray(sessions) ? sessions : [])
+    .filter((s) => s && s.stake !== 'practice' && Number.isFinite(s.profitBb) && Number.isFinite(s.hands) && s.hands > 0)
+    .slice()
+    .sort((a, b) => (a.endedAt || 0) - (b.endedAt || 0));
+  const points = [{ hands: 0, bb: 0, money: 0, stake: rows.length ? stakeFor(rows[0].stake) : null, session: null }];
+  let hands = 0; let bb = 0; let money = 0;
+  for (const s of rows) {
+    const stake = stakeFor(s.stake);
+    hands += s.hands;
+    bb += s.profitBb;
+    money += s.profitBb * stake.bb;
+    points.push({ hands, bb: Math.round(bb * 10) / 10, money: Math.round(money * 100) / 100, stake, session: { hands: s.hands, bb: s.profitBb, money: s.profitBb * stake.bb } });
+  }
+  return points;
+}

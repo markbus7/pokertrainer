@@ -3802,6 +3802,7 @@ await step('your win rate: the bands from beginner to elite, where you are, and 
     if (!got.text.includes('+$47.25')) throw new Error('the profit is not the nl25 sitting alone');
     if (!/Strong regular/.test(got.you)) throw new Error(`your row is ${got.you}`);
     if (!got.text.includes('NL25')) throw new Error('the table is not at your stake');
+    if (!/Play two sessions/.test(await cp.locator('.wr-graph').textContent())) throw new Error('one cash sitting drew a line');
     if (!/1 of 1 sessions/.test(await cp.locator('.wr-sessions').textContent())) throw new Error('the session count is not one cash sitting');
     if (await cp.locator('.wr-by-stake tbody tr').count() !== 1) throw new Error('the practice table counted as a stake');
     if (got.wide > 1) throw new Error(`the panel is ${got.wide}px wider than a phone`);

@@ -39,7 +39,7 @@ import { RANK_CHARS, RANK_PLURALS, RANK_NAMES } from '../core/cards.js';
 import { VENUES } from '../data/venues.js';
 import { purseWorth } from '../state/economy.js';
 import { stakeFor } from '../state/stats.js';
-import { WINRATE_BANDS, BAND_TYPICAL, SCALE, bandFor, confidence, cashProfit, expectedProfit, scaleAt, byStake, bySession } from '../state/winrate.js';
+import { WINRATE_BANDS, BAND_TYPICAL, SCALE, bandFor, confidence, cashProfit, expectedProfit, scaleAt, byStake, bySession, graphPoints } from '../state/winrate.js';
 import { openSnags, SNAG_CLEAR, SNAG_PEARLS, SEAT_WORDS, FACING_WORDS } from '../state/snags.js';
 import { PROFILES, WANDERER_PROFILES } from '../engine/bots.js';
 import { RIVAL } from '../data/rival.js';
@@ -680,10 +680,119 @@ function winratePanel(profile, me) {
       )) : null,
     )),
     el('p.faint', t('The money columns use a typical rate for each kind of player.')),
+    graphBlock(profile.data.sessions),
     sessionsBlock(profile.data.sessions),
     stakesTable(profile.data.sessions),
   );
 }
+
+/**
+ * Your results as a line over the hands, sitting by sitting: in big blinds,
+ * which is how well you play whatever the stake, or in money, where the higher
+ * stakes weigh more. A dashed line marks each move to another stake; hover or
+ * touch the chart for the sitting under your finger.
+ */
+function graphBlock(sessions) {
+  const points = graphPoints(sessions);
+  if (points.length < 3) {
+    return el('div.wr-graph',
+      el('h3', t('Your results over time')),
+      el('p.faint', t('Play two sessions at a cash table and your line starts here.')));
+  }
+  let unit = 'bb';
+  const W = 600;
+  const H = 220;
+  const host = el('div.wr-graph-host');
+  const tip = el('div.wr-tip', { hidden: true });
+  const total = points[points.length - 1].hands;
+  const x = (hands) => (hands / total) * W;
+
+  function draw() {
+    const val = (p) => (unit === 'bb' ? p.bb : p.money);
+    const vals = points.map(val);
+    let lo = Math.min(0, ...vals);
+    let hi = Math.max(0, ...vals);
+    if (hi - lo < 1e-9) { hi += 1; lo -= 1; }
+    const pad = (hi - lo) * 0.08;
+    lo -= pad; hi += pad;
+    const y = (v) => H - ((v - lo) / (hi - lo)) * H;
+    const line = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.hands).toFixed(1)},${y(val(p)).toFixed(1)}`).join(' ');
+    const area = `${line} L${W},${y(0).toFixed(1)} L0,${y(0).toFixed(1)} Z`;
+    const moves = points.slice(2)
+      .map((p, k) => ({ p, before: points[k + 1] }))
+      .filter(({ p, before }) => p.stake !== before.stake)
+      .map(({ p, before }) => ({ at: before.hands, stake: p.stake }));
+    const labels = [{ at: 0, stake: points[1].stake }, ...moves];
+    const svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="wr-svg" aria-hidden="true">
+      <path d="${area}" class="wr-area"/>
+      <line x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" class="wr-zero"/>
+      ${moves.map((m) => `<line x1="${x(m.at).toFixed(1)}" x2="${x(m.at).toFixed(1)}" y1="0" y2="${H}" class="wr-move"/>`).join('')}
+      <path d="${line}" class="wr-line"/>
+    </svg>`;
+    const fmtV = (v) => (unit === 'bb' ? t('{n} bb', { n: signed(v) }) : signedMoney(v));
+    const last = points[points.length - 1];
+    mount(host,
+      el('div.wr-plot',
+        svgNode(svg, 'wr-svg-wrap'),
+        el('span.wr-y.wr-y-hi', fmtV(hi - pad)),
+        el('span.wr-y.wr-y-lo', fmtV(lo + pad)),
+        labels.map((m) => el(`span.wr-move-label${m.at ? '' : '.first'}`, { style: { left: `${(m.at / total) * 100}%` } }, m.stake.name)),
+        el('span.wr-dot', { style: { left: `${(last.hands / total) * 100}%`, top: `${(y(val(last)) / H) * 100}%` } }),
+        tip,
+      ),
+      el('div.wr-x', el('span', '0'), el('span', t('{n} hands', { n: fmt.chips(total) }))),
+    );
+    const plot = host.querySelector('.wr-plot');
+    const show = (ev) => {
+      const r = plot.getBoundingClientRect();
+      const at = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * total;
+      let p = points[1];
+      for (const q of points.slice(1)) if (Math.abs(q.hands - at) < Math.abs(p.hands - at)) p = q;
+      const i = points.indexOf(p);
+      tip.hidden = false;
+      mount(tip,
+        el('div.wr-tip-head', t('Session {n} of {total}', { n: i, total: points.length - 1 }), ' · ', p.stake.name),
+        el('div', t('This session: {v} over {n} hands', { v: unit === 'bb' ? t('{n} bb', { n: signed(p.session.bb) }) : signedMoney(p.session.money), n: fmt.chips(p.session.hands) })),
+        el('div', t('Total: {v} after {n} hands', { v: fmtV(val(p)), n: fmt.chips(p.hands) })),
+      );
+      const left = (p.hands / total) * 100;
+      tip.style.left = `${Math.min(70, Math.max(0, left - 15))}%`;
+      const at100 = (y(val(p)) / H) * 100;
+      tip.style.top = at100 > 50 ? '' : `${at100 + 6}%`;
+      tip.style.bottom = at100 > 50 ? `${100 - at100 + 6}%` : '';
+    };
+    plot.addEventListener('pointermove', show);
+    plot.addEventListener('pointerdown', show);
+    plot.addEventListener('pointerleave', () => { tip.hidden = true; });
+  }
+
+  const toggle = el('div.wr-units', { role: 'group', 'aria-label': t('Show the line in') },
+    [['bb', 'Big blinds'], ['money', 'Money']].map(([key, label]) => el(`button.btn.sm${key === unit ? '.primary' : '.ghost'}`, {
+      type: 'button',
+      'aria-pressed': key === unit ? 'true' : 'false',
+      dataset: { unit: key },
+      onclick: (ev) => {
+        unit = key;
+        for (const b of toggle.querySelectorAll('button')) {
+          const on = b.dataset.unit === unit;
+          b.classList.toggle('primary', on);
+          b.classList.toggle('ghost', !on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+        explain.textContent = t(unit === 'bb' ? WHY_BB : WHY_MONEY);
+        draw();
+      },
+    }, t(label))));
+  const explain = el('p.faint.wr-why', t(WHY_BB));
+  draw();
+  return el('div.wr-graph',
+    el('div.wr-graph-head', el('h3', t('Your results over time')), toggle),
+    explain,
+    host,
+  );
+}
+const WHY_BB = 'In big blinds: how well you play. A hand at NL5 counts as much as one at NL100, so the line shows whether you are getting better.';
+const WHY_MONEY = 'In money: your purse. A hand at a higher stake moves it more, so a few hundred hands up the river can outweigh a thousand at the start.';
 
 /** Your sittings: how often you get up ahead, the average, the best and the worst. */
 function sessionsBlock(sessions) {
