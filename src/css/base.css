@@ -1927,6 +1927,21 @@ h1 > .icon, h2 > .icon, h3 > .icon { color: var(--gold); }
   padding: 0 4px;
 }
 .reference-close:hover { color: var(--text); }
+.reference-keep {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: var(--s-2); padding: 2px 0;
+  background: none; border: 0; cursor: pointer;
+  font: inherit; font-size: var(--t-xs); color: var(--text-dim);
+}
+.reference-keep:hover, .reference-keep.on { color: var(--text); }
+.reference-keep:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.reference-keep-box {
+  display: inline-grid; place-items: center;
+  width: 14px; height: 14px; flex: none;
+  border: 1px solid var(--border); border-radius: 3px;
+  font-size: 10px; line-height: 1;
+}
+.reference-keep.on .reference-keep-box { background: var(--accent); border-color: var(--accent); color: var(--bg); }
 /* The grid has to shrink to fit a side panel without losing the shape. */
 .reference-drawer .range-grid { font-size: 9px; }
 .reference-drawer .range-cell { padding: 0; min-height: 18px; }

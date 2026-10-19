@@ -4490,3 +4490,13 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
   .wr-plot { height: 180px; }
   .wr-tip { min-width: 55%; }
 }
+
+/* The hands you open the chart for at the table, on the range ladder. */
+.lookups-note .panel-title h3 { color: var(--ink); }
+.lookup-list { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: grid; gap: 6px; }
+.lookup-row {
+  display: grid; grid-template-columns: 3.2em 1fr; column-gap: var(--s-2);
+  font-size: var(--t-sm);
+}
+.lookup-hand { grid-row: span 3; font-family: "IBM Plex Mono", ui-monospace, monospace; font-weight: 600; }
+.lookup-count, .lookup-alone { font-size: var(--t-xs); }
