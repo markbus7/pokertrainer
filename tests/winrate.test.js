@@ -5,7 +5,7 @@
  */
 
 import { describe, it, assert, equal, close } from './harness.js';
-import { WINRATE_BANDS, BAND_TYPICAL, bandFor, confidence, cashProfit, expectedProfit, scaleAt, SCALE, byStake, bySession } from '../src/js/state/winrate.js';
+import { WINRATE_BANDS, BAND_TYPICAL, bandFor, confidence, cashProfit, expectedProfit, scaleAt, SCALE, byStake, bySession, graphPoints } from '../src/js/state/winrate.js';
 import { NL } from '../src/js/i18n/nl.js';
 
 describe('winrate', () => {
@@ -85,5 +85,23 @@ describe('winrate by session', () => {
     equal(s.best.bb, 20);
     equal(s.worst.bb, -30);
     equal(bySession([]), null);
+  });
+});
+
+describe('winrate graph', () => {
+  it('runs the totals in the order played, from nothing, without practice', () => {
+    const pts = graphPoints([
+      { hands: 100, profitBb: -10, stake: 'nl100', endedAt: 3 },
+      { hands: 1000, profitBb: 50, stake: 'nl5', endedAt: 1 },
+      { hands: 50, profitBb: 99, stake: 'practice', endedAt: 2 },
+    ]);
+    equal(pts.length, 3);
+    equal(pts[0].hands, 0);
+    equal(pts[1].stake.key, 'nl5');
+    equal(pts[2].hands, 1100);
+    equal(pts[2].bb, 40);
+    // In money the hundred hands at NL100 outweigh the thousand at NL5.
+    close(pts[2].money, 50 * 0.05 - 10, 1e-9);
+    assert(pts[2].money < 0 && pts[2].bb > 0);
   });
 });

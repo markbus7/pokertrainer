@@ -129,6 +129,11 @@ Under it, your win rate at each stake you have played: hands, bb a hundred,
 profit, and the group each stake's rate falls in.
 And per session: how often you get up from the table ahead, your average
 session, and your best and worst.
+A chart draws your results as a running total over the hands, with a dashed
+line at each move to a new stake. Switch it between **big blinds** and
+**money**. In big blinds a hand counts the same at every stake, so the line
+shows whether you are playing better. In money the higher stakes weigh more,
+just as they do in your purse.
 
 A snag is a spot before the flop you went wrong in at a real table: the same
 hand, in the same seat, with the same thing in front of you (first in, a
@@ -542,7 +547,7 @@ tools/                  dev server, hand-strength generator
 Everything is vanilla ES modules. There is no framework and nothing to install.
 
 Which build you are running is written under the ♠ in the top bar of every
-screen (for example `v4.7.0`), and the Ledger and the Cabin page carry it too,
+screen (for example `v4.8.0`), and the Ledger and the Cabin page carry it too,
 with the build date and an update check. The number is stamped from
 `package.json` by `npm run stamp`, so bump the version there, stamp, and the
 screen follows. If it is older than the release you expect, the browser is

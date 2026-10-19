@@ -4459,3 +4459,34 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 }
 .wr-sessions { margin-top: var(--s-4); }
 .wr-sessions h3 { margin: 0 0 var(--s-2); }
+
+/* Your results over time: one line, in big blinds or in money. */
+.wr-graph { margin-top: var(--s-4); }
+.wr-graph-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.wr-graph-head h3 { margin: 0; }
+.wr-units { display: flex; gap: 6px; }
+.wr-why { margin: var(--s-2) 0; }
+.wr-plot { position: relative; height: 220px; margin: 0 10px 0 4px; border-left: 1px solid var(--ink-rule); border-bottom: 1px solid var(--ink-rule); touch-action: pan-y; cursor: crosshair; }
+.wr-svg-wrap, .wr-svg { display: block; width: 100%; height: 100%; }
+.wr-line { fill: none; stroke: var(--char-you); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.wr-area { fill: var(--char-you); opacity: 0.08; }
+.wr-zero { stroke: var(--ink-dim); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.wr-move { stroke: var(--ink-rule); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.wr-y { position: absolute; left: 4px; padding: 0 3px; background: var(--paper); border-radius: 3px; opacity: 0.9; font-family: var(--mono); font-size: var(--t-xs); color: var(--ink-dim); white-space: nowrap; }
+.wr-y-hi { top: 4%; transform: translateY(-50%); }
+.wr-y-lo { bottom: 4%; transform: translateY(50%); }
+.wr-move-label { position: absolute; top: 2px; transform: translateX(4px); font-family: var(--mono); font-size: var(--t-xs); color: var(--ink-dim); }
+.wr-move-label.first { transform: translateX(4px); top: auto; bottom: calc(4% + 1.4em); }
+.wr-dot { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--char-you); border: 2px solid var(--paper); transform: translate(-50%, -50%); pointer-events: none; }
+.wr-x { display: flex; justify-content: space-between; margin: 0 10px 0 4px; font-family: var(--mono); font-size: var(--t-xs); color: var(--ink-dim); }
+.wr-tip[hidden] { display: none; }
+.wr-tip {
+  position: absolute; z-index: 2; min-width: 30%; padding: 6px 10px; pointer-events: none;
+  background: var(--paper); border: 1px solid var(--ink-rule); border-radius: 6px; font-size: var(--t-xs);
+}
+.wr-tip-head { font-weight: 700; }
+@media (max-width: 520px) {
+  .wr-move-label { font-size: 10px; }
+  .wr-plot { height: 180px; }
+  .wr-tip { min-width: 55%; }
+}
