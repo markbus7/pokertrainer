@@ -443,6 +443,16 @@ export function removeHand(id) {
 
 export function clearHands() { writeHands([]); }
 
+/** Change one kept hand in place. @returns {object|null} the hand as stored, or null if it is gone */
+export function updateHand(id, change) {
+  const hands = loadHands();
+  const i = hands.findIndex((h) => h.id === id);
+  if (i < 0) return null;
+  hands[i] = change(hands[i]);
+  writeHands(hands);
+  return hands[i];
+}
+
 export function findHand(id) {
   return loadHands().find((h) => h.id === id) || null;
 }

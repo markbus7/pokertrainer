@@ -26,12 +26,14 @@ import {
   recentHands, findHand, removeHand, clearHands, handSummary,
   frameAt, frameCount, reviewOf, MISTAKE_CAP, COOLER_BB,
 } from '../state/handHistory.js';
+import { retryOf, gradeRetry, retryQueue, isFixed, noteRetry } from '../state/retry.js';
 import { MENTOR } from '../data/characters.js';
 import { roomSign, silasSays, lampNode } from './place.js';
 
 const SOURCES = { play: 'Table', grind: 'Bankroll', lab: 'Lab' };
 
 export function renderReview(ctx, params = {}) {
+  if (params.retry) return renderRetry(ctx, params.retry);
   return params.hand ? renderOneHand(ctx, params.hand) : renderList(ctx);
 }
 
@@ -43,6 +45,7 @@ function renderList(ctx) {
   const { go } = ctx;
   const hands = recentHands();
   const summary = handSummary();
+  const toRetry = retryQueue().length;
   // Removing a hand re-renders the whole screen rather than patching the
   // list: the header counts the same hands the rows show, and redrawing only
   // one of them is how those two quietly drift apart.
@@ -79,6 +82,13 @@ function renderList(ctx) {
             el('div.stat', el('div.label', 'Coolers'), el('div.value', String(summary.coolers))),
           )
         : null,
+      toRetry
+        ? el('div.notice.log-retry', { style: { marginTop: '14px' } },
+            el('div', richText(t('**Play them again.** {n} of your mistakes dealt again as they stood when you '
+              + 'acted, without the answer. Get one right and it is marked fixed.', { n: toRetry }))),
+            el('button.btn.sm.primary', { style: { marginTop: '8px' }, onclick: () => go('review', { retry: 'all' }) },
+              t('Play {n} again', { n: toRetry })))
+        : null,
       hands.length
         ? el('div.stack-sm.log-entries', hands.map((hand) => handCard(hand, go, refresh)))
         : el('div.notice.log-empty', t(
@@ -109,6 +119,7 @@ function handCard(hand, go, redraw) {
   },
     el('div.hand-card-head',
       el('span.badge' + (cooler ? '' : '.red'), cooler ? 'Cooler' : 'Mistake'),
+      isFixed(hand) ? el('span.badge.green', 'Fixed') : null,
       el('span.hand-card-title', review.headline),
       el('span.faint.hand-card-when', `${t(SOURCES[hand.source] || hand.source)} · ${whenText(hand.at)}`),
     ),
@@ -236,7 +247,12 @@ function renderOneHand(ctx, id) {
             ].filter(Boolean).join(' · ')),
           ),
         ),
-        el('button.btn.sm.ghost', { onclick: () => go('review') }, 'All hands'),
+        el('div.row',
+          retryOf(hand)
+            ? el('button.btn.sm', { onclick: () => go('review', { retry: hand.id }) }, 'Try it again')
+            : null,
+          el('button.btn.sm.ghost', { onclick: () => go('review') }, 'All hands'),
+        ),
       ),
     ),
     el('div.panel.replay-panel.saloon-stage', lampNode(), feltHost, transport),
@@ -250,6 +266,157 @@ function renderOneHand(ctx, id) {
     ),
   );
 }
+
+/* ------------------------------------------------------------------ *
+ * Playing a mistake again
+ * ------------------------------------------------------------------ */
+
+/**
+ * The spot you went wrong in, dealt again without the answer. `which` is a
+ * hand's id, or 'all' for every mistake still to put right, newest first.
+ * The list is fixed when the sitting starts, so a hand marked fixed halfway
+ * through does not shift the ones still to come.
+ */
+function renderRetry(ctx, which) {
+  const { profile, go } = ctx;
+  const ids = which === 'all'
+    ? retryQueue().map((h) => h.id)
+    : [which].filter((id) => retryOf(findHand(id)));
+  if (!ids.length) {
+    return el('div.screen', el('div.panel',
+      el('h1', 'Nothing to play again'),
+      el('p.muted', 'Every mistake in the Log is fixed, or the hand is gone.'),
+      el('button.btn.primary', { onclick: () => go('review') }, 'Back to the list'),
+    ));
+  }
+
+  const state = { i: 0, right: 0, answer: null };
+  const host = el('div');
+
+  function draw() {
+    if (state.i >= ids.length) { mount(host, endPanel()); return; }
+    const hand = findHand(ids[state.i]);
+    const spot = hand && retryOf(hand);
+    if (!spot) { state.i += 1; draw(); return; }
+    const frame = frameAt(hand, spot.step);
+    const felt = renderFelt({
+      players: frame.players.map((p) => ({
+        ...p,
+        tag: !p.isHero && p.profileKey ? getProfile(p.profileKey).tag : null,
+      })),
+      heroSeat: (hand.seats.find((s) => s.isHero) || hand.seats[0]).seat,
+      seatCount: hand.seatCount || hand.seats.length,
+      button: hand.button,
+      board: frame.board,
+      pot: frame.pot,
+      street: frame.street,
+      actingId: frame.actingId,
+      reveal: Boolean(hand.revealAll),
+      fourColour: profile.settings.fourColour,
+      boardPlaceholder: 'preflop',
+    });
+    mount(host,
+      el('div.panel.replay-panel.saloon-stage', lampNode(), felt),
+      state.answer ? answerPanel(hand, spot, state.answer) : askPanel(hand, spot),
+    );
+  }
+
+  function askPanel(hand, spot) {
+    const d = spot.decision;
+    return el('div.panel.paper.step-card.retry-ask',
+      el('div.panel-title', el('h3', { style: { margin: 0 } }, 'What do you do?')),
+      el('div.faint', d.toCall > 0
+        ? t('The pot is {pot}, and it costs {call} to stay in.', { pot: fmt.chips(d.pot), call: fmt.chips(d.toCall) })
+        : t('The pot is {pot}, and nobody has bet.', { pot: fmt.chips(d.pot) })),
+      el('div.replay-numbers',
+        metric('Pot', fmt.chips(d.pot)),
+        d.toCall > 0 ? metric('To call', fmt.chips(d.toCall)) : metric('Facing', 'no bet'),
+        d.toCall > 0 ? metric('Pot odds', `${potOddsRatio(d.toCall, d.pot).toFixed(1)} : 1`) : null,
+        metric('Opponents', String(d.opponents ?? '—')),
+      ),
+      el('div.row.retry-choices', { style: { marginTop: '12px' } },
+        spot.choices.map((c) => el('button.btn', {
+          onclick: () => {
+            const graded = gradeRetry(spot, c);
+            noteRetry(hand.id, graded.right);
+            if (graded.right) state.right += 1;
+            state.answer = { choice: c, ...graded };
+            draw();
+          },
+        }, CHOICE_WORDS[c]))),
+    );
+  }
+
+  function answerPanel(hand, spot, answer) {
+    const v = answer.verdict;
+    const d = spot.decision;
+    const last = state.i >= ids.length - 1;
+    return el(`div.panel.paper.step-card.verdict-panel.${answer.right ? 'good' : 'bad'}`,
+      el('div.panel-title',
+        el('h3', { style: { margin: 0 } }, answer.right ? 'Put right' : 'Wrong again'),
+        el(`span.badge${v.level === 'bad' ? '.red' : v.level === 'good' ? '.green' : ''}`, t(v.head, v.params)),
+      ),
+      el('div', { style: { marginTop: '4px' } }, t(v.body, v.params)),
+      answer.right
+        ? null
+        : el('div.notice.warn', { style: { marginTop: '12px' } }, richText(`**${t('The answer:')}** `
+          + answer.best.map((c) => t(CHOICE_WORDS[c])).join(` ${t('or')} `) + '.')),
+      d.toCall > 0
+        ? el('div', { style: { marginTop: '12px' } },
+            renderGauge({ need: d.needed, have: d.equity, needLabel: 'Price demands', haveLabel: 'Your hand has' }))
+        : null,
+      el('div.faint', { style: { marginTop: '10px' } },
+        t('At the table you chose {action}: {verdict}.',
+          { action: t(CHOICE_WORDS[spot.did] || spot.did), verdict: t(spot.verdict.head, spot.verdict.params) })),
+      el('div.row', { style: { marginTop: '12px' } },
+        el('button.btn.sm.primary', {
+          onclick: () => { state.i += 1; state.answer = null; draw(); },
+        }, last ? 'Finish' : 'Next hand →'),
+        el('button.btn.sm.ghost', { onclick: () => go('review', { hand: hand.id }) }, 'Watch the hand'),
+      ),
+    );
+  }
+
+  function endPanel() {
+    const left = retryQueue().length;
+    return el('div.panel.paper.step-card',
+      el('div.panel-title', el('h3', { style: { margin: 0 } },
+        t('{right} of {n} put right', { right: state.right, n: ids.length }))),
+      el('div.faint', left === 1
+        ? t('One mistake in the Log still to fix. It stays there, and you can play it again any time.')
+        : left
+        ? t('{n} mistakes in the Log still to fix. They stay there, and you can play them again any time.', { n: left })
+        : t('Every mistake in the Log is fixed. The next ones will come from the table.')),
+      el('div.row', { style: { marginTop: '12px' } },
+        el('button.btn.sm.primary', { onclick: () => go('review') }, 'Back to the list'),
+        left && which === 'all'
+          ? el('button.btn.sm', { onclick: () => go('review', { retry: 'all', n: Date.now() }) }, 'Play again')
+          : null,
+      ),
+    );
+  }
+
+  draw();
+
+  return el('div.screen.hand-log.replay',
+    el('div.panel.book-bar',
+      el('div.spread',
+        el('div.row',
+          el('span.module-glyph', icon('review', { size: 20 })),
+          el('div',
+            el('div.book-title', 'Play your mistakes again'),
+            el('div.faint', 'The spot as it stood when you acted. What you did is not shown.'),
+          ),
+        ),
+        el('button.btn.sm.ghost', { onclick: () => go('review') }, 'All hands'),
+      ),
+    ),
+    host,
+  );
+}
+
+/** The buttons, by the action they take. */
+const CHOICE_WORDS = { fold: 'Fold', call: 'Call', raise: 'Raise', check: 'Check', bet: 'Bet' };
 
 /**
  * The timeline. Every action is a dot; your own decisions are larger, and the
