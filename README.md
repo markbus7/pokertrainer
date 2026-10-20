@@ -100,6 +100,20 @@ At the end of a session it produces a **leak report** from your own stats —
 VPIP, PFR, aggression factor, WTSD — naming what you are doing wrong and what
 to do instead.
 
+### 🔁 Play your mistakes again
+
+The Log keeps the hands you went wrong in, and watching one back shows you the
+answer before you have had to find it. **Play them again** deals each kept
+mistake as it stood at the moment you acted (your cards, the board, the pot,
+what it cost to stay in) and asks what you do: fold, call or raise, or check
+or bet, without saying what you did. It is graded by the same judge as the
+Log, and right means the best of the choices, so a bluff raise does not pass
+for the fold the hand was kept for. Get one right and the hand is marked
+**Fixed** in the Log and is not asked again; a single hand can still be tried
+on its own from its replay, and a wrong answer there takes the mark off.
+Only the action is asked: a mistake that was only in the size of a bet is
+left to the replay.
+
 ### 🐈 Help, and the cat who remembers
 
 In free play nobody talks you through a hand: **Help** is a button, and

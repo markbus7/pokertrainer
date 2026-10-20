@@ -2338,6 +2338,37 @@ export const NL = {
     '**Deze is niet jouw schuld.** Je verloor {amount}bb en de coach vond geen enkele beslissing verkeerd. Handen als deze zijn de reden dat resultaten over een sessie weinig zeggen — de beslissingen zijn het enige deel dat je in de hand hebt, en die waren hier goed.',
   '{n} decisions in this hand went wrong. The red marks on the timeline are all of them.':
     '{n} beslissingen in deze hand gingen mis. De rode markeringen op de tijdlijn zijn ze allemaal.',
+
+  /* ---- Hand review: playing a mistake again ---- */
+
+  '**Play them again.** {n} of your mistakes dealt again as they stood when you acted, without the answer. Get one right and it is marked fixed.':
+    '**Speel ze opnieuw.** {n} van je fouten opnieuw gedeeld zoals ze stonden toen je handelde, zonder het antwoord. Doe je er een goed, dan staat hij als opgelost.',
+  'Play {n} again': 'Speel {n} opnieuw',
+  'Fixed': 'Opgelost',
+  'Try it again': 'Probeer opnieuw',
+  'Nothing to play again': 'Niets om opnieuw te spelen',
+  'Every mistake in the Log is fixed, or the hand is gone.': 'Elke fout in het Scheepsjournaal is opgelost, of de hand is weg.',
+  'What do you do?': 'Wat doe je?',
+  'The pot is {pot}, and it costs {call} to stay in.': 'De pot is {pot}, en het kost {call} om erin te blijven.',
+  'The pot is {pot}, and nobody has bet.': 'De pot is {pot}, en niemand heeft gebet.',
+  'Put right': 'Rechtgezet',
+  'Wrong again': 'Weer mis',
+  'The answer:': 'Het antwoord:',
+  'or': 'of',
+  'At the table you chose {action}: {verdict}.': 'Aan tafel koos je {action}: {verdict}.',
+  'Finish': 'Afronden',
+  'Next hand →': 'Volgende hand →',
+  'Watch the hand': 'Bekijk de hand',
+  '{right} of {n} put right': '{right} van {n} rechtgezet',
+  '{n} mistakes in the Log still to fix. They stay there, and you can play them again any time.':
+    'Nog {n} fouten in het Scheepsjournaal op te lossen. Ze blijven daar staan, en je kunt ze altijd opnieuw spelen.',
+  'One mistake in the Log still to fix. It stays there, and you can play it again any time.':
+    'Nog één fout in het Scheepsjournaal op te lossen. Hij blijft daar staan, en je kunt hem altijd opnieuw spelen.',
+  'Every mistake in the Log is fixed. The next ones will come from the table.':
+    'Elke fout in het Scheepsjournaal is opgelost. De volgende komen van de tafel.',
+  'Play your mistakes again': 'Speel je fouten opnieuw',
+  'The spot as it stood when you acted. What you did is not shown.':
+    'De situatie zoals die stond toen je handelde. Wat je deed, zie je niet.',
   'End of the spot': 'Einde van de spot',
   'This one came from the Lab, so the hand stops here — the decision was the whole question.':
     'Deze kwam uit het Lab, dus de hand stopt hier — de beslissing was de hele vraag.',
