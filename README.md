@@ -111,8 +111,12 @@ Log, and right means the best of the choices, so a bluff raise does not pass
 for the fold the hand was kept for. Get one right and the hand is marked
 **Fixed** in the Log and is not asked again; a single hand can still be tried
 on its own from its replay, and a wrong answer there takes the mark off.
-Only the action is asked: a mistake that was only in the size of a bet is
-left to the replay.
+A mistake that was only in how much you bet or raised is asked as the size
+instead: three buttons, smallest first, each in chips and in the measure its
+rule is written in (big blinds for an open, times their bet for a raise, a
+share of the pot after the flop). One is the size you made, one is the rule's,
+and one is wrong the other way, so the right one has to be found rather than
+guessed as "not mine". Only the rule's own size counts as right.
 
 ### 🐈 Help, and the cat who remembers
 

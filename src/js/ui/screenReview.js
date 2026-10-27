@@ -26,6 +26,7 @@ import {
   recentHands, findHand, removeHand, clearHands, handSummary,
   frameAt, frameCount, reviewOf, MISTAKE_CAP, COOLER_BB,
 } from '../state/handHistory.js';
+import { judgeSize } from '../core/sizing.js';
 import { retryOf, gradeRetry, retryQueue, isFixed, noteRetry } from '../state/retry.js';
 import { MENTOR } from '../data/characters.js';
 import { roomSign, silasSays, lampNode } from './place.js';
@@ -324,7 +325,9 @@ function renderRetry(ctx, which) {
   function askPanel(hand, spot) {
     const d = spot.decision;
     return el('div.panel.paper.step-card.retry-ask',
-      el('div.panel-title', el('h3', { style: { margin: 0 } }, 'What do you do?')),
+      el('div.panel-title', el('h3', { style: { margin: 0 } }, spot.kind === 'size'
+        ? (spot.decision.action === 'bet' ? t('You bet. How much?') : t('You raise. How much?'))
+        : t('What do you do?'))),
       el('div.faint', d.toCall > 0
         ? t('The pot is {pot}, and it costs {call} to stay in.', { pot: fmt.chips(d.pot), call: fmt.chips(d.toCall) })
         : t('The pot is {pot}, and nobody has bet.', { pot: fmt.chips(d.pot) })),
@@ -343,7 +346,7 @@ function renderRetry(ctx, which) {
             state.answer = { choice: c, ...graded };
             draw();
           },
-        }, CHOICE_WORDS[c]))),
+        }, spot.kind === 'size' ? sizeLabel(spot.decision, c) : CHOICE_WORDS[c]))),
     );
   }
 
@@ -360,13 +363,16 @@ function renderRetry(ctx, which) {
       answer.right
         ? null
         : el('div.notice.warn', { style: { marginTop: '12px' } }, richText(`**${t('The answer:')}** `
-          + answer.best.map((c) => t(CHOICE_WORDS[c])).join(` ${t('or')} `) + '.')),
-      d.toCall > 0
+          + answer.best.map((c) => (spot.kind === 'size' ? sizeLabel(d, c) : t(CHOICE_WORDS[c])))
+            .join(` ${t('or')} `) + '.')),
+      d.toCall > 0 && spot.kind !== 'size'
         ? el('div', { style: { marginTop: '12px' } },
             renderGauge({ need: d.needed, have: d.equity, needLabel: 'Price demands', haveLabel: 'Your hand has' }))
         : null,
-      el('div.faint', { style: { marginTop: '10px' } },
-        t('At the table you chose {action}: {verdict}.',
+      el('div.faint', { style: { marginTop: '10px' } }, spot.kind === 'size'
+        ? t('At the table you made it {size}: {verdict}.',
+          { size: sizeLabel(d, spot.did), verdict: t(spot.verdict.head, spot.verdict.params) })
+        : t('At the table you chose {action}: {verdict}.',
           { action: t(CHOICE_WORDS[spot.did] || spot.did), verdict: t(spot.verdict.head, spot.verdict.params) })),
       el('div.row', { style: { marginTop: '12px' } },
         el('button.btn.sm.primary', {
@@ -413,6 +419,22 @@ function renderRetry(ctx, which) {
     ),
     host,
   );
+}
+
+/**
+ * A size, in chips and in the measure its rule is written in: big blinds for
+ * an open, times the bet for a raise, a share of the pot for a bet.
+ */
+function sizeLabel(d, amount) {
+  const v = judgeSize({ ...d, amount });
+  const kind = v ? v.sizeKind : null;
+  const p = v ? v.params : {};
+  if (kind === 'open' || kind === 'iso') return t('{size} · {bb} big blinds', { size: fmt.chips(amount), bb: p.bb });
+  if (kind === 'flop' || kind === 'turn' || kind === 'river') {
+    return t('{size} · {pct} of the pot', { size: fmt.chips(amount), pct: p.pct });
+  }
+  if (kind) return t('{size} · {times}× their bet', { size: fmt.chips(amount), times: p.times });
+  return fmt.chips(amount);
 }
 
 /** The buttons, by the action they take. */

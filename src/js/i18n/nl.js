@@ -2367,6 +2367,12 @@ export const NL = {
   'Every mistake in the Log is fixed. The next ones will come from the table.':
     'Elke fout in het Scheepsjournaal is opgelost. De volgende komen van de tafel.',
   'Play your mistakes again': 'Speel je fouten opnieuw',
+  'You bet. How much?': 'Je bet. Hoeveel?',
+  'You raise. How much?': 'Je raiset. Hoeveel?',
+  'At the table you made it {size}: {verdict}.': 'Aan tafel maakte je hem {size}: {verdict}.',
+  '{size} · {bb} big blinds': '{size} · {bb} big blinds',
+  '{size} · {pct} of the pot': '{size} · {pct} van de pot',
+  '{size} · {times}× their bet': '{size} · {times}× hun bet',
   'The spot as it stood when you acted. What you did is not shown.':
     'De situatie zoals die stond toen je handelde. Wat je deed, zie je niet.',
   'End of the spot': 'Einde van de spot',

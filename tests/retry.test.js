@@ -7,6 +7,9 @@ import { describe, it, assert, equal } from './harness.js';
 import { makeRng } from '../src/js/core/rng.js';
 import { generateSpot } from '../src/js/trainers/lab.js';
 import { handFromLabSpot, keepHand, findHand, frameAt, reviewOf, _useStorage } from '../src/js/state/handHistory.js';
+import { createTable } from '../src/js/engine/table.js';
+import { parseCards } from '../src/js/core/cards.js';
+import { sizingContextOf, judgeSize } from '../src/js/core/sizing.js';
 import { retryOf, gradeRetry, retryQueue, isFixed, noteRetry } from '../src/js/state/retry.js';
 
 function memoryStore() {
@@ -91,5 +94,60 @@ describe('playing a mistake again', () => {
     assert(!isFixed(findHand(kept[1].id)), 'wrong again takes the mark off');
     equal(findHand(kept[1].id).retry.tries, 2);
     equal(noteRetry('gone', true), null, 'a hand that is gone is left alone');
+  });
+});
+
+/** A hand whose one mistake was the size: the action right, the amount not. */
+function sizedHand({ moves = [], board = null, action, amount, equity = 0.5 }) {
+  const t = createTable({
+    smallBlind: 1, bigBlind: 2, rng: makeRng(3),
+    players: ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => ({ id, name: id, stack: 200 })),
+  });
+  t.startHand();
+  for (const m of moves) t.act(m);
+  if (board) t.board = parseCards(board);
+  const hero = t.actor;
+  const sizing = sizingContextOf(t, hero);
+  const toCall = Math.max(0, t.currentBet - hero.committed);
+  return {
+    id: `s${amount}`, at: 1, source: 'play', bigBlind: 2, heroId: hero.id,
+    seats: [], posts: [], steps: [], board: [],
+    decisions: [{ step: 0, street: t.street, action, equity, needed: 0, toCall, pot: t.totalPot, amount,
+      currentBet: t.currentBet, opponents: 5, spr: null, sizing }],
+    result: { reason: 'fold', net: 0, potTotal: 0, winners: [], showdown: [] },
+  };
+}
+
+describe('playing a size again', () => {
+  it('asks the size of an open that was far too big', () => {
+    const hand = sizedHand({ action: 'raise', amount: 20 });
+    equal(judgeSize({ ...hand.decisions[0] }).level, 'bad', 'ten big blinds is a mistake of size');
+    const spot = retryOf(hand);
+    assert(spot, 'a size mistake is askable now');
+    equal(spot.kind, 'size');
+    equal(spot.did, 20);
+    assert(spot.choices.includes(5), `2.5 big blinds is among ${spot.choices}`);
+    equal(spot.choices.length, 3, `three sizes: ${spot.choices}`);
+    for (let i = 1; i < spot.choices.length; i++) assert(spot.choices[i] > spot.choices[i - 1], 'smallest first');
+    assert(gradeRetry(spot, 5).right, 'the rule is right');
+    assert(!gradeRetry(spot, 20).right, 'the size you made is wrong again');
+    equal(gradeRetry(spot, 20).best.join(), '5', 'and the answer is the one right size');
+  });
+
+  it('asks a flop bet that was too big for a medium hand', () => {
+    const hand = sizedHand({
+      moves: [{ type: 'raise', amount: 6 }, { type: 'fold' }, { type: 'fold' }, { type: 'fold' }, { type: 'fold' }, { type: 'call' }, { type: 'check' }],
+      board: 'Kd7c2s', action: 'bet', amount: 40, equity: 0.5,
+    });
+    equal(judgeSize(hand.decisions[0]).level, 'bad', 'three pots with a medium hand on a dry flop');
+    const spot = retryOf(hand);
+    equal(spot.kind, 'size');
+    const right = spot.choices.filter((c) => gradeRetry(spot, c).right);
+    equal(right.length, 1, `one right size among ${spot.choices}`);
+  });
+
+  it('has no size to ask of a size that was only close', () => {
+    const hand = sizedHand({ action: 'raise', amount: 8 });
+    equal(retryOf(hand), null, 'four big blinds is off the rule but not a mistake');
   });
 });
