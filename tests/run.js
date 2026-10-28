@@ -35,6 +35,7 @@ const modules = [
   './ranges.test.js',
   './engine.test.js',
   './handHistory.test.js',
+  './retry.test.js',
   './coach.test.js',
   './handShape.test.js',
   './lessonTable.test.js',
