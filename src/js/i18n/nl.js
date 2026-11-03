@@ -2367,6 +2367,27 @@ export const NL = {
   'Every mistake in the Log is fixed. The next ones will come from the table.':
     'Elke fout in het Scheepsjournaal is opgelost. De volgende komen van de tafel.',
   'Play your mistakes again': 'Speel je fouten opnieuw',
+
+  /* ---- Your week ---- */
+  'How was my week?': 'Hoe ging mijn week?',
+  'Your week': 'Je week',
+  'No sittings in the last seven days. Sit down at a table this week and I will tell you how it went.':
+    'Geen sessies in de afgelopen zeven dagen. Ga deze week aan een tafel zitten, dan vertel ik je hoe het ging.',
+  'This week: {sittings} sittings, {hands} hands, and {sound} of {n} decisions right — {pct}.':
+    'Deze week: {sittings} sessies, {hands} handen, en {sound} van {n} beslissingen goed — {pct}.',
+  'This week: {sittings} sittings and {hands} hands, but no decision I could grade.':
+    'Deze week: {sittings} sessies en {hands} handen, maar geen beslissing die ik kon beoordelen.',
+  'That is {pts} points better than the week before.': 'Dat is {pts} punten beter dan de week ervoor.',
+  'That is {pts} points worse than the week before.': 'Dat is {pts} punten slechter dan de week ervoor.',
+  'Better than last week: {skill}, from {from} to {to}.': 'Beter dan vorige week: {skill}, van {from} naar {to}.',
+  'The mistake you made most this week: “{head}”, in {n} sittings.':
+    'De fout die je deze week het vaakst maakte: “{head}”, in {n} sessies.',
+  'The job for next week: {skill}. {right} of {total} right this week. Go over the chapter before you sit down again.':
+    'De opdracht voor volgende week: {skill}. {right} van {total} goed deze week. Neem het hoofdstuk nog eens door voor je weer gaat zitten.',
+  'No skill fell short this week. Keep the same habits, and play a few more hands.':
+    'Geen vaardigheid schoot deze week tekort. Houd dezelfde gewoontes vast, en speel nog wat handen.',
+  'Study it': 'Bestudeer het',
+  'The notes': 'De aantekeningen',
   'You bet. How much?': 'Je bet. Hoeveel?',
   'You raise. How much?': 'Je raiset. Hoeveel?',
   'At the table you made it {size}: {verdict}.': 'Aan tafel maakte je hem {size}: {verdict}.',

@@ -513,6 +513,18 @@ table, saying one of his rules and nothing about your decisions: beside the
 felt on a big screen, under the buttons in the column beside the felt on a
 laptop, and nowhere on a phone, where the buttons need the room.
 
+### 📅 Your week
+
+Silas's notes cover one sitting, and the character page your whole career.
+**How was my week?** (one of the things you can ask him, and a panel on his
+notes) reads the sittings of the last seven days against the seven before:
+how many hands and how many decisions were right, how many points better or
+worse that is than the week before, the skill that came on most, the mistake
+that was among the costliest of more than one sitting, and one job for the
+next week, the weakest skill of the seven days, with a button to its chapter.
+A week is only compared with another once both have ten graded decisions, and
+a skill only once it has four in each.
+
 ### 📋 Interactive range charts
 
 The full 13×13 grid for every opening position and every 3-betting position,

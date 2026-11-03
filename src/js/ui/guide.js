@@ -26,6 +26,9 @@ import { whoYouAre } from '../state/character.js';
 import { allTerms } from '../data/glossary.js';
 import { openSnags, SEAT_WORDS, FACING_WORDS } from '../state/snags.js';
 import { dateKey, doneToday, liveStreak } from '../state/daily.js';
+import { weekReview } from '../state/week.js';
+import { reportsOf } from '../state/sessionReport.js';
+import { moduleMeta } from '../data/curriculum.js';
 
 /** Him, head to toe: the long coat and the wide hat, white whiskers, a cup of tea. */
 const SILAS_LOOK = { skin: 'light', hair: 'bald', hairColour: 'white', beard: 'moustache', colour: 'crimson', name: '' };
@@ -174,6 +177,7 @@ const bbOf = (x) => `${x.toFixed(1)} bb`;
 /** What you can ask him, in the order the chips show them. */
 export const QUESTIONS = [
   { key: 'doing', q: 'How am I doing?' },
+  { key: 'week', q: 'How was my week?' },
   { key: 'next', q: 'What should I do next?' },
   { key: 'leak', q: 'Where am I losing money?' },
   { key: 'snags', q: 'Where do I keep going wrong?' },
@@ -197,6 +201,7 @@ export function answer(profile, key, rng = Math.random) {
     if (weakest && weakest.share < 1) lines.push({ text: 'Your weakest: {action}, {pct} right.', params: { action: t(ACTION_NAMES[weakest.key]), pct: pctOf(weakest.share) } });
     return { lines, to: { route: 'character', params: { at: 'money' } }, label: 'Your money decisions' };
   }
+  if (key === 'week') return weekAnswer(profile);
   if (key === 'next') {
     const road = journeyState(profile).next;
     if (!road || !road.goal) return { lines: [{ text: 'The road is done. Now it is the tables, and every decision at them.' }] };
@@ -248,8 +253,37 @@ export function answer(profile, key, rng = Math.random) {
   return { lines: [{ text: RULES[Math.floor(rng() * RULES.length)] }] };
 }
 
+/**
+ * The week, in his words: what you played, how it went against the week
+ * before, what came on, the mistake you kept making, and one job for the
+ * next seven days.
+ */
+export function weekAnswer(profile, now = Date.now()) {
+  const w = weekReview(reportsOf(profile), now);
+  if (!w.ready) {
+    return { lines: [{ text: 'No sittings in the last seven days. Sit down at a table this week and I will tell you how it went.' }], to: { route: 'home' }, label: 'The river' };
+  }
+  const skill = (key) => { const m = moduleMeta(key); return m ? t(m.name) : key; };
+  const lines = [w.decisions
+    ? { text: 'This week: {sittings} sittings, {hands} hands, and {sound} of {n} decisions right — {pct}.', params: { sittings: w.sittings, hands: fmt.chips(w.hands), sound: w.sound, n: w.decisions, pct: pctOf(w.share) } }
+    : { text: 'This week: {sittings} sittings and {hands} hands, but no decision I could grade.', params: { sittings: w.sittings, hands: fmt.chips(w.hands) } }];
+  if (w.change !== null && Math.round(w.change * 100) !== 0) {
+    const pts = Math.abs(Math.round(w.change * 100));
+    lines.push({ text: w.change > 0 ? 'That is {pts} points better than the week before.' : 'That is {pts} points worse than the week before.', params: { pts } });
+  }
+  if (w.better) lines.push({ text: 'Better than last week: {skill}, from {from} to {to}.', params: { skill: skill(w.better.skill), from: pctOf(w.better.from), to: pctOf(w.better.to) } });
+  if (w.repeated) lines.push({ text: 'The mistake you made most this week: “{head}”, in {n} sittings.', params: { head: t(w.repeated.head), n: w.repeated.times } });
+  if (w.weakest && moduleMeta(w.weakest.skill)) {
+    lines.push({ text: 'The job for next week: {skill}. {right} of {total} right this week. Go over the chapter before you sit down again.', params: { skill: skill(w.weakest.skill), right: w.weakest.right, total: w.weakest.total } });
+    return { lines, to: { route: 'learn', params: { module: w.weakest.skill } }, label: 'Study it' };
+  }
+  lines.push({ text: 'No skill fell short this week. Keep the same habits, and play a few more hands.' });
+  return { lines, to: { route: 'report' }, label: 'The notes' };
+}
+
 /** Words that mean one of the questions, in either language. */
 const ASKS = [
+  ['week', /\bweek\b|this week|deze week|mijn week|afgelopen week/],
   ['snags', /keep going wrong|keep getting|again and again|over and over|snag|steeds|telkens|keer op keer/],
   ['leak', /leak|losing|lose|lost|mistake|lek|verlie|fout/],
   ['size', /size|how much|too much|too little|too big|too small|betting|sizing|inzet|hoeveel|te veel|te weinig/],
