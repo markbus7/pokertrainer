@@ -18,6 +18,7 @@ import { reportsOf, rankedSkills, strongestAndWeakest } from '../state/sessionRe
 import { ownsLesson, COMPANIONS } from '../state/economy.js';
 import { silasSays } from './place.js';
 import { buyControl, pearls } from './shop.js';
+import { weekAnswer } from './guide.js';
 
 const when = (at) => new Date(at).toLocaleString(undefined, {
   day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
@@ -79,6 +80,8 @@ export function renderReport(ctx) {
       el('div.faint', t('A pearl for every hand you played through, one more for every sound decision you made without asking.')),
     ),
 
+    weekPanel(profile, go),
+
     /* ---- the notes, folded ---- */
     notesHost,
     opened
@@ -105,6 +108,18 @@ export function renderReport(ctx) {
   );
   if (opened) openNotes();
   return root;
+}
+
+/** The last seven days, on top of the one sitting: whether the week went better than the one before. */
+function weekPanel(profile, go) {
+  const week = weekAnswer(profile);
+  if (!week.to || week.to.route === 'home') return null;
+  return el('div.panel.page.paper.report-week',
+    el('div.page-kicker', t('Your week')),
+    el('div.stack-sm', week.lines.map((l) => el('div', t(l.text, l.params)))),
+    week.to.route === 'report' ? null
+      : el('button.btn.sm', { style: { marginTop: '10px' }, onclick: () => go(week.to.route, week.to.params) }, t(week.label)),
+  );
 }
 
 function part(label, n) {
