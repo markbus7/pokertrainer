@@ -64,7 +64,7 @@ describe('your week', () => {
     const a = weekAnswer(p, NOW);
     equal(a.to.route, 'learn');
     equal(a.to.params.module, 'pot-odds');
-    assert(askFree(p, 'hoe ging mijn week').lines.length >= 1, 'asked in Dutch');
-    equal(askFree(p, 'how was my week?').to.route, a.to.route, 'and in English');
+    assert(askFree(p, 'hoe ging mijn week', Math.random, NOW).lines.length >= 1, 'asked in Dutch');
+    equal(askFree(p, 'how was my week?', Math.random, NOW).to.route, a.to.route, 'and in English');
   });
 });
