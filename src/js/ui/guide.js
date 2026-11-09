@@ -191,7 +191,7 @@ export const QUESTIONS = [
  * His answer to one of the questions, from your own numbers.
  * @returns {{lines:Array<{text:string, params?:object}>, to?:{route, params}, label?:string}}
  */
-export function answer(profile, key, rng = Math.random) {
+export function answer(profile, key, rng = Math.random, now = Date.now()) {
   const life = profile.lifetime;
   if (key === 'doing') {
     const m = moneyHabits(life);
@@ -201,7 +201,7 @@ export function answer(profile, key, rng = Math.random) {
     if (weakest && weakest.share < 1) lines.push({ text: 'Your weakest: {action}, {pct} right.', params: { action: t(ACTION_NAMES[weakest.key]), pct: pctOf(weakest.share) } });
     return { lines, to: { route: 'character', params: { at: 'money' } }, label: 'Your money decisions' };
   }
-  if (key === 'week') return weekAnswer(profile);
+  if (key === 'week') return weekAnswer(profile, now);
   if (key === 'next') {
     const road = journeyState(profile).next;
     if (!road || !road.goal) return { lines: [{ text: 'The road is done. Now it is the tables, and every decision at them.' }] };
@@ -299,7 +299,7 @@ const ASKS = [
  * longest one named wins), else a question about your game, else he says
  * what he can talk about.
  */
-export function askFree(profile, text, rng = Math.random) {
+export function askFree(profile, text, rng = Math.random, now = Date.now()) {
   const q = String(text || '').toLowerCase().replace(/\s+/g, ' ').trim();
   if (!q) return null;
   let best = null;
@@ -314,7 +314,7 @@ export function askFree(profile, text, rng = Math.random) {
   }
   if (best) return { lines: [{ text: best.entry.term, strong: true }, { text: best.entry.full }], to: { route: 'glossary' }, label: 'The Almanac' };
   const hit = ASKS.find(([, re]) => re.test(q));
-  if (hit) return answer(profile, hit[0], rng);
+  if (hit) return answer(profile, hit[0], rng, now);
   return { lines: [{ text: 'I do not know that one. Ask me about a word from the tables — pot odds, equity, a 3-bet — or about your own game, or pick one of the questions.' }] };
 }
 
