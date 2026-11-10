@@ -257,6 +257,12 @@ function seatedElsewhere({ place, back, getUp, getUpLabel, money }) {
   ));
 }
 
+/** What each key presses at the table, by the button's data-key, first found wins. */
+const TABLE_KEYS = { f: ['fold'], c: ['check', 'call'], r: ['raise'], b: ['raise'], n: ['deal'], ' ': ['deal'] };
+/** The letter each button answers to, shown on it where there is a keyboard. */
+const KEY_HINTS = { fold: 'F', check: 'C', call: 'C', raise: 'R', deal: 'N' };
+const keyed = (name) => ({ 'data-key': name, 'data-hint': KEY_HINTS[name], 'aria-keyshortcuts': KEY_HINTS[name] });
+
 export function renderTable(ctx, params = {}) {
   // The table you got up from a moment ago is still there: pick it back up.
   const key = tableKey(params, ctx.profile);
@@ -765,6 +771,7 @@ export function renderTable(ctx, params = {}) {
   /** Back to the table: everything as it was, and the hand carries on. */
   function resume(next) {
     next.onLeave = park;
+    next.onKey = onKey;
     session.parked = false;
     if (headLang !== getLang()) {
       headLang = getLang();
@@ -785,6 +792,24 @@ export function renderTable(ctx, params = {}) {
   const backParams = Object.fromEntries(Object.entries(params).filter(([k]) => k !== 'resume' && k !== 'cashout' && k !== 'pay'));
   if (grind) Object.assign(backParams, { at: room.key, table: seat.id });
 
+  /**
+   * The keyboard, for a reader at a computer: F folds, C checks or calls, R
+   * bets or raises the amount the bar shows, N or the space bar deals the next
+   * hand. Each key presses the button on screen, so a key can only ever do
+   * what a click there would, and does nothing while that button is not there.
+   */
+  function onKey(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    const k = e.key === ' ' || e.key === 'Spacebar' ? ' ' : String(e.key || '').toLowerCase();
+    const wanted = TABLE_KEYS[k];
+    if (!wanted) return;
+    const button = wanted.map((name) => actionHost.querySelector(`[data-key="${name}"]`)).find((b) => b && !b.disabled);
+    if (!button) return;
+    e.preventDefault();
+    button.click();
+  }
+
+  ctx.onKey = onKey;
   ctx.onLeave = lesson ? discard : park;
   if (!lesson) {
     live = {
@@ -2123,7 +2148,7 @@ export function renderTable(ctx, params = {}) {
   /** The deal button: while the table counts down, it fills as it goes. */
   function dealNextButton() {
     const wait = session.autoDeal;
-    return el(`button.btn.primary.lg.deal-button${wait ? '.counting' : ''}`, { onclick: startHand },
+    return el(`button.btn.primary.lg.deal-button${wait ? '.counting' : ''}`, { ...keyed('deal'), onclick: startHand },
       wait ? el('span.deal-fill', { style: { transform: `scaleX(${countdown(wait).progress.toFixed(3)})` } }) : null,
       el('span.deal-label', 'Deal next hand'),
     );
@@ -2672,6 +2697,7 @@ export function renderTable(ctx, params = {}) {
 
     const raiseButton = raiseSpec
       ? el('button.btn.primary', {
+          ...keyed('raise'),
           onclick: () => heroAct({ type: raiseSpec.type, amount: session.raiseAmount }),
         })
       : null;
@@ -2806,13 +2832,13 @@ export function renderTable(ctx, params = {}) {
       sizingRows,
       el('div.action-buttons',
         legal.some((a) => a.type === 'fold')
-          ? el('button.btn.danger', { onclick: () => heroAct({ type: 'fold' }) }, 'Fold')
+          ? el('button.btn.danger', { ...keyed('fold'), onclick: () => heroAct({ type: 'fold' }) }, 'Fold')
           : null,
         legal.some((a) => a.type === 'check')
-          ? el('button.btn', { onclick: () => heroAct({ type: 'check' }) }, 'Check')
+          ? el('button.btn', { ...keyed('check'), onclick: () => heroAct({ type: 'check' }) }, 'Check')
           : null,
         callSpec
-          ? el('button.btn.success', { onclick: () => heroAct({ type: 'call' }) },
+          ? el('button.btn.success', { ...keyed('call'), onclick: () => heroAct({ type: 'call' }) },
               t('Call {amount}', { amount: fmt.chips(callSpec.amount) }))
           : null,
         raiseButton,

@@ -4922,6 +4922,49 @@ await step('the map pinches: two fingers zoom it round their middle, and the pag
   }
 });
 
+await step('the table plays from the keyboard: F, C and R press the buttons, N deals', async () => {
+  // Each key presses the button on screen, so it can only do what a click
+  // there would. Typing in the raise box must not fold the hand.
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const kp = await ctx.newPage();
+  kp.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
+  try {
+    await kp.goto(`${BASE}/#play`, { waitUntil: 'domcontentloaded' });
+    await kp.waitForSelector('.felt', { timeout: 8000 });
+    await kp.click('button.btn.primary.lg');
+    await kp.waitForSelector('.action-buttons [data-key]', { timeout: 15000 });
+    const hints = await kp.$$eval('.action-buttons [data-key]', (n) => n.map((b) => b.dataset.hint));
+    if (!hints.includes('F') || !hints.includes('C')) throw new Error(`the buttons carry no keys: ${hints}`);
+    const box = await kp.$('.raise-input');
+    if (box) {
+      await box.focus();
+      await kp.keyboard.press('f');
+      if (!(await kp.$('.action-buttons [data-key="fold"]'))) throw new Error('an f typed in the raise box folded the hand');
+      await kp.evaluate(() => document.activeElement.blur());
+    }
+    let acted = 0;
+    let dealt = 0;
+    for (let i = 0; i < 80 && dealt < 2; i++) {
+      if (await kp.$('.action-buttons [data-key]')) {
+        await kp.keyboard.press(acted % 2 ? 'f' : 'c');
+        acted++;
+        await kp.waitForTimeout(350);
+      } else if (await kp.$('[data-key="deal"]')) {
+        await kp.keyboard.press('n');
+        dealt++;
+        await kp.waitForTimeout(500);
+      } else {
+        await kp.waitForTimeout(300);
+      }
+    }
+    if (acted < 2) throw new Error(`the keys acted ${acted} times`);
+    if (dealt < 2) throw new Error(`N dealt ${dealt} hands`);
+    console.log(`      keys on the buttons: ${hints.join(' ')}; ${acted} decisions and ${dealt} deals from the keyboard; f in the raise box ignored`);
+  } finally {
+    await ctx.close().catch(() => {});
+  }
+});
+
 await step('the rail says which build this is, on a desktop and on a phone', async () => {
   // "Do I have the right one?" has to be a glance. The version was inside the
   // ledger; it is now on the rail of every screen, under the crest, and the
