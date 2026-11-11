@@ -63,6 +63,12 @@ uncalled-bet returns, and odd chips going to the first seat left of the button.
 - **Short Deck (6+)** — twos through fives removed, flushes beat full houses,
   and A-6-7-8-9 is a straight
 
+At a computer the table plays from the keyboard as well: **F** folds, **C**
+checks or calls, **R** bets or raises the amount the bar shows, and **N** or
+the space bar deals the next hand. Each key presses the button on screen, so
+it does nothing while that button is not there, and typing in the raise box
+types. The letter is shown on each button where there is a mouse to point.
+
 ### 🧭 A coach that grades every decision
 
 While you play, the coach shows your live equity, the equity the price demands,

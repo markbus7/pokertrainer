@@ -836,3 +836,23 @@ input[type="range"] {
   .seat.hero .seat-pos-long { display: inline; }
   .seat.hero .seat-pos-short { display: none; }
 }
+
+/* The key each table button answers to, where there is a keyboard to press it. */
+@media (hover: hover) and (pointer: fine) {
+  .action-buttons [data-hint]::after,
+  .deal-button[data-hint]::after {
+    content: attr(data-hint);
+    display: inline-block;
+    margin-left: 8px;
+    padding: 0 5px;
+    min-width: 1.4em;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.72em;
+    line-height: 1.5;
+    opacity: 0.55;
+    vertical-align: middle;
+    position: relative;
+  }
+}
