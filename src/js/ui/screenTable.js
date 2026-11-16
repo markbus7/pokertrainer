@@ -83,11 +83,12 @@ const BOT_DELAY = 620;
 
 /**
  * How many hands a lesson table will deal looking for the reader's own spot.
- * Measured over twelve fresh sessions per lesson, every one finds its spot;
- * the slowest are the flop draw at 57 hands and the river bluff at 52, so
- * this is roughly double the worst case seen.
+ * Twelve fresh sessions per lesson once put the slowest at 57 hands, but
+ * over 400 the river bluff needs more than 120 hands about once in 200
+ * (worst 148), and a lesson that gives up asks the reader nothing. So this
+ * is roughly double that worst case.
  */
-const MAX_SEARCH = 120;
+const MAX_SEARCH = 300;
 const HERO_ID = 'hero';
 
 /**
