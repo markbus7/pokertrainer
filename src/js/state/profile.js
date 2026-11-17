@@ -229,6 +229,8 @@ const emptyProfile = () => ({
   catchBook: {},
   // Your snags in practice (state/snags.js): spot id -> { streak, cleared }.
   snags: {},
+  // Yesterday's hand (state/morning.js): { last } is the day it was last answered.
+  morning: {},
   // The towns off the river (state/backwaters.js): key -> { sittings, bestUp, bestSound, paid }.
   towns: {},
   // lang and theme both live in settings so they travel with the cloud

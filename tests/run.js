@@ -37,6 +37,7 @@ const modules = [
   './handHistory.test.js',
   './retry.test.js',
   './week.test.js',
+  './morning.test.js',
   './coach.test.js',
   './handShape.test.js',
   './lessonTable.test.js',

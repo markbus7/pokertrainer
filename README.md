@@ -124,6 +124,15 @@ share of the pot after the flop). One is the size you made, one is the rule's,
 and one is wrong the other way, so the right one has to be found rather than
 guessed as "not mine". Only the rule's own size counts as right.
 
+**Yesterday's hand** comes with today's question. Under the three questions
+that are the same for everybody is one of your own: the newest mistake the Log
+kept from before today and has not seen put right, dealt again as it stood
+when you acted. A night between the mistake and the answer is the point: the
+hand has to be found again, not remembered from a minute ago. The first answer
+of the day counts, and a right one pays 10 pearls and marks the hand
+**Fixed**; a second go the same day pays nothing. The button is on the
+Today's question card and at the end of the day's set.
+
 ### 🐈 Help, and the cat who remembers
 
 In free play nobody talks you through a hand: **Help** is a button, and

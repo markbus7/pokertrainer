@@ -4083,6 +4083,8 @@ button.hand-pick.is-button:hover { border-color: var(--brass-lo); box-shadow: 0 
 .contract-text { font-weight: 600; }
 .contract-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .daily-streak { display: flex; align-items: baseline; gap: 8px; margin: var(--s-2) 0 var(--s-3); }
+.morning-hand { margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px dashed var(--ink-rule); }
+.morning-hand p { margin: 0 0 var(--s-2); }
 .daily-streak-n { font-family: var(--font-print); font-size: var(--t-2xl, 2rem); font-weight: 700; color: var(--brass-lo); }
 @media (max-width: 640px) { .contract { grid-template-columns: 1fr; } .contract-side { flex-direction: row; align-items: center; justify-content: space-between; } }
 

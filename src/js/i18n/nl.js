@@ -6997,4 +6997,10 @@ export const NL = {
   "Money": "Geld",
   "In big blinds: how well you play. A hand at NL5 counts as much as one at NL100, so the line shows whether you are getting better.": "In big blinds: hoe goed je speelt. Een hand op NL5 telt even zwaar als een op NL100, dus de lijn laat zien of je beter wordt.",
   "In money: your purse. A hand at a higher stake moves it more, so a few hundred hands up the river can outweigh a thousand at the start.": "In geld: je beurs. Een hand op een hogere inzet weegt zwaarder, dus een paar honderd handen verderop de rivier kunnen zwaarder wegen dan duizend aan het begin.",
+  // ---- yesterday's hand (state/morning.js) ----
+  "Yesterday's hand": "De hand van gisteren",
+  "And one of your own: the newest mistake from the Log, from before today. Put it right for {n} pearls.": "En één van jezelf: de nieuwste fout uit het Scheepsjournaal, van vóór vandaag. Speel hem goed voor {n} parels.",
+  "for putting yesterday's hand right.": "voor het goedmaken van de hand van gisteren.",
+  "It stays in the Log. Tomorrow there is another hand for {n} pearls.": "Hij blijft in het Scheepsjournaal. Morgen is er weer een hand voor {n} parels.",
+  "You answered yesterday's hand already today, so this one pays nothing.": "Je hebt de hand van gisteren vandaag al beantwoord, dus deze levert niets op.",
 };
