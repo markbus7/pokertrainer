@@ -28,13 +28,15 @@ import {
 } from '../state/handHistory.js';
 import { judgeSize } from '../core/sizing.js';
 import { retryOf, gradeRetry, retryQueue, isFixed, noteRetry } from '../state/retry.js';
+import { recordMorning, MORNING_PEARLS } from '../state/morning.js';
+import { pearls, pearlPop } from './shop.js';
 import { MENTOR } from '../data/characters.js';
 import { roomSign, silasSays, lampNode } from './place.js';
 
 const SOURCES = { play: 'Table', grind: 'Bankroll', lab: 'Lab' };
 
 export function renderReview(ctx, params = {}) {
-  if (params.retry) return renderRetry(ctx, params.retry);
+  if (params.retry) return renderRetry(ctx, params.retry, params.morning === '1');
   return params.hand ? renderOneHand(ctx, params.hand) : renderList(ctx);
 }
 
@@ -276,9 +278,10 @@ function renderOneHand(ctx, id) {
  * The spot you went wrong in, dealt again without the answer. `which` is a
  * hand's id, or 'all' for every mistake still to put right, newest first.
  * The list is fixed when the sitting starts, so a hand marked fixed halfway
- * through does not shift the ones still to come.
+ * through does not shift the ones still to come. `morning` is yesterday's
+ * hand, asked from today's question: its first answer of the day counts.
  */
-function renderRetry(ctx, which) {
+function renderRetry(ctx, which, morning = false) {
   const { profile, go } = ctx;
   const ids = which === 'all'
     ? retryQueue().map((h) => h.id)
@@ -343,7 +346,9 @@ function renderRetry(ctx, which) {
             const graded = gradeRetry(spot, c);
             noteRetry(hand.id, graded.right);
             if (graded.right) state.right += 1;
-            state.answer = { choice: c, ...graded };
+            const day = morning ? recordMorning(profile, graded.right) : null;
+            if (day && day.pearls) pearlPop(day.pearls);
+            state.answer = { choice: c, ...graded, day };
             draw();
           },
         }, spot.kind === 'size' ? sizeLabel(spot.decision, c) : CHOICE_WORDS[c]))),
@@ -360,6 +365,15 @@ function renderRetry(ctx, which) {
         el(`span.badge${v.level === 'bad' ? '.red' : v.level === 'good' ? '.green' : ''}`, t(v.head, v.params)),
       ),
       el('div', { style: { marginTop: '4px' } }, t(v.body, v.params)),
+      answer.day
+        ? el('div.race-prize.daily-prize', { style: { marginTop: '12px' } },
+          answer.day.pearls ? pearls(answer.day.pearls, { className: 'big' }) : null,
+          el('span', answer.day.pearls
+            ? t('for putting yesterday\'s hand right.')
+            : answer.day.counted
+              ? t('It stays in the Log. Tomorrow there is another hand for {n} pearls.', { n: MORNING_PEARLS })
+              : t('You answered yesterday\'s hand already today, so this one pays nothing.')))
+        : null,
       answer.right
         ? null
         : el('div.notice.warn', { style: { marginTop: '12px' } }, richText(`**${t('The answer:')}** `
@@ -394,7 +408,9 @@ function renderRetry(ctx, which) {
         ? t('{n} mistakes in the Log still to fix. They stay there, and you can play them again any time.', { n: left })
         : t('Every mistake in the Log is fixed. The next ones will come from the table.')),
       el('div.row', { style: { marginTop: '12px' } },
-        el('button.btn.sm.primary', { onclick: () => go('review') }, 'Back to the list'),
+        morning
+          ? el('button.btn.sm.primary', { onclick: () => go('home') }, t('Back to the river'))
+          : el('button.btn.sm.primary', { onclick: () => go('review') }, 'Back to the list'),
         left && which === 'all'
           ? el('button.btn.sm', { onclick: () => go('review', { retry: 'all', n: Date.now() }) }, 'Play again')
           : null,

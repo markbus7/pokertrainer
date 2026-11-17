@@ -15,6 +15,7 @@ import { pearls } from './shop.js';
 import { furthestStop } from '../state/economy.js';
 import { ensureContracts, contractsOf, contractText } from '../state/contracts.js';
 import { dateKey, doneToday, liveStreak, dailyOf, DAILY_LENGTH } from '../state/daily.js';
+import { morningHand, morningDone, MORNING_PEARLS } from '../state/morning.js';
 
 /** A contract's sentence with its names translated. */
 export function contractLine(k) {
@@ -68,6 +69,21 @@ export function dailyCard(profile, go, now = new Date()) {
       best > streak ? el('span.faint', ` · ${t('best {n}', { n: best })}`) : null),
     el('button.btn.primary', { onclick: () => go('drill', { mode: 'daily' }) },
       done ? t('Go through them again') : t('Answer today\'s three')),
+    morningLine(profile, go, now),
+  );
+}
+
+/**
+ * Yesterday's hand, under today's three: the newest mistake the Log kept
+ * before today, asked again. Nothing when there is none or it is answered.
+ */
+export function morningLine(profile, go, now = new Date()) {
+  if (morningDone(profile, now)) return null;
+  const hand = morningHand(now);
+  if (!hand) return null;
+  return el('div.morning-hand',
+    el('p.muted', t('And one of your own: the newest mistake from the Log, from before today. Put it right for {n} pearls.', { n: MORNING_PEARLS })),
+    el('button.btn', { onclick: () => go('review', { retry: hand.id, morning: '1' }) }, t('Yesterday\'s hand')),
   );
 }
 

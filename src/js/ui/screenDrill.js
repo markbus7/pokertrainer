@@ -8,6 +8,7 @@ import { copyButton } from './copySpot.js';
 import { MODULE_META, moduleMeta } from '../data/curriculum.js';
 import { generateQuestion, generateGauntlet, difficultyForLevel, DRILL_MODULE_IDS } from '../trainers/index.js';
 import { dateKey, dailyQuestions, recordDaily, DAILY_PASS } from '../state/daily.js';
+import { morningHand, morningDone } from '../state/morning.js';
 import { openSnags, snagSitting, noteSnag, SNAG_CLEAR, SNAG_PEARLS } from '../state/snags.js';
 import { snagQuestion } from '../trainers/preflop.js';
 import { checkAchievements } from '../state/achievements.js';
@@ -461,11 +462,15 @@ export function renderDrill(ctx, params) {
 
     );
 
+    // Yesterday's hand is the fourth question of the day, and yours alone.
+    const morning = daily && !morningDone(profile) ? morningHand() : null;
     mount(footer,
       snags
         ? el('button.btn.primary', { onclick: () => go('drill', { mode: 'snags' }) }, t('Sail them again'))
       : daily
-        ? el('button.btn.primary', { onclick: () => go('home') }, t('Back to the river'))
+        ? (morning
+          ? el('button.btn.primary', { onclick: () => go('review', { retry: morning.id, morning: '1' }) }, t('Yesterday\'s hand'))
+          : el('button.btn.primary', { onclick: () => go('home') }, t('Back to the river')))
         : el('button.btn.primary', { onclick: () => go(gauntlet ? 'gauntlet' : 'drill', { module: params.module }) },
           gauntlet ? t('Race again') : 'Another session'),
       !mixed
