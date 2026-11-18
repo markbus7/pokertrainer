@@ -276,9 +276,9 @@ export const LANDMARKS = {
     <path class="roof ink" d="M-8 17v-10h7v10zM1 17v-10h7v10z"/>
     <path class="ink" d="M32 18v-11M42 18v-11M30 9h14"/>`,
 
-  // The boatyard: a long shed, a hull up on the stocks with her ribs still
-  // showing, the slipway down into the water, and a derrick to lift the
-  // boilers in.
+  // The boatyard: the shed, a boat half planked on her
+  // trestles at the head of the slipway (the ribs still bare along her
+  // sheer), and a derrick with its hook out over her to lift the boilers in.
   boatyard: () => `
     <path class="shallows" d="M-46 16h92v8h-92z"/>
     <path class="ground" d="M-44 16h30"/>
@@ -289,13 +289,21 @@ export const LANDMARKS = {
     ${shingles(-43, -7, -6, -25, -20)}${gableShade(-7, -6, -25, -20)}
     <rect class="glow" x="-35" y="0" width="6" height="6"/>
     <path class="roof ink" d="M-24 16v-12h9v12z"/>
-    <path class="ink" d="M-6 16L40 24M-2 11L42 19"/>
-    <path class="hull ink" d="M-2 4h34l-6 8h-22z"/><path class="fine" d="M0 7h30"/>
-    <path class="ink" d="M4 4v-7M10 4v-8M16 4v-8M22 4v-7M28 4v-5"/>
-    <path class="ink" d="M1 12v6M27 12v8"/>
-    <path class="ink" d="M36 16V-26M36 -26L14 -12M36 -18L20 -8"/>
-    <path class="ink" d="M14 -12v10"/>
-    <path class="mark ink" d="M36 -26l9 3-9 3z"/>`,
+    <path class="ink" d="M-1 13V-34"/>
+    <path class="ink" d="M-1 -32L30 -20"/>
+    <path class="fine" d="M-1 -24L30 -20M-1 -34l-14 13"/>
+    <path class="roof ink" d="M-9 13.5L46 19.5v3.4L-9 16.9z"/>
+    <path class="fine" d="M-2 14.3v3.4M6 15.2v3.4M14 16.1v3.4M22 17v3.4M30 17.8v3.4M38 18.7v3.4"/>
+    <path class="ink" d="M2 15.4l3 -6.4l3 7.1M23 17.7l3 -8.7l3 9.4"/>
+    <path class="ink" d="M1 9h9M22 9h9"/>
+    <path class="wall ink" d="M-6 -1q21 2.6 44 -4l-7 14q-15 2.4 -31 0z"/>
+    <path class="roof ink" d="M-4.3 3.3q19.8 2.2 40.6 -3.2l-5.3 8.9q-15 2.4 -31 0z"/>
+    ${shingles(-4.3, 31.3, 9, 13, 3.6, 1)}
+    <path class="shade" d="M-2 6.6q17 2 32.6 -1l-1.6 3.4q-15 2.4 -31 0z"/>
+    <path class="ink" d="M6 .3v3.5M12 .7v3.5M18 .8v3.4M24 .4v3.3M30 -.6v3"/>
+    <path class="ink" d="M30 -20v12"/>
+    <path class="ink" d="M30 -8a2 2 0 1 0 2 2"/>
+    <path class="mark ink" d="M-1 -34l9 2.6-9 2.6z"/>`,
 
   // The bait and tackle shop: a shack at the end of a pier, a carved fish
   // hung out for a sign, and a rod leaning on the rail with its line in.
@@ -530,13 +538,15 @@ export const LANDMARKS = {
 
 export const BOAT_ART = {
   // A clinker rowboat: a sheer that rises to the bow, a square stern, and
-  // an oar trailing from its rowlock with the blade in the water.
+  // the oars shipped inside her, blades up over the gunwale: nothing of
+  // her reaches past her own length, so a scene cropped at her stern does
+  // not leave an oar on its own in the water.
   rowboat: () => `
+    <path class="ink" d="M-11 -5.6L9 -8.2M-9 -4.2L11 -6.6"/>
+    <path class="hull ink" d="M9 -8.2l5 -.8l.2 2.4l-5 .4zM11 -6.6l4.6 -.6l.2 2.2l-4.6 .4z"/>
     <path class="hull ink" d="M-15 -2q15 2 31 -2.5l-4 8.5q-11 2.2-23 0z"/>
     <path class="fine" d="M-13.6 1q13.6 1.8 28.1 -2.1"/>
-    <path class="shade" d="M-12 3.2q12 1.8 25 -1.2l-1 2q-11 2.2-23 0z"/>
-    <path class="ink" d="M2 -5L-19 6.5"/>
-    <path class="hull ink" d="M-17 5.4l-6.4 3.4a1.6 1.6 0 0 0 1.7 2.6l6.2-3.6z"/>`,
+    <path class="shade" d="M-12 3.2q12 1.8 25 -1.2l-1 2q-11 2.2-23 0z"/>`,
   skiff: () => `
     <path class="hull ink" d="M-17 -1q17 2 35 -3l-5 9.5q-12 2.4-26 0z"/>
     <path class="fine" d="M-15.5 2.2q15.5 1.8 31.4 -2.4"/>
