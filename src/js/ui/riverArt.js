@@ -530,13 +530,15 @@ export const LANDMARKS = {
 
 export const BOAT_ART = {
   // A clinker rowboat: a sheer that rises to the bow, a square stern, and
-  // an oar trailing from its rowlock with the blade in the water.
+  // the oars shipped inside her, blades up over the gunwale: nothing of
+  // her reaches past her own length, so a scene cropped at her stern does
+  // not leave an oar on its own in the water.
   rowboat: () => `
+    <path class="ink" d="M-11 -5.6L9 -8.2M-9 -4.2L11 -6.6"/>
+    <path class="hull ink" d="M9 -8.2l5 -.8l.2 2.4l-5 .4zM11 -6.6l4.6 -.6l.2 2.2l-4.6 .4z"/>
     <path class="hull ink" d="M-15 -2q15 2 31 -2.5l-4 8.5q-11 2.2-23 0z"/>
     <path class="fine" d="M-13.6 1q13.6 1.8 28.1 -2.1"/>
-    <path class="shade" d="M-12 3.2q12 1.8 25 -1.2l-1 2q-11 2.2-23 0z"/>
-    <path class="ink" d="M2 -5L-19 6.5"/>
-    <path class="hull ink" d="M-17 5.4l-6.4 3.4a1.6 1.6 0 0 0 1.7 2.6l6.2-3.6z"/>`,
+    <path class="shade" d="M-12 3.2q12 1.8 25 -1.2l-1 2q-11 2.2-23 0z"/>`,
   skiff: () => `
     <path class="hull ink" d="M-17 -1q17 2 35 -3l-5 9.5q-12 2.4-26 0z"/>
     <path class="fine" d="M-15.5 2.2q15.5 1.8 31.4 -2.4"/>
