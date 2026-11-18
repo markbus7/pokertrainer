@@ -20,17 +20,54 @@ const f1 = (n) => Math.round(n * 10) / 10;
 const windowsRow = (x0, y, n, step, w = 4, h = 4) => Array.from({ length: n },
   (_, i) => `<rect class="glow" x="${f1(x0 + i * step)}" y="${y}" width="${w}" height="${h}"/>`).join('');
 
+
+/*
+ * The detail a drawing earns when it is seen large: clapboards and shingles
+ * (`fine`, a thin pen), the shadow side of a roof, the shadow under the eaves
+ * and on the ground (`shade`). river.css shows them only where a drawing is
+ * big (a stop's scene, the head of a creek, the boatyard), so the chart of the
+ * whole river stays as clean as it was.
+ */
+const n1 = (n) => f1(n).toString();
+/** Clapboards: level lines across a wall, every `step` from the top. */
+const siding = (x1, x2, top, bottom, step = 4) => {
+  let d = '';
+  for (let y = top + step; y < bottom - 0.5; y += step) d += `M${n1(x1)} ${n1(y)}H${n1(x2)}`;
+  return `<path class="fine" d="${d}"/>`;
+};
+/** Rows of shingles on a gable roof from (x1,y) to (x2,y) under its apex (ax,ay). */
+const shingles = (x1, x2, y, ax, ay, rows = 2) => {
+  let d = '';
+  for (let k = 1; k <= rows; k++) {
+    const t = k / (rows + 1);
+    d += `M${n1(x1 + (ax - x1) * t)} ${n1(y + (ay - y) * t)}H${n1(x2 + (ax - x2) * t)}`;
+  }
+  return `<path class="fine" d="${d}"/>`;
+};
+/** The side of a gable away from the light, which comes from the left. */
+const gableShade = (x2, y, ax, ay) => `<path class="shade" d="M${n1(ax)} ${n1(ay)}L${n1(x2)} ${n1(y)}H${n1(ax)}z"/>`;
+/** The shadow under the eaves, a band across the top of a wall. */
+const eaves = (x1, x2, y, h = 2.5) => `<path class="shade" d="M${n1(x1)} ${n1(y)}H${n1(x2)}v${n1(h)}H${n1(x1)}z"/>`;
+/** A window's glazing bars, a cross through its middle. */
+const panes = (x, y, w, h) => `<path class="fine" d="M${n1(x + w / 2)} ${n1(y)}v${n1(h)}M${n1(x)} ${n1(y + h / 2)}h${n1(w)}"/>`;
+/** The shadow a building throws on the ground under it. */
+const footShadow = (cx, rx, y = 18) => `<ellipse class="shade" cx="${n1(cx)}" cy="${n1(y + 0.8)}" rx="${n1(rx)}" ry="1.8"/>`;
+
 export const LANDMARKS = {
   landing: () => `
+    ${footShadow(-8, 34)}
     <path class="ground" d="M-40 18h80"/>
     <path class="wall ink" d="M-32 18V-3h26v21z"/>
+    ${siding(-32, -6, -3, 18)}${eaves(-32, -6, -3)}
     <path class="roof ink" d="M-35 -2L-19 -16L-3 -2z"/>
-    <rect class="glow" x="-26" y="2" width="7" height="7"/>
+    ${shingles(-35, -3, -2, -19, -16)}${gableShade(-3, -2, -19, -16)}
+    <rect class="glow" x="-26" y="2" width="7" height="7"/>${panes(-26, 2, 7, 7)}
     <path class="ink" d="M-13 18v-10h4v10"/>
     <rect class="wall ink" x="3" y="8" width="10" height="10"/>
     <rect class="wall ink" x="13" y="11" width="8" height="7"/>
     <rect class="wall ink" x="6" y="0" width="8" height="8"/>
     <path class="ink" d="M3 13h10M8 8v10"/>
+    <path class="fine" d="M13 14.5h8M6 4h8"/>
     <path class="ink" d="M29 18V-14h7"/>
     <path class="ink" d="M36 -14v3"/>
     <circle class="glow ink" cx="36" cy="-7.5" r="3.4"/>`,
@@ -40,46 +77,57 @@ export const LANDMARKS = {
     <path class="ink" d="M-24 24V7M-11 24V7M3 24V7M17 24V7"/>
     <path class="roof ink" d="M-31 7h55v-3h-55z"/>
     <path class="wall ink" d="M-27 4V-14h46V4z"/>
+    ${siding(-27, 19, -14, 4, 3.6)}${eaves(-27, 19, -14)}
     <path class="roof ink" d="M-31 -13L-4 -30L23 -13z"/>
+    ${shingles(-31, 23, -13, -4, -30, 3)}${gableShade(23, -13, -4, -30)}
     <path class="roof ink" d="M9 -21v-9h5v12"/>
     <path class="smoke" d="M11.5 -33c-3-3 3-5 0-8s3-5 0-7"/>
-    <rect class="glow" x="-21" y="-9" width="6" height="6"/>
-    <rect class="glow" x="7" y="-9" width="6" height="6"/>
+    <rect class="glow" x="-21" y="-9" width="6" height="6"/>${panes(-21, -9, 6, 6)}
+    <rect class="glow" x="7" y="-9" width="6" height="6"/>${panes(7, -9, 6, 6)}
     <path class="ink" d="M-7 4v-10h6v10"/>
     <path class="ink" d="M23 -5h9M28 -5v3"/>
     <rect class="wall ink" x="23.5" y="-2" width="9" height="6"/>`,
 
   ferry: () => `
     <path class="ground" d="M-40 18h36"/>
+    ${footShadow(-26, 14)}
     <path class="wall ink" d="M-37 18V1h21v17z"/>
+    ${siding(-37, -16, 1, 18)}${eaves(-37, -16, 1, 2)}
     <path class="roof ink" d="M-39 2L-26.5 -10L-14 2z"/>
-    <rect class="glow" x="-31" y="5" width="6" height="6"/>
+    ${shingles(-39, -14, 2, -26.5, -10)}${gableShade(-14, 2, -26.5, -10)}
+    <rect class="glow" x="-31" y="5" width="6" height="6"/>${panes(-31, 5, 6, 6)}
     <path class="ink" d="M-8 18V-15h9"/>
     <path class="glow ink" d="M1 -14c-3 0-3.6 3-4 6.5h8c-.4-3.5-1-6.5-4-6.5z"/>
     <path class="roof ink" d="M-4 13h44l-4 7h-36z"/>
-    <path class="wall ink" d="M8 13V1h19v12z"/>
+    <path class="fine" d="M-2.3 16h40.6"/><path class="shade" d="M-1.7 17h41.4l-1.7 3h-38z"/>
+    <path class="wall ink" d="M8 13V1h19v12z"/>${eaves(8, 27, 1, 2)}
     <path class="roof ink" d="M6 2L17.5 -6L29 2z"/>
     <rect class="glow" x="14" y="4" width="6" height="5"/>`,
 
   exchange: () => `
     <path class="ground" d="M-40 18h80"/>
+    ${footShadow(-6, 40)}
     <path class="wall ink" d="M-35 17V-8h52v25z"/>
+    ${eaves(-35, 17, -8, 3)}
     <path class="roof ink" d="M-39 -8L-9 -27L21 -8z"/>
+    ${gableShade(21, -8, -9, -27)}
     <path class="ink" d="M-19 -13h20"/>
     <path class="ink" d="M-29 17V-5M-19 17V-5M-9 17V-5M1 17V-5M11 17V-5"/>
     <path class="roof ink" d="M-37 17h56v2h-56z"/>
-    <rect class="glow" x="-26" y="3" width="5" height="8"/>
-    <rect class="glow" x="-6" y="3" width="5" height="8"/>
-    <rect class="glow" x="4" y="3" width="5" height="8"/>
+    <path class="shade" d="M-27 17V-5h-2v22zM-17 17V-5h-2v22zM-7 17V-5h-2v22zM3 17V-5h-2v22zM13 17V-5h-2v22z"/>
+    <rect class="glow" x="-26" y="3" width="5" height="8"/>${panes(-26, 3, 5, 8)}
+    <rect class="glow" x="-6" y="3" width="5" height="8"/>${panes(-6, 3, 5, 8)}
+    <rect class="glow" x="4" y="3" width="5" height="8"/>${panes(4, 3, 5, 8)}
     <rect class="wall ink" x="23" y="8" width="13" height="10" rx="2"/>
     <rect class="wall ink" x="26" y="-2" width="11" height="10" rx="2"/>
     <path class="ink" d="M27 8v10M32 8v10M30 -2v10M34 -2v10"/>`,
 
   steamer: () => `
     <path class="roof ink" d="M-40 10h78l-8 10h-62z"/>
-    <path class="wall ink" d="M-32 10V0h56v10z"/>
+    <path class="fine" d="M-37.6 13h72.6M-35.2 16h67.8"/><path class="shade" d="M-35.2 16h67.8l-3.2 4h-62z"/>
+    <path class="wall ink" d="M-32 10V0h56v10z"/>${eaves(-32, 24, 0, 2)}
     ${windowsRow(-28, 3, 7, 7.5)}
-    <path class="wall ink" d="M-25 0V-8h40V0z"/>
+    <path class="wall ink" d="M-25 0V-8h40V0z"/>${eaves(-25, 15, -8, 1.6)}
     ${windowsRow(-20, -6, 4, 9, 4, 3)}
     <path class="wall ink" d="M-7 -8v-7h12v7z"/>
     <rect class="glow" x="-4" y="-13" width="6" height="3"/>
@@ -91,10 +139,13 @@ export const LANDMARKS = {
 
   hotel: () => `
     <path class="ground" d="M-40 18h80"/>
+    ${footShadow(0, 42)}
     <path class="wall ink" d="M-38 18V-14h76v32z"/>
+    ${siding(-38, 38, -14, 18, 8)}${eaves(-38, 38, -14, 3)}
+    <path class="shade" d="M20 -14h18v32h-18z"/>
     <path class="roof ink" d="M-40 -14h80v-4h-80z"/>
     <path class="roof ink" d="M-8 -18v-7h16v7z"/>
-    <path class="wall ink" d="M-9 -25a9 9 0 0 1 18 0z"/>
+    <path class="wall ink" d="M-9 -25a9 9 0 0 1 18 0z"/><path class="shade" d="M0 -34a9 9 0 0 1 9 9h-9z"/>
     <path class="ink" d="M0 -34v-9"/>
     <path class="mark ink" d="M0 -43l9 2.5L0 -38z"/>
     ${windowsRow(-33, -10, 8, 8.8)}
@@ -106,9 +157,11 @@ export const LANDMARKS = {
 
   barge: () => `
     <path class="roof ink" d="M-40 10h80l-6 9h-68z"/>
+    <path class="fine" d="M-38.7 13h77.4M-37.3 16h74.6"/><path class="shade" d="M-37.3 16h74.6l-2 3h-70.6z"/>
     <path class="glow" d="M-39 10h78v2h-78z"/>
-    <path class="wall ink" d="M-31 10V-7h58v17z"/>
+    <path class="wall ink" d="M-31 10V-7h58v17z"/>${eaves(-31, 27, -7, 3)}
     <path class="roof ink" d="M-34 -6c10-9 54-9 64 0z"/>
+    <path class="fine" d="M-26 -9.6c10-4 36-4 46 0"/>
     <path class="glow ink" d="M-25 6v-6a3 3 0 0 1 6 0v6zM-12 6v-6a3 3 0 0 1 6 0v6zM1 6v-6a3 3 0 0 1 6 0v6zM14 6v-6a3 3 0 0 1 6 0v6z"/>
     <path class="ink" d="M-40 -19c12 6 30 6 40 0s26-6 40 0"/>
     <circle class="glow" cx="-30" cy="-15.5" r="2.2"/>
@@ -120,16 +173,26 @@ export const LANDMARKS = {
   // Not stops: the places you study. Drawn in the same hand so the school
   // and the pilot house sit on the same river as the tables.
   school: () => `
+    ${footShadow(-6, 30)}
     <path class="ground" d="M-42 18h84"/>
     <path class="wall ink" d="M-30 18V-5h48v23z"/>
+    ${siding(-30, 18, -5, 18, 3.8)}${eaves(-30, 18, -5, 3)}
     <path class="roof ink" d="M-34 -4L-6 -23L22 -4z"/>
+    ${shingles(-34, 22, -4, -6, -23, 3)}${gableShade(22, -4, -6, -23)}
     <path class="wall ink" d="M-11 -18v-12h10v12"/>
+    <path class="shade" d="M-6 -30h5v8.6l-5 3.4z"/>
     <path class="roof ink" d="M-13.5 -30L-6 -41L1.5 -30z"/>
+    ${gableShade(1.5, -30, -6, -41)}
     <circle class="glow ink" cx="-6" cy="-24" r="2.4"/>
+    <path class="ink" d="M-6 -24v-1.6M-6 -24h1.2"/>
     <rect class="glow" x="-25" y="-1" width="7" height="8"/>
     <rect class="glow" x="6" y="-1" width="7" height="8"/>
+    <path class="fine" d="M-21.5 -1v8M9.5 -1v8"/>
     <path class="ink" d="M-25 3h7M6 3h7"/>
+    <path class="ink" d="M-26 7.5h9M5 7.5h9"/>
     <path class="roof ink" d="M-10 18v-13h8v13z"/>
+    <path class="fine" d="M-6 5v13"/><circle class="ink" cx="-4.2" cy="12" r=".5"/>
+    <path class="ink" d="M-12 18v1.5h12V18"/>
     <path class="ink" d="M-13 18h14"/>
     <path class="ink" d="M26 18V-22"/>
     <path class="mark ink" d="M26 -22l12 3.5-12 3.5z"/>
@@ -137,13 +200,15 @@ export const LANDMARKS = {
 
   pilothouse: () => `
     <path class="roof ink" d="M-44 12h88l-9 9h-70z"/>
-    <path class="wall ink" d="M-36 12V2h72v10z"/>
+    <path class="fine" d="M-42 15h84M-39.5 18h79"/>
+    <path class="wall ink" d="M-36 12V2h72v10z"/>${eaves(-36, 36, 2, 2)}
     ${windowsRow(-32, 5, 9, 7.8)}
-    <path class="wall ink" d="M-26 2V-6h52v8z"/>
+    <path class="wall ink" d="M-26 2V-6h52v8z"/>${eaves(-26, 26, -6, 2)}
     <path class="roof ink" d="M-30 -6v-24h5v24zM-21 -6v-24h5v24z"/>
     <path class="ink" d="M-32 -30h9M-23 -30h9"/>
     <path class="smoke" d="M-27.5 -33c-4-4 4-6 0-10M-18.5 -33c-4-4 4-6 0-10"/>
     <path class="wall ink" d="M-2 -6v-20h26v20z"/>
+    ${siding(-2, 24, -12, -6, 2)}${eaves(-2, 24, -26, 2.5)}
     <path class="roof ink" d="M-5 -26h32l-4 -6h-24z"/>
     <rect class="glow" x="1" y="-23" width="9" height="11"/>
     <rect class="glow" x="12" y="-23" width="9" height="11"/>
@@ -196,12 +261,15 @@ export const LANDMARKS = {
   // doors, and a hitching post outside.
   saloon: () => `
     <path class="ground" d="M-42 18h84"/>
+    ${footShadow(-2, 36)}
     <path class="wall ink" d="M-30 18V-6h56v24z"/>
+    ${siding(-30, 26, -3, 18, 3.5)}
     <path class="wall ink" d="M-34 -6V-27h64v21z"/>
+    ${siding(-34, 30, -14, -6, 2.7)}
     <path class="roof ink" d="M-36 -27h68v-3h-68z"/>
     <rect class="mark ink" x="-25" y="-23" width="46" height="9"/>
     <path class="ink" d="M-19 -18.5h34"/>
-    <path class="roof ink" d="M-35 -6h66v3h-66z"/>
+    <path class="roof ink" d="M-35 -6h66v3h-66z"/>${eaves(-30, 26, -3, 3)}
     <path class="ink" d="M-33 -3v-7M-21 -3v-7M-9 -3v-7M3 -3v-7M15 -3v-7M27 -3v-7M-33 -10h60"/>
     <rect class="glow" x="-26" y="3" width="8" height="8"/>
     <rect class="glow" x="14" y="3" width="8" height="8"/>
@@ -214,12 +282,15 @@ export const LANDMARKS = {
   boatyard: () => `
     <path class="shallows" d="M-46 16h92v8h-92z"/>
     <path class="ground" d="M-44 16h30"/>
+    ${footShadow(-25, 17, 16)}
     <path class="wall ink" d="M-40 16V-6h30v22z"/>
+    ${siding(-40, -10, -6, 16, 3.6)}${eaves(-40, -10, -6)}
     <path class="roof ink" d="M-43 -6L-25 -20L-7 -6z"/>
+    ${shingles(-43, -7, -6, -25, -20)}${gableShade(-7, -6, -25, -20)}
     <rect class="glow" x="-35" y="0" width="6" height="6"/>
     <path class="roof ink" d="M-24 16v-12h9v12z"/>
     <path class="ink" d="M-6 16L40 24M-2 11L42 19"/>
-    <path class="hull ink" d="M-2 4h34l-6 8h-22z"/>
+    <path class="hull ink" d="M-2 4h34l-6 8h-22z"/><path class="fine" d="M0 7h30"/>
     <path class="ink" d="M4 4v-7M10 4v-8M16 4v-8M22 4v-7M28 4v-5"/>
     <path class="ink" d="M1 12v6M27 12v8"/>
     <path class="ink" d="M36 16V-26M36 -26L14 -12M36 -18L20 -8"/>
@@ -248,7 +319,9 @@ export const LANDMARKS = {
     <path class="ink" d="M-32 24V11M-16 24V11M0 24V11M16 24V11M32 24V11"/>
     <path class="roof ink" d="M-38 11h76v-3h-76z"/>
     <path class="wall ink" d="M-31 8V-15h50V8z"/>
+    ${siding(-31, 19, -15, 8, 3.6)}${eaves(-31, 19, -15)}
     <path class="roof ink" d="M-35 -15L-6 -32L23 -15z"/>
+    ${shingles(-35, 23, -15, -6, -32, 3)}${gableShade(23, -15, -6, -32)}
     <rect class="mark ink" x="-24" y="-11" width="36" height="7"/>
     <path class="ink" d="M-19 -7.5h26"/>
     <rect class="glow" x="-26" y="-1" width="7" height="7"/>
@@ -456,22 +529,32 @@ export const LANDMARKS = {
  * ------------------------------------------------------------------ */
 
 export const BOAT_ART = {
+  // A clinker rowboat: a sheer that rises to the bow, a square stern, and
+  // an oar trailing from its rowlock with the blade in the water.
   rowboat: () => `
-    <path class="hull ink" d="M-14 0h28l-5 7h-18z"/>
-    <path class="ink" d="M-7 2l-9 8M7 2l9 8"/>`,
+    <path class="hull ink" d="M-15 -2q15 2 31 -2.5l-4 8.5q-11 2.2-23 0z"/>
+    <path class="fine" d="M-13.6 1q13.6 1.8 28.1 -2.1"/>
+    <path class="shade" d="M-12 3.2q12 1.8 25 -1.2l-1 2q-11 2.2-23 0z"/>
+    <path class="ink" d="M2 -5L-19 6.5"/>
+    <path class="hull ink" d="M-17 5.4l-6.4 3.4a1.6 1.6 0 0 0 1.7 2.6l6.2-3.6z"/>`,
   skiff: () => `
-    <path class="hull ink" d="M-16 1h32l-6 7h-20z"/>
-    <path class="ink" d="M-2 1v-23"/>
+    <path class="hull ink" d="M-17 -1q17 2 35 -3l-5 9.5q-12 2.4-26 0z"/>
+    <path class="fine" d="M-15.5 2.2q15.5 1.8 31.4 -2.4"/>
+    <path class="shade" d="M-13.6 4.6q13 2 26.4 -.8l-.8 1.7q-12 2.4-26 0z"/>
+    <path class="ink" d="M-2 0v-22"/>
     <path class="sail ink" d="M-1 -21l15 20h-15z"/>
     <path class="sail ink" d="M-3 -17l-9 16h9z"/>`,
   launch: () => `
-    <path class="hull ink" d="M-19 1h38l-6 8h-26z"/>
+    <path class="hull ink" d="M-19 0q19 2 39 -2.5l-6 9.5q-13 2.4-28 0z"/>
+    <path class="fine" d="M-17.5 3.4q17.5 1.8 35.6 -2.4"/>
+    <path class="shade" d="M-15.5 5.6q14 2 28.5 -.6l-.9 1.5q-13 2.4-28 0z"/>
     <path class="deck ink" d="M-9 1v-8h15v8z"/>
     <rect class="glow" x="-6" y="-5" width="4" height="3"/>
     <path class="deck ink" d="M9 1v-12h4v12z"/>
     <path class="smoke" d="M11 -14c-3-3 3-5 0-8"/>`,
   sternwheeler: () => `
     <path class="hull ink" d="M-22 1h40l-6 8h-30z"/>
+    <path class="fine" d="M-19.7 4h35.4"/><path class="shade" d="M-17.7 6.6h31.4l-1.7 2.4h-28z"/>
     <path class="deck ink" d="M-17 1v-7h32v7z"/>
     ${windowsRow(-14, -4, 4, 7, 3, 3)}
     <path class="deck ink" d="M-10 -6v-5h16v5z"/>
@@ -480,6 +563,7 @@ export const BOAT_ART = {
     <path class="ink" d="M15 1h12M21 -5v12"/>`,
   flagship: () => `
     <path class="hull ink" d="M-26 1h52l-7 9h-38z"/>
+    <path class="fine" d="M-23.7 4h47.4"/><path class="shade" d="M-21.4 7h42.8l-2.3 3h-38z"/>
     <path class="deck ink" d="M-20 1v-7h40v7z"/>
     ${windowsRow(-17, -4, 5, 7.5, 3, 3)}
     <path class="deck ink" d="M-14 -6v-6h28v6z"/>
