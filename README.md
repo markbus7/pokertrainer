@@ -323,6 +323,13 @@ daylight), the people have faces, and everything you hear — chips, cards, the
 ship's bell, a steam whistle and a ragtime piano — is synthesised in the
 browser, with separate switches for effects and music in the ledger.
 
+Where a place is drawn large (the scene at a stop, the school at the head of
+its creek, the boatyard) its building gets the detail the big chart leaves
+out: clapboards, shingles, glazing bars, the shadow side of the roof and under
+the eaves, a shadow on the ground, and a little light around each lit window.
+Your boat is in brass there too, and the borrowed rowboat is a proper one now,
+with a sheer that rises to the bow and an oar trailing in the water.
+
 ### 🌊 The Gulf: the second act
 
 Take the delta and the river is won — and past it the Gulf opens: five more

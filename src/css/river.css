@@ -704,6 +704,28 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
   fill: none; stroke: var(--map-ink-dim); stroke-width: 1.2; stroke-linecap: round; opacity: 0.8;
 }
 
+/* The detail a drawing earns when it is seen large (riverArt.js): clapboards,
+   shingles and glazing bars in a fine pen, and the shadow side of things.
+   The chart of the whole river draws the same buildings small, where that
+   detail would only be noise, so it is off unless the drawing is big. */
+.fine, .shade { display: none; }
+:is(.scene-art, .landmark-art, .creek-place-art, .boat-art, .yard-boat) .fine {
+  display: inline;
+  fill: none;
+  stroke: var(--map-ink);
+  stroke-width: 0.55;
+  stroke-linecap: round;
+  opacity: 0.4;
+}
+.scene-art .fine { stroke-width: 0.9; vector-effect: non-scaling-stroke; }
+:is(.scene-art, .landmark-art, .creek-place-art, .boat-art, .yard-boat) .shade {
+  display: inline;
+  fill: rgba(0, 0, 0, 0.2);
+}
+/* Lit windows throw a little light around them where there is room to see it. */
+:is(.scene-art, .creek-place-art) .scene-landmark .glow,
+.creek-place-art .glow { filter: drop-shadow(0 0 1.6px var(--map-glow)); }
+
 .landmark { cursor: pointer; transition: opacity 200ms, filter 200ms; }
 .landmark:hover { filter: brightness(1.2); }
 .landmark.shut { opacity: 0.42; }
@@ -914,6 +936,10 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 .scene-art .ground { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
 .scene-art .smoke { fill: none; stroke: var(--map-ink-dim); stroke-width: 1.4; stroke-linecap: round; opacity: 0.8; vector-effect: non-scaling-stroke; }
 .scene-art .scene-ripple { vector-effect: non-scaling-stroke; }
+/* Your boat in brass at a stop too: the scene's pen rule above would leave it hollow. */
+.scene-art .you .hull { fill: var(--brass); }
+.scene-art .you .sail { fill: var(--paper); }
+.scene-art .you .deck { fill: var(--paper-2); }
 
 /* Arriving: the boat comes in from off the left edge and settles. */
 .scene-boat.arriving { animation: arrive 1.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
