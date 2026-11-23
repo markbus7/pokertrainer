@@ -28,6 +28,7 @@ import {
 } from '../state/handHistory.js';
 import { judgeSize } from '../core/sizing.js';
 import { retryOf, gradeRetry, retryQueue, isFixed, noteRetry } from '../state/retry.js';
+import { LOG_FILTERS, STREETS, filterHands, filterCounts, sortHands, leakByStreet } from '../state/logView.js';
 import { recordMorning, MORNING_PEARLS } from '../state/morning.js';
 import { pearls, pearlPop } from './shop.js';
 import { MENTOR } from '../data/characters.js';
@@ -35,8 +36,26 @@ import { roomSign, silasSays, lampNode } from './place.js';
 
 const SOURCES = { play: 'Table', grind: 'Bankroll', lab: 'Lab' };
 
+/**
+ * How the list is being read: one street or all of it, newest or dearest
+ * first. Kept while the app is open, so going into a hand and back does not
+ * put the list back the way it was.
+ */
+const view = { show: 'all', by: 'new' };
+
+const FILTER_LABELS = {
+  // The streets are the words the cards below use, which are the same in both languages.
+  all: 'All', preflop: 'preflop', flop: 'flop', turn: 'turn', river: 'river', open: 'Not fixed yet', cooler: 'Coolers',
+};
+const LEAK_LINES = {
+  preflop: 'Most of it goes before the flop: {cost}bb in {n} hands.',
+  flop: 'Most of it goes on the flop: {cost}bb in {n} hands.',
+  turn: 'Most of it goes on the turn: {cost}bb in {n} hands.',
+  river: 'Most of it goes on the river: {cost}bb in {n} hands.',
+};
+
 export function renderReview(ctx, params = {}) {
-  if (params.retry) return renderRetry(ctx, params.retry, params.morning === '1');
+  if (params.retry) return renderRetry(ctx, params.retry, params.morning === '1', params.show);
   return params.hand ? renderOneHand(ctx, params.hand) : renderList(ctx);
 }
 
@@ -48,7 +67,14 @@ function renderList(ctx) {
   const { go } = ctx;
   const hands = recentHands();
   const summary = handSummary();
-  const toRetry = retryQueue().length;
+  const counts = filterCounts(hands);
+  // A filter with nothing left in it (the last turn mistake was removed) is no filter.
+  if (!counts[view.show]) view.show = 'all';
+  const shown = sortHands(filterHands(hands, view.show), view.by);
+  const street = STREETS.includes(view.show) ? view.show : null;
+  const toRetry = filterHands(retryQueue(), street || 'all').length;
+  const leak = leakByStreet(hands);
+  const pick = (change) => { Object.assign(view, change); refresh(); };
   // Removing a hand re-renders the whole screen rather than patching the
   // list: the header counts the same hands the rows show, and redrawing only
   // one of them is how those two quietly drift apart.
@@ -89,11 +115,17 @@ function renderList(ctx) {
         ? el('div.notice.log-retry', { style: { marginTop: '14px' } },
             el('div', richText(t('**Play them again.** {n} of your mistakes dealt again as they stood when you '
               + 'acted, without the answer. Get one right and it is marked fixed.', { n: toRetry }))),
-            el('button.btn.sm.primary', { style: { marginTop: '8px' }, onclick: () => go('review', { retry: 'all' }) },
-              t('Play {n} again', { n: toRetry })))
+            el('button.btn.sm.primary', {
+              style: { marginTop: '8px' },
+              onclick: () => go('review', street ? { retry: 'all', show: street } : { retry: 'all' }),
+            }, street
+              ? t('Play {n} again: {street}', { n: toRetry, street: t(FILTER_LABELS[street]) })
+              : t('Play {n} again', { n: toRetry })))
         : null,
+      leakPanel(leak, pick),
+      hands.length > 1 ? logBar(counts, pick) : null,
       hands.length
-        ? el('div.stack-sm.log-entries', hands.map((hand) => handCard(hand, go, refresh)))
+        ? el('div.stack-sm.log-entries', shown.map((hand) => handCard(hand, go, refresh)))
         : el('div.notice.log-empty', t(
             'Nothing saved yet. Hands land here when the coach grades one of your decisions as a mistake, or '
             + 'when you lose {n} big blinds or more having played it right. Go and play a few hands.',
@@ -105,6 +137,57 @@ function renderList(ctx) {
         + 'These live on this device only, so they do not bloat every sync of your progress.',
         { n: COOLER_BB, cap: MISTAKE_CAP }))),
     ),
+  );
+}
+
+/**
+ * Where the money goes: the kept mistakes street by street, each a bar as
+ * long as its share of the cost. A street is a button: it narrows the list
+ * to the hands that went wrong there.
+ */
+function leakPanel(leak, pick) {
+  const mistakes = leak.rows.reduce((n, row) => n + row.hands, 0);
+  if (mistakes < 2 || leak.total <= 0) return null;
+  return el('div.log-leak',
+    el('div.page-kicker', t('Where it goes')),
+    leak.worst
+      ? el('div.log-leak-line', t(LEAK_LINES[leak.worst.street], { cost: leak.worst.costBb.toFixed(1), n: leak.worst.hands }))
+      : null,
+    el('div.log-leak-rows', leak.rows.map((row) => el(
+      `button.log-leak-row${row.hands ? '' : '.none'}${leak.worst === row ? '.worst' : ''}${view.show === row.street ? '.active' : ''}`,
+      {
+        type: 'button',
+        disabled: !row.hands,
+        'data-street': row.street,
+        'aria-pressed': view.show === row.street ? 'true' : 'false',
+        onclick: () => pick({ show: view.show === row.street ? 'all' : row.street }),
+      },
+      el('span.log-leak-name', t(FILTER_LABELS[row.street])),
+      el('span.log-leak-track', el('span.log-leak-fill', { style: { width: `${Math.round(row.share * 100)}%` } })),
+      el('span.log-leak-sum', row.hands
+        ? t('{cost}bb · {n} hands', { cost: row.costBb.toFixed(1), n: row.hands })
+        : '–'),
+    ))),
+  );
+}
+
+/** The list's own controls: which hands, and in what order. Filters with nothing in them are left off. */
+function logBar(counts, pick) {
+  const filters = LOG_FILTERS.filter((key) => key === 'all' || (counts[key] > 0 && counts[key] < counts.all));
+  return el('div.log-bar',
+    filters.length > 1
+      ? el('div.log-filters', { role: 'group', 'aria-label': t('Show') }, filters.map((key) => el(
+          `button.log-chip${view.show === key ? '.active' : ''}`,
+          { type: 'button', 'data-show': key, 'aria-pressed': view.show === key ? 'true' : 'false', onclick: () => pick({ show: key }) },
+          el('span', t(FILTER_LABELS[key])), el('span.log-chip-n', String(counts[key])),
+        )))
+      : null,
+    el('div.log-order', { role: 'group', 'aria-label': t('Order') },
+      [['new', 'Newest first'], ['cost', 'Dearest first']].map(([key, label]) => el(
+        `button.log-chip${view.by === key ? '.active' : ''}`,
+        { type: 'button', 'data-by': key, 'aria-pressed': view.by === key ? 'true' : 'false', onclick: () => pick({ by: key }) },
+        t(label),
+      ))),
   );
 }
 
@@ -281,10 +364,11 @@ function renderOneHand(ctx, id) {
  * through does not shift the ones still to come. `morning` is yesterday's
  * hand, asked from today's question: its first answer of the day counts.
  */
-function renderRetry(ctx, which, morning = false) {
+function renderRetry(ctx, which, morning = false, show = 'all') {
   const { profile, go } = ctx;
+  // `show` is a street picked on the list: the sitting is that street's mistakes only.
   const ids = which === 'all'
-    ? retryQueue().map((h) => h.id)
+    ? filterHands(retryQueue(), STREETS.includes(show) ? show : 'all').map((h) => h.id)
     : [which].filter((id) => retryOf(findHand(id)));
   if (!ids.length) {
     return el('div.screen', el('div.panel',

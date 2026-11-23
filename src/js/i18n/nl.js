@@ -2346,6 +2346,22 @@ export const NL = {
   'Play {n} again': 'Speel {n} opnieuw',
   'Fixed': 'Opgelost',
   'Try it again': 'Probeer opnieuw',
+
+  /* ---- Hand review: the list by street, and dearest first ---- */
+
+  'All': 'Alles',
+  'Not fixed yet': 'Nog niet opgelost',
+  'Where it goes': 'Waar het heen gaat',
+  'Most of it goes before the flop: {cost}bb in {n} hands.': 'Het meeste gaat vóór de flop verloren: {cost}bb in {n} handen.',
+  'Most of it goes on the flop: {cost}bb in {n} hands.': 'Het meeste gaat op de flop verloren: {cost}bb in {n} handen.',
+  'Most of it goes on the turn: {cost}bb in {n} hands.': 'Het meeste gaat op de turn verloren: {cost}bb in {n} handen.',
+  'Most of it goes on the river: {cost}bb in {n} hands.': 'Het meeste gaat op de river verloren: {cost}bb in {n} handen.',
+  '{cost}bb · {n} hands': '{cost}bb · {n} handen',
+  'Show': 'Toon',
+  'Order': 'Volgorde',
+  'Newest first': 'Nieuwste eerst',
+  'Dearest first': 'Duurste eerst',
+  'Play {n} again: {street}': 'Speel {n} opnieuw: {street}',
   'Nothing to play again': 'Niets om opnieuw te spelen',
   'Every mistake in the Log is fixed, or the hand is gone.': 'Elke fout in het Scheepsjournaal is opgelost, of de hand is weg.',
   'What do you do?': 'Wat doe je?',

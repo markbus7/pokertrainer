@@ -44,6 +44,22 @@ const shingles = (x1, x2, y, ax, ay, rows = 2) => {
   }
   return `<path class="fine" d="${d}"/>`;
 };
+/** Planks standing upright: board-and-batten on a mill or a warehouse. */
+const boards = (x1, x2, top, bottom, step = 4) => {
+  let d = '';
+  for (let x = x1 + step; x < x2 - 0.5; x += step) d += `M${n1(x)} ${n1(top)}V${n1(bottom)}`;
+  return `<path class="fine" d="${d}"/>`;
+};
+/** Dressed stone or brick: level courses, their joints staggered row by row. */
+const courses = (x1, x2, top, bottom, step = 4, block = 8) => {
+  let d = '';
+  let row = 0;
+  for (let y = top + step; y < bottom + 0.1; y += step, row++) {
+    if (y < bottom - 0.5) d += `M${n1(x1)} ${n1(y)}H${n1(x2)}`;
+    for (let x = x1 + (row % 2 ? block : block / 2); x < x2 - 0.5; x += block) d += `M${n1(x)} ${n1(y - step)}V${n1(Math.min(y, bottom))}`;
+  }
+  return `<path class="fine" d="${d}"/>`;
+};
 /** The side of a gable away from the light, which comes from the left. */
 const gableShade = (x2, y, ax, ay) => `<path class="shade" d="M${n1(ax)} ${n1(ay)}L${n1(x2)} ${n1(y)}H${n1(ax)}z"/>`;
 /** The shadow under the eaves, a band across the top of a wall. */
@@ -344,192 +360,422 @@ export const LANDMARKS = {
     <path class="mark ink" d="M-40 -24l12 3.5-12 3.5z"/>`,
 
   /* ---- the Gulf ---- */
-  // Salt Harbour: the customs house on the quay, its flag, a crate of duty.
+  // Salt Harbour: the customs house on the quay, its seal in the gable, its
+  // flag, and the duty waiting outside: a crate and a cask.
   customs: () => `
-    <path class="ground" d="M-44 18h88"/>
-    <path class="wall ink" d="M-30 18V-6h60v24z"/>
+    ${footShadow(0, 40)}
+    <path class="ground" d="M-46 18h92"/>
+    <path class="wall ink" d="M-30 16V-6h60v22z"/>
+    ${courses(-30, 30, -6, 16, 4.4, 9)}${eaves(-30, 30, -6, 3)}
     <path class="roof ink" d="M-34 -6L0 -22L34 -6z"/>
-    <path class="ink" d="M-23 18V-2M-14 18V-2M14 18V-2M23 18V-2"/>
-    <rect class="glow" x="-5" y="3" width="10" height="15"/>
-    <path class="ink" d="M0 -22v-14"/>
-    <path class="mark ink" d="M0 -36l12 3-12 3z"/>
-    <rect class="wall ink" x="33" y="8" width="10" height="10"/>
-    <path class="ink" d="M33 13h10M38 8v10"/>`,
+    ${gableShade(34, -6, 0, -22)}
+    <path class="fine" d="M-23 -8.6L0 -19.2L23 -8.6z"/>
+    <circle class="glow ink" cx="0" cy="-12.6" r="2.6"/>
+    <path class="ink" d="M-24 16V-3M-15 16V-3M15 16V-3M24 16V-3"/>
+    <path class="shade" d="M-22.4 16V-3h-1.6v19zM-13.4 16V-3h-1.6v19zM16.6 16V-3h-1.6v19zM25.6 16V-3h-1.6v19z"/>
+    <path class="ink" d="M-26 -3h13M13 -3h13"/>
+    <rect class="glow" x="-11.5" y="1" width="5" height="8"/>${panes(-11.5, 1, 5, 8)}
+    <rect class="glow" x="6.5" y="1" width="5" height="8"/>${panes(6.5, 1, 5, 8)}
+    <path class="glow ink" d="M-4 16V4a4 4 0 0 1 8 0v12z"/>
+    <path class="fine" d="M0 0v16M-4 4h8"/>
+    <path class="roof ink" d="M-33 16h66v2h-66z"/>
+    <path class="ink" d="M0 -22v-15"/>
+    <path class="mark ink" d="M0 -37l12 3-12 3z"/>
+    <rect class="wall ink" x="35" y="9" width="9" height="9"/>
+    <path class="fine" d="M35 9l9 9M44 9l-9 9"/>
+    <ellipse class="wall ink" cx="-39" cy="12.5" rx="3.6" ry="5.5"/>
+    <path class="fine" d="M-42.3 10.4h6.6M-42.3 14.6h6.6"/>`,
 
-  // Placer Gulch: a canvas tent, a sluice on its trestle, and the headframe over the shaft.
+  // Placer Gulch: a canvas tent with a lamp inside, the headframe over the
+  // shaft with its wheel and rope, and a sluice on its trestle.
   diggings: () => `
-    <path class="ground" d="M-44 18h88"/>
+    ${footShadow(-24, 17)}
+    <path class="ground" d="M-46 18h92"/>
+    <path class="fine" d="M-31 4.5L-43 18M-17 4.5L-5 18"/>
     <path class="wall ink" d="M-38 18L-24 -6L-10 18z"/>
-    <path class="ink" d="M-24 -6V18M-28 18l4-9 4 9"/>
-    <rect class="glow" x="-26" y="10" width="4" height="7"/>
-    <path class="ink" d="M-2 18L6 -26L14 18M1 2h10M3 -10h6"/>
-    <path class="roof ink" d="M2 -28h8l-4 -5z"/>
-    <path class="ink" d="M6 -26v-3"/>
-    <path class="wall ink" d="M16 2L44 10v4L16 6z"/>
-    <path class="ink" d="M22 4v14M32 7v11M40 9v9"/>
-    <path class="mark ink" d="M-8 18c0-4 6-4 6 0"/>`,
+    <path class="shade" d="M-24 -6L-10 18h-9z"/>
+    <path class="glow ink" d="M-24 3l-5 15h10z"/>
+    <path class="ink" d="M-24 -6v-3.5"/>
+    <path class="mark ink" d="M-7 18c.4-4.6 6.6-4.6 7 0z"/>
+    <path class="roof ink" d="M2.5 18v-3.5h11V18z"/>
+    <path class="fine" d="M8 -26.5V14.5M1.6 8L12.6 -2M14.4 8L3.4 -2M3.4 -2L11 -12M12.6 -2L5 -12"/>
+    <path class="ink" d="M0 18L6.5 -24M16 18L9.5 -24M1.6 8h12.8M3.4 -2h9.2M5 -12h6"/>
+    <path class="roof ink" d="M3 -24h10v-2.6h-10z"/>
+    <circle class="wall ink" cx="8" cy="-30.4" r="3.8"/>
+    <path class="fine" d="M8 -34.2v7.6M4.2 -30.4h7.6"/>
+    <path class="ink" d="M22 4.6v13.4M32 8v10M41 11v7"/>
+    <path class="fine" d="M22 17L32 9.5M32 17L41 12"/>
+    <path class="wall ink" d="M18 0L45 9v3.6L18 3.6z"/>
+    <path class="fine" d="M24 2.3v3.2M30 4.3v3.2M36 6.3v3.2M42 8.3v3.2"/>
+    <path class="shade" d="M18 2.4L45 11.4v1.2L18 3.6z"/>`,
 
-  // Cypress Bayou: a house on stilts over the water, a lantern on its porch, a pirogue tied below.
+  // Cypress Bayou: a house on stilts over the water, a lantern on its porch,
+  // a ladder up from the pirogue tied below.
   stilts: () => `
-    <path class="ground" d="M-44 18h88" opacity=".5"/>
-    <path class="ink" d="M-24 18V0M-10 18V0M10 18V0M24 18V0"/>
-    <path class="wall ink" d="M-28 0V-18h56V0z"/>
-    <path class="roof ink" d="M-32 -18L0 -34L32 -18z"/>
-    <rect class="glow" x="-18" y="-13" width="8" height="8"/>
-    <rect class="glow" x="10" y="-13" width="8" height="8"/>
-    <path class="ink" d="M-28 -4h56"/>
-    <path class="ink" d="M30 -12v6"/><circle class="glow ink" cx="30" cy="-4" r="2.4"/>
-    <path class="wall ink" d="M-34 16q14 5 28 0z"/>`,
+    <path class="ground" d="M-46 18h92" opacity=".5"/>
+    <path class="fine" d="M-24 4L-10 14M-10 4L-24 14M8 4L22 14M22 4L8 14"/>
+    <path class="ink" d="M-24 18V1M-10 18V1M8 18V1M22 18V1"/>
+    <path class="roof ink" d="M-31 -1h64v2.4h-64z"/>
+    <path class="wall ink" d="M-27 -1V-18h50v17z"/>
+    ${siding(-27, 23, -18, -1, 3.4)}${eaves(-27, 23, -18)}
+    <path class="roof ink" d="M-32 -17L-2 -33L28 -17z"/>
+    ${shingles(-32, 28, -17, -2, -33, 3)}${gableShade(28, -17, -2, -33)}
+    <rect class="glow" x="-20" y="-13" width="7" height="7"/>${panes(-20, -13, 7, 7)}
+    <rect class="glow" x="9" y="-13" width="7" height="7"/>${panes(9, -13, 7, 7)}
+    <path class="roof ink" d="M-6 -1v-11h7v11z"/>
+    <path class="ink" d="M33 -1v-7M23 -8h10M28 -8v7"/>
+    <path class="ink" d="M26 -17h6v2.4"/>
+    <circle class="glow ink" cx="32" cy="-12" r="2.5"/>
+    <path class="ink" d="M39 18L35 1.4M44 18L40 1.4"/>
+    <path class="fine" d="M38.1 14h5M37.1 10h5M36.2 6h5"/>
+    <path class="wall ink" d="M-44 13.6q15 3 31 0l-3.4 4q-12 1.8-24.2 0z"/>
+    <path class="shade" d="M-42.4 15.6q13.6 2.4 27.7 0l-1.7 2q-12 1.8-24.2 0z"/>`,
 
   // Bethel: a white chapel with its steeple and bell, and the hall beside it.
   chapel: () => `
-    <path class="ground" d="M-44 18h88"/>
-    <path class="wall ink" d="M-20 18V-6h24v24z"/>
-    <path class="roof ink" d="M-23 -6L-8 -18L7 -6z"/>
-    <path class="wall ink" d="M-14 -14V-30h12v16"/>
-    <path class="roof ink" d="M-16 -30L-8 -44L0 -30z"/>
-    <path class="ink" d="M-8 -44v-6M-11 -48h6"/>
-    <circle class="glow" cx="-8" cy="-23" r="2.6"/>
-    <path class="glow" d="M-12 18v-10a4 4 0 0 1 8 0v10z"/>
+    ${footShadow(4, 36)}
+    <path class="ground" d="M-46 18h92"/>
     <path class="wall ink" d="M6 18V2h30v16z"/>
+    ${siding(6, 36, 2, 18, 3.6)}${eaves(6, 36, 2, 2.2)}
     <path class="roof ink" d="M3 2L21 -8L39 2z"/>
-    <rect class="glow" x="12" y="6" width="5" height="6"/><rect class="glow" x="25" y="6" width="5" height="6"/>`,
+    ${shingles(3, 39, 2, 21, -8)}${gableShade(39, 2, 21, -8)}
+    <rect class="glow" x="12" y="6" width="5" height="7"/>${panes(12, 6, 5, 7)}
+    <rect class="glow" x="25" y="6" width="5" height="7"/>${panes(25, 6, 5, 7)}
+    <path class="wall ink" d="M-22 18V-6h28v24z"/>
+    ${siding(-22, 6, -6, 18, 3.6)}${eaves(-22, 6, -6)}
+    <path class="roof ink" d="M-25 -5L-8 -19L9 -5z"/>
+    ${gableShade(9, -5, -8, -19)}
+    <path class="wall ink" d="M-14 -13V-31h12v18z"/>
+    <path class="shade" d="M-8 -31h6v18h-6z"/>
+    <path class="roof ink" d="M-12 -19v-8a4 4 0 0 1 8 0v8z"/>
+    <path class="glow ink" d="M-10 -22.6q0-3 2-3t2 3z"/>
+    <path class="ink" d="M-8 -22.6v1.6"/>
+    <path class="roof ink" d="M-16.5 -31L-8 -46L.5 -31z"/>
+    ${gableShade(0.5, -31, -8, -46)}
+    <path class="ink" d="M-8 -46v-7M-11 -50h6"/>
+    <path class="glow ink" d="M-12 18V9q0-5 4-6.5q4 1.5 4 6.5v9z"/>
+    <path class="fine" d="M-8 2.5v15.5"/>
+    <path class="glow" d="M-19 12V5q0-2.5 1.5-3.5q1.5 1 1.5 3.5v7zM0 12V5q0-2.5 1.5-3.5q1.5 1 1.5 3.5v7z"/>
+    <path class="ink" d="M-14 18v1.5h12V18"/>
+    <path class="ink" d="M-46 12h20M-44 18v-8M-39 18v-8M-34 18v-8M-29 18v-8"/>`,
 
-  // Sweetwater: a false-fronted saloon, a stockyard fence and a windmill.
+  // Sweetwater: a false-fronted saloon with its awning, the stockyard fence
+  // and its gate, and a windmill turning over the trough.
   corral: () => `
-    <path class="ground" d="M-44 18h88"/>
-    <path class="wall ink" d="M-34 18V-4h22v22z"/>
-    <path class="wall ink" d="M-36 -4V-14h26v10z"/>
-    <rect class="glow" x="-28" y="4" width="6" height="8"/>
-    <path class="ink" d="M-6 18V8h30v10M-6 12h30M4 8v10M14 8v10"/>
-    <path class="ink" d="M32 18V-20M28 18l4 -38 4 38"/>
-    <path class="mark ink" d="M32 -20l-10 -4M32 -20l10 4M32 -20l4 -10M32 -20l-4 10"/>`,
+    ${footShadow(-23, 16)}
+    <path class="ground" d="M-46 18h92"/>
+    <path class="wall ink" d="M-36 18V-4h24v22z"/>
+    ${siding(-36, -12, -4, 18, 3.6)}
+    <path class="wall ink" d="M-38 -4V-16h28v12z"/>
+    <path class="roof ink" d="M-39.5 -16h31v-2.4h-31z"/>
+    <rect class="mark ink" x="-33" y="-13" width="18" height="6" rx="1"/>
+    <path class="fine" d="M-30 -10h12"/>
+    <path class="roof ink" d="M-39 2h30l-2-4h-26z"/>
+    <path class="shade" d="M-36 2h24v2.4h-24z"/>
+    <path class="ink" d="M-38 18V2M-10 18V2"/>
+    <rect class="glow" x="-33" y="6" width="6" height="7"/>${panes(-33, 6, 6, 7)}
+    <path class="roof ink" d="M-23 18V7h7v11z"/>
+    <path class="fine" d="M-19.5 7v11"/>
+    <path class="ink" d="M-6 18V7M4 18V7M14 18V7M24 18V7M-6 9.5h30M-6 14h30"/>
+    <path class="fine" d="M4 9.5L14 14M14 9.5L4 14"/>
+    <path class="wall ink" d="M27 18v-4h12v4z"/>
+    <path class="fine" d="M28.4 18L31.5 -4L37.6 18M35.6 18L32.5 -4L26.4 18"/>
+    <path class="ink" d="M26 18L31 -20M38 18L33 -20M27.3 8h9.4M28.7 -3h6.6"/>
+    <path class="mark ink" d="M39.5 -22h3.5l2.5-2.6v5.2L43 -22z"/>
+    <circle class="wall ink" cx="32" cy="-22" r="7.6"/>
+    <path class="ink" d="M32 -29.6v15.2M24.4 -22h15.2M26.6 -27.4l10.8 10.8M37.4 -27.4l-10.8 10.8"/>
+    <circle class="glow ink" cx="32" cy="-22" r="1.6"/>`,
 
-  // Timber Falls: the sawmill with its wheel, a log flume, a stack of timber.
+  // Timber Falls: the sawmill and its wheel, the flume that feeds it, the
+  // logs waiting and the boards stacked to dry.
   sawmill: () => `
-    <path class="ground" d="M-44 18h88"/>
-    <path class="wall ink" d="M-30 18V-6h34v24z"/>
-    <path class="roof ink" d="M-34 -6L-13 -20L8 -6z"/>
-    <rect class="glow" x="-22" y="2" width="7" height="7"/>
-    <circle class="wall ink" cx="16" cy="6" r="11"/>
-    <path class="ink" d="M16 -5v22M5 6h22M8 -2l16 16M8 14l16 -16"/>
-    <path class="ink" d="M-40 -18L-30 -6M-44 -14L-34 -2"/>
-    <path class="mark ink" d="M30 18h12v-4h-12zM32 14h10v-4h-10z"/>`,
+    ${footShadow(-12, 24)}
+    <path class="ground" d="M-46 18h92"/>
+    <path class="ink" d="M-44 -9.5L4 -3M-44 -6.5L4 0"/>
+    <path class="ink" d="M-40 -6v24M-33 -5v6"/>
+    <path class="fine" d="M-40 6l-6 12M-40 6l6 12"/>
+    <path class="wall ink" d="M-30 18V-4h34v22z"/>
+    ${boards(-30, 4, -4, 18, 4.25)}${eaves(-30, 4, -4)}
+    <path class="roof ink" d="M-34 -3L-13 -18L8 -3z"/>
+    ${shingles(-34, 8, -3, -13, -18, 3)}${gableShade(8, -3, -13, -18)}
+    <path class="roof ink" d="M-25 18V5h13v13z"/>
+    <circle class="glow ink" cx="-18.5" cy="12" r="4.2"/>
+    <path class="fine" d="M-18.5 7.8v8.4M-22.7 12h8.4"/>
+    <rect class="glow" x="-7" y="3" width="6" height="6"/>${panes(-7, 3, 6, 6)}
+    <circle class="wall ink" cx="16" cy="6" r="11.5"/>
+    <circle class="ink" cx="16" cy="6" r="8.4"/>
+    <path class="ink" d="M16 -5.5v23M4.5 6h23M7.9 -2.1l16.2 16.2M7.9 14.1l16.2 -16.2"/>
+    <circle class="roof ink" cx="16" cy="6" r="1.8"/>
+    <path class="shade" d="M16 -5.5a11.5 11.5 0 0 1 0 23z"/>
+    <circle class="wall ink" cx="33" cy="15" r="3"/><circle class="wall ink" cx="39.5" cy="15" r="3"/>
+    <circle class="wall ink" cx="36.2" cy="9.6" r="3"/>
+    <path class="fine" d="M33 13.8v2.4M39.5 13.8v2.4M36.2 8.4v2.4"/>
+    <path class="mark ink" d="M-46 18h7v-2.5h-7zM-45 15.5h7V13h-7z"/>`,
 
-  // Copperhead: the smelter with its smoking stack, and a row of company houses.
+  // Copperhead: the smelter under its banded brick stack, the furnace mouth
+  // lit, an ore cart on the rails, and a row of company houses.
   smelter: () => `
-    <path class="ground" d="M-44 18h88"/>
-    <path class="wall ink" d="M-26 18V-4h30v22z"/>
-    <path class="roof ink" d="M-28 -4h34l-4 -6h-26z"/>
-    <path class="wall ink" d="M-2 -10V-34h7v24"/>
-    <rect class="glow" x="-20" y="4" width="18" height="6"/>
-    <path class="smoke" d="M2 -36q-6 -6 0 -12q6 -6 0 -12"/>
-    <path class="wall ink" d="M10 18V6l7 -6l7 6v12zM24 18V6l7 -6l7 6v12z"/>
-    <rect class="glow" x="15" y="9" width="4" height="4"/><rect class="glow" x="29" y="9" width="4" height="4"/>`,
+    ${footShadow(-12, 22)}
+    <path class="ground" d="M-46 18h92"/>
+    <path class="wall ink" d="M-3 18V-36h8v54z"/>
+    <path class="shade" d="M1 -36h4v54h-4z"/>
+    <path class="roof ink" d="M-4.2 -36h10.4v-2.6h-10.4z"/>
+    <path class="fine" d="M-3 -28h8M-3 -19h8M-3 -10h8"/>
+    <path class="smoke" d="M1 -41q-6 -5 0 -10q6 -5 0 -10M3.5 -42q5 -3 3 -8"/>
+    <path class="wall ink" d="M-30 18V-2h30v20z"/>
+    ${courses(-30, 0, -2, 18, 4, 7.5)}${eaves(-30, 0, -2)}
+    <path class="roof ink" d="M-32 -2h34l-5 -7h-24z"/>
+    <path class="roof ink" d="M-22 -9v-4h14v4z"/>
+    <path class="fine" d="M-19 -13v4M-15 -13v4M-11 -13v4"/>
+    <path class="glow ink" d="M-23 18V9a5 5 0 0 1 10 0v9z"/>
+    <path class="mark" d="M-21 18v-7.5a3 3 0 0 1 6 0V18z" opacity=".7"/>
+    <rect class="glow" x="-9" y="4" width="5" height="5"/>${panes(-9, 4, 5, 5)}
+    <path class="shade" d="M-46 18q4 -9 10 -7q4 1.5 6 7z"/>
+    <path class="ink" d="M-46 18q4 -9 10 -7q4 1.5 6 7"/>
+    <path class="mark ink" d="M7 11h9l-1.5 5h-6z"/>
+    <circle class="ink" cx="9.5" cy="17" r="1"/><circle class="ink" cx="13.5" cy="17" r="1"/>
+    <path class="wall ink" d="M20 18V7h10v11zM32 18V7h10v11z"/>
+    <path class="roof ink" d="M18.5 7.5L25 1l6.5 6.5zM30.5 7.5L37 1l6.5 6.5z"/>
+    ${gableShade(31.5, 7.5, 25, 1)}${gableShade(43.5, 7.5, 37, 1)}
+    <rect class="glow" x="23" y="10" width="4" height="4"/><rect class="glow" x="35" y="10" width="4" height="4"/>
+    <path class="fine" d="M20 12.5h3M27 12.5h3M32 12.5h3M39 12.5h3"/>`,
 
-  // Lafitte's Landing: a long warehouse on pilings, with a boat with no name tied up.
+  // Lafitte's Landing: a long warehouse on pilings, its doors barred and its
+  // hoist out over the water, with a boat with no name tied up.
   warehouse: () => `
-    <path class="ground" d="M-44 18h88" opacity=".5"/>
-    <path class="ink" d="M-34 18V4M-18 18V4M-2 18V4M14 18V4M30 18V4"/>
-    <path class="wall ink" d="M-38 4V-14h72V4z"/>
-    <path class="roof ink" d="M-40 -14L-2 -26L36 -14z"/>
-    <path class="ink" d="M-26 4v-12h10v12M8 4v-12h10v12"/>
-    <rect class="glow" x="-6" y="-10" width="6" height="5"/>
-    <path class="wall ink" d="M18 16q12 5 24 0z"/>
-    <path class="ink" d="M30 16v-12"/>`,
+    <path class="ground" d="M-46 18h92" opacity=".5"/>
+    <path class="fine" d="M-34 7L-18 16M-18 7L-34 16M-2 7L14 16M14 7L-2 16"/>
+    <path class="ink" d="M-34 18V4M-18 18V4M-2 18V4M14 18V4M28 18V4"/>
+    <path class="roof ink" d="M-40 3h72v2.4h-72z"/>
+    <path class="wall ink" d="M-38 3V-14h68V3z"/>
+    ${boards(-38, 30, -14, 3, 4.25)}${eaves(-38, 30, -14, 2.6)}
+    <path class="roof ink" d="M-41 -13L-4 -27L33 -13z"/>
+    ${shingles(-41, 33, -13, -4, -27, 3)}${gableShade(33, -13, -4, -27)}
+    <path class="roof ink" d="M-28 3V-9h11V3zM6 3V-9h11V3z"/>
+    <path class="fine" d="M-28 -9L-17 3M-17 -9L-28 3M6 -9L17 3M17 -9L6 3"/>
+    <path class="ink" d="M-30 -3h15M4 -3h15"/>
+    <rect class="glow" x="-8" y="-9" width="6" height="5"/>${panes(-8, -9, 6, 5)}
+    <path class="ink" d="M30 -17h10v8"/>
+    <path class="fine" d="M30 -11L38 -17"/>
+    <rect class="wall ink" x="37" y="-9" width="6" height="5"/>
+    <path class="ink" d="M39 18V-4"/>
+    <path class="sail ink" d="M39 -3l5 12h-5z"/>
+    <path class="wall ink" d="M24 13.6q11 3 22 0l-2.6 4q-8.4 1.8-16.8 0z"/>
+    <path class="shade" d="M25.3 15.6q9.7 2.4 19.4 0l-1.3 2q-8.4 1.8-16.8 0z"/>`,
 
-  // Eagle Rock: the grand lodge on its rock, every window lit, a flag on the gable.
+  // Eagle Rock: the grand lodge on its rock, every window lit, a fire going,
+  // pines beside it and a flag on the gable.
   lodge: () => `
     <path class="ground" d="M-46 18h92"/>
-    <path class="wall ink" d="M-44 18L-36 6h72L44 18z"/>
-    <path class="wall ink" d="M-32 6V-14h64V6z"/>
-    <path class="roof ink" d="M-36 -14L0 -32L36 -14z"/>
-    <rect class="glow" x="-26" y="-8" width="7" height="7"/><rect class="glow" x="-12" y="-8" width="7" height="7"/>
-    <rect class="glow" x="5" y="-8" width="7" height="7"/><rect class="glow" x="19" y="-8" width="7" height="7"/>
-    <path class="ink" d="M0 -32v-10"/><path class="mark ink" d="M0 -42l9 3 -9 3z"/>`,
+    <path class="roof ink" d="M-42 6l5 -15l5 15zM36 6l4.5 -13l4.5 13z"/>
+    <path class="roof ink" d="M-40.5 -1l3.5 -11l3.5 11zM37.2 0l3.3 -10l3.3 10z"/>
+    <path class="ink" d="M-37 6v3M40.5 6v3"/>
+    <path class="wall ink" d="M-46 18L-36 7h72L46 18z"/>
+    <path class="fine" d="M-36 7l5 6l-7 5M-12 7l-4 5l6 6M10 7l5 7l-4 4M30 7l-3 5l8 6M-31 13h15M15 14h12"/>
+    <path class="shade" d="M10 7h26L46 18H11l4 -4z"/>
+    <path class="wall ink" d="M19 -18v-14h7v20z"/>
+    <path class="fine" d="M19 -27h7M19 -22h7M22.5 -32v5M22.5 -22v5"/>
+    <path class="smoke" d="M22.5 -35c-3-3 3-5 0-8s3-5 0-7"/>
+    <path class="wall ink" d="M-32 7V-13h64V7z"/>
+    ${siding(-32, 32, -13, 7, 3.3)}${eaves(-32, 32, -13, 3)}
+    <path class="roof ink" d="M-36 -12L0 -31L36 -12z"/>
+    ${shingles(-36, 36, -12, 0, -31, 4)}${gableShade(36, -12, 0, -31)}
+    <path class="glow ink" d="M-4 -17l4 -5l4 5z"/>
+    <rect class="glow" x="-27" y="-8" width="6" height="7"/>${panes(-27, -8, 6, 7)}
+    <rect class="glow" x="-16" y="-8" width="6" height="7"/>${panes(-16, -8, 6, 7)}
+    <rect class="glow" x="10" y="-8" width="6" height="7"/>${panes(10, -8, 6, 7)}
+    <rect class="glow" x="21" y="-8" width="6" height="7"/>${panes(21, -8, 6, 7)}
+    <path class="glow ink" d="M-4.5 7V-4a4.5 4.5 0 0 1 9 0V7z"/>
+    <path class="fine" d="M0 -8.5V7"/>
+    <path class="roof ink" d="M-35 1.5h70v2h-70z"/>
+    <path class="ink" d="M-33 7V3.5M-8 7V3.5M8 7V3.5M33 7V3.5"/>
+    <path class="ink" d="M0 -31v-11"/><path class="mark ink" d="M0 -42l9 3 -9 3z"/>`,
 
-  // Pelican Point: the wharf on its piles, the net loft over it, and a pelican on the post.
+  // Pelican Point: the wharf on its piles, the net loft over it, nets drying
+  // on the rack, and a pelican on the post.
   wharf: () => `
-    <path class="ground" d="M-44 18h88" opacity=".5"/>
-    <path class="ink" d="M-40 8h80M-34 8v10M-18 8v10M-2 8v10M14 8v10M30 8v10"/>
-    <path class="wall ink" d="M-26 8V-12h30V8z"/>
-    <path class="roof ink" d="M-30 -12L-11 -24L8 -12z"/>
-    <rect class="glow" x="-18" y="-6" width="8" height="7"/>
-    <path class="ink" d="M24 8V-6"/>
-    <path class="mark ink" d="M20 -6q4 -8 10 -4l6 0 -4 2q-2 4 -8 3z"/>`,
+    <path class="ground" d="M-46 18h92" opacity=".5"/>
+    <path class="fine" d="M-34 10L-18 17M-18 10L-34 17M-2 10L14 17M14 10L-2 17"/>
+    <path class="ink" d="M-34 9v9M-18 9v9M-2 9v9M14 9v9M30 9v9"/>
+    <path class="roof ink" d="M-42 7h84v2.4h-84z"/>
+    <path class="wall ink" d="M-28 7V-12h30V7z"/>
+    ${siding(-28, 2, -12, 7, 3.6)}${eaves(-28, 2, -12)}
+    <path class="roof ink" d="M-32 -11L-13 -25L6 -11z"/>
+    ${shingles(-32, 6, -11, -13, -25, 3)}${gableShade(6, -11, -13, -25)}
+    <rect class="glow" x="-22" y="-7" width="7" height="7"/>${panes(-22, -7, 7, 7)}
+    <path class="roof ink" d="M-9 7V-4h7V7z"/>
+    <path class="ink" d="M8 7V-6M22 7V-6M7 -6h16"/>
+    <path class="fine" d="M9 -6q3 9 6 0q3 9 6 0M10.5 -2.5h3M16.5 -2.5h3M9.6 -4.4h4.8M15.6 -4.4h4.8"/>
+    <ellipse class="wall ink" cx="-37" cy="3" rx="3" ry="4"/>
+    <path class="fine" d="M-39.7 1.4h5.4M-39.7 4.6h5.4"/>
+    <path class="ink" d="M34 18V-3"/>
+    <path class="wall ink" d="M28 -6.5q-1 -5 5 -5.5q5.5 -.4 6.5 4q-1.5 4.5 -6.5 4.5q-3.5 0 -5 -3z"/>
+    <path class="fine" d="M30.5 -7.5q3 2.5 6.5 .5"/>
+    <path class="wall ink" d="M37 -10.5q-1.5 -3 .2 -5.2a2.5 2.5 0 1 1 3.3 2.2q-.6 1.6 -1 4.5z"/>
+    <path class="mark ink" d="M40.6 -16.2L47 -7.5q-4.5 1 -6.7 -6z"/>
+    <circle class="ink" cx="39.2" cy="-16.6" r=".4"/>`,
 
-  // Smugglers' Cove: a cave mouth in the cliff, a fire, and lanterns hung over the table.
+  // Smugglers' Cove: a cave mouth in the cliff, lanterns hung over the table
+  // inside, a fire on the beach and a boat pulled up beside it.
   cove: () => `
-    <path class="ground" d="M-44 18h88"/>
-    <path class="wall ink" d="M-44 18L-36 -16L-14 -30L14 -28L36 -12L44 18z"/>
-    <path class="roof ink" d="M-18 18V2q0 -16 18 -16q18 0 18 16v16z"/>
-    <path class="ink" d="M-12 -4h24"/>
-    <circle class="glow" cx="-8" cy="-2" r="2.4"/><circle class="glow" cx="8" cy="-2" r="2.4"/>
-    <path class="mark ink" d="M28 18l4 -8 4 8z"/>
-    <path class="smoke" d="M32 6q-4 -6 0 -10"/>`,
-
-  // Lighthouse Point: the tower and its beam, and the keeper's cottage.
-  lighthouse: () => `
-    <path class="ground" d="M-40 18h80"/>
-    <path class="glow" d="M6 -31L40 -42V-18z" opacity=".55"/>
-    <path class="wall ink" d="M-9 18l3-40h12l3 40z"/>
-    <path class="mark ink" d="M-7.9 2h15.8l-.6-7H-7.3zM-6.5 -14h13l-.5-6h-12z"/>
-    <path class="roof ink" d="M-9 -22h18v-3h-18z"/>
-    <rect class="glow ink" x="-5" y="-32" width="10" height="7"/>
-    <path class="roof ink" d="M-7 -32l7-7 7 7z"/>
-    <path class="wall ink" d="M14 18V6h18v12z"/>
-    <path class="roof ink" d="M12 6l11-8 11 8z"/>
-    <rect class="glow" x="19" y="10" width="5" height="5"/>`,
-
-  // The Pearl Banks: a buying schooner at anchor over the beds.
-  pearler: () => `
-    <path class="hull ink" d="M-40 8h80l-10 12h-60z"/>
-    ${windowsRow(-28, 11, 6, 9, 3, 3)}
-    <path class="ink" d="M-10 8v-46M15 8v-40"/>
-    <path class="wall ink" d="M-9 -36l21 32h-21z"/>
-    <path class="wall ink" d="M16 -30l18 26h-18z"/>
-    <path class="wall ink" d="M-11 -34l-24 30h24z"/>
-    <path class="mark ink" d="M-10 -38l9 2-9 2z"/>
-    <path class="ink" d="M-40 8l-6 -6M40 8v6"/>`,
-
-  // Hurricane Key: a stone fort behind the reef, a black flag, a palm.
-  fort: () => `
-    <path class="ground" d="M-44 18h88"/>
-    <path class="wall ink" d="M-34 18V-4h42v22z"/>
-    <path class="wall ink" d="M-34 -4v-6h7v6M-21 -4v-6h7v6M-8 -4v-6h7v6M4 -4v-6h4v6"/>
-    <rect class="glow" x="-24" y="4" width="5" height="7"/>
-    <rect class="glow" x="-9" y="4" width="5" height="7"/>
-    <path class="ink" d="M-14 -10v-16"/>
-    <path class="mark ink" d="M-14 -26l12 3-12 3z"/>
-    <path class="ink" d="M24 18q1-16 5-30"/>
-    <path class="roof ink" d="M29 -12q-12-3-17 6q8-6 17-6zM29 -12q12-3 17 6q-8-6-17-6zM29 -12q-6-10-15-10q9 2 15 10zM29 -12q6-10 15-10q-9 2-15 10z"/>`,
-
-  // The Admiralty: the great house at the end of the sea lanes, its dome and ensign.
-  admiralty: () => `
     <path class="ground" d="M-46 18h92"/>
-    <path class="wall ink" d="M-40 18V0h80v18z"/>
-    ${windowsRow(-35, 6, 8, 9.5, 4, 6)}
-    <rect class="glow" x="-4" y="9" width="8" height="9"/>
-    <path class="roof ink" d="M-44 0h88l-4-4h-80z"/>
-    <path class="wall ink" d="M-14 -4v-8h28v8z"/>
-    <path class="roof ink" d="M-12 -12a12 12 0 0 1 24 0z"/>
-    <path class="ink" d="M0 -24v-16"/>
-    <path class="mark ink" d="M0 -40l14 3.5-14 3.5z"/>`,
+    <path class="wall ink" d="M-44 18L-38 -12L-27 -17L-16 -30L10 -32L21 -22L35 -17L44 18z"/>
+    <path class="shade" d="M10 -32L21 -22L35 -17L44 18H19V0q0 -15 -9 -17z"/>
+    <path class="fine" d="M-38 -12l10 4l8 -9M-16 -30l6 8l14 -2l6 -8M21 -22l-6 5M35 -17l-9 6l4 12M-41 4l8 -3l4 6M-36 12l7 2M28 8l8 3M-27 -17l2 9"/>
+    <path class="roof ink" d="M-18 18V2q0 -17 18 -17q18 0 18 17v16z"/>
+    <path class="fine" d="M-9 -12.5l1.5 4l1.5 -5M3 -14.8l1.5 5l1.5 -4.6M10 -12l1 3l1.2 -2"/>
+    <path class="ink" d="M-3 -14.6v8"/>
+    <path class="glow ink" d="M-5.4 -1.2l.8 -5.4h3.2l.8 5.4z"/>
+    <path class="glow" d="M-12 18L-5 1h4L8 18z" opacity=".16"/>
+    <path class="wall ink" d="M-11 10h15v2h-15z"/>
+    <path class="ink" d="M-8.5 12v6M1.5 12v6"/>
+    <path class="mark ink" d="M-1.5 10V6.5h1.6V10z"/>
+    <rect class="glow" x="-7.5" y="8.2" width="3.6" height="1.8"/>
+    <ellipse class="wall ink" cx="11.5" cy="13.5" rx="3.2" ry="4.5"/>
+    <path class="fine" d="M8.6 11.8h5.8M8.6 15.2h5.8"/>
+    <path class="smoke" d="M33 6q-4 -5 0 -9q3 -4 0 -7"/>
+    <path class="mark ink" d="M29.5 17q-1 -5 3.5 -9q4.5 4 3.5 9z"/>
+    <path class="glow" d="M31.5 17q0 -3 1.5 -4.6q1.5 1.6 1.5 4.6z"/>
+    <path class="ink" d="M27.5 18l11 -2M38.5 18l-11 -2"/>
+    <path class="wall ink" d="M-45 13q8 2.4 17 -.6l-2.5 5.6h-12z"/>
+    <path class="fine" d="M-43.6 15.3q7 1.6 14.2 -.6"/>`,
+
+  // Lighthouse Point: the tower on its rock and its beam, the gallery round
+  // the lamp, and the keeper's cottage with a fire in.
+  lighthouse: () => `
+    <path class="ground" d="M-42 18h84"/>
+    <path class="glow" d="M6 -32L42 -44V-18z" opacity=".55"/>
+    <path class="glow" d="M-6 -32L-26 -37V-25z" opacity=".25"/>
+    <path class="wall ink" d="M-9.5 16l3.5-38h12l3.5 38z"/>
+    <path class="mark ink" d="M-8.3 2h16.6l-.7-8H-7.6zM-6.7 -14h13.4l-.6-6.5h-12.2z"/>
+    <path class="shade" d="M2 -22h4l3.5 38H2z"/>
+    <path class="roof ink" d="M-3 16V9a3 3 0 0 1 6 0v7z"/>
+    <rect class="glow" x="-1.5" y="-11" width="3" height="4"/>
+    <path class="roof ink" d="M-10 -22h20v-2.6h-20z"/>
+    <path class="ink" d="M-10 -24.6v-4M10 -24.6v-4M-10 -28.6h20M-5 -28.6v4M5 -28.6v4"/>
+    <rect class="glow ink" x="-5" y="-33.5" width="10" height="9"/>
+    <path class="fine" d="M-1.7 -33.5v9M1.7 -33.5v9"/>
+    <path class="roof ink" d="M-7 -33.5q7 -9 14 0z"/>
+    <path class="ink" d="M0 -38v-3.5"/><circle class="ink" cx="0" cy="-42.3" r=".8"/>
+    <path class="wall ink" d="M-24 18l4 -4l5 1.5l4 -3.5h23l5 2.5l4 3.5z"/>
+    <path class="fine" d="M-20 14l3 4M-11 12l-2 6M12 12l3 6"/>
+    <path class="wall ink" d="M17 18V6h20v12z"/>
+    ${siding(17, 37, 6, 18, 3.4)}${eaves(17, 37, 6, 2)}
+    <path class="roof ink" d="M31 0v-7h4v10z"/>
+    <path class="smoke" d="M33 -9c-2.5-2.5 2.5-4 0-6.5"/>
+    <path class="roof ink" d="M15 6.5L27 -3L39 6.5z"/>
+    ${shingles(15, 39, 6.5, 27, -3)}${gableShade(39, 6.5, 27, -3)}
+    <rect class="glow" x="20" y="9.5" width="5" height="5"/>${panes(20, 9.5, 5, 5)}
+    <path class="roof ink" d="M29 18V10h5v8z"/>`,
+
+  // The Pearl Banks: a buying schooner at anchor over the beds, her sails
+  // loosed to dry and the divers' boat alongside.
+  pearler: () => `
+    <path class="ink" d="M36 9L46 -1M-10 9v-48M14 9v-41"/>
+    <path class="fine" d="M-10 -38L44 0.5M14 -31L36 9"/>
+    <path class="wall ink" d="M-9 -35l21 31h-21z"/>
+    <path class="fine" d="M-9 -24h7.5M-9 -14h14.2M-3 -4V-26"/>
+    <path class="shade" d="M2 -18.8L12 -4H2z"/>
+    <path class="wall ink" d="M15 -29l17 25h-17z"/>
+    <path class="fine" d="M15 -19h6.8M15 -10h13"/>
+    <path class="shade" d="M24 -15.8L32 -4h-8z"/>
+    <path class="wall ink" d="M-12 -34l-24 30h24z"/>
+    <path class="fine" d="M-12 -22h-9.6M-12 -12h-17.6M-18 -4v-22.5"/>
+    <path class="ink" d="M-10 -4h23M14 -4h19"/>
+    <path class="mark ink" d="M-10 -39l9 2-9 2z"/>
+    <path class="hull ink" d="M-42 7q40 3.5 82 0l-9 13h-62z"/>
+    <path class="fine" d="M-39.5 10.8q38 3 76.5 0M-36.5 14.6q35 2.4 70.5 0"/>
+    <path class="shade" d="M-36.5 14.6q35 2.4 70.5 0l-3 5.4h-62z"/>
+    ${windowsRow(-24, 10.5, 6, 8.5, 2.6, 2.4)}
+    <path class="ink" d="M-42 7l-5 -5"/>
+    <path class="fine" d="M-38 9v12"/>
+    <path class="wall ink" d="M35 17.6q5 1.4 10.5 -.6l-1.4 3.4h-7.7z"/>`,
+
+  // Hurricane Key: a stone fort behind the reef, a gun at the wall, a black
+  // flag over the tower, and a palm.
+  fort: () => `
+    ${footShadow(-12, 28)}
+    <path class="ground" d="M-46 18h92"/>
+    <path class="wall ink" d="M-26 18V-3h36v21z"/>
+    ${courses(-26, 10, -3, 18, 4.2, 8)}
+    <path class="wall ink" d="M-26 -3v-5h6v5M-15 -3v-5h6v5M-4 -3v-5h6v5M7 -3v-5h3v5"/>
+    <path class="shade" d="M3 -3h7v21H3z"/>
+    <path class="wall ink" d="M-40 18V-12h14v30z"/>
+    ${courses(-40, -26, -12, 18, 4.2, 7)}
+    <path class="wall ink" d="M-41.5 -12v-5.5h4.5v3h3.5v-3h4.5v3h3.5v-3h1v5.5z"/>
+    <path class="shade" d="M-31 -12h5v30h-5z"/>
+    <rect class="glow" x="-34.5" y="-5" width="3" height="6"/>
+    <path class="roof ink" d="M-13 18V9a5 5 0 0 1 10 0v9z"/>
+    <path class="glow" d="M-11 18V9.5a3 3 0 0 1 6 0V18z" opacity=".8"/>
+    <path class="fine" d="M-8 6.5V18M-11 12h6"/>
+    <rect class="glow" x="-21.5" y="3" width="3" height="5"/><rect class="glow" x="3" y="3" width="3" height="5"/>
+    <path class="roof ink" d="M10 -5.5h9v2.6h-9z"/>
+    <path class="ink" d="M-33 -17.5v-18"/>
+    <path class="roof ink" d="M-33 -35.5l12 3-12 3z"/>
+    <path class="ink" d="M26 18q.5-15 5 -29"/>
+    <path class="fine" d="M24.8 12h3M25.3 6h3M26.3 0h3M27.8 -6h3"/>
+    <path class="roof ink" d="M31 -11q-12-3-17 6q8-6 17-6zM31 -11q12-3 15 7q-7-7-15-7zM31 -11q-6-10-15-10q9 2 15 10zM31 -11q6-10 14-9q-9 1-14 9zM31 -11q-1 -9 -6 -13q3 5 6 13z"/>
+    <circle class="mark ink" cx="30" cy="-9.5" r="1.3"/><circle class="mark ink" cx="32.5" cy="-9" r="1.3"/>
+    <path class="wall ink" d="M36 18q1 -4 4 -4t4 4zM14 18q.5 -2.5 3 -2.5t3 2.5z"/>`,
+
+  // The Admiralty: the great house at the end of the sea lanes: a colonnade
+  // up its steps, two wings, the dome and the ensign over it.
+  admiralty: () => `
+    ${footShadow(0, 44)}
+    <path class="ground" d="M-46 18h92"/>
+    <path class="wall ink" d="M-42 16V0h84v16z"/>
+    ${courses(-42, 42, 0, 16, 4, 10)}${eaves(-42, 42, 0, 2.4)}
+    <rect class="glow" x="-38" y="5" width="4" height="7"/>${panes(-38, 5, 4, 7)}
+    <rect class="glow" x="-30" y="5" width="4" height="7"/>${panes(-30, 5, 4, 7)}
+    <rect class="glow" x="-22" y="5" width="4" height="7"/>${panes(-22, 5, 4, 7)}
+    <rect class="glow" x="18" y="5" width="4" height="7"/>${panes(18, 5, 4, 7)}
+    <rect class="glow" x="26" y="5" width="4" height="7"/>${panes(26, 5, 4, 7)}
+    <rect class="glow" x="34" y="5" width="4" height="7"/>${panes(34, 5, 4, 7)}
+    <path class="roof ink" d="M-45 0h90l-3-3.5h-84z"/>
+    <path class="fine" d="M-40 -5.5h24M16 -5.5h24M-36 -3.5v-2M-30 -3.5v-2M-24 -3.5v-2M-18 -3.5v-2M18 -3.5v-2M24 -3.5v-2M30 -3.5v-2M36 -3.5v-2"/>
+    <path class="wall ink" d="M-15 16V-4h30v20z"/>
+    <path class="glow ink" d="M-3.5 16V7a3.5 3.5 0 0 1 7 0v9z"/>
+    <path class="fine" d="M0 3.5V16"/>
+    <path class="ink" d="M-12 16V-3M-6.5 16V-3M6.5 16V-3M12 16V-3"/>
+    <path class="shade" d="M-10.6 16V-3H-12v19zM-5.1 16V-3h-1.4v19zM7.9 16V-3H6.5v19zM13.4 16V-3H12v19z"/>
+    <path class="roof ink" d="M-17 -4L0 -12L17 -4z"/>
+    ${gableShade(17, -4, 0, -12)}
+    <path class="roof ink" d="M-18 16h36v2h-36z"/>
+    <path class="fine" d="M-16 17h32"/>
+    <path class="wall ink" d="M-11 -9v-6h22v6"/>
+    <path class="fine" d="M-7 -15v5M-3 -15v4M3 -15v4M7 -15v5"/>
+    <path class="roof ink" d="M-10 -15a10 10 0 0 1 20 0z"/>
+    <path class="shade" d="M0 -25a10 10 0 0 1 10 10H3q0 -6 -3 -10z"/>
+    <path class="wall ink" d="M-2 -25v-4h4v4"/>
+    <path class="ink" d="M0 -29v-14"/>
+    <path class="mark ink" d="M0 -43l14 3.5-14 3.5z"/>`,
 
   flagship: () => `
     <path class="roof ink" d="M-44 8h88l-11 12h-66z"/>
-    <path class="wall ink" d="M-35 8V-2h68v10z"/>
+    <path class="fine" d="M-41.2 11h82.4M-38.5 14h77M-35.7 17h71.4"/><path class="shade" d="M-38.5 14h77l-5.5 6h-66z"/>
+    <path class="wall ink" d="M-35 8V-2h68v10z"/>${eaves(-35, 33, -2, 2)}
     ${windowsRow(-31, 1, 8, 8)}
-    <path class="wall ink" d="M-28 -2v-8h54v8z"/>
+    <path class="ink" d="M-38 -2h74"/>
+    <path class="wall ink" d="M-28 -2v-8h54v8z"/>${eaves(-28, 26, -10, 1.6)}
     ${windowsRow(-24, -8, 6, 8, 4, 3)}
+    <path class="ink" d="M-31 -10h60"/>
+    <path class="fine" d="M-31 -10v-3h60v3M-25 -13v3M-19 -13v3M-1 -13v3M11 -13v3M17 -13v3M23 -13v3"/>
     <path class="wall ink" d="M-7 -10v-8h14v8z"/>
-    <rect class="glow" x="-4" y="-16" width="8" height="3"/>
+    <path class="roof ink" d="M-9 -18h18l-2 -2.6h-14z"/>
+    <rect class="glow" x="-4" y="-16" width="8" height="3.5"/>
+    <path class="fine" d="M-1.3 -16v3.5M1.3 -16v3.5"/>
     <path class="roof ink" d="M-23 -10v-28h6v28zM-13 -10v-28h6v28z"/>
+    <path class="shade" d="M-20 -38h3v28h-3zM-10 -38h3v28h-3z"/>
+    <path class="mark" d="M-23 -34h6v3h-6zM-13 -34h6v3h-6z"/>
     <path class="ink" d="M-24 -38l2-3 2 3 2-3 2 3M-14 -38l2-3 2 3 2-3 2 3"/>
+    <path class="smoke" d="M-20 -44c-4-4 4-6 0-10M-10 -44c-4-4 4-6 0-10"/>
+    <path class="fine" d="M-17 -30L21 -38M-7 -30L21 -34"/>
     <path class="ink" d="M21 -10v-32"/>
     <path class="mark ink" d="M21 -42l15 3.5-15 3.5z"/>
     <path class="glow ink" d="M21 -33l10 2.5-10 2.5z"/>
-    <path class="roof ink" d="M-3 8a10 10 0 0 1 20 0z"/>`,
+    <path class="roof ink" d="M-3 8a10 10 0 0 1 20 0z"/>
+    <path class="fine" d="M7 -2v10M0 1l7 7l7 -7M-1.7 5.5h17.4"/>
+    <circle class="glow ink" cx="-40" cy="4" r="1.6"/>`,
 };
 
 /* ------------------------------------------------------------------ *

@@ -4965,6 +4965,84 @@ await step('the table plays from the keyboard: F, C and R press the buttons, N d
   }
 });
 
+await step('the Log by street: where the money goes, one street at a time, the dearest first', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const lp = await ctx.newPage();
+  const mine = [];
+  lp.on('pageerror', (e) => mine.push(`PAGEERROR: ${e.message}`));
+  try {
+    await lp.goto(`${BASE}/#home`, { waitUntil: 'domcontentloaded' });
+    await lp.evaluate(() => localStorage.setItem('poker-trainer.profile.v1', JSON.stringify({ seenPrologue: true, settings: { lang: 'en' } })));
+    await lp.reload({ waitUntil: 'domcontentloaded' });
+    // Nine Lab spots answered wrong, written up as five turns, two flops and two rivers.
+    const kept = await lp.evaluate(async () => {
+      const { makeRng } = await import('/src/js/core/rng.js');
+      const { generateSpot } = await import('/src/js/trainers/lab.js');
+      const hh = await import('/src/js/state/handHistory.js');
+      hh.clearHands();
+      const streets = ['turn', 'flop', 'turn', 'river', 'turn', 'flop', 'river', 'turn', 'turn'];
+      let n = 0;
+      for (let seed = 1; n < streets.length && seed < 400; seed++) {
+        const spot = generateSpot('decide', makeRng(seed));
+        if (spot.type !== 'decide') continue;
+        const hand = hh.handFromLabSpot(spot, spot.answer === 'call' ? 'fold' : 'call');
+        for (const d of hand.decisions) d.street = streets[n];
+        if (hh.reviewOf(hand).kind !== 'mistake') continue;
+        hh.keepHand(hand);
+        n += 1;
+      }
+      return n;
+    });
+    if (kept !== 9) throw new Error(`only ${kept} mistakes could be made`);
+    await lp.goto(`${BASE}/#review`, { waitUntil: 'domcontentloaded' });
+    await lp.waitForSelector('.log-leak-row', { timeout: 5000 });
+    const cards = () => lp.$$eval('.hand-card', (n) => n.length);
+    const costs = () => lp.$$eval('.hand-card-cost', (n) => n.map((x) => Number((x.textContent.match(/([\d.]+)bb/) || [])[1])));
+    if (await cards() !== 9) throw new Error(`the Log shows ${await cards()} of 9 hands`);
+    // Four streets, the turn the dearest, and preflop with nothing in it.
+    if ((await lp.$$('.log-leak-row')).length !== 4) throw new Error('the streets are not all four listed');
+    if (!(await lp.$('.log-leak-row.none[data-street="preflop"]:disabled'))) throw new Error('preflop has no mistakes and can still be picked');
+    const line = await lp.textContent('.log-leak-line');
+    if (!/Most of it goes on the turn: [\d.]+bb in 5 hands\./.test(line)) throw new Error(`the leak line reads "${line}"`);
+    if (!(await lp.$('.log-leak-row.worst[data-street="turn"]'))) throw new Error('the turn is not marked as the dearest street');
+    // The chips count what they show, and a chip narrows the list.
+    const chips = await lp.$$eval('.log-filters .log-chip', (n) => n.map((x) => Array.from(x.children, (c) => c.textContent.trim()).join(' ')));
+    if (chips.join('|') !== 'All 9|flop 2|turn 5|river 2') throw new Error(`the chips read ${chips.join('|')}`);
+    await lp.click('.log-chip[data-show="turn"]');
+    await lp.waitForSelector('.log-chip.active[data-show="turn"]', { timeout: 3000 });
+    if (await cards() !== 5) throw new Error(`the turn shows ${await cards()} hands, not 5`);
+    const streetsShown = await lp.$$eval('.hand-card-cost', (n) => n.map((x) => x.textContent.split('·')[0].trim()));
+    if (streetsShown.some((x) => x !== 'turn')) throw new Error(`the turn list holds ${streetsShown}`);
+    if (!/Play 5 again: turn/.test(await lp.textContent('.log-retry .btn'))) throw new Error('the retry button does not follow the street');
+    // Dearest first is in order, and going into a hand and back keeps both choices.
+    await lp.click('.log-chip[data-by="cost"]');
+    await lp.waitForSelector('.log-chip.active[data-by="cost"]', { timeout: 3000 });
+    const sorted = await costs();
+    if (sorted.some((c, i) => i && c > sorted[i - 1])) throw new Error(`dearest first is not in order: ${sorted}`);
+    await lp.click('.hand-card');
+    await lp.waitForFunction(() => /hand=/.test(location.hash), null, { timeout: 5000 });
+    await lp.goBack();
+    await lp.waitForSelector('.log-chip.active[data-show="turn"]', { timeout: 5000 });
+    if (!(await lp.$('.log-chip.active[data-by="cost"]'))) throw new Error('the order was forgotten on the way back');
+    // The sitting is that street's hands only.
+    await lp.click('.log-retry .btn');
+    await lp.waitForFunction(() => /retry=all/.test(location.hash) && /show=turn/.test(location.hash), null, { timeout: 5000 });
+    await lp.waitForSelector('.replay-panel', { timeout: 5000 });
+    // The street row is a button too, and pressing it again lets go.
+    await lp.goto(`${BASE}/#review`, { waitUntil: 'domcontentloaded' });
+    await lp.waitForSelector('.log-leak-row.active[data-street="turn"]', { timeout: 5000 });
+    await lp.click('.log-leak-row[data-street="turn"]');
+    await lp.waitForSelector('.log-chip.active[data-show="all"]', { timeout: 3000 });
+    if (await cards() !== 9) throw new Error('letting go of the street did not bring the hands back');
+    // Nothing runs off the side of a phone.
+    const wide = await lp.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    if (wide > 1) throw new Error(`the Log is ${wide}px wider than the phone`);
+    if (mine.length) throw new Error(mine.join('; '));
+  } finally {
+    await ctx.close();
+  }
+});
+
 await step('the rail says which build this is, on a desktop and on a phone', async () => {
   // "Do I have the right one?" has to be a glance. The version was inside the
   // ledger; it is now on the rail of every screen, under the crest, and the

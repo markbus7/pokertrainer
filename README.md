@@ -133,6 +133,16 @@ of the day counts, and a right one pays 10 pearls and marks the hand
 **Fixed**; a second go the same day pays nothing. The button is on the
 Today's question card and at the end of the day's set.
 
+**The Log by street.** Above the list, *Where it goes* adds the kept mistakes
+up by the street the costliest one was made on: preflop, flop, turn and river,
+each with a bar as long as its share of the cost, and the dearest street named
+in a sentence once it has two mistakes and costs more than any other. A street
+is a button that narrows the list to its hands, and so are the chips under it
+(a street, the coolers, the mistakes not fixed yet), each with its count; the
+list can be read newest first or dearest first. With a street picked, **Play
+them again** deals that street's mistakes only, and going into a hand and
+back keeps the choice.
+
 ### 🐈 Help, and the cat who remembers
 
 In free play nobody talks you through a hand: **Help** is a button, and
@@ -329,6 +339,13 @@ out: clapboards, shingles, glazing bars, the shadow side of the roof and under
 the eaves, a shadow on the ground, and a little light around each lit window.
 Your boat is in brass there too, and the borrowed rowboat is a proper one now,
 with a sheer that rises to the bow and an oar trailing in the water.
+
+The towns off the river and the ports of the Gulf are drawn in the same hand
+as the river's stops: the customs house in dressed stone with its seal in the
+gable, the lighthouse with a gallery round the lamp, the schooner with her
+sails seamed, a fort with a tower and a gun at the wall, the Admiralty with a
+colonnade under its dome, and the sawmill, smelter, chapel, lodge, wharf,
+cove and the rest each with the things that make them that place.
 
 ### 🌊 The Gulf: the second act
 

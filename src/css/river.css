@@ -2117,6 +2117,62 @@ main { padding-bottom: max(64px, calc(48px + env(safe-area-inset-bottom))); }
 .log-entries { margin-top: var(--s-4); }
 .log-sums .stat, .cabin .paper .stat { background: var(--paper-2); border-color: var(--ink-rule); }
 .log-empty { margin-top: var(--s-4); }
+
+/* Where the money goes: a row a street, its bar as long as its share of the
+   cost. A row is a button that narrows the list to that street. */
+.log-leak { margin-top: var(--s-4); padding-top: var(--s-3); border-top: 1px solid var(--ink-rule); }
+.log-leak-line { font-family: var(--font-print); font-size: var(--t-md); margin-top: 2px; }
+.log-leak-rows { display: grid; gap: 4px; margin-top: var(--s-2); }
+.log-leak-row {
+  display: grid;
+  grid-template-columns: 5.5em 1fr auto;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 34px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: var(--t-sm);
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.log-leak-row:hover:not(:disabled) { background: var(--paper-2); }
+.log-leak-row.active { background: var(--paper-2); border-color: var(--ink-rule); }
+.log-leak-row.none { cursor: default; opacity: 0.55; }
+.log-leak-name { font-weight: 650; }
+.log-leak-name::first-letter, .log-chip > span:first-child::first-letter { text-transform: uppercase; }
+.log-leak-track { height: 8px; border-radius: 4px; background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--ink-rule); overflow: hidden; }
+.log-leak-row.active .log-leak-track { background: var(--paper); }
+.log-leak-fill { display: block; height: 100%; min-width: 0; border-radius: 4px; background: var(--ink-rule); }
+.log-leak-row.worst .log-leak-fill { background: var(--red); }
+.log-leak-sum { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Which hands, and in what order. */
+.log-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); margin-top: var(--s-4); }
+.log-filters, .log-order { display: flex; flex-wrap: wrap; gap: 6px; }
+.log-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: inherit;
+  background: none;
+  border: 1px solid var(--ink-rule);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.log-chip:hover { background: var(--paper-2); }
+.log-chip.active { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.log-chip-n { font-variant-numeric: tabular-nums; opacity: 0.7; }
+.log-bar + .log-entries { margin-top: var(--s-3); }
 .log-note { margin-top: var(--s-5); padding-top: var(--s-3); border-top: 1px solid var(--ink-rule); font-size: var(--t-sm); }
 .replay-panel.saloon-stage { gap: var(--s-3); }
 .replay-panel.saloon-stage .btn.ghost { color: var(--on-wood); border-color: rgba(255, 255, 255, 0.25); }
