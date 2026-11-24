@@ -564,6 +564,19 @@ next week, the weakest skill of the seven days, with a button to its chapter.
 A week is only compared with another once both have ten graded decisions, and
 a skill only once it has four in each.
 
+The job is kept, not just said. Silas writes down the skill and the share it
+stood at, and reads the next seven days against it: done once that skill comes
+in fifteen points better (or at four in five), from at least four decisions,
+which pays 25 pearls once; if the week runs out without it he says so, with the
+numbers. While it is open, **How was my week?** says how far along it is, and a
+new job is set from the new week once the last one is settled.
+
+The chapters' icons are drawn for what each one teaches: a card with a crown
+for hand rankings, a pot for pot odds, a dealer button for position, a mask for
+bluffing, a stack of chips for stack depth, a trophy for ICM, a diamond for
+value betting. The school's own icon is a mortarboard, and the cards and the
+snowflake are redrawn to match.
+
 ### 📋 Interactive range charts
 
 The full 13×13 grid for every opening position and every 3-betting position,
