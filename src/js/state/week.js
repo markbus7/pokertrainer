@@ -96,3 +96,90 @@ export function weekReview(reports, now = Date.now()) {
     repeated,
   };
 }
+
+/* ------------------------------------------------------------------ *
+ * The job for next week, kept
+ *
+ * Naming the weakest skill as the job for next week is only advice until
+ * somebody looks again. So the job is written down when it is set (the skill
+ * and the share it stood at), and the week after is read against it: put
+ * right once that skill comes in at fifteen points better than it was, or
+ * at four in five, from enough decisions to say so. A job done pays a few
+ * pearls, once; a week gone by without it is said plainly, and a new job is
+ * set from the new week.
+ * ------------------------------------------------------------------ */
+
+/** How much better a skill has to be to call the job done, and the share that is done whatever it was. */
+export const GOAL_RISE = 0.15;
+export const GOAL_ENOUGH = 0.8;
+/** What a job done pays, once. */
+export const GOAL_PEARLS = 25;
+
+/** The job as kept on the profile, read back as numbers whatever was stored, or null. */
+export function goalOf(profile) {
+  const g = profile.data.weekGoal;
+  if (!g || typeof g !== 'object' || Array.isArray(g)) return null;
+  if (typeof g.skill !== 'string' || !g.skill || g.skill.length > 40) return null;
+  if (!Number.isFinite(g.set) || !Number.isFinite(g.from)) return null;
+  return {
+    skill: g.skill,
+    from: Math.min(1, Math.max(0, g.from)),
+    set: g.set,
+    done: Number.isFinite(g.done) && g.done > 0 ? g.done : 0,
+    met: Boolean(g.met),
+  };
+}
+
+/** The share a job has to reach. */
+export const goalTarget = (goal) => Math.min(GOAL_ENOUGH, goal.from + GOAL_RISE);
+
+/**
+ * How a job stands: the skill's decisions since it was set (to a week after),
+ * and whether it is done, still open, or the week ran out.
+ * @returns {{state:'met'|'open'|'missed', right:number, total:number, share:number|null, target:number}}
+ */
+export function goalProgress(reports, goal, now = Date.now()) {
+  const until = goal.set + WEEK;
+  const row = tally(Array.isArray(reports) ? reports : [], goal.set, Math.min(now, until) + 1).skills[goal.skill] || { right: 0, total: 0 };
+  const share = row.total ? row.right / row.total : null;
+  const target = goalTarget(goal);
+  const state = row.total >= SKILL_WEEK && share >= target ? 'met' : now >= until ? 'missed' : 'open';
+  return { state, right: row.right, total: row.total, share, target };
+}
+
+/**
+ * Read the kept job against the sittings, settle it when it is done or its
+ * week has run out, and set the next one from this week's weakest skill.
+ * Pays the pearls for a job done, once.
+ * @returns {{goal:object|null, progress:object|null, settled:'met'|'missed'|null, pearls:number, fresh:boolean}}
+ */
+export function keepGoal(profile, reports, now = Date.now()) {
+  let goal = goalOf(profile);
+  let progress = null;
+  let settled = null;
+  let pearls = 0;
+  if (goal && !goal.done) {
+    progress = goalProgress(reports, goal, now);
+    if (progress.state !== 'open') {
+      settled = progress.state;
+      goal = { ...goal, done: now, met: settled === 'met' };
+      profile.data.weekGoal = goal;
+      profile.save();
+      if (settled === 'met') pearls = profile.earnPearls(GOAL_PEARLS);
+    }
+  }
+  // A new job once the last one is settled: this week's weakest skill.
+  let fresh = false;
+  if (!goal || goal.done) {
+    const w = weekReview(reports, now);
+    if (w.weakest) {
+      const next = { skill: w.weakest.skill, from: w.weakest.share, set: now, done: 0, met: false };
+      // The one just settled stays readable for this answer.
+      profile.data.weekGoal = next;
+      profile.save();
+      fresh = true;
+      return { goal: next, progress: settled ? progress : null, settled, pearls, fresh, last: settled ? goal : null };
+    }
+  }
+  return { goal, progress, settled, pearls, fresh, last: settled ? goal : null };
+}

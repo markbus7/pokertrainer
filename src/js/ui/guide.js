@@ -26,7 +26,7 @@ import { whoYouAre } from '../state/character.js';
 import { allTerms } from '../data/glossary.js';
 import { openSnags, SEAT_WORDS, FACING_WORDS } from '../state/snags.js';
 import { dateKey, doneToday, liveStreak } from '../state/daily.js';
-import { weekReview } from '../state/week.js';
+import { weekReview, keepGoal, goalProgress, goalTarget } from '../state/week.js';
 import { reportsOf } from '../state/sessionReport.js';
 import { moduleMeta } from '../data/curriculum.js';
 
@@ -259,11 +259,35 @@ export function answer(profile, key, rng = Math.random, now = Date.now()) {
  * next seven days.
  */
 export function weekAnswer(profile, now = Date.now()) {
-  const w = weekReview(reportsOf(profile), now);
-  if (!w.ready) {
-    return { lines: [{ text: 'No sittings in the last seven days. Sit down at a table this week and I will tell you how it went.' }], to: { route: 'home' }, label: 'The river' };
-  }
+  const reports = reportsOf(profile);
+  const w = weekReview(reports, now);
   const skill = (key) => { const m = moduleMeta(key); return m ? t(m.name) : key; };
+  // The job set a week ago, read again: done, run out, or still going.
+  const kept = keepGoal(profile, reports, now);
+  const job = [];
+  if (kept.settled && kept.last && moduleMeta(kept.last.skill)) {
+    const pr = kept.progress;
+    const params = { skill: skill(kept.last.skill), right: pr.right, total: pr.total, pct: pctOf(pr.share || 0), from: pctOf(kept.last.from), target: pctOf(pr.target), n: kept.pearls };
+    job.push(kept.settled === 'met'
+      ? { text: 'Last week\'s job is done: {skill}, {right} of {total} right since, {pct} where it was {from}. {n} pearls for it.', params }
+      : pr.total
+        ? { text: 'Last week\'s job, {skill}, is not done: {right} of {total} right since, {pct}, and it needed {target}.', params }
+        : { text: 'Last week\'s job was {skill}, and no hand since has tested it.', params });
+  }
+  const open = kept.goal && !kept.goal.done && !kept.fresh && moduleMeta(kept.goal.skill) ? kept.goal : null;
+  if (open) {
+    const pr = goalProgress(reports, open, now);
+    const params = { skill: skill(open.skill), right: pr.right, total: pr.total, pct: pctOf(pr.share || 0), target: pctOf(pr.target) };
+    job.push(pr.total
+      ? { text: 'This week\'s job: {skill}, up to {target}. So far {right} of {total} right, {pct}.', params }
+      : { text: 'This week\'s job: {skill}, up to {target}. No hand has tested it yet.', params });
+  }
+  if (!w.ready) {
+    const lines = [{ text: 'No sittings in the last seven days. Sit down at a table this week and I will tell you how it went.' }, ...job];
+    return open
+      ? { lines, to: { route: 'learn', params: { module: open.skill } }, label: 'Study it' }
+      : { lines, to: { route: 'home' }, label: 'The river' };
+  }
   const lines = [w.decisions
     ? { text: 'This week: {sittings} sittings, {hands} hands, and {sound} of {n} decisions right — {pct}.', params: { sittings: w.sittings, hands: fmt.chips(w.hands), sound: w.sound, n: w.decisions, pct: pctOf(w.share) } }
     : { text: 'This week: {sittings} sittings and {hands} hands, but no decision I could grade.', params: { sittings: w.sittings, hands: fmt.chips(w.hands) } }];
@@ -273,9 +297,11 @@ export function weekAnswer(profile, now = Date.now()) {
   }
   if (w.better) lines.push({ text: 'Better than last week: {skill}, from {from} to {to}.', params: { skill: skill(w.better.skill), from: pctOf(w.better.from), to: pctOf(w.better.to) } });
   if (w.repeated) lines.push({ text: 'The mistake you made most this week: “{head}”, in {n} sittings.', params: { head: t(w.repeated.head), n: w.repeated.times } });
-  if (w.weakest && moduleMeta(w.weakest.skill)) {
-    lines.push({ text: 'The job for next week: {skill}. {right} of {total} right this week. Go over the chapter before you sit down again.', params: { skill: skill(w.weakest.skill), right: w.weakest.right, total: w.weakest.total } });
-    return { lines, to: { route: 'learn', params: { module: w.weakest.skill } }, label: 'Study it' };
+  lines.push(...job);
+  if (open) return { lines, to: { route: 'learn', params: { module: open.skill } }, label: 'Study it' };
+  if (kept.fresh && moduleMeta(kept.goal.skill)) {
+    lines.push({ text: 'The job for next week: {skill}. {right} of {total} right this week; get it to {target}. Go over the chapter before you sit down again.', params: { skill: skill(kept.goal.skill), right: w.weakest.right, total: w.weakest.total, target: pctOf(goalTarget(kept.goal)) } });
+    return { lines, to: { route: 'learn', params: { module: kept.goal.skill } }, label: 'Study it' };
   }
   lines.push({ text: 'No skill fell short this week. Keep the same habits, and play a few more hands.' });
   return { lines, to: { route: 'report' }, label: 'The notes' };

@@ -2398,8 +2398,18 @@ export const NL = {
   'Better than last week: {skill}, from {from} to {to}.': 'Beter dan vorige week: {skill}, van {from} naar {to}.',
   'The mistake you made most this week: “{head}”, in {n} sittings.':
     'De fout die je deze week het vaakst maakte: “{head}”, in {n} sessies.',
-  'The job for next week: {skill}. {right} of {total} right this week. Go over the chapter before you sit down again.':
-    'De opdracht voor volgende week: {skill}. {right} van {total} goed deze week. Neem het hoofdstuk nog eens door voor je weer gaat zitten.',
+  'The job for next week: {skill}. {right} of {total} right this week; get it to {target}. Go over the chapter before you sit down again.':
+    'De opdracht voor volgende week: {skill}. {right} van {total} goed deze week; breng het naar {target}. Neem het hoofdstuk nog eens door voor je weer gaat zitten.',
+  "Last week's job is done: {skill}, {right} of {total} right since, {pct} where it was {from}. {n} pearls for it.":
+    'De opdracht van vorige week is gelukt: {skill}, sindsdien {right} van {total} goed, {pct} waar het {from} was. {n} parels daarvoor.',
+  "Last week's job, {skill}, is not done: {right} of {total} right since, {pct}, and it needed {target}.":
+    'De opdracht van vorige week, {skill}, is niet gelukt: sindsdien {right} van {total} goed, {pct}, en er was {target} nodig.',
+  "Last week's job was {skill}, and no hand since has tested it.":
+    'De opdracht van vorige week was {skill}, en sindsdien heeft geen enkele hand die getest.',
+  "This week's job: {skill}, up to {target}. So far {right} of {total} right, {pct}.":
+    'De opdracht van deze week: {skill}, omhoog naar {target}. Tot nu toe {right} van {total} goed, {pct}.',
+  "This week's job: {skill}, up to {target}. No hand has tested it yet.":
+    'De opdracht van deze week: {skill}, omhoog naar {target}. Nog geen hand heeft die getest.',
   'No skill fell short this week. Keep the same habits, and play a few more hands.':
     'Geen vaardigheid schoot deze week tekort. Houd dezelfde gewoontes vast, en speel nog wat handen.',
   'Study it': 'Bestudeer het',

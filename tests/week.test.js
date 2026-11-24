@@ -3,7 +3,7 @@
  */
 
 import { describe, it, assert, equal } from './harness.js';
-import { weekReview, WEEK } from '../src/js/state/week.js';
+import { weekReview, WEEK, keepGoal, goalOf, goalProgress, goalTarget, GOAL_PEARLS } from '../src/js/state/week.js';
 import { Profile } from '../src/js/state/profile.js';
 import { weekAnswer, askFree } from '../src/js/ui/guide.js';
 
@@ -66,5 +66,78 @@ describe('your week', () => {
     equal(a.to.params.module, 'pot-odds');
     assert(askFree(p, 'hoe ging mijn week', Math.random, NOW).lines.length >= 1, 'asked in Dutch');
     equal(askFree(p, 'how was my week?', Math.random, NOW).to.route, a.to.route, 'and in English');
+  });
+});
+
+describe('the job for next week, kept', () => {
+  const profile = (reports) => {
+    const p = new Profile({}, memory());
+    p.data.reports = reports;
+    return p;
+  };
+  const LATER = (days) => NOW + days * DAY;
+
+  it('sets the job from the weakest skill of the week, at the share it stood at', () => {
+    const p = profile([sitting(2, { preflop: [2, 5], 'pot-odds': [5, 5] })]);
+    const kept = keepGoal(p, p.data.reports, NOW);
+    assert(kept.fresh);
+    equal(kept.goal.skill, 'preflop');
+    equal(goalOf(p).from, 0.4);
+    equal(goalTarget(goalOf(p)), 0.55, 'fifteen points better');
+    const again = keepGoal(p, p.data.reports, NOW + 1000);
+    assert(!again.fresh, 'set once, not again every time it is asked');
+  });
+
+  it('calls it done once the skill comes in at the target, and pays once', () => {
+    const reports = [sitting(2, { preflop: [2, 5] })];
+    const p = profile(reports);
+    keepGoal(p, reports, NOW);
+    reports.push({ ...sitting(0, { preflop: [4, 5] }), at: LATER(2) });
+    const before = p.economy.pearls;
+    const kept = keepGoal(p, reports, LATER(3));
+    equal(kept.settled, 'met');
+    equal(kept.pearls, GOAL_PEARLS);
+    equal(p.economy.pearls, before + GOAL_PEARLS);
+    equal(keepGoal(p, reports, LATER(3)).pearls, 0, 'not paid twice');
+  });
+
+  it('says so when the week runs out without it, and pays nothing', () => {
+    const reports = [sitting(2, { preflop: [2, 5] })];
+    const p = profile(reports);
+    keepGoal(p, reports, NOW);
+    reports.push({ ...sitting(0, { preflop: [2, 5] }), at: LATER(2) });
+    equal(goalProgress(reports, goalOf(p), LATER(3)).state, 'open', 'still open inside the week');
+    const kept = keepGoal(p, reports, LATER(8));
+    equal(kept.settled, 'missed');
+    equal(kept.pearls, 0);
+  });
+
+  it('needs enough decisions before it is called done', () => {
+    const reports = [sitting(2, { preflop: [1, 5] })];
+    const p = profile(reports);
+    keepGoal(p, reports, NOW);
+    reports.push({ ...sitting(0, { preflop: [2, 2] }), at: LATER(1) });
+    equal(goalProgress(reports, goalOf(p), LATER(2)).state, 'open', 'two right of two is not enough to say');
+  });
+
+  it('reads a damaged save as no job', () => {
+    const p = profile([]);
+    p.data.weekGoal = { skill: 3 };
+    equal(goalOf(p), null);
+    p.data.weekGoal = 'x';
+    equal(goalOf(p), null);
+  });
+
+  it('tells you the job in Silas\'s week, and how it went a week later', () => {
+    const reports = [sitting(2, { preflop: [2, 5], 'pot-odds': [5, 5] })];
+    const p = profile(reports);
+    const first = weekAnswer(p, NOW);
+    assert(first.lines.some((l) => /job for next week/.test(l.text)), 'the job is set');
+    equal(first.to.params.module, 'preflop');
+    const mid = weekAnswer(p, LATER(1));
+    assert(mid.lines.some((l) => /This week's job/.test(l.text)), 'and followed while it is open');
+    reports.push({ ...sitting(0, { preflop: [5, 5] }), at: LATER(3) });
+    const done = weekAnswer(p, LATER(4));
+    assert(done.lines.some((l) => /job is done/.test(l.text)), 'and called done');
   });
 });
